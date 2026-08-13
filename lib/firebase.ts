@@ -1,5 +1,5 @@
-import { initializeApp, getApps } from 'firebase/app'
-import { getAuth, signInWithEmailAndPassword, type UserCredential } from 'firebase/auth'
+import { getApp, getApps, initializeApp, type FirebaseApp } from 'firebase/app'
+import { getAuth, signInWithEmailAndPassword, type Auth, type UserCredential } from 'firebase/auth'
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -10,14 +10,22 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 }
 
-if (!getApps().length) {
-  initializeApp(firebaseConfig)
+const requiredConfigKeys = ['apiKey', 'authDomain', 'projectId', 'appId'] as const
+
+function getFirebaseApp(): FirebaseApp {
+  const missingKeys = requiredConfigKeys.filter((key) => !firebaseConfig[key])
+
+  if (missingKeys.length > 0) {
+    throw new Error(`Firebase não configurado. Variáveis ausentes: ${missingKeys.join(', ')}`)
+  }
+
+  return getApps().length > 0 ? getApp() : initializeApp(firebaseConfig)
 }
 
-const auth = getAuth()
+export function getFirebaseAuth(): Auth {
+  return getAuth(getFirebaseApp())
+}
 
 export async function signIn(email: string, password: string): Promise<UserCredential> {
-  return signInWithEmailAndPassword(auth, email, password)
+  return signInWithEmailAndPassword(getFirebaseAuth(), email, password)
 }
-
-export { auth }
