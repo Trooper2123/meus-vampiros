@@ -1,14 +1,23 @@
-'use client'
+ 'use client'
 
 import { useState } from 'react'
+import { signIn } from '@/lib/firebase'
 import { ArrowRight, Eye, EyeOff, KeyRound, LockKeyhole } from 'lucide-react'
 
 export default function Page() {
   const [showPassword, setShowPassword] = useState(false)
   const [user, setUser] = useState('')
   const [password, setPassword] = useState('')
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (!user || !password) return
+
+    try {
+      await signIn(user, password)
+      // TODO: redirect or load protected data
+    } catch {
+      // Feedback visual será conectado ao fluxo de autenticação.
+    }
   }
 
   return (
