@@ -7,15 +7,8 @@ export default function Page() {
   const [showPassword, setShowPassword] = useState(false)
   const [user, setUser] = useState('')
   const [password, setPassword] = useState('')
-  const [notice, setNotice] = useState('')
-
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!user || !password) {
-      setNotice('Preencha os dois campos para consultar seus contratos.')
-      return
-    }
-    setNotice('Verificando seus contratos...')
   }
 
   return (
@@ -69,22 +62,13 @@ export default function Page() {
 
           <div className="mt-7 border-t border-border pt-5 text-center">
             <p className="text-sm text-muted-foreground">Caso não tenha um contrato crie um agora !</p>
-            <button type="button" className="mt-3 font-mono text-[11px] uppercase tracking-[0.14em] text-primary transition-colors hover:text-foreground" onClick={() => setNotice('O registro de novos contratos será aberto em breve.')}>Criar nova conta</button>
+            <button type="button" className="mt-3 font-mono text-[11px] uppercase tracking-[0.14em] text-primary transition-colors hover:text-foreground">Criar nova conta</button>
           </div>
         </div>
 
         <p className="mt-6 text-center font-mono text-[9px] uppercase tracking-[0.18em] text-muted-foreground">Toda entrada deixa uma marca</p>
       </section>
 
-      {notice && (
-        <div className="toast-overlay" role="alert" aria-live="assertive">
-          <div className="toast" role="status">
-            <span className="toast-kicker">Aviso do arquivo</span>
-            <span>{notice}</span>
-            <button type="button" className="toast-close" onClick={() => setNotice('')} aria-label="Fechar aviso">Fechar</button>
-          </div>
-        </div>
-      )}
     </main>
   )
 }
