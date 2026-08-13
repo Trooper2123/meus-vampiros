@@ -76,7 +76,15 @@ export default function Page() {
         <p className="mt-6 text-center font-mono text-[9px] uppercase tracking-[0.18em] text-muted-foreground">Toda entrada deixa uma marca</p>
       </section>
 
-      {notice && <div className="toast" role="status">{notice}</div>}
+      {notice && (
+        <div className="toast-overlay" role="alert" aria-live="assertive">
+          <div className="toast" role="status">
+            <span className="toast-kicker">Aviso do arquivo</span>
+            <span>{notice}</span>
+            <button type="button" className="toast-close" onClick={() => setNotice('')} aria-label="Fechar aviso">Fechar</button>
+          </div>
+        </div>
+      )}
     </main>
   )
 }
