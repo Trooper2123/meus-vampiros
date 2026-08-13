@@ -1,6 +1,7 @@
-'use client'
+ 'use client'
 
 import { useState } from 'react'
+import { signIn } from '@/lib/firebase'
 import { ArrowRight, Eye, EyeOff, KeyRound, LockKeyhole } from 'lucide-react'
 
 export default function Page() {
@@ -9,13 +10,22 @@ export default function Page() {
   const [password, setPassword] = useState('')
   const [notice, setNotice] = useState('')
 
-  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!user || !password) {
       setNotice('Preencha os dois campos para consultar seus contratos.')
       return
     }
+
     setNotice('Verificando seus contratos...')
+    try {
+      await signIn(user, password)
+      setNotice('Login efetuado com sucesso.')
+      // TODO: redirect or load protected data
+    } catch (err: any) {
+      const message = err?.message || 'Falha ao efetuar login.'
+      setNotice(`Erro: ${message}`)
+    }
   }
 
   return (
