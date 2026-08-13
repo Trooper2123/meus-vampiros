@@ -3,8 +3,8 @@ import type { Metadata, Viewport } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Ledger Command — Registro de Personagens',
-  description: 'Painel de comando para personagens de horror gótico.',
+title: 'Arquivos da Noite — Acesso Restrito',
+description: 'Entre nos arquivos dos amaldiçoados.',
   generator: 'v0.app',
   icons: {
     icon: [
