@@ -28,11 +28,11 @@ export async function POST(request: Request) {
     const body = await request.json()
     const name = typeof body.name === 'string' && body.name.trim() ? body.name.trim() : null
     if (!name) return NextResponse.json({ error: 'Nome da campanha é obrigatório.' }, { status: 400 })
-    const theme = typeof body.theme === 'string' && body.theme.trim() ? body.theme.trim() : null
+    const averageXp = typeof body.averageXp === 'number' && Number.isFinite(body.averageXp) ? Math.trunc(body.averageXp) : typeof body.averageXp === 'string' && body.averageXp.trim() ? Number.parseInt(body.averageXp, 10) : null
     const status = typeof body.status === 'string' && body.status.trim() ? body.status.trim() : 'Ativa'
     const lastSessionAt = typeof body.lastSessionAt === 'string' && body.lastSessionAt.trim() ? body.lastSessionAt.trim() : null
 
-    const campaign = await createCampaign(user.sub, { name, theme, status, lastSessionAt })
+    const campaign = await createCampaign(user.sub, { name, averageXp: Number.isFinite(averageXp) ? averageXp : null, status, lastSessionAt })
     return NextResponse.json({ campaign }, { status: 201 })
   } catch {
     return NextResponse.json({ error: 'Não foi possível criar a mesa.' }, { status: 500 })
