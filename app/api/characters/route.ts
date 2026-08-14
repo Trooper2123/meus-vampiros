@@ -1,10 +1,9 @@
-import { Auth0Client } from '@auth0/nextjs-auth0/server'
+import { auth0 } from '@/lib/auth0'
 import { sql } from 'drizzle-orm'
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 
 async function getAuthenticatedUser() {
-  const auth0 = new Auth0Client()
   const session = await auth0.getSession()
   return session?.user ?? null
 }
