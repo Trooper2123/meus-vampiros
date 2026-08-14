@@ -1,3 +1,4 @@
+import { drizzle } from 'drizzle-orm/node-postgres'
 import { Pool } from 'pg'
 
 declare global {
@@ -58,5 +59,7 @@ export async function upsertUserFromAuth0(user: any) {
 
   return res.rows[0] ?? null
 }
+
+export const db = drizzle(pool as Pool)
 
 export { pool }
