@@ -17,8 +17,12 @@ function getAuthErrorMessage(error: unknown) {
       return 'Informe um e-mail válido.'
     case 'auth/too-many-requests':
       return 'Muitas tentativas de acesso. Aguarde alguns instantes e tente novamente.'
+    case 'auth/network-request-failed':
+      return 'Não foi possível conectar ao Firebase. Verifique sua conexão e a configuração do projeto.'
     default:
-      return 'Não foi possível realizar o acesso. Verifique suas credenciais e tente novamente.'
+      return error instanceof Error && error.message.startsWith('Firebase não configurado')
+        ? error.message
+        : 'Não foi possível realizar o acesso. Verifique suas credenciais e tente novamente.'
   }
 }
 import { ArrowRight, Eye, EyeOff, KeyRound, LockKeyhole } from 'lucide-react'
