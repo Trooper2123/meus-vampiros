@@ -1,8 +1,12 @@
 'use client'
 
 import Link from 'next/link'
-import { ArrowLeft, Check, Save, Skull } from 'lucide-react'
-import { useRef, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
+import { ArrowLeft, Check, Link2, Save, Skull, Unlink } from 'lucide-react'
+import { Suspense, useRef, useState } from 'react'
+import useSWR from 'swr'
+
+const fetcher = (url: string) => fetch(url).then((response) => response.json())
 
 const tabs = [
   { id: 'identidade', label: 'Identidade', eyebrow: 'I / o nome antes da noite' },
@@ -33,7 +37,62 @@ function SheetSection({ title, eyebrow, children }: { title: string; eyebrow?: s
   return <section className="sheet-section"><div className="sheet-section-heading"><div>{eyebrow && <p className="eyebrow">{eyebrow}</p>}<h2>{title}</h2></div><span className="section-mark" aria-hidden="true">✦</span></div>{children}</section>
 }
 
+function CampaignLink({ characterId, onCampaignChange }: { characterId: string | null; onCampaignChange?: (campaignId: string | null) => void }) {
+  const { data, mutate } = useSWR<{ character?: { campaignId: string | null }; campaign?: { id: string; name: string; theme: string | null } | null }>(
+    characterId ? `/api/characters?id=${characterId}` : null,
+    fetcher
+  )
+  const [campaignInput, setCampaignInput] = useState('')
+  const [linking, setLinking] = useState(false)
+  const [linkError, setLinkError] = useState<string | null>(null)
+  const linkedCampaign = data?.campaign ?? null
+
+  async function linkCampaign(nextCampaignId: string | null) {
+    if (!characterId) {
+      setLinkError('Salve a ficha antes de vincular a uma mesa.')
+      return
+    }
+    setLinking(true)
+    setLinkError(null)
+    const response = await fetch('/api/characters', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: characterId, campaignId: nextCampaignId }),
+    })
+    setLinking(false)
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}))
+      setLinkError(body.error ?? 'Não foi possível vincular a mesa.')
+      return
+    }
+    setCampaignInput('')
+    await mutate()
+    onCampaignChange?.(nextCampaignId)
+  }
+
+  return <div className="identity-subsection">
+    <div className="blood-heading"><h3>Mesa vinculada</h3></div>
+    {linkedCampaign ? <div className="mt-4 flex flex-wrap items-center justify-between gap-4 border border-border bg-card p-4">
+      <div><p className="eyebrow">Campanha</p><p className="mt-1 font-serif text-lg">{linkedCampaign.name}</p><p className="mt-1 text-sm text-muted-foreground">{linkedCampaign.theme ?? 'Tema não definido'}</p></div>
+      <button type="button" onClick={() => linkCampaign(null)} disabled={linking} className="button-ghost inline-flex items-center gap-2"><Unlink className="size-4" /> Desvincular</button>
+    </div> : <div className="mt-4 flex flex-wrap items-end gap-3">
+      <label className="sheet-field" style={{ flex: '1 1 260px' }}><span>ID da mesa</span><input value={campaignInput} onChange={(event) => setCampaignInput(event.target.value)} placeholder="Cole o identificador enviado pelo mestre" /></label>
+      <button type="button" onClick={() => linkCampaign(campaignInput.trim() || null)} disabled={linking || !campaignInput.trim()} className="button-primary inline-flex items-center gap-2"><Link2 className="size-4" /> {linking ? 'Vinculando...' : 'Vincular'}</button>
+    </div>}
+    {linkError && <p className="mt-3 text-sm" style={{ color: '#e17b78' }}>{linkError}</p>}
+    {!characterId && <p className="mt-3 text-xs text-muted-foreground">Salve a ficha uma vez para poder vincular a uma mesa.</p>}
+  </div>
+}
+
 export default function CriarPersonagemPage() {
+  return <Suspense fallback={null}>
+    <CriarPersonagemForm />
+  </Suspense>
+}
+
+function CriarPersonagemForm() {
+  const searchParams = useSearchParams()
+  const idFromUrl = searchParams.get('id')
   const [activeTab, setActiveTab] = useState<TabId>('identidade')
   const [attributes, setAttributes] = useState({ forca: 1, destreza: 1, vigor: 1, carisma: 1, manipulacao: 1, compostura: 1, inteligencia: 1, raciocinio: 1, determinacao: 1 })
   const [bloodPotency, setBloodPotency] = useState(0)
@@ -45,7 +104,7 @@ export default function CriarPersonagemPage() {
   )
   const [saved, setSaved] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [characterId, setCharacterId] = useState<string | null>(null)
+  const [characterId, setCharacterId] = useState<string | null>(idFromUrl)
   const formRef = useRef<HTMLFormElement>(null)
   const setAttribute = (name: keyof typeof attributes, value: number) => setAttributes((current) => ({ ...current, [name]: value }))
 
@@ -86,7 +145,7 @@ export default function CriarPersonagemPage() {
       <form ref={formRef} onSubmit={(event) => { event.preventDefault(); void saveDraft('Ficha selada como rascunho.') }}>
         <div className="mb-6 border-b border-border" role="tablist" aria-label="Seções da ficha de personagem"><div className="flex gap-1 overflow-x-auto pb-px">{tabs.map((tab) => <button key={tab.id} type="button" role="tab" aria-selected={activeTab === tab.id} aria-controls={`panel-${tab.id}`} id={`tab-${tab.id}`} onClick={() => void changeTab(tab.id)} className={`whitespace-nowrap border-b-2 px-3 py-3 text-left font-mono text-[10px] uppercase tracking-[0.12em] transition-colors sm:px-4 ${activeTab === tab.id ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:border-border hover:text-foreground'}`}>{tab.label}</button>)}</div></div>
         <div role="tabpanel" id={`panel-${activeTab}`} aria-labelledby={`tab-${activeTab}`}>
-          {activeTab === 'identidade' && <SheetSection title="Identidade" eyebrow="I / o nome antes da noite"><div className="sheet-grid sheet-grid-4"><Field label="Nome do personagem" name="nome" placeholder="Nome conhecido" className="span-2" /><Field label="Conceito" name="conceito" placeholder="O que define esta criatura?" className="span-2" /><Field label="Clã" name="cla" placeholder="Selecione" /><Field label="Predador" name="predador" placeholder="Instinto dominante" /><Field label="Geração" name="geracao" placeholder="—" /><Field label="Sire" name="sire" placeholder="Nome do criador" /></div><div className="identity-subsection"><div className="blood-heading"><h3>Potência de Sangue</h3>{dots(10, bloodPotency, setBloodPotency, 'potencia-de-sangue')}</div><div className="blood-grid">{[['Surto de Sangue', 'surto-de-sangue'], ['Quantidade Recuperada', 'quantidade-recuperada'], ['Bônus de Poder', 'bonus-de-poder'], ['Rerrolagem de Sangue', 'rerrolagem-de-sangue'], ['Penalidade de Alimentação', 'penalidade-de-alimentacao'], ['Gravidade da Perdição', 'gravidade-da-perdicao']].map(([label, name]) => <Field key={name} label={label} name={name} />)}</div><div className="experience-lines"><Field label="Experiência Total" name="experiencia-total" /><Field label="Experiência Gasta" name="experiencia-gasta" /></div><div className="age-fields"><Field label="Idade Verdadeira" name="idade-verdadeira" /><Field label="Idade Aparente" name="idade-aparente" /><Field label="Data de Nascimento" name="data-de-nascimento" /><Field label="Data de Morte" name="data-de-morte" /></div></div></SheetSection>}
+          {activeTab === 'identidade' && <SheetSection title="Identidade" eyebrow="I / o nome antes da noite"><div className="sheet-grid sheet-grid-4"><Field label="Nome do personagem" name="nome" placeholder="Nome conhecido" className="span-2" /><Field label="Conceito" name="conceito" placeholder="O que define esta criatura?" className="span-2" /><Field label="Clã" name="cla" placeholder="Selecione" /><Field label="Predador" name="predador" placeholder="Instinto dominante" /><Field label="Geração" name="geracao" placeholder="—" /><Field label="Sire" name="sire" placeholder="Nome do criador" /></div><div className="identity-subsection"><div className="blood-heading"><h3>Potência de Sangue</h3>{dots(10, bloodPotency, setBloodPotency, 'potencia-de-sangue')}</div><div className="blood-grid">{[['Surto de Sangue', 'surto-de-sangue'], ['Quantidade Recuperada', 'quantidade-recuperada'], ['Bônus de Poder', 'bonus-de-poder'], ['Rerrolagem de Sangue', 'rerrolagem-de-sangue'], ['Penalidade de Alimentação', 'penalidade-de-alimentacao'], ['Gravidade da Perdição', 'gravidade-da-perdicao']].map(([label, name]) => <Field key={name} label={label} name={name} />)}</div><div className="experience-lines"><Field label="Experiência Total" name="experiencia-total" /><Field label="Experiência Gasta" name="experiencia-gasta" /></div><div className="age-fields"><Field label="Idade Verdadeira" name="idade-verdadeira" /><Field label="Idade Aparente" name="idade-aparente" /><Field label="Data de Nascimento" name="data-de-nascimento" /><Field label="Data de Morte" name="data-de-morte" /></div><CampaignLink characterId={characterId} /></div></SheetSection>}
           {activeTab === 'atributos' && <SheetSection title="Atributos" eyebrow="II / corpo, presença e mente"><p className="mb-5 text-xs text-muted-foreground">Distribua os pontos clicando nas marcas. Cada atributo começa com um ponto.</p><div className="attribute-columns">{[{ title: 'Físicos', items: [['forca', 'Força'], ['destreza', 'Destreza'], ['vigor', 'Vigor']] }, { title: 'Sociais', items: [['carisma', 'Carisma'], ['manipulacao', 'Manipulação'], ['compostura', 'Compostura']] }, { title: 'Mentais', items: [['inteligencia', 'Inteligência'], ['raciocinio', 'Raciocínio'], ['determinacao', 'Determinação']] }].map((group) => <div key={group.title} className="attribute-group"><h3>{group.title}</h3>{group.items.map(([key, label]) => <div className="attribute-row" key={key}><span>{label}</span>{dots(5, attributes[key as keyof typeof attributes], (value) => setAttribute(key as keyof typeof attributes, value))}</div>)}</div>)}</div></SheetSection>}
           {activeTab === 'habilidades' && <SheetSection title="Habilidades" eyebrow="III / aquilo que foi aprendido"><p className="mb-5 text-xs text-muted-foreground">Distribua os níveis clicando nas bolinhas de cada habilidade.</p><div className="skill-list skill-list-3col">{skillNames.map((skill) => <label key={skill} className="skill-row"><span>{skill}</span>{dots(5, skills[skill] ?? 0, (value) => setSkills((current) => ({ ...current, [skill]: value })), `habilidade-${skill.toLowerCase().replaceAll(' ', '-')}`)}</label>)}</div></SheetSection>}
           {activeTab === 'disciplinas' && <SheetSection title="Disciplinas" eyebrow="IV / dons do sangue"><p className="mb-5 text-xs text-muted-foreground">Cada bolinha desbloqueia um poder. Registre seu nome e o efeito correspondente.</p><div className="discipline-list">{disciplineNames.map((name) => { const discipline = disciplines[name]; return <article className="discipline-card" key={name}><div className="discipline-card-header"><div><p className="eyebrow">Disciplina</p><h3>{name}</h3></div>{dots(5, discipline.level, (value) => setDisciplines((current) => ({ ...current, [name]: { ...current[name], level: value } })), `disciplina-${name.toLowerCase()}`)}</div>{discipline.level > 0 && <div className="power-list">{Array.from({ length: discipline.level }, (_, index) => <div className="power-row" key={index}><span className="power-level">{index + 1}</span><label className="sheet-field"><span>Poder ganho</span><input name={`${name}-poder-${index + 1}`} value={discipline.powers[index]} onChange={(event) => setDisciplines((current) => ({ ...current, [name]: { ...current[name], powers: current[name].powers.map((power, powerIndex) => powerIndex === index ? event.target.value : power) } }))} placeholder={`Poder de nível ${index + 1}`} /></label><label className="sheet-field"><span>Efeito</span><textarea name={`${name}-efeito-${index + 1}`} value={discipline.effects[index]} onChange={(event) => setDisciplines((current) => ({ ...current, [name]: { ...current[name], effects: current[name].effects.map((effect, effectIndex) => effectIndex === index ? event.target.value : effect) } }))} rows={2} placeholder="Descreva o efeito..." /></label></div>)}</div>}</article>})}</div></SheetSection>}
