@@ -1,10 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { ArrowRight, Eye, EyeOff, KeyRound, LockKeyhole, Mail } from 'lucide-react'
-import { createAccount } from '@/lib/firebase'
 
 function getAuthErrorMessage(error: unknown) {
   const code = error && typeof error === 'object' && 'code' in error ? error.code : ''
@@ -24,7 +22,6 @@ function getAuthErrorMessage(error: unknown) {
 }
 
 export default function CadastroPage() {
-  const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmation, setConfirmation] = useState('')
@@ -44,8 +41,7 @@ export default function CadastroPage() {
 
     setIsSubmitting(true)
     try {
-      await createAccount(email.trim(), password)
-      router.push('/')
+      window.location.href = '/auth/login?screen_hint=signup'
     } catch (authError) {
       setError(getAuthErrorMessage(authError))
       setIsSubmitting(false)
