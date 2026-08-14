@@ -1,5 +1,5 @@
 import { getApp, getApps, initializeApp, type FirebaseApp } from 'firebase/app'
-import { getAuth, signInWithEmailAndPassword, type Auth, type UserCredential } from 'firebase/auth'
+import { createUserWithEmailAndPassword, getAuth, signInWithEmailAndPassword, type Auth, type UserCredential } from 'firebase/auth'
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -28,4 +28,8 @@ export function getFirebaseAuth(): Auth {
 
 export async function signIn(email: string, password: string): Promise<UserCredential> {
   return signInWithEmailAndPassword(getFirebaseAuth(), email, password)
+}
+
+export async function createAccount(email: string, password: string): Promise<UserCredential> {
+  return createUserWithEmailAndPassword(getFirebaseAuth(), email, password)
 }
