@@ -17,6 +17,8 @@ function getAuthErrorMessage(error: unknown) {
       return 'Informe um e-mail válido.'
     case 'auth/too-many-requests':
       return 'Muitas tentativas de acesso. Aguarde alguns instantes e tente novamente.'
+    case 'auth/network-request-failed':
+      return 'Não foi possível concluir o acesso. Verifique sua conexão e tente novamente.'
     default:
       return 'Não foi possível realizar o acesso. Verifique suas credenciais e tente novamente.'
   }

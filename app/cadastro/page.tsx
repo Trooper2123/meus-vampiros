@@ -16,6 +16,8 @@ function getAuthErrorMessage(error: unknown) {
       return 'Informe um e-mail válido.'
     case 'auth/weak-password':
       return 'A senha precisa ter pelo menos 6 caracteres.'
+    case 'auth/network-request-failed':
+      return 'Não foi possível concluir o cadastro. Verifique sua conexão e tente novamente.'
     default:
       return 'Não foi possível criar sua conta. Verifique os dados e tente novamente.'
   }
