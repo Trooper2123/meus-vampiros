@@ -17,11 +17,9 @@ function getAuthErrorMessage(error: unknown) {
     case 'auth/weak-password':
       return 'A senha precisa ter pelo menos 6 caracteres.'
     case 'auth/network-request-failed':
-      return 'Não foi possível conectar ao Firebase. Verifique sua conexão e a configuração do projeto.'
+      return 'Não foi possível concluir o cadastro. Verifique sua conexão e tente novamente.'
     default:
-      return error instanceof Error && error.message.startsWith('Firebase não configurado')
-        ? error.message
-        : 'Não foi possível criar sua conta. Verifique os dados e tente novamente.'
+      return 'Não foi possível criar sua conta. Verifique os dados e tente novamente.'
   }
 }
 
