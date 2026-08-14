@@ -37,13 +37,26 @@ export default function CriarPersonagemPage() {
   const [attributes, setAttributes] = useState({ forca: 1, destreza: 1, vigor: 1, carisma: 1, manipulacao: 1, compostura: 1, inteligencia: 1, raciocinio: 1, determinacao: 1 })
   const [saved, setSaved] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [characterId, setCharacterId] = useState<string | null>(null)
   const formRef = useRef<HTMLFormElement>(null)
   const setAttribute = (name: keyof typeof attributes, value: number) => setAttributes((current) => ({ ...current, [name]: value }))
 
   async function saveDraft(message = 'Alterações salvas automaticamente.') {
     setSaving(true)
     const formData = formRef.current ? Object.fromEntries(new FormData(formRef.current).entries()) : {}
-    void formData
+    const response = await fetch('/api/characters', {
+      method: characterId ? 'PUT' : 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: characterId, name: formData.nome || 'Personagem sem nome', data: formData }),
+    })
+    if (!response.ok && response.status !== 401) {
+      setSaving(false)
+      return false
+    }
+    if (!characterId && response.ok) {
+      const result = await response.json()
+      setCharacterId(result.id ?? null)
+    }
     await new Promise((resolve) => window.setTimeout(resolve, 350))
     setSaving(false)
     setSaved(true)
