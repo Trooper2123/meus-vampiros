@@ -1,5 +1,6 @@
  'use client'
 
+import Link from 'next/link'
 import { useState } from 'react'
 import { signIn } from '@/lib/firebase'
 import { ArrowRight, Eye, EyeOff, KeyRound, LockKeyhole } from 'lucide-react'
@@ -71,7 +72,7 @@ export default function Page() {
 
           <div className="mt-7 border-t border-border pt-5 text-center">
             <p className="text-sm text-muted-foreground">Caso não tenha um contrato crie um agora !</p>
-            <button type="button" className="mt-3 font-mono text-[11px] uppercase tracking-[0.14em] text-primary transition-colors hover:text-foreground">Criar nova conta</button>
+            <Link href="/cadastro" className="mt-3 inline-block font-mono text-[11px] uppercase tracking-[0.14em] text-primary transition-colors hover:text-foreground">Criar nova conta</Link>
           </div>
         </div>
 
