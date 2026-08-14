@@ -1,14 +1,17 @@
-import { Auth0Client } from '@auth0/nextjs-auth0/server'
-import { NextRequest, NextResponse } from 'next/server'
-
-const auth0 = process.env.AUTH0_DOMAIN ? new Auth0Client() : null
+import { NextResponse, type NextRequest } from 'next/server'
+import { auth0 } from './lib/auth0'
 
 export async function proxy(request: NextRequest) {
-  if (!auth0) {
+  if (!process.env.AUTH0_DOMAIN || !process.env.AUTH0_CLIENT_ID || !process.env.AUTH0_SECRET || !process.env.AUTH0_CLIENT_SECRET) {
     return NextResponse.next()
   }
 
-  return auth0.middleware(request)
+  try {
+    return await auth0.middleware(request)
+  } catch (error) {
+    console.error('[v0] Auth0 proxy falhou:', error)
+    return NextResponse.next()
+  }
 }
 
 export const config = {

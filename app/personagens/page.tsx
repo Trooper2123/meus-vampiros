@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { Auth0Client } from '@auth0/nextjs-auth0/server'
+import { auth0 } from '@/lib/auth0'
 import { ArrowRight, LogOut, Plus, Skull } from 'lucide-react'
 import { getCharactersForUser } from '@/lib/characters'
 
@@ -9,7 +9,6 @@ export default async function PersonagensPage() {
     redirect('/auth/login?returnTo=/personagens')
   }
 
-  const auth0 = new Auth0Client()
   const session = await auth0.getSession()
   if (!session?.user) redirect('/auth/login?returnTo=/personagens')
 
