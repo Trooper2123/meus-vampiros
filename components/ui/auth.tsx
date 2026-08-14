@@ -19,6 +19,9 @@ export default function AuthButton() {
   }
 
   return (
-    <a className="button-ghost" href="/api/auth/login">Entrar</a>
+    <div className="auth-status">
+      <a className="button-ghost" href="/api/auth/login">Entrar</a>
+      <a className="ml-3 button-ghost" href="/api/auth/login?screen_hint=signup">Criar conta</a>
+    </div>
   )
 }
