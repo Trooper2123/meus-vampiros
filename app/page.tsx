@@ -3,21 +3,49 @@
 import Link from 'next/link'
 import { useState } from 'react'
 import { signIn } from '@/lib/firebase'
+
+function getAuthErrorMessage(error: unknown) {
+  const code = error && typeof error === 'object' && 'code' in error ? error.code : ''
+
+  switch (code) {
+    case 'auth/invalid-credential':
+    case 'auth/invalid-login-credentials':
+    case 'auth/user-not-found':
+    case 'auth/wrong-password':
+      return 'E-mail ou senha incorretos. Verifique suas credenciais e tente novamente.'
+    case 'auth/invalid-email':
+      return 'Informe um e-mail válido.'
+    case 'auth/too-many-requests':
+      return 'Muitas tentativas de acesso. Aguarde alguns instantes e tente novamente.'
+    default:
+      return 'Não foi possível realizar o acesso. Verifique suas credenciais e tente novamente.'
+  }
+}
 import { ArrowRight, Eye, EyeOff, KeyRound, LockKeyhole } from 'lucide-react'
 
 export default function Page() {
   const [showPassword, setShowPassword] = useState(false)
   const [user, setUser] = useState('')
   const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!user || !password) return
+    setError('')
 
+    if (!user.trim() || !password) {
+      setError('Informe seu e-mail e sua senha para continuar.')
+      return
+    }
+
+    setIsSubmitting(true)
     try {
-      await signIn(user, password)
-      // TODO: redirect or load protected data
-    } catch {
-      // Feedback visual será conectado ao fluxo de autenticação.
+      await signIn(user.trim(), password)
+    } catch (authError) {
+      setError(getAuthErrorMessage(authError))
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -65,8 +93,10 @@ export default function Page() {
               </div>
             </div>
 
-            <button type="submit" className="button-primary flex w-full items-center justify-center gap-3 py-3">
-              Verifique seus Contratos <ArrowRight className="size-4" aria-hidden="true" />
+            {error && <p className="border border-[#642b2d] bg-[#241315] px-3 py-3 text-sm leading-6 text-[#f3c7b7]" role="alert">{error}</p>}
+
+            <button type="submit" disabled={isSubmitting} className="button-primary flex w-full items-center justify-center gap-3 py-3 disabled:cursor-not-allowed disabled:opacity-60">
+              {isSubmitting ? 'Verificando credenciais...' : 'Verifique seus Contratos'} {!isSubmitting && <ArrowRight className="size-4" aria-hidden="true" />}
             </button>
           </form>
 
