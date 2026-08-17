@@ -31,15 +31,12 @@ export default function Page() {
 
           <div className="space-y-5">
             <p className="text-sm leading-6 text-muted-foreground">A autenticação é protegida pelo Auth0. Você será direcionado para inserir seu e-mail e sua senha com segurança.</p>
-            <a href="/auth/login?returnTo=/personagens" className="button-primary flex w-full items-center justify-center gap-3 py-3">
+            <a href={process.env.NODE_ENV !== 'production' ? "/characters" : "/api/auth/login?returnTo=/characters"} className="button-primary flex w-full items-center justify-center gap-3 py-3">
               Verifique seus Contratos <ArrowRight className="size-4" aria-hidden="true" />
             </a>
           </div>
 
-          <div className="mt-7 border-t border-border pt-5 text-center">
-            <p className="text-sm text-muted-foreground">Caso não tenha um contrato crie um agora !</p>
-            <Link href="/cadastro" className="mt-3 inline-block font-mono text-[11px] uppercase tracking-[0.14em] text-primary transition-colors hover:text-foreground">Criar nova conta</Link>
-          </div>
+
         </div>
 
         <p className="mt-6 text-center font-mono text-[9px] uppercase tracking-[0.18em] text-muted-foreground">Toda entrada deixa uma marca</p>

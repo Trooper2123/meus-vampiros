@@ -1,11 +1,19 @@
 'use client'
 
 import Link from 'next/link'
-import { useUser } from '@auth0/nextjs-auth0/client'
+import { useEffect, useState } from 'react'
+import useAppUser from './useAppUser'
 
 export default function AuthButton() {
-  const { user, error, isLoading } = useUser()
+  const { user, error, isLoading } = useAppUser()
+  const [mounted, setMounted] = useState(false)
 
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  // Render the same fallback the server renders to avoid hydration mismatch
+  if (!mounted) return <div className="auth-status">Carregando...</div>
   if (isLoading) return <div className="auth-status">Carregando...</div>
   if (error) return <div className="auth-status">Erro de autenticação</div>
 
@@ -13,6 +21,7 @@ export default function AuthButton() {
     return (
       <div className="auth-status">
         <span className="mr-3">Olá, {user.name ?? user.email}</span>
+        {/* In dev the logout link may be a no-op */}
         <a className="button-ghost" href="/api/auth/logout">Sair</a>
       </div>
     )

@@ -60,6 +60,8 @@ export async function upsertUserFromAuth0(user: any) {
   return res.rows[0] ?? null
 }
 
-export const db = drizzle(pool as Pool)
+// When DATABASE_URL is absent (local dev without a real DB), `pool` is undefined.
+// The dev-db layer intercepts calls before they reach `db`, so this cast is safe.
+export const db = pool ? drizzle(pool) : (null as unknown as ReturnType<typeof drizzle>)
 
 export { pool }

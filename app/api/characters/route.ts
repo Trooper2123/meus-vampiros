@@ -1,11 +1,10 @@
-import { auth0 } from '@/lib/auth0'
-import { sql } from 'drizzle-orm'
 import { NextResponse } from 'next/server'
-import { db } from '@/lib/db'
+import { getSessionOrDev } from '@/lib/auth0'
+import { getCharacterById, createCharacter, updateCharacter } from '@/lib/characters'
 import { getCampaignById } from '@/lib/campaigns'
 
 async function getAuthenticatedUser() {
-  const session = await auth0.getSession()
+  const session = await getSessionOrDev()
   return session?.user ?? null
 }
 
@@ -26,14 +25,14 @@ export async function GET(request: Request) {
     const id = new URL(request.url).searchParams.get('id')
     if (!id) return NextResponse.json({ error: 'Ficha inválida' }, { status: 400 })
 
-    const result = await db.execute<{ id: string; name: string; data: unknown; campaign_id: string | null }>(sql`
-      SELECT id, name, data, campaign_id FROM characters WHERE id = ${id}::uuid AND user_id = ${user.sub}
-    `)
-    const character = result.rows[0]
+    const character = await getCharacterById(id, user.sub)
     if (!character) return NextResponse.json({ error: 'Ficha não encontrada' }, { status: 404 })
 
-    const campaign = character.campaign_id ? await getCampaignById(character.campaign_id) : null
-    return NextResponse.json({ character: { id: character.id, name: character.name, data: character.data, campaignId: character.campaign_id }, campaign })
+    const campaign = character.campaignId && !character.campaign
+      ? await getCampaignById(character.campaignId)
+      : character.campaign ?? null
+
+    return NextResponse.json({ character: { id: character.id, name: character.name, data: character.data, campaignId: character.campaignId }, campaign })
   } catch {
     return NextResponse.json({ error: 'Não foi possível carregar a ficha.' }, { status: 500 })
   }
@@ -52,12 +51,8 @@ export async function POST(request: Request) {
       validCampaignId = campaign.id
     }
 
-    const result = await db.execute<{ id: string }>(sql`
-      INSERT INTO characters (user_id, name, concept, clan, generation, data, campaign_id)
-      VALUES (${user.sub}, ${name}, ${data.conceito ?? null}, ${data.cla ?? null}, ${data.geracao ?? null}, ${JSON.stringify(data)}::jsonb, ${validCampaignId}::uuid)
-      RETURNING id
-    `)
-    return NextResponse.json({ id: result.rows[0]?.id }, { status: 201 })
+    const result = await createCharacter(user.sub, { name, data, campaignId: validCampaignId })
+    return NextResponse.json({ id: result.id }, { status: 201 })
   } catch {
     return NextResponse.json({ error: 'Não foi possível salvar a ficha.' }, { status: 500 })
   }
@@ -81,30 +76,10 @@ export async function PUT(request: Request) {
       }
     }
 
-    if (name === undefined && data === undefined) {
-      // Atualização apenas do vínculo com a mesa, preservando os demais dados da ficha.
-      await db.execute(sql`
-        UPDATE characters SET campaign_id = ${validCampaignId}::uuid, updated_at = NOW()
-        WHERE id = ${id}::uuid AND user_id = ${user.sub}
-      `)
-      return NextResponse.json({ ok: true, campaignId: validCampaignId })
-    }
+    const result = await updateCharacter(id, user.sub, { name, data, campaignId: validCampaignId })
+    if (!result) return NextResponse.json({ error: 'Ficha não encontrada.' }, { status: 404 })
 
-    if (validCampaignId !== undefined) {
-      await db.execute(sql`
-        UPDATE characters
-        SET name = ${name}, concept = ${data.conceito ?? null}, clan = ${data.cla ?? null}, generation = ${data.geracao ?? null}, data = ${JSON.stringify(data)}::jsonb, campaign_id = ${validCampaignId}::uuid, updated_at = NOW()
-        WHERE id = ${id}::uuid AND user_id = ${user.sub}
-      `)
-      return NextResponse.json({ ok: true, campaignId: validCampaignId })
-    }
-
-    await db.execute(sql`
-      UPDATE characters
-      SET name = ${name}, concept = ${data.conceito ?? null}, clan = ${data.cla ?? null}, generation = ${data.geracao ?? null}, data = ${JSON.stringify(data)}::jsonb, updated_at = NOW()
-      WHERE id = ${id}::uuid AND user_id = ${user.sub}
-    `)
-    return NextResponse.json({ ok: true })
+    return NextResponse.json({ ok: true, campaignId: validCampaignId })
   } catch {
     return NextResponse.json({ error: 'Não foi possível atualizar a ficha.' }, { status: 500 })
   }

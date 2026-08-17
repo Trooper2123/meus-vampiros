@@ -4,6 +4,20 @@ import { upsertUserFromAuth0, ensureUsersTable } from '@/lib/db'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
+    const isLocal = process.env.NODE_ENV !== 'production' || !!req.headers.host?.includes('localhost')
+
+    if (isLocal) {
+      const devUser = {
+        sub: 'dev|local',
+        name: process.env.DEV_USER_NAME || 'Dev User',
+        email: process.env.DEV_USER_EMAIL || 'dev@example.com',
+        picture: process.env.DEV_USER_PICTURE || null,
+      }
+
+      // In development return a dev user immediately without DB operations
+      return res.status(200).json({ user: devUser, dev: true })
+    }
+
     const session = getSession(req, res)
 
     if (!session || !session.user) {
