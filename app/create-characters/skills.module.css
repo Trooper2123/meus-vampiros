@@ -1,0 +1,44 @@
+.skillColumns {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.skillGroup {
+  min-width: 0;
+}
+
+.skillGroup h3 {
+  border-bottom: 1px solid #6b3436;
+  padding-bottom: 8px;
+  color: #d47776;
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.skillGroup :global(.skill-list) {
+  margin-top: 13px;
+  gap: 0;
+}
+
+.skillRow {
+  min-width: 0;
+  border-bottom: 1px dotted #77716b66;
+  padding: 4px 0 8px;
+}
+
+.skillRow > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 760px) {
+  .skillColumns {
+    grid-template-columns: 1fr;
+  }
+}

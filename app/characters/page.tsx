@@ -1,10 +1,9 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getSessionOrDev } from '@/lib/auth0'
-import { cookies } from 'next/headers'
 import { ArrowRight, BookOpen, LogOut, Plus, Skull, Crown } from 'lucide-react'
 import { getCharactersForUser } from '@/lib/characters'
-import { getCampaignsForMaster, isMaster } from '@/lib/campaigns'
+import { getCampaignsForMaster, hasMasterAccess } from '@/lib/campaigns'
 import { MasterPanel } from '@/components/master-panel'
 
 export default async function PersonagensPage() {
@@ -17,8 +16,7 @@ export default async function PersonagensPage() {
   if (!session?.user) redirect('/api/auth/login?returnTo=/characters')
 
   const characters = await getCharactersForUser(session.user.sub)
-  const cookieStore = await cookies()
-  const userIsMaster = isMaster(session.user) || cookieStore.get('is-master')?.value === 'true'
+  const userIsMaster = await hasMasterAccess(session.user)
   const campaigns = userIsMaster ? await getCampaignsForMaster(session.user.sub) : []
   const displayName = session.user.name ?? session.user.email ?? 'Guardião'
 

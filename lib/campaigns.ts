@@ -16,6 +16,12 @@ export function isMaster(user: any): boolean {
   return roles.includes('mestre')
 }
 
+export async function hasMasterAccess(user: any): Promise<boolean> {
+  if (!user?.sub) return false
+  if (isMaster(user)) return true
+  return (await getCampaignsForMaster(user.sub)).length > 0
+}
+
 export type CampaignSummary = {
   id: string
   name: string

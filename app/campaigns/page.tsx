@@ -1,9 +1,8 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getSessionOrDev } from '@/lib/auth0'
-import { cookies } from 'next/headers'
 import { ArrowLeft, BookOpen, LogOut, Plus, Scroll, Users } from 'lucide-react'
-import { getCampaignsForMaster, isMaster } from '@/lib/campaigns'
+import { getCampaignsForMaster, hasMasterAccess } from '@/lib/campaigns'
 
 export default async function CampaignsPage() {
   if (!process.env.AUTH0_DOMAIN || !process.env.AUTH0_CLIENT_ID || !process.env.AUTH0_SECRET || !process.env.AUTH0_CLIENT_SECRET) {
@@ -14,8 +13,7 @@ export default async function CampaignsPage() {
   const session = await getSessionOrDev()
   if (!session?.user) redirect('/api/auth/login?returnTo=/campaigns')
 
-  const cookieStore = await cookies()
-  const userIsMaster = isMaster(session.user) || cookieStore.get('is-master')?.value === 'true'
+  const userIsMaster = await hasMasterAccess(session.user)
 
   // Quem não é mestre não tem o que ver aqui
   if (!userIsMaster) redirect('/master')

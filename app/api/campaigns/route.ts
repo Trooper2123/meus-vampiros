@@ -1,6 +1,6 @@
 import { auth0, getSessionOrDev } from '@/lib/auth0'
 import { NextResponse } from 'next/server'
-import { createCampaign, getCampaignsForMaster, isMaster } from '@/lib/campaigns'
+import { createCampaign, getCampaignsForMaster, hasMasterAccess } from '@/lib/campaigns'
 
 async function getAuthenticatedUser() {
   const session = await getSessionOrDev()
@@ -11,7 +11,7 @@ export async function GET() {
   try {
     const user = await getAuthenticatedUser()
     if (!user) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
-    if (!isMaster(user)) return NextResponse.json({ campaigns: [] })
+    if (!await hasMasterAccess(user)) return NextResponse.json({ campaigns: [] })
     const campaigns = await getCampaignsForMaster(user.sub)
     return NextResponse.json({ campaigns })
   } catch {
@@ -23,8 +23,6 @@ export async function POST(request: Request) {
   try {
     const user = await getAuthenticatedUser()
     if (!user) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
-    if (!isMaster(user)) return NextResponse.json({ error: 'Apenas mestres podem criar mesas.' }, { status: 403 })
-
     const body = await request.json()
     const name = typeof body.name === 'string' && body.name.trim() ? body.name.trim() : null
     if (!name) return NextResponse.json({ error: 'Nome da campanha é obrigatório.' }, { status: 400 })
