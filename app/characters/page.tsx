@@ -9,11 +9,11 @@ import { MasterPanel } from '@/components/master-panel'
 export default async function PersonagensPage() {
   if (!process.env.AUTH0_DOMAIN || !process.env.AUTH0_CLIENT_ID || !process.env.AUTH0_SECRET || !process.env.AUTH0_CLIENT_SECRET) {
     const session = await getSessionOrDev()
-    if (!session?.user) redirect('/api/auth/login?returnTo=/characters' as any)
+    if (!session?.user) redirect('/auth/login?returnTo=/characters' as any)
   }
 
   const session = await getSessionOrDev()
-  if (!session?.user) redirect('/api/auth/login?returnTo=/characters')
+  if (!session?.user) redirect('/auth/login?returnTo=/characters')
 
   const characters = await getCharactersForUser(session.user.sub)
   const userIsMaster = await hasMasterAccess(session.user)
@@ -38,7 +38,7 @@ export default async function PersonagensPage() {
             </Link>
           )}
           {userIsMaster && <MasterPanel initialCampaigns={campaigns} />}
-          <a href="/api/auth/logout" className="button-ghost inline-flex items-center gap-2">
+          <a href="/auth/logout" className="button-ghost inline-flex items-center gap-2">
             <LogOut className="size-4" /> Sair
           </a>
         </div>
@@ -109,6 +109,10 @@ export default async function PersonagensPage() {
                     <dd className="mt-1 truncate" title={character.campaignName ?? 'Sem vínculo'}>
                       {character.campaignName ?? 'Sem vínculo'}
                     </dd>
+                    {character.campaignName && (character.campaignTheme || character.campaignPrincipios) && <dd className="mt-2 text-xs leading-5 text-muted-foreground">
+                      {character.campaignTheme && <p>{character.campaignTheme}</p>}
+                      {character.campaignPrincipios && <p>{character.campaignPrincipios}</p>}
+                    </dd>}
                   </div>
                   <div className="col-span-2 sm:col-span-1">
                     <dt className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">XP (Gasto/Total)</dt>

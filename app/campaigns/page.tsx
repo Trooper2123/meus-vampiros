@@ -7,11 +7,11 @@ import { getCampaignsForMaster, hasMasterAccess } from '@/lib/campaigns'
 export default async function CampaignsPage() {
   if (!process.env.AUTH0_DOMAIN || !process.env.AUTH0_CLIENT_ID || !process.env.AUTH0_SECRET || !process.env.AUTH0_CLIENT_SECRET) {
     const session = await getSessionOrDev()
-    if (!session?.user) redirect('/api/auth/login?returnTo=/campaigns' as any)
+    if (!session?.user) redirect('/auth/login?returnTo=/campaigns' as any)
   }
 
   const session = await getSessionOrDev()
-  if (!session?.user) redirect('/api/auth/login?returnTo=/campaigns')
+  if (!session?.user) redirect('/auth/login?returnTo=/campaigns')
 
   const userIsMaster = await hasMasterAccess(session.user)
 
@@ -35,7 +35,7 @@ export default async function CampaignsPage() {
           <Link href="/characters" className="button-ghost inline-flex items-center gap-2">
             <ArrowLeft className="size-4" /> Personagens
           </Link>
-          <a href="/api/auth/logout" className="button-ghost inline-flex items-center gap-2">
+          <a href="/auth/logout" className="button-ghost inline-flex items-center gap-2">
             <LogOut className="size-4" /> Sair
           </a>
         </div>

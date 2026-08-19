@@ -19,6 +19,8 @@ export type CharacterSummary = {
   updatedAt: string
   campaignId: string | null
   campaignName: string | null
+  campaignTheme: string | null
+  campaignPrincipios: string | null
   spentXp: string | null
   totalXp: string | null
 }
@@ -36,11 +38,13 @@ export async function getCharactersForUser(userId: string): Promise<CharacterSum
     updated_at: Date
     campaign_id: string | null
     campaign_name: string | null
+    campaign_theme: string | null
+    campaign_principios: string | null
     spent_xp: string | null
     total_xp: string | null
   }>(sql`
     SELECT ch.id, ch.name, ch.concept, ch.clan, ch.generation, ch.status, ch.updated_at,
-           ch.campaign_id, c.name AS campaign_name,
+           ch.campaign_id, c.name AS campaign_name, c.theme AS campaign_theme, c.principios AS campaign_principios,
            ch.spent_xp, ch.total_xp
     FROM characters ch
     LEFT JOIN campaigns c ON c.id = ch.campaign_id
@@ -58,6 +62,8 @@ export async function getCharactersForUser(userId: string): Promise<CharacterSum
     updatedAt: character.updated_at.toISOString(),
     campaignId: character.campaign_id,
     campaignName: character.campaign_name,
+    campaignTheme: character.campaign_theme,
+    campaignPrincipios: character.campaign_principios,
     spentXp: character.spent_xp,
     totalXp: character.total_xp,
   }))

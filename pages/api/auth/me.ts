@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { getSession } from '@auth0/nextjs-auth0'
+import { auth0 } from '@/lib/auth0'
 import { upsertUserFromAuth0, ensureUsersTable } from '@/lib/db'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -18,7 +18,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(200).json({ user: devUser, dev: true })
     }
 
-    const session = getSession(req, res)
+    const session = await auth0.getSession(req)
 
     if (!session || !session.user) {
       return res.status(401).json({ user: null })

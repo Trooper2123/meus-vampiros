@@ -133,6 +133,8 @@ export function devGetCharactersForUser(userId: string) {
         updatedAt: c.updatedAt.toISOString(),
         campaignId: c.campaignId,
         campaignName: campaign?.name ?? null,
+        campaignTheme: campaign?.theme ?? null,
+        campaignPrincipios: campaign?.principios ?? null,
         spentXp: String(c.spentXp),
         totalXp: String(c.totalXp),
       }

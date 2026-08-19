@@ -5,7 +5,7 @@ import { hasMasterAccess } from '@/lib/campaigns'
 export default async function MasterPage() {
   const session = await getSessionOrDev()
 
-  if (!session?.user) redirect('/api/auth/login?returnTo=/master')
+  if (!session?.user) redirect('/auth/login?returnTo=/master')
 
   if (await hasMasterAccess(session.user)) redirect('/campaigns')
 
