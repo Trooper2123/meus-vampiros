@@ -1,0 +1,181 @@
+# Plano de Execução — Ajustes de Ficha e Painel do Mestre
+
+## 0. Preparação
+
+**Migração de banco (nova tabela/colunas):**
+```sql
+ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS theme TEXT; -- já existe, confirmar persistência no INSERT
+ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS principios TEXT; -- já existe, confirmar
+
+CREATE TABLE IF NOT EXISTS character_possessions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  character_id UUID NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
+  campaign_id UUID REFERENCES campaigns(id),
+  label TEXT NOT NULL,
+  description TEXT,
+  origin TEXT NOT NULL DEFAULT 'player', -- 'player' | 'master'
+  status TEXT NOT NULL DEFAULT 'pendente', -- 'pendente' | 'aprovado' | 'reprovado'
+  master_comment TEXT,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+```
+Espelhar em `lib/dev-db.ts` (array em memória) para manter paridade em dev sem `DATABASE_URL`.
+
+Atualizar `lib/campaigns.ts`:
+- `createCampaign` já recebe `theme`/`principios` — confirmar que o INSERT realmente grava `theme` (hoje é gravado, então o bug relatado provavelmente está no form do `/campaigns/new` ou `master-panel.tsx`, que envia `theme` mas talvez o campo esteja sendo omitido em algum fluxo — checar ambos os formulários e garantir `theme` no payload).
+
+---
+
+## 1. Habilidades em 3 colunas (Físicas/Sociais/Intelectuais)
+
+**Arquivo:** `app/create-characters/page.tsx`
+
+- Reestruturar `skillNames` em três arrays fixos: `physicalSkills`, `socialSkills`, `mentalSkills`.
+- Trocar `.skill-list-3col` (grid único) por um grid de 3 colunas nomeadas, cada uma com título (`Físicas`, `Sociais`, `Intelectuais`) e sua lista interna.
+- CSS (`app/globals.css`):
+  - Desktop (`min-width: 900px`): `.skills-columns { display:grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }`
+  - Mobile: `.skills-columns { grid-template-columns: 1fr; }` cada bloco de coluna vira seção empilhada (lista corrida), mantendo o agrupamento/título — não misturar as três em uma lista única.
+- Reuso do `dots()` já existente para cada `skill-row`.
+
+---
+
+## 2. Painel do Mestre — Princípios da crônica ao criar mesa
+
+**Arquivos:** `components/master-panel.tsx`, `app/campaigns/new/page.tsx`, `app/api/campaigns/route.ts`, `lib/campaigns.ts`
+
+- Ambos os formulários (`NewCampaignForm` e `/campaigns/new`) já têm `theme` e `principios` no estado — confirmar que o `POST /api/campaigns` grava os dois (parece correto no código atual). Adicionar teste manual e, se necessário, corrigir bug de campo vazio sendo convertido para `null` incorretamente.
+- Garantir que `getCampaignById` (usado na ficha) retorna `theme` e `principios` — já retorna.
+
+---
+
+## 3. Ficha — Princípios da crônica somente leitura + auto-preenchimento
+
+**Arquivo:** `app/create-characters/page.tsx`
+
+- Na aba **Recursos e convicções**, campo "Princípios da crônica":
+  - Buscar via `CampaignLink`/SWR já existente (`/api/characters?id=`) que retorna `campaign.principios`.
+  - Renderizar `<textarea readOnly value={campaign?.principios ?? ''} placeholder="Vincule-se a uma mesa com princípios cadastrados para visualizá-los aqui." />`.
+  - Se não houver campanha vinculada ou `principios` vazio: mostrar aviso (`<p className="text-xs text-muted-foreground">Nenhuma mesa vinculada ou princípios não cadastrados.</p>`) e campo em branco, disabled.
+  - Remover esse campo do `FormData` submetido (ou mantê-lo mas ignorá-lo no backend) já que não é mais editável pelo jogador.
+
+---
+
+## 4. Idade Verdadeira e Aparente na mesma linha
+
+**Arquivo:** `app/create-characters/page.tsx` (bloco `.age-fields`)
+
+- Reagrupar: criar um sub-grid `age-fields-row` com `grid-template-columns: repeat(2, 1fr)` contendo só "Idade Verdadeira" e "Idade Aparente"; os campos de data (ver item 5) saem desse grid.
+
+---
+
+## 5. Dados de Vida / Dados da Morte (substituindo Data de Nascimento/Morte)
+
+**Arquivo:** `app/create-characters/page.tsx`
+
+- Remover `Field` "Data de Nascimento" / "Data de Morte".
+- Adicionar duas `<textarea>` lado a lado (grid 2 colunas):
+  - `dados-de-vida` — label "Dados de Vida", placeholder "Data de nascimento e como foi seu último dia de vida...".
+  - `dados-da-morte` — label "Dados da Morte", placeholder "Data do Abraço e como se tornou uma criatura da noite...".
+- CSS: reaproveitar `.sheet-grid-2` com `rows={4}`.
+
+---
+
+## 6. XP: mesma linha + XP disponível calculado
+
+**Arquivo:** `app/create-characters/page.tsx`
+
+- Unir "Experiência Total" e "Experiência Gasta" em `.experience-lines` já existente (já estão na mesma linha via grid-3, mas adicionar terceiro campo):
+  - Adicionar estado controlado `totalXp`/`spentXp` (hoje são `input` não controlados dentro de um form não-controlado — precisa converter para `useState` para permitir o cálculo reativo).
+  - Novo campo "XP Disponível" = `Number(totalXp || 0) - Number(spentXp || 0)`, renderizado como `<input readOnly value={available} />`, mesmo grid de 3 colunas (`.experience-lines` já é `grid-template-columns: repeat(3, ...)`).
+- Ajustar `name` hidden input para XP disponível não ser enviado como editável (mandar apenas para exibição, ou enviar calculado).
+
+---
+
+## 7. Disciplinas: dropdown + adicionar dinamicamente (limite 7)
+
+**Arquivo:** `app/create-characters/page.tsx`
+
+- Criar constante `DISCIPLINES_CLASSIC = ['Animalismo','Auspícios','Rapidez','Dominação','Potência','Ofuscação','Presença','Proteísmo','Necromancia','Quietude', ...]` (lista completa clássica de VtM).
+- Alterar estado `disciplines` de `Record<name, {...}>` para um array de blocos: `{ id, selectedName, level, powers[], effects[] }[]`, inicializado com 3 blocos (ou 1) editáveis.
+- Cada bloco renderiza um `<select>` no lugar do `<h3>{name}</h3>` fixo, populado com `DISCIPLINES_CLASSIC`, evitando duplicar disciplina já escolhida em outro bloco (filtrar ou permitir com aviso).
+- Botão "+ Adicionar Disciplina" abaixo da lista: `onClick` adiciona novo bloco vazio; `disabled`/oculto quando `disciplines.length >= 7`.
+- Ajustar nomes de campos no `FormData` para usar `id` do bloco em vez do nome (já que o nome pode mudar): `disciplina-${block.id}`, `${block.id}-poder-${index}`, etc. — ou manter `selectedName` como parte da chave e re-serializar no submit.
+- Persistência: já cai dentro do payload genérico (`data`) enviado ao `/api/characters`, então nenhuma mudança de backend é necessária, apenas garantir que o novo shape serialize corretamente (ex.: stringificar array de disciplinas em um campo JSON dedicado, `disciplinas: JSON.stringify(disciplines)`, e no carregamento (`GET`) fazer parse ao popular o estado).
+
+---
+
+## 8. Recursos e Convicções — bolinhas e correções
+
+**Arquivo:** `app/create-characters/page.tsx`
+
+- Substituir os `Field` simples de Humanidade/Vontade/Vitalidade por `dots(10, value, setter, name)`, estado inicial `0`.
+- Fome: `dots(5, value, setter, name)`, estado inicial `1`, permitir clicar no mesmo ponto já preenchido para zerar (adaptar `dots()` — hoje `onChange` sempre seta o valor clicado; adicionar lógica: se `point === value`, seta `0`).
+  - Ajustar a função `dots` para aceitar esse comportamento de "anular" apenas quando aplicável (Fome), via prop opcional `allowClear`.
+- Convicções: trocar as duas `<textarea>` livres por grid de 2 colunas x 3 linhas:
+  - Coluna esquerda: "Pilar 1/2/3" (`convicoes-pilar-1..3`)
+  - Coluna direita: "Crença ligada 1/2/3" (`convicoes-crenca-1..3`)
+  - `grid-template-columns: repeat(2, 1fr)`, cada linha alinhando pilar/crença correspondente.
+
+---
+
+## 9. Nova aba "Vantagens e Defeitos" (com Pertences)
+
+**Arquivo:** `app/create-characters/page.tsx`
+
+- Adicionar tab `{ id: 'vantagens', label: 'Vantagens e Defeitos', eyebrow: 'VII / o que soma e o que custa' }` ao array `tabs`.
+- **Bloco Vantagens/Defeitos:**
+  - Estado: `traits: { label: string; level: number; description: string }[]`, 2 colunas x 5 linhas iniciais (10 itens fixos ou 5+5 por coluna — conforme pedido: "duas colunas iniciando com 5 linhas em cada coluna").
+  - Cada linha: `<input>` texto (nome do traço) + `dots(5, level, setter)` (inicia 0) + botão/ícone para expandir `<textarea>` de descrição (toggle).
+  - Grid: `grid-template-columns: repeat(2, 1fr)`.
+- **Bloco Pertences e Posses:**
+  - Lista de itens do jogador: nome + descrição opcional, status (pendente/aprovado/reprovado) exibido como badge somente leitura para o jogador.
+  - Formulário para adicionar novo pertence (`POST` para nova rota, ver item 10).
+  - Itens atribuídos pelo mestre (`origin: 'master'`) aparecem em subseção "Itens concedidos pelo mestre", somente leitura.
+
+---
+
+## 10. Backend — Pertences e Posses
+
+**Novo arquivo:** `lib/possessions.ts`
+- `getPossessionsForCharacter(characterId)`
+- `createPossession(characterId, { label, description })` — origin `'player'`, status `'pendente'`
+- `updatePossessionStatus(id, masterUserId, { status, masterComment })` — apenas se o mestre for dono da campanha vinculada ao personagem
+- `createMasterPossession(characterId, masterUserId, { label, description })` — origin `'master'`
+
+**Nova rota:** `app/api/possessions/route.ts`
+- `GET ?characterId=` — lista pertences (jogador vê os seus; mestre vê os da mesa)
+- `POST` — jogador cria pertence (`origin: player`)
+- `PUT` — mestre atualiza status/comentário, ou cria/edita item `origin: master`
+
+Espelhar em `lib/dev-db.ts` (array `possessions` em memória).
+
+---
+
+## 11. Painel do Mestre — Aprovação de Pertences
+
+**Arquivo:** `components/master-panel.tsx`
+
+- Ao clicar em uma mesa (ou em cada personagem vinculado), listar pertences pendentes por personagem com botões "Aprovar"/"Reprovar" + campo de comentário.
+- Adicionar seção "Conceder item" por personagem, chamando `createMasterPossession`.
+- Usar SWR (`/api/possessions?characterId=`) com `mutate` após ações, seguindo o padrão já usado em `CampaignLink`.
+
+---
+
+## 12. Ordem de implementação sugerida
+
+1. Migração de banco + `lib/dev-db.ts` (possessions).
+2. `lib/possessions.ts` + rota API.
+3. Refatorações de estado no formulário de personagem (XP controlado, disciplinas em array, traits) — maior parte do trabalho.
+4. Ajustes visuais (colunas de habilidades, idades, vida/morte, convicções, dots).
+5. Nova aba Vantagens/Defeitos + Pertences (client).
+6. Painel do Mestre: aprovação/concessão de itens + confirmação de persistência de `theme`.
+7. Testes manuais: criar mesa com princípios → vincular personagem → checar preenchimento readonly; testar limite de 7 disciplinas; testar fome anulável; testar cálculo de XP disponível; testar fluxo de pertences pendente→aprovado.
+
+---
+
+## 13. Riscos / pontos de atenção
+
+- Mudar `disciplines` de objeto nomeado para array quebra fichas já salvas com o formato antigo — necessário escrever uma função de migração/compatibilidade no `GET` de `/api/characters` para converter formato legado ao carregar (`if data.disciplinas is object -> convert to array`).
+- `dots()` precisa de nova prop para suportar "clique novamente para zerar" sem quebrar o comportamento padrão nos demais usos.
+- Formulário de personagem hoje é não controlado (lê via `FormData` no submit); campos calculados (XP disponível) e campos readonly (princípios) exigem componentes controlados — migração parcial para `useState` deve ser cuidadosa para não quebrar o autosave ao trocar de aba.
