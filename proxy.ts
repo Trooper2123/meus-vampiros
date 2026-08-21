@@ -3,14 +3,20 @@ import { auth0 } from './lib/auth0'
 
 export async function proxy(request: NextRequest) {
   if (!process.env.AUTH0_DOMAIN || !process.env.AUTH0_CLIENT_ID || !process.env.AUTH0_SECRET || !process.env.AUTH0_CLIENT_SECRET) {
-    return NextResponse.next()
+    return NextResponse.json(
+      { error: 'Autenticação não configurada. Defina as variáveis AUTH0_* no ambiente.' },
+      { status: 500 }
+    )
   }
 
   try {
     return await auth0.middleware(request)
   } catch (error) {
     console.error('[v0] Auth0 proxy falhou:', error)
-    return NextResponse.next()
+    return NextResponse.json(
+      { error: 'Falha na autenticação.' },
+      { status: 500 }
+    )
   }
 }
 
