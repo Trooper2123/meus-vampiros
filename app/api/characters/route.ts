@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
 import { getSessionOrDev } from '@/lib/auth0'
-import { getCharacterById, createCharacter, updateCharacter } from '@/lib/characters'
+import { getCharacterById, createCharacter, updateCharacter, getCharactersForCampaign, updateCharacterXp } from '@/lib/characters'
 import { getCampaignById } from '@/lib/campaigns'
+import { ensureAllTables } from '@/lib/db'
 
 async function getAuthenticatedUser() {
   const session = await getSessionOrDev()
@@ -20,9 +21,17 @@ async function readPayload(request: Request) {
 
 export async function GET(request: Request) {
   try {
+    await ensureAllTables()
     const user = await getAuthenticatedUser()
     if (!user) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
-    const id = new URL(request.url).searchParams.get('id')
+    const searchParams = new URL(request.url).searchParams
+    const campaignId = searchParams.get('campaignId')
+    if (campaignId) {
+      const characters = await getCharactersForCampaign(campaignId)
+      return NextResponse.json({ characters })
+    }
+
+    const id = searchParams.get('id')
     if (!id) return NextResponse.json({ error: 'Ficha inválida' }, { status: 400 })
 
     const character = await getCharacterById(id, user.sub)
@@ -77,10 +86,32 @@ export async function PUT(request: Request) {
     }
 
     const result = await updateCharacter(id, user.sub, { name, data, campaignId: validCampaignId })
-    if (!result) return NextResponse.json({ error: 'Ficha não encontrada.' }, { status: 404 })
-
     return NextResponse.json({ ok: true, campaignId: validCampaignId })
   } catch {
     return NextResponse.json({ error: 'Não foi possível atualizar a ficha.' }, { status: 500 })
+  }
+}
+
+export async function PATCH(request: Request) {
+  try {
+    await ensureAllTables()
+    const user = await getAuthenticatedUser()
+    if (!user) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+
+    const body = await request.json()
+    const { characterId, totalXp, addXp } = body
+
+    if (!characterId || typeof characterId !== 'string') {
+      return NextResponse.json({ error: 'characterId é obrigatório.' }, { status: 400 })
+    }
+
+    if (typeof totalXp === 'number') {
+      await updateCharacterXp(characterId, Math.max(0, totalXp))
+      return NextResponse.json({ ok: true, totalXp: Math.max(0, totalXp) })
+    }
+
+    return NextResponse.json({ error: 'Valor totalXp inválido.' }, { status: 400 })
+  } catch {
+    return NextResponse.json({ error: 'Não foi possível atualizar o XP.' }, { status: 500 })
   }
 }

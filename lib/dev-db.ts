@@ -38,11 +38,25 @@ export type DevCampaign = {
   createdAt: Date
 }
 
+export type DevPossession = {
+  id: string
+  characterId: string
+  campaignId: string | null
+  label: string
+  description: string | null
+  origin: 'player' | 'master'
+  status: 'pendente' | 'aprovado' | 'reprovado'
+  masterComment: string | null
+  createdAt: Date
+  updatedAt: Date
+}
+
 // ─── Singleton store ───────────────────────────────────────────────────────────
 
 type DevStore = {
   characters: DevCharacter[]
   campaigns: DevCampaign[]
+  possessions: DevPossession[]
 }
 
 declare global {
@@ -104,7 +118,34 @@ function seed(): DevStore {
     },
   ]
 
-  return { characters, campaigns }
+  const possessions: DevPossession[] = [
+    {
+      id: randomUUID(),
+      characterId: characters[0].id,
+      campaignId,
+      label: 'Carro Sedan 1998',
+      description: 'Veículo com vidros insulfilmados para deslocamento noturno',
+      origin: 'player',
+      status: 'aprovado',
+      masterComment: 'Aprovado pelo narrador.',
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: randomUUID(),
+      characterId: characters[0].id,
+      campaignId,
+      label: 'Chave do Refúgio da Capela',
+      description: 'Concedido pelo Regente Tremere',
+      origin: 'master',
+      status: 'aprovado',
+      masterComment: 'Item de história concedido na sessão 1.',
+      createdAt: now,
+      updatedAt: now,
+    },
+  ]
+
+  return { characters, campaigns, possessions }
 }
 
 function getStore(): DevStore {
@@ -114,7 +155,32 @@ function getStore(): DevStore {
   return global.__devDb
 }
 
-// ─── Characters ───────────────────────────────────────────────────────────────
+export function devGetCharactersForCampaign(campaignId: string) {
+  const { characters } = getStore()
+  return characters
+    .filter((c) => c.campaignId === campaignId)
+    .map((c) => ({
+      id: c.id,
+      name: c.name,
+      concept: c.concept,
+      clan: c.clan,
+      generation: c.generation,
+      status: c.status,
+      updatedAt: c.updatedAt.toISOString(),
+      campaignId: c.campaignId,
+      spentXp: c.spentXp ?? 0,
+      totalXp: c.totalXp ?? 0,
+    }))
+}
+
+export function devUpdateCharacterXp(characterId: string, totalXp: number) {
+  const store = getStore()
+  const character = store.characters.find((c) => c.id === characterId)
+  if (!character) return null
+  character.totalXp = totalXp
+  character.updatedAt = new Date()
+  return character
+}
 
 export function devGetCharactersForUser(userId: string) {
   const { characters, campaigns } = getStore()
@@ -263,4 +329,51 @@ export function devCreateCampaign(
     lastSessionAt: campaign.lastSessionAt ? campaign.lastSessionAt.toISOString() : null,
     playerCount: 0,
   }
+}
+
+// ─── Possessions ──────────────────────────────────────────────────────────────
+
+export function devGetPossessionsForCharacter(characterId: string) {
+  const { possessions } = getStore()
+  return possessions.filter((p) => p.characterId === characterId)
+}
+
+export function devGetPossessionsForCampaign(campaignId: string) {
+  const { possessions } = getStore()
+  return possessions.filter((p) => p.campaignId === campaignId)
+}
+
+export function devCreatePossession(
+  characterId: string,
+  input: { label: string; description?: string | null; origin?: 'player' | 'master'; campaignId?: string | null }
+) {
+  const store = getStore()
+  const now = new Date()
+  const possession: DevPossession = {
+    id: randomUUID(),
+    characterId,
+    campaignId: input.campaignId ?? null,
+    label: input.label,
+    description: input.description ?? null,
+    origin: input.origin ?? 'player',
+    status: input.origin === 'master' ? 'aprovado' : 'pendente',
+    masterComment: null,
+    createdAt: now,
+    updatedAt: now,
+  }
+  store.possessions.push(possession)
+  return possession
+}
+
+export function devUpdatePossessionStatus(
+  id: string,
+  input: { status: 'pendente' | 'aprovado' | 'reprovado'; masterComment?: string | null }
+) {
+  const store = getStore()
+  const possession = store.possessions.find((p) => p.id === id)
+  if (!possession) return null
+  possession.status = input.status
+  if (input.masterComment !== undefined) possession.masterComment = input.masterComment
+  possession.updatedAt = new Date()
+  return possession
 }

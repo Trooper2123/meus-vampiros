@@ -24,6 +24,16 @@ const pool = (() => {
 
 export async function ensureUsersTable() {
   if (!pool) return
+  await ensureAllTables()
+}
+
+export async function ensurePossessionsTable() {
+  if (!pool) return
+  await ensureAllTables()
+}
+
+export async function ensureAllTables() {
+  if (!pool) return
   await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
       id BIGSERIAL PRIMARY KEY,
@@ -31,6 +41,53 @@ export async function ensureUsersTable() {
       email TEXT,
       name TEXT,
       picture TEXT,
+      created_at TIMESTAMPTZ DEFAULT now(),
+      updated_at TIMESTAMPTZ DEFAULT now()
+    );
+
+    CREATE TABLE IF NOT EXISTS campaigns (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      master_user_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      theme TEXT,
+      principios TEXT,
+      status TEXT NOT NULL DEFAULT 'Ativa',
+      average_xp INT DEFAULT 0,
+      last_session_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ DEFAULT now(),
+      updated_at TIMESTAMPTZ DEFAULT now()
+    );
+
+    ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS principios TEXT;
+
+    CREATE TABLE IF NOT EXISTS characters (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id TEXT NOT NULL,
+      campaign_id UUID REFERENCES campaigns(id),
+      name TEXT NOT NULL,
+      concept TEXT,
+      clan TEXT,
+      generation TEXT,
+      status TEXT NOT NULL DEFAULT 'Ativo',
+      spent_xp INT DEFAULT 0,
+      total_xp INT DEFAULT 0,
+      data JSONB DEFAULT '{}'::jsonb,
+      created_at TIMESTAMPTZ DEFAULT now(),
+      updated_at TIMESTAMPTZ DEFAULT now()
+    );
+
+    ALTER TABLE characters ADD COLUMN IF NOT EXISTS spent_xp INT DEFAULT 0;
+    ALTER TABLE characters ADD COLUMN IF NOT EXISTS total_xp INT DEFAULT 0;
+
+    CREATE TABLE IF NOT EXISTS character_possessions (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      character_id UUID NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
+      campaign_id UUID REFERENCES campaigns(id),
+      label TEXT NOT NULL,
+      description TEXT,
+      origin TEXT NOT NULL DEFAULT 'player',
+      status TEXT NOT NULL DEFAULT 'pendente',
+      master_comment TEXT,
       created_at TIMESTAMPTZ DEFAULT now(),
       updated_at TIMESTAMPTZ DEFAULT now()
     );

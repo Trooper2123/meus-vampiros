@@ -1,6 +1,7 @@
 import { auth0, getSessionOrDev } from '@/lib/auth0'
 import { NextResponse } from 'next/server'
 import { createCampaign, getCampaignsForMaster, hasMasterAccess } from '@/lib/campaigns'
+import { ensureAllTables } from '@/lib/db'
 
 async function getAuthenticatedUser() {
   const session = await getSessionOrDev()
@@ -9,6 +10,7 @@ async function getAuthenticatedUser() {
 
 export async function GET() {
   try {
+    await ensureAllTables()
     const user = await getAuthenticatedUser()
     if (!user) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     if (!await hasMasterAccess(user)) return NextResponse.json({ campaigns: [] })

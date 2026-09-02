@@ -1,8 +1,9 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getSessionOrDev } from '@/lib/auth0'
-import { ArrowLeft, BookOpen, LogOut, Plus, Scroll, Users } from 'lucide-react'
+import { ArrowLeft, BookOpen, LogOut, Plus } from 'lucide-react'
 import { getCampaignsForMaster, hasMasterAccess } from '@/lib/campaigns'
+import { MasterPanel } from '@/components/master-panel'
 
 export default async function CampaignsPage() {
   if (!process.env.AUTH0_DOMAIN || !process.env.AUTH0_CLIENT_ID || !process.env.AUTH0_SECRET || !process.env.AUTH0_CLIENT_SECRET) {
@@ -48,7 +49,7 @@ export default async function CampaignsPage() {
             <p className="eyebrow">Painel do Narrador</p>
             <h2 className="mt-3 font-serif text-4xl uppercase tracking-[0.08em] sm:text-6xl">Suas histórias</h2>
             <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
-              Um resumo das campanhas que você narra. Crie novas mesas ou consulte as existentes.
+              Um resumo das campanhas que você narra. Clique em "Gerenciar mesa" para expandir os personagens e pertences da crônica.
             </p>
           </div>
           <Link href="/campaigns/new" id="btn-nova-campanha" className="button-primary inline-flex items-center justify-center gap-2">
@@ -69,48 +70,7 @@ export default async function CampaignsPage() {
             </Link>
           </section>
         ) : (
-          <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-            {campaigns.map((campaign) => (
-              <div
-                key={campaign.id}
-                className="group border border-border bg-card p-6 transition-colors hover:border-primary"
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <p className="eyebrow">{campaign.status}</p>
-                    <h3 className="mt-3 font-serif text-2xl uppercase tracking-[0.06em] truncate">{campaign.name}</h3>
-                    {campaign.theme && (
-                      <p className="mt-1 text-sm text-muted-foreground truncate">{campaign.theme}</p>
-                    )}
-                  </div>
-                  <Scroll className="size-6 shrink-0 text-primary" aria-hidden="true" />
-                </div>
-
-                <dl className="mt-7 grid grid-cols-2 gap-4 border-t border-border pt-5 text-sm">
-                  <div>
-                    <dt className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground flex items-center gap-1">
-                      <Users className="size-3" /> Jogadores
-                    </dt>
-                    <dd className="mt-1">{campaign.playerCount}</dd>
-                  </div>
-                  <div>
-                    <dt className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">Último encontro</dt>
-                    <dd className="mt-1">
-                      {campaign.lastSessionAt
-                        ? new Intl.DateTimeFormat('pt-BR').format(new Date(campaign.lastSessionAt))
-                        : 'Sem registro'}
-                    </dd>
-                  </div>
-                  <div className="col-span-2">
-                    <dt className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">ID da mesa</dt>
-                    <dd className="mt-1 font-mono text-xs truncate text-muted-foreground" title={campaign.id}>
-                      {campaign.id}
-                    </dd>
-                  </div>
-                </dl>
-              </div>
-            ))}
-          </div>
+          <MasterPanel initialCampaigns={campaigns} />
         )}
       </div>
     </main>

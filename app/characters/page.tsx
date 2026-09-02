@@ -32,12 +32,15 @@ export default async function PersonagensPage() {
         </div>
         <div className="flex items-center gap-4">
           <span className="hidden text-sm text-muted-foreground sm:inline">{displayName}</span>
-          {!userIsMaster && (
+          {userIsMaster ? (
+            <Link href="/campaigns" className="button-ghost inline-flex items-center gap-2">
+              <Crown className="size-4" /> Painel do Mestre
+            </Link>
+          ) : (
             <Link href="/master" className="button-ghost inline-flex items-center gap-2">
               <Crown className="size-4" /> Sou Mestre
             </Link>
           )}
-          {userIsMaster && <MasterPanel initialCampaigns={campaigns} />}
           <a href="/auth/logout" className="button-ghost inline-flex items-center gap-2">
             <LogOut className="size-4" /> Sair
           </a>
@@ -125,6 +128,19 @@ export default async function PersonagensPage() {
               </Link>
             ))}
           </div>
+        )}
+
+        {userIsMaster && campaigns.length > 0 && (
+          <section className="mt-14 border-t border-border pt-10">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <p className="eyebrow">Painel do Narrador</p>
+                <h3 className="font-serif text-2xl uppercase tracking-[0.08em] mt-1">Gerenciamento de Mesas</h3>
+              </div>
+              <Link href="/campaigns" className="button-ghost text-xs">Ver tela cheia</Link>
+            </div>
+            <MasterPanel initialCampaigns={campaigns} />
+          </section>
         )}
       </div>
     </main>

@@ -2,9 +2,11 @@ import { sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import {
   devGetCharactersForUser,
+  devGetCharactersForCampaign,
   devGetCharacterById,
   devCreateCharacter,
   devUpdateCharacter,
+  devUpdateCharacterXp,
 } from '@/lib/dev-db'
 
 const isDev = process.env.NODE_ENV !== 'production' && !process.env.DATABASE_URL
@@ -67,6 +69,48 @@ export async function getCharactersForUser(userId: string): Promise<CharacterSum
     spentXp: character.spent_xp,
     totalXp: character.total_xp,
   }))
+}
+
+export async function getCharactersForCampaign(campaignId: string) {
+  if (isDev) return devGetCharactersForCampaign(campaignId)
+
+  const result = await db.execute<{
+    id: string
+    name: string
+    concept: string | null
+    clan: string | null
+    generation: string | null
+    spent_xp: string | null
+    total_xp: string | null
+  }>(sql`
+    SELECT id, name, concept, clan, generation, spent_xp, total_xp
+    FROM characters
+    WHERE campaign_id = ${campaignId}::uuid
+    ORDER BY name ASC
+  `)
+
+  return result.rows.map((row) => ({
+    id: row.id,
+    name: row.name,
+    concept: row.concept,
+    clan: row.clan,
+    generation: row.generation,
+    status: 'Ativo',
+    campaignId,
+    spentXp: row.spent_xp ? Number.parseInt(row.spent_xp, 10) : 0,
+    totalXp: row.total_xp ? Number.parseInt(row.total_xp, 10) : 0,
+  }))
+}
+
+export async function updateCharacterXp(characterId: string, totalXp: number) {
+  if (isDev) return devUpdateCharacterXp(characterId, totalXp)
+
+  await db.execute(sql`
+    UPDATE characters
+    SET total_xp = ${totalXp}, updated_at = NOW()
+    WHERE id = ${characterId}::uuid
+  `)
+  return { ok: true }
 }
 
 export async function getCharacterById(id: string, userId: string) {
