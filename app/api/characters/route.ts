@@ -3,6 +3,7 @@ import { getSessionOrDev } from '@/lib/auth0'
 import { getCharacterById, createCharacter, updateCharacter, getCharactersForCampaign, updateCharacterXp } from '@/lib/characters'
 import { getCampaignById } from '@/lib/campaigns'
 import { ensureAllTables } from '@/lib/db'
+import { canManageCampaign, canEditCharacter } from '@/lib/auth/authorization'
 
 async function getAuthenticatedUser() {
   const session = await getSessionOrDev()
@@ -23,10 +24,13 @@ export async function GET(request: Request) {
   try {
     await ensureAllTables()
     const user = await getAuthenticatedUser()
-    if (!user) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+    if (!user || !user.sub) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     const searchParams = new URL(request.url).searchParams
     const campaignId = searchParams.get('campaignId')
     if (campaignId) {
+      if (!(await canManageCampaign(user.sub, campaignId))) {
+         return NextResponse.json({ error: 'Proibido' }, { status: 403 })
+      }
       const characters = await getCharactersForCampaign(campaignId)
       return NextResponse.json({ characters })
     }
@@ -96,13 +100,17 @@ export async function PATCH(request: Request) {
   try {
     await ensureAllTables()
     const user = await getAuthenticatedUser()
-    if (!user) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+    if (!user || !user.sub) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
     const body = await request.json()
     const { characterId, totalXp, addXp } = body
 
     if (!characterId || typeof characterId !== 'string') {
       return NextResponse.json({ error: 'characterId é obrigatório.' }, { status: 400 })
+    }
+
+    if (!(await canEditCharacter(user.sub, characterId))) {
+      return NextResponse.json({ error: 'Proibido' }, { status: 403 })
     }
 
     if (typeof totalXp === 'number') {

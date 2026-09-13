@@ -7,6 +7,7 @@ import {
   updatePossessionStatus,
 } from '@/lib/possessions'
 import { ensureAllTables } from '@/lib/db'
+import { canEditCharacter, canManageCampaign, canManagePossession } from '@/lib/auth/authorization'
 
 async function getAuthenticatedUser() {
   const session = await getSessionOrDev()
@@ -17,18 +18,24 @@ export async function GET(request: Request) {
   try {
     await ensureAllTables()
     const user = await getAuthenticatedUser()
-    if (!user) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+    if (!user || !user.sub) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
     const { searchParams } = new URL(request.url)
     const characterId = searchParams.get('characterId')
     const campaignId = searchParams.get('campaignId')
 
     if (characterId) {
+      if (!(await canEditCharacter(user.sub, characterId))) {
+        return NextResponse.json({ error: 'Proibido' }, { status: 403 })
+      }
       const possessions = await getPossessionsForCharacter(characterId)
       return NextResponse.json({ possessions })
     }
 
     if (campaignId) {
+      if (!(await canManageCampaign(user.sub, campaignId))) {
+        return NextResponse.json({ error: 'Proibido' }, { status: 403 })
+      }
       const possessions = await getPossessionsForCampaign(campaignId)
       return NextResponse.json({ possessions })
     }
@@ -43,7 +50,7 @@ export async function POST(request: Request) {
   try {
     await ensureAllTables()
     const user = await getAuthenticatedUser()
-    if (!user) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+    if (!user || !user.sub) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
     const body = await request.json()
     const { characterId, label, description, origin, campaignId } = body
@@ -53,6 +60,10 @@ export async function POST(request: Request) {
     }
     if (!label || typeof label !== 'string' || !label.trim()) {
       return NextResponse.json({ error: 'Nome do pertence é obrigatório.' }, { status: 400 })
+    }
+
+    if (!(await canEditCharacter(user.sub, characterId))) {
+      return NextResponse.json({ error: 'Proibido' }, { status: 403 })
     }
 
     const possession = await createPossession(characterId, {
@@ -72,7 +83,7 @@ export async function PUT(request: Request) {
   try {
     await ensureAllTables()
     const user = await getAuthenticatedUser()
-    if (!user) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+    if (!user || !user.sub) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
     const body = await request.json()
     const { id, status, masterComment } = body
@@ -82,6 +93,10 @@ export async function PUT(request: Request) {
     }
     if (!['pendente', 'aprovado', 'reprovado'].includes(status)) {
       return NextResponse.json({ error: 'Status inválido.' }, { status: 400 })
+    }
+
+    if (!(await canManagePossession(user.sub, id))) {
+      return NextResponse.json({ error: 'Proibido' }, { status: 403 })
     }
 
     const possession = await updatePossessionStatus(id, {
