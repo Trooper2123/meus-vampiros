@@ -185,12 +185,17 @@ function CampaignPossessionsManager({ campaignId }: { campaignId: string }) {
   async function handleAddXpToCharacter(character: CampaignCharacter, amount: number) {
     const currentTotal = typeof character.totalXp === 'number' ? character.totalXp : Number.parseInt(String(character.totalXp ?? '0'), 10) || 0
     const nextTotal = currentTotal + amount
-    await fetch('/api/characters', {
+    const response = await fetch('/api/characters', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ characterId: character.id, totalXp: nextTotal }),
     })
-    await mutateCharacters()
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}))
+      console.error('Erro ao atribuir XP:', body.error)
+      return
+    }
+    await mutateCharacters(undefined, { revalidate: true })
   }
 
   async function handleGrantXpToAll(event: React.FormEvent) {
@@ -201,14 +206,18 @@ function CampaignPossessionsManager({ campaignId }: { campaignId: string }) {
     for (const char of characters) {
       const currentTotal = typeof char.totalXp === 'number' ? char.totalXp : Number.parseInt(String(char.totalXp ?? '0'), 10) || 0
       const nextTotal = currentTotal + amount
-      await fetch('/api/characters', {
+      const response = await fetch('/api/characters', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ characterId: char.id, totalXp: nextTotal }),
       })
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}))
+        console.error('Erro ao atribuir XP a', char.name, ':', body.error)
+      }
     }
     setUpdatingXp(false)
-    await mutateCharacters()
+    await mutateCharacters(undefined, { revalidate: true })
   }
 
   async function updateStatus(id: string, status: 'aprovado' | 'reprovado') {
