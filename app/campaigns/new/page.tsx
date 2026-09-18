@@ -1,9 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, ArrowRight, Check, Copy, Plus } from 'lucide-react'
+import { hasMasterAccess, getCampaignsForMaster } from '@/lib/campaigns'
+import { getSessionOrDev } from '@/lib/auth0'
 
 function CopyId({ id }: { id: string }) {
   const [copied, setCopied] = useState(false)
@@ -34,6 +36,38 @@ export default function NewCampaignPage() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [createdId, setCreatedId] = useState<string | null>(null)
+  const [userIsMaster, setUserIsMaster] = useState<boolean | null>(null)
+  const [hasCampaigns, setHasCampaigns] = useState(false)
+
+  useEffect(() => {
+    let mounted = true
+    const checkAccess = async () => {
+      const session = await getSessionOrDev()
+      if (!session?.user) return
+      const master = await hasMasterAccess(session.user)
+      if (!mounted) return
+      setUserIsMaster(master)
+      if (master) {
+        const campaigns = await getCampaignsForMaster(session.user.sub)
+        setHasCampaigns(campaigns.length > 0)
+      }
+    }
+    checkAccess()
+    return () => { mounted = false }
+  }, [])
+
+  function handleCancel() {
+    if (userIsMaster === null) return
+    if (userIsMaster) {
+      if (hasCampaigns) {
+        router.push('/campaigns')
+      } else {
+        router.push('/master')
+      }
+    } else {
+      router.push('/characters')
+    }
+  }
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault()
@@ -174,9 +208,13 @@ export default function NewCampaignPage() {
               >
                 <Plus className="size-4" /> {submitting ? 'Criando...' : 'Criar mesa'}
               </button>
-              <Link href="/campaigns" className="button-ghost inline-flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleCancel}
+                className="button-ghost inline-flex items-center gap-2"
+              >
                 Cancelar
-              </Link>
+              </button>
             </div>
           </form>
         )}
