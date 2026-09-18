@@ -11,6 +11,33 @@ import {
 
 const isDev = process.env.NODE_ENV !== 'production' && !process.env.DATABASE_URL
 
+/**
+ * Converte o formato legado de disciplinas (objeto nomeado) para o formato atual (array).
+ * Fichas criadas antes da refatoração do item 7 do plano armazenam disciplinas como:
+ *   { 'Animalismo': { level: 2, powers: [...] }, ... }
+ * O novo formato esperado pelo frontend é:
+ *   [{ id: 'disciplina-1', name: 'Animalismo', level: 2, powers: [...] }]
+ * Esta função é idempotente — se já for um array, retorna sem modificar.
+ */
+export function normalizeDisciplines(data: Record<string, unknown>): Record<string, unknown> {
+  const raw = data['disciplinas']
+  if (!raw || Array.isArray(raw)) return data
+  if (typeof raw !== 'object') return data
+
+  const legacyObj = raw as Record<string, unknown>
+  const converted = Object.entries(legacyObj).map(([name, val], index) => {
+    const entry = (typeof val === 'object' && val !== null ? val : {}) as Record<string, unknown>
+    return {
+      id: `compat-${index + 1}-${name.toLowerCase().replace(/\s+/g, '-')}`,
+      name,
+      level: typeof entry['level'] === 'number' ? entry['level'] : 0,
+      powers: Array.isArray(entry['powers']) ? entry['powers'] : [],
+    }
+  })
+
+  return { ...data, disciplinas: converted }
+}
+
 export type CharacterSummary = {
   id: string
   name: string
@@ -121,7 +148,10 @@ export async function getCharacterById(id: string, userId: string) {
   `)
   const row = result.rows[0]
   if (!row) return null
-  return { id: row.id, name: row.name, data: row.data, campaignId: row.campaign_id, campaign: null }
+  const normalizedData = normalizeDisciplines(
+    (row.data && typeof row.data === 'object' ? row.data : {}) as Record<string, unknown>
+  )
+  return { id: row.id, name: row.name, data: normalizedData, campaignId: row.campaign_id, campaign: null }
 }
 
 export async function createCharacter(

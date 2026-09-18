@@ -242,9 +242,11 @@ function CampaignPossessionsManager({ campaignId }: { campaignId: string }) {
     await mutatePossessions()
   }
 
-  const filteredPossessions = selectedCharacterId
+  const STATUS_ORDER: Record<string, number> = { pendente: 0, aprovado: 1, reprovado: 2 }
+  const filteredPossessions = (selectedCharacterId
     ? possessions.filter((p) => p.characterId === selectedCharacterId)
     : possessions
+  ).slice().sort((a, b) => (STATUS_ORDER[a.status] ?? 1) - (STATUS_ORDER[b.status] ?? 1))
 
   return (
     <div className="border border-[#6b3436] bg-[#131316] p-6 flex flex-col gap-6">

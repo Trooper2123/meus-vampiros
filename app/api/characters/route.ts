@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getSessionOrDev } from '@/lib/auth0'
-import { getCharacterById, createCharacter, updateCharacter, getCharactersForCampaign, updateCharacterXp } from '@/lib/characters'
+import { getCharacterById, createCharacter, updateCharacter, getCharactersForCampaign, updateCharacterXp, normalizeDisciplines } from '@/lib/characters'
 import { getCampaignById } from '@/lib/campaigns'
 import { ensureAllTables } from '@/lib/db'
 import { canManageCampaign, canEditCharacter } from '@/lib/auth/authorization'
@@ -45,7 +45,10 @@ export async function GET(request: Request) {
       ? await getCampaignById(character.campaignId)
       : character.campaign ?? null
 
-    return NextResponse.json({ character: { id: character.id, name: character.name, data: character.data, campaignId: character.campaignId }, campaign })
+    const safeData = normalizeDisciplines(
+      (character.data && typeof character.data === 'object' ? character.data : {}) as Record<string, unknown>
+    )
+    return NextResponse.json({ character: { id: character.id, name: character.name, data: safeData, campaignId: character.campaignId }, campaign })
   } catch {
     return NextResponse.json({ error: 'Não foi possível carregar a ficha.' }, { status: 500 })
   }
