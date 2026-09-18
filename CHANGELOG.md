@@ -77,3 +77,43 @@ Cada entrada deve incluir data, horário (BRT), tipo e resumo do que foi feito.
 | Anterior | `2c4db7a` | Atualização de `globals.css` |
 | Anterior | `8b879f7` | Deploy inicial |
 
+## [2026-09-18] — Página de resumo da ficha de personagem
+
+**Horário:** 17:30 BRT
+**Tipo:** feat
+**Arquivos principais:** 
+- `app/api/characters/resources/route.ts`
+- `app/characters/[id]/page.tsx`
+- `app/characters/[id]/summary/page.tsx`
+- `app/characters/[id]/character-summary-client.tsx`
+- `components/character-summary/summary-header.tsx`
+- `components/character-summary/summary-attributes.tsx`
+- `components/character-summary/summary-skills.tsx`
+- `components/character-summary/summary-disciplines.tsx`
+- `components/character-summary/summary-resources.tsx`
+- `components/character-summary/character-summary.tsx`
+- `app/characters/page.tsx`
+
+- Implementação da página de resumo da ficha com visualização inicial de dados
+- Componentes para exibição de: identificação, atributos, habilidades, disciplinas e recursos
+- Edição de recursos (humanidade, vontade, vitalidade, fome) com sincronização em tempo real
+- API endpoint `/api/characters/resources` para atualização de recursos
+- Navegação entre resumo e ficha completa
+- Validação de UUID, limites de recursos e autorização melhoradas
+- Build testado e funcionando
+
+---
+## [2026-09-18] — Ficha de teste totalmente preenchida
+
+**Horário:** 17:45 BRT
+**Tipo:** chore
+**Arquivos principais:** `lib/dev-db.ts`
+
+- Criação de ficha de teste com todos os campos preenchidos:
+  - Atributos: 2 pontos em força, 3 em destreza, 2 em vigor, 4 em carisma, 3 em manipulação, 2 em compostura, 3 em inteligência, 2 em raciocínio, 3 em determinação
+  - Disciplinas: Presença (nível 3), Ofuscação (nível 2) com efeitos e dice pools
+  - Habilidades: Todas as categorias (físicas, sociais, intelectuais) com valores atribuídos
+  - Recursos: Humanidade (7), Vontade (8), Vitalidade (6), Fome (2)
+- Atualização de seed para incluir personagem completo para testes de UI
+
+---

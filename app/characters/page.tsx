@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getSessionOrDev } from '@/lib/auth0'
-import { ArrowRight, BookOpen, LogOut, Plus, Skull, Crown } from 'lucide-react'
+import { ArrowRight, BookOpen, LogOut, Plus, Skull, Crown, FileText } from 'lucide-react'
 import { getCharactersForUser } from '@/lib/characters'
 import { getCampaignsForMaster, hasMasterAccess } from '@/lib/campaigns'
 import { MasterPanel } from '@/components/master-panel'
@@ -86,11 +86,7 @@ export default async function PersonagensPage() {
         ) : (
           <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
             {characters.map((character) => (
-              <Link
-                href={`/create-characters?id=${character.id}`}
-                key={character.id}
-                className="group border border-border bg-card p-6 transition-colors hover:border-primary"
-              >
+              <div key={character.id} className="group border border-border bg-card p-6 transition-colors hover:border-primary">
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <p className="eyebrow">{character.status}</p>
@@ -122,10 +118,21 @@ export default async function PersonagensPage() {
                     <dd className="mt-1">{character.spentXp ?? '0'} / {character.totalXp ?? '0'}</dd>
                   </div>
                 </dl>
-                <span className="mt-6 inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.12em] text-primary">
-                  Abrir ficha <ArrowRight className="size-3 transition-transform group-hover:translate-x-1" />
-                </span>
-              </Link>
+                <div className="mt-6 flex items-center justify-between">
+                  <Link
+                    href={`/characters/${character.id}`}
+                    className="inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.12em] text-primary hover:gap-3 transition-all"
+                  >
+                    <FileText className="size-3" /> Resumo da ficha
+                  </Link>
+                  <Link
+                    href={`/create-characters?id=${character.id}`}
+                    className="inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.12em] text-primary hover:gap-3 transition-all"
+                  >
+                    Editar ficha <ArrowRight className="size-3 transition-transform group-hover:translate-x-1" />
+                  </Link>
+                </div>
+              </div>
             ))}
           </div>
         )}
