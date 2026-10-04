@@ -59,6 +59,8 @@ export async function ensureAllTables() {
     );
 
     ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS principios TEXT;
+    ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS session_start_time TIME;
+    ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS session_end_time TIME;
 
     CREATE TABLE IF NOT EXISTS characters (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

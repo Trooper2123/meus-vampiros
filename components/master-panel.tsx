@@ -2,8 +2,8 @@
 
 import { useState } from 'react'
 import useSWR from 'swr'
-import { Check, Copy, Plus } from 'lucide-react'
-import { useRouter } from 'next/navigation'
+import { Check, Copy, Plus, CalendarDays, Users } from 'lucide-react'
+import Link from 'next/link'
 import { DateAvailabilityCalendar } from '@/components/date-availability-calendar'
 
 export type CampaignSummary = {
@@ -16,7 +16,21 @@ export type CampaignSummary = {
   playerCount: number
 }
 
+type ReminderData = { entries?: { date: string; status: string; suggested: boolean }[] }
+
 const fetcher = (url: string) => fetch(url).then((response) => response.json())
+
+function MasterReminderItem({ campaign }: { campaign: CampaignSummary }) {
+  const { data } = useSWR<ReminderData>(`/api/campaign-availability?campaignId=${campaign.id}`, fetcher)
+  const suggested = (data?.entries ?? []).filter((entry) => entry.suggested).sort((a, b) => a.date.localeCompare(b.date))[0]
+  if (!suggested) return null
+  const confirmed = (data?.entries ?? []).filter((entry) => entry.date === suggested.date && entry.status === 'disponível').length
+  return <Link href={`/campaigns/${campaign.id}`} className="border border-border p-4 transition-colors hover:border-primary"><p className="font-semibold">{campaign.name}</p><p className="mt-2 font-mono text-xs uppercase text-primary">{new Intl.DateTimeFormat('pt-BR', { dateStyle: 'medium' }).format(new Date(`${suggested.date}T12:00:00`))}</p><p className="mt-2 inline-flex items-center gap-1.5 text-xs text-muted-foreground"><Users className="size-3.5" aria-hidden="true" /> {confirmed} confirmação{confirmed === 1 ? '' : 'ões'}</p></Link>
+}
+
+function MasterReminders({ campaigns }: { campaigns: CampaignSummary[] }) {
+  return <section className="border border-border bg-card p-5" aria-labelledby="master-reminders-title"><div className="flex items-center justify-between gap-4 border-b border-border pb-3"><div><p className="eyebrow">Visão rápida</p><h3 id="master-reminders-title" className="mt-1 font-serif text-2xl uppercase tracking-[0.06em]">Próximas mesas</h3></div><CalendarDays className="size-5 text-primary" aria-hidden="true" /></div><div className="grid gap-3 pt-4 sm:grid-cols-2 lg:grid-cols-3">{campaigns.map((campaign) => <MasterReminderItem key={campaign.id} campaign={campaign} />)}</div><p className="pt-4 text-sm text-muted-foreground">As datas sugeridas e confirmações aparecem aqui conforme os jogadores respondem.</p></section>
+}
 
 function formatDate(value: string | null) {
   if (!value) return 'Sem registro'
@@ -104,12 +118,11 @@ export function NewCampaignForm({ onCreated }: { onCreated: (campaign: CampaignS
 export function MasterPanel({ initialCampaigns }: { initialCampaigns: CampaignSummary[] }) {
   const { data } = useSWR('/api/campaigns', fetcher)
   const campaigns: CampaignSummary[] = data?.campaigns ?? initialCampaigns
-  const [selectedCampaignId, setSelectedCampaignId] = useState<string | null>(null)
-
   if (campaigns.length === 0) return null
 
   return (
     <div className="flex flex-col gap-6 mt-6 w-full">
+      <MasterReminders campaigns={campaigns} />
       <div className="campaign-table">
         <div className="campaign-table-row campaign-table-head">
           <span>Status</span><span>Campanha</span><span>Tema principal</span><span>Jogadores</span><span>Último encontro</span><span>ID / Ações</span>
@@ -124,22 +137,12 @@ export function MasterPanel({ initialCampaigns }: { initialCampaigns: CampaignSu
               <span>{formatDate(campaign.lastSessionAt)}</span>
               <div className="flex items-center gap-2">
                 <CopyId id={campaign.id} />
-                <button
-                  type="button"
-                  onClick={() => setSelectedCampaignId(selectedCampaignId === campaign.id ? null : campaign.id)}
-                  className={`button-ghost text-[10px] px-3 py-1.5 h-auto ${selectedCampaignId === campaign.id ? 'border-primary text-primary' : ''}`}
-                >
-                  {selectedCampaignId === campaign.id ? 'Recolher' : 'Gerenciar mesa'}
-                </button>
+                <Link href={`/campaigns/${campaign.id}`} className="button-ghost text-[10px] px-3 py-1.5 h-auto">
+                  Gerenciar mesa
+                </Link>
               </div>
             </div>
 
-            {selectedCampaignId === campaign.id && (
-              <div className="flex flex-col gap-6 border-t border-border/80 bg-background p-5">
-                <DateAvailabilityCalendar campaignId={campaign.id} master />
-                <CampaignPossessionsManager campaignId={campaign.id} />
-              </div>
-            )}
           </div>
         ))}
       </div>
@@ -168,7 +171,7 @@ type CampaignCharacter = {
   totalXp?: number | string
 }
 
-function CampaignPossessionsManager({ campaignId }: { campaignId: string }) {
+export function CampaignPossessionsManager({ campaignId }: { campaignId: string }) {
   const { data: charData, mutate: mutateCharacters } = useSWR<{ characters: CampaignCharacter[] }>(`/api/characters?campaignId=${campaignId}`, fetcher)
   const { data: possData, mutate: mutatePossessions } = useSWR<{ possessions: Possession[] }>(`/api/possessions?campaignId=${campaignId}`, fetcher)
 
