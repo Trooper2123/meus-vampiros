@@ -4,6 +4,7 @@ import { useState } from 'react'
 import useSWR from 'swr'
 import { Check, Copy, Plus } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { DateAvailabilityCalendar } from '@/components/date-availability-calendar'
 
 export type CampaignSummary = {
   id: string
@@ -134,7 +135,8 @@ export function MasterPanel({ initialCampaigns }: { initialCampaigns: CampaignSu
             </div>
 
             {selectedCampaignId === campaign.id && (
-              <div className="p-5 bg-[#0d0d0f] border-t border-border/80">
+              <div className="flex flex-col gap-6 border-t border-border/80 bg-background p-5">
+                <DateAvailabilityCalendar campaignId={campaign.id} master />
                 <CampaignPossessionsManager campaignId={campaign.id} />
               </div>
             )}

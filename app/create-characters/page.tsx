@@ -237,7 +237,7 @@ function CriarPersonagemForm() {
       predador: formData.predador || '',
       geracao: formData.geracao || '',
       sire: formData.sire || '',
-      potencia-de-sangue: String(bloodPotency || 0),
+      'potencia-de-sangue': String(bloodPotency || 0),
       'surto-de-sangue': formData['surto-de-sangue'] || '',
       'quantidade-recuperada': formData['quantidade-recuperada'] || '',
       'bonus-de-poder': formData['bonus-de-poder'] || '',
