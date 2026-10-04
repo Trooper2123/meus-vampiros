@@ -3,7 +3,7 @@ import { Pool } from '@neondatabase/serverless'
 
 declare global {
   // eslint-disable-next-line no-var
-  var __pgPool: Pool | undefined
+  var __neonPool: Pool | undefined
 }
 
 const connectionString = process.env.DATABASE_URL
@@ -16,9 +16,9 @@ if (!connectionString) {
 
 const pool = (() => {
   if (!connectionString) return undefined
-  if (global.__pgPool) return global.__pgPool
-  const p = new Pool(connectionString)
-  global.__pgPool = p
+  if (global.__neonPool) return global.__neonPool
+  const p = new Pool({ connectionString })
+  global.__neonPool = p
   return p
 })()
 
