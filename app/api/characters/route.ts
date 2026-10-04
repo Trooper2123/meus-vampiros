@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getSessionOrDev } from '@/lib/auth0'
-import { getCharacterById, createCharacter, updateCharacter, getCharactersForCampaign, updateCharacterXp, normalizeDisciplines } from '@/lib/characters'
+import { getCharacterById, createCharacter, updateCharacter, getCharactersForCampaign, updateCharacterXp, normalizeDisciplines, deleteCharacter } from '@/lib/characters'
 import { getCampaignById } from '@/lib/campaigns'
 import { ensureAllTables } from '@/lib/db'
 import { canManageCampaign, canEditCharacter } from '@/lib/auth/authorization'
@@ -96,6 +96,23 @@ export async function PUT(request: Request) {
     return NextResponse.json({ ok: true, campaignId: validCampaignId })
   } catch {
     return NextResponse.json({ error: 'Não foi possível atualizar a ficha.' }, { status: 500 })
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const user = await getAuthenticatedUser()
+    if (!user) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+    
+    const body = await request.json()
+    const { id } = body
+    
+    if (!id) return NextResponse.json({ error: 'Ficha inválida' }, { status: 400 })
+
+    await deleteCharacter(id, user.sub)
+    return NextResponse.json({ ok: true })
+  } catch {
+    return NextResponse.json({ error: 'Não foi possível deletar a ficha.' }, { status: 500 })
   }
 }
 
