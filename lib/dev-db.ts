@@ -347,6 +347,23 @@ export function devUpdateCharacter(
   return character
 }
 
+export function devUpdateCharacterStatus(id: string, userId: string, status: string) {
+  const store = getStore()
+  const character = store.characters.find((c) => c.id === id && c.userId === userId)
+  if (!character) return null
+  character.status = status
+  character.updatedAt = new Date()
+  return character
+}
+
+export function devDeleteCharacter(id: string, userId: string) {
+  const store = getStore()
+  const index = store.characters.findIndex((c) => c.id === id && c.userId === userId)
+  if (index === -1) return null
+  store.characters.splice(index, 1)
+  return { ok: true }
+}
+
 // ─── Campaigns ────────────────────────────────────────────────────────────────
 
 export function devGetCampaignsForMaster(masterUserId: string) {

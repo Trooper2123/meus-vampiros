@@ -199,8 +199,80 @@ function CriarPersonagemForm() {
   const [saving, setSaving] = useState(false)
   const [characterId, setCharacterId] = useState<string | null>(idFromUrl)
   const [confirmingDiscipline, setConfirmingDiscipline] = useState<{ index: number; name: string } | null>(null)
-  const { data: characterData, mutate: mutateCharacter } = useSWR<{ campaign?: { principios: string | null } | null }>(characterId ? `/api/characters?id=${characterId}` : null, fetcher)
+  const { data: characterData, mutate: mutateCharacter } = useSWR<{ character?: { id: string; name: string; data: Record<string, unknown> }; campaign?: { principios: string | null } | null }>(characterId ? `/api/characters?id=${characterId}` : null, fetcher)
   const { data: possessionsData, mutate: mutatePossessions } = useSWR<{ possessions: PossessionItem[] }>(characterId ? `/api/possessions?characterId=${characterId}` : null, fetcher)
+
+  useEffect(() => {
+    if (characterData?.character?.data && idFromUrl) {
+      const data = characterData.character.data
+      // Carregar identidade
+      setAttributes({
+        forca: Number(data['forca']) || 1,
+        destreza: Number(data['destreza']) || 1,
+        vigor: Number(data['vigor']) || 1,
+        carisma: Number(data['carisma']) || 1,
+        manipulacao: Number(data['manipulacao']) || 1,
+        compostura: Number(data['compostura']) || 1,
+        inteligencia: Number(data['inteligencia']) || 1,
+        raciocinio: Number(data['raciocinio']) || 1,
+        determinacao: Number(data['determinacao']) || 1,
+      })
+      setBloodPotency(Number(data['potencia-de-sangue']) || 0)
+      // Carregar habilidades
+      const loadedSkills: Record<string, number> = {}
+      for (const key in data) {
+        if (key.startsWith('habilidade-')) {
+          const skillName = key.replace('habilidade-', '')
+          loadedSkills[skillName] = Number(data[key]) || 0
+        }
+      }
+      setSkills(loadedSkills)
+      // Carregar disciplinas
+      if (Array.isArray(data['disciplinas'])) {
+        const loadedDisciplines = (data['disciplinas'] as Array<{ id?: string; name?: string; level?: number; powers?: any[] }>).map(d => ({
+          id: d.id || `disciplina-${Date.now()}`,
+          name: d.name || '',
+          level: Number(d.level) || 0,
+          powers: Array.isArray(d.powers) ? d.powers : []
+        }))
+        setDisciplines(loadedDisciplines)
+      }
+      // Carregar recursos
+      setResources({
+        humanidade: Number(data['humanidade']) || 0,
+        vontade: Number(data['vontade']) || 0,
+        vitalidade: Number(data['vitalidade']) || 0,
+        fome: Number(data['fome']) || 1,
+      })
+      // Carregar convicções
+      const loadedConvictions = [
+        { pilar: String(data['convicoes-pilar-1'] || ''), crenca: String(data['convicoes-crenca-1'] || '') },
+        { pilar: String(data['convicoes-pilar-2'] || ''), crenca: String(data['convicoes-crenca-2'] || '') },
+        { pilar: String(data['convicoes-pilar-3'] || ''), crenca: String(data['convicoes-crenca-3'] || '') },
+      ]
+      setConvictions(loadedConvictions)
+      // Carregar vantagens e defeitos
+      if (Array.isArray(data['vantagens'])) {
+        setMerits((data['vantagens'] as Array<{ name?: string; level?: number; description?: string }>).map((m, i) => ({
+          name: m.name || '',
+          level: Number(m.level) || 0,
+          description: m.description || '',
+          expanded: false
+        })))
+      }
+      if (Array.isArray(data['defeitos'])) {
+        setFlaws((data['defeitos'] as Array<{ name?: string; level?: number; description?: string }>).map((f, i) => ({
+          name: f.name || '',
+          level: Number(f.level) || 0,
+          description: f.description || '',
+          expanded: false
+        })))
+      }
+      // Carregar XP
+      setTotalXp(String(data['experiencia-total'] || ''))
+      setSpentXp(String(data['experiencia-gasta'] || ''))
+    }
+  }, [characterData, idFromUrl])
 
   useEffect(() => {
     if (possessionsData?.possessions) {

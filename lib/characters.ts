@@ -7,6 +7,8 @@ import {
   devCreateCharacter,
   devUpdateCharacter,
   devUpdateCharacterXp,
+  devUpdateCharacterStatus,
+  devDeleteCharacter,
 } from '@/lib/dev-db'
 
 const isDev = process.env.NODE_ENV !== 'production' && !process.env.DATABASE_URL
@@ -167,6 +169,26 @@ export async function createCharacter(
     RETURNING id
   `)
   return { id: result.rows[0]?.id }
+}
+
+export async function updateCharacterStatus(id: string, userId: string, status: string) {
+  if (isDev) return devUpdateCharacterStatus(id, userId, status)
+
+  await db.execute(sql`
+    UPDATE characters
+    SET status = ${status}, updated_at = NOW()
+    WHERE id = ${id}::uuid AND user_id = ${userId}
+  `)
+  return { ok: true }
+}
+
+export async function deleteCharacter(id: string, userId: string) {
+  if (isDev) return devDeleteCharacter(id, userId)
+
+  await db.execute(sql`
+    DELETE FROM characters WHERE id = ${id}::uuid AND user_id = ${userId}
+  `)
+  return { ok: true }
 }
 
 export async function updateCharacter(
