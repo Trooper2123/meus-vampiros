@@ -5,6 +5,7 @@ import { ensureAllTables } from '@/lib/db'
 import { canEditCharacter } from '@/lib/auth/authorization'
 import { db } from '@/lib/db'
 import { sql } from 'drizzle-orm'
+import { devUpdateCharacterResources } from '@/lib/dev-db'
 
 async function getAuthenticatedUser() {
   const session = await getSessionOrDev()
@@ -42,6 +43,12 @@ export async function PATCH(request: Request) {
       }
     }
 
+    if (process.env.NODE_ENV !== 'production' && !process.env.DATABASE_URL) {
+      const resources = devUpdateCharacterResources(characterId, { humanidade, vontade, vitalidade, fome })
+      if (!resources) return NextResponse.json({ error: 'Personagem não encontrado.' }, { status: 404 })
+      return NextResponse.json({ ok: true, resources })
+    }
+
     // Atualiza apenas os recursos no campo data da ficha usando parâmetros seguros
     await db.execute(sql`
       UPDATE characters
@@ -52,8 +59,8 @@ export async function PATCH(request: Request) {
         'fome', $4
       ),
       updated_at = NOW()
-      WHERE id = $5::uuid
-    `, [humanidade, vontade, vitalidade, fome, characterId])
+      WHERE id = ${characterId}::uuid
+    `)
 
     return NextResponse.json({
       ok: true,

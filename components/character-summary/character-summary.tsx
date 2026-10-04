@@ -5,6 +5,7 @@ import { SummaryAttributes } from './summary-attributes'
 import { SummarySkills } from './summary-skills'
 import { SummaryDisciplines } from './summary-disciplines'
 import { SummaryResources } from './summary-resources'
+import { SummaryMerits } from './summary-merits'
 
 type CharacterData = {
   id: string
@@ -26,6 +27,8 @@ type CharacterData = {
     determinacao?: number
   }
   skills: Record<string, number>
+  merits: Array<{ name?: string; level?: number; description?: string }>
+  flaws: Array<{ name?: string; level?: number; description?: string }>
   disciplines: Array<{
     id: string
     name: string
@@ -65,6 +68,7 @@ export function CharacterSummary({ data, onChangeResources }: CharacterSummaryPr
       />
       <SummaryAttributes attributes={data.attributes} />
       <SummarySkills skills={data.skills} />
+      <SummaryMerits merits={data.merits} flaws={data.flaws} />
       <SummaryDisciplines disciplines={data.disciplines} />
       {onChangeResources && (
         <SummaryResources resources={data.resources} onChange={handleResourcesChange} />
