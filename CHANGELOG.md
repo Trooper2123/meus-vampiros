@@ -152,6 +152,26 @@ Cada entrada deve incluir data, horário (BRT), tipo e resumo do que foi feito.
 - Conversão de strings para números usando `parseIntSafe` em todos os dados numéricos
 - Garantia que `name` não seja `NULL` ao recuperar personagem
 - Ajuste para exibir personagens mesmo quando campos separados (`concept`, `clan`, `generation`) estão `NULL`
+- Build testado e funcionando
+
+---
+
+## [2026-09-18] — Página de edição de personagem e funcionalidades
+
+**Horário:** 22:30 BRT
+**Tipo:** feat
+**Arquivos principais:** 
+- `app/characters/[id]/edit/page.tsx` (novo)
+- `app/api/characters/route.ts`
+- `lib/characters.ts`
+- `lib/dev-db.ts`
+
+- Criação de página `/characters/[id]/edit` para edição de personagem
+- Correção de carregamento de dados ao editar personagem (carregamento de identidade, atributos, habilidades, disciplinas, recursos)
+- Adição de função `updateCharacterStatus` para mudar status de 'Rascunho' para 'Finalizada'
+- Adição de função `deleteCharacter` para excluir fichas
+- Botão de deletar na página de edição com confirmação
+- Botão de salvar ficha que muda status para 'Finalizada'
 - Build testado e funcionando localmente
 
 ---
