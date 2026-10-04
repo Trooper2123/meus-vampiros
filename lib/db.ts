@@ -79,18 +79,30 @@ export async function ensureAllTables() {
     ALTER TABLE characters ADD COLUMN IF NOT EXISTS spent_xp INT DEFAULT 0;
     ALTER TABLE characters ADD COLUMN IF NOT EXISTS total_xp INT DEFAULT 0;
 
-    CREATE TABLE IF NOT EXISTS character_possessions (
-      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-      character_id UUID NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
-      campaign_id UUID REFERENCES campaigns(id),
-      label TEXT NOT NULL,
-      description TEXT,
-      origin TEXT NOT NULL DEFAULT 'player',
-      status TEXT NOT NULL DEFAULT 'pendente',
-      master_comment TEXT,
-      created_at TIMESTAMPTZ DEFAULT now(),
-      updated_at TIMESTAMPTZ DEFAULT now()
-    );
+  CREATE TABLE IF NOT EXISTS character_possessions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  character_id UUID NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
+  campaign_id UUID REFERENCES campaigns(id),
+  label TEXT NOT NULL,
+  description TEXT,
+  origin TEXT NOT NULL DEFAULT 'player',
+  status TEXT NOT NULL DEFAULT 'pendente',
+  master_comment TEXT,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+  );
+
+  CREATE TABLE IF NOT EXISTS campaign_availability (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    campaign_id UUID NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+    user_id TEXT NOT NULL,
+    date DATE NOT NULL,
+    status TEXT NOT NULL CHECK (status IN ('disponível', 'talvez', 'indisponível')),
+    suggested BOOLEAN NOT NULL DEFAULT false,
+    created_at TIMESTAMPTZ DEFAULT now(),
+    updated_at TIMESTAMPTZ DEFAULT now(),
+    UNIQUE (campaign_id, user_id, date)
+  );
   `)
 }
 

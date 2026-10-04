@@ -16,6 +16,17 @@ Cada entrada deve incluir data, horário (BRT), tipo e resumo do que foi feito.
 
 ---
 
+## [2026-10-03] — Calendário de disponibilidade das mesas
+
+**Horário:** 12:00 BRT
+**Tipo:** feat
+**Arquivos principais:** `components/date-availability-calendar.tsx`, `components/master-panel.tsx`, `app/characters/page.tsx`, `app/api/campaign-availability/route.ts`, `lib/availability.ts`, `lib/db.ts`
+
+- Adição de calendário mensal compartilhado para jogadores e mestre.
+- Jogadores podem marcar dias como disponíveis, talvez ou indisponíveis.
+- Mestre pode sugerir uma data e visualizar o resumo de participantes por dia.
+- Persistência das marcações em banco com fallback de desenvolvimento.
+
 ## Tipos de entrada
 
 | Tipo | Quando usar |

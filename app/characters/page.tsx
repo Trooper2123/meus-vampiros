@@ -5,6 +5,7 @@ import { ArrowRight, BookOpen, LogOut, Plus, Skull, Crown, FileText } from 'luci
 import { getCharactersForUser } from '@/lib/characters'
 import { getCampaignsForMaster, hasMasterAccess } from '@/lib/campaigns'
 import { MasterPanel } from '@/components/master-panel'
+import { DateAvailabilityCalendar } from '@/components/date-availability-calendar'
 
 export default async function PersonagensPage() {
   if (!process.env.AUTH0_DOMAIN || !process.env.AUTH0_CLIENT_ID || !process.env.AUTH0_SECRET || !process.env.AUTH0_CLIENT_SECRET) {
@@ -136,6 +137,12 @@ export default async function PersonagensPage() {
             ))}
           </div>
         )}
+
+        {Array.from(new Set(characters.map((character) => character.campaignId).filter((campaignId): campaignId is string => Boolean(campaignId)))).map((campaignId) => (
+          <section key={campaignId} className="mt-10">
+            <DateAvailabilityCalendar campaignId={campaignId} />
+          </section>
+        ))}
 
         {userIsMaster && campaigns.length > 0 && (
           <section className="mt-14 border-t border-border pt-10">
