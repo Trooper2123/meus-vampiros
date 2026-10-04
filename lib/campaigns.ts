@@ -60,7 +60,7 @@ export async function getCampaignsForMaster(masterUserId: string): Promise<Campa
     principios: row.principios,
     averageXp: row.average_xp,
     status: row.status,
-    lastSessionAt: row.last_session_at ? row.last_session_at.toISOString() : null,
+    lastSessionAt: row.last_session_at && row.last_session_at !== '' ? (row.last_session_at instanceof Date ? row.last_session_at.toISOString() : new Date(row.last_session_at).toISOString()) : null,
     playerCount: row.player_count,
   }))
 }
@@ -93,7 +93,7 @@ export async function createCampaign(
     principios: row.principios,
     averageXp: row.average_xp,
     status: row.status,
-    lastSessionAt: row.last_session_at ? row.last_session_at.toISOString() : null,
+    lastSessionAt: row.last_session_at && row.last_session_at !== '' ? (row.last_session_at instanceof Date ? row.last_session_at.toISOString() : new Date(row.last_session_at).toISOString()) : null,
     playerCount: 0,
   }
 }
