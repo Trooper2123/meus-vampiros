@@ -39,6 +39,16 @@ Cada entrada deve incluir data, horário (BRT), tipo e resumo do que foi feito.
 
 ---
 
+## [2026-10-04] — Detalhes e lembretes de mesas
+
+**Horário:** 09:30 BRT
+**Tipo:** feat
+**Arquivos principais:** `app/campaigns/[id]/page.tsx`, `components/master-panel.tsx`
+
+- O gerenciamento de cada mesa agora abre em uma página dedicada com calendário, horário e gestão de personagens.
+- O dropdown expansível foi removido da listagem principal de campanhas.
+- O painel do mestre ganhou um resumo das datas sugeridas e confirmações dos jogadores.
+
 ## [2026-09-18] — Sessão inicial de estruturação
 
 **Horário:** 15:46 BRT
