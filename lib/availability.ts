@@ -4,6 +4,7 @@ import { randomUUID } from 'crypto'
 
 export type AvailabilityStatus = 'disponível' | 'talvez' | 'indisponível'
 export type AvailabilityEntry = { id: string; campaignId: string; userId: string; name: string; date: string; status: AvailabilityStatus; suggested: boolean }
+export type CampaignSchedule = { startTime: string | null; endTime: string | null }
 
 const isDev = process.env.NODE_ENV !== 'production' && !process.env.DATABASE_URL
 const memory: AvailabilityEntry[] = []
@@ -37,8 +38,31 @@ export async function saveAvailability(campaignId: string, userId: string, name:
 }
 
 export async function suggestAvailability(campaignId: string, userId: string, date: string) {
-  if (isDev) { memory.filter((entry) => entry.campaignId === campaignId && entry.userId === userId).forEach((entry) => { entry.suggested = entry.date === date }) ; return }
-  await db.execute(sql`UPDATE campaign_availability SET suggested = (date = ${date}::date), updated_at = now() WHERE campaign_id = ${campaignId}::uuid`)
+  if (isDev) {
+    const current = memory.find((entry) => entry.campaignId === campaignId && entry.userId === userId && entry.date === date)
+    if (current) current.suggested = !current.suggested
+    return
+  }
+  await db.execute(sql`
+    INSERT INTO campaign_availability (campaign_id, user_id, date, status, suggested)
+    VALUES (${campaignId}::uuid, ${userId}, ${date}::date, 'indisponível', true)
+    ON CONFLICT (campaign_id, user_id, date) DO UPDATE SET suggested = NOT campaign_availability.suggested, updated_at = now()
+  `)
+}
+
+export async function getCampaignSchedule(campaignId: string): Promise<CampaignSchedule> {
+  if (isDev) return { startTime: null, endTime: null }
+  const result = await db.execute<{ session_start_time: string | null; session_end_time: string | null }>(sql`
+    SELECT session_start_time::text, session_end_time::text FROM campaigns WHERE id = ${campaignId}::uuid
+  `)
+  const row = result.rows[0]
+  return { startTime: row?.session_start_time?.slice(0, 5) ?? null, endTime: row?.session_end_time?.slice(0, 5) ?? null }
+}
+
+export async function saveCampaignSchedule(campaignId: string, startTime: string | null, endTime: string | null) {
+  if (isDev) return { startTime, endTime }
+  await db.execute(sql`UPDATE campaigns SET session_start_time = ${startTime}::time, session_end_time = ${endTime}::time, updated_at = now() WHERE id = ${campaignId}::uuid`)
+  return { startTime, endTime }
 }
 
 export function getAvailabilitySummary(entries: AvailabilityEntry[]) {
