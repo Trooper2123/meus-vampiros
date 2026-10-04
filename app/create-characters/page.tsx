@@ -8,7 +8,6 @@ import useSWR from 'swr'
 import styles from './skills.module.css'
 
 const fetcher = (url: string) => fetch(url).then((response) => response.json())
-const router = useRouter()
 
 const tabs = [
   { id: 'identidade', label: 'Identidade', eyebrow: 'I / o nome antes da noite' },
@@ -168,6 +167,7 @@ function CriarPersonagemForm() {
   ])
   const [newPossessionLabel, setNewPossessionLabel] = useState('')
   const [newPossessionDesc, setNewPossessionDesc] = useState('')
+  const router = useRouter()
 
   const handleAddPossession = async () => {
     if (!newPossessionLabel.trim()) return
