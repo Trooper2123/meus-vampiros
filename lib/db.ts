@@ -1,5 +1,5 @@
-import { drizzle } from 'drizzle-orm/node-postgres'
-import { Pool } from 'pg'
+import { drizzle } from 'drizzle-orm/neon-serverless'
+import { Pool } from '@neondatabase/serverless'
 
 declare global {
   // eslint-disable-next-line no-var
@@ -17,7 +17,7 @@ if (!connectionString) {
 const pool = (() => {
   if (!connectionString) return undefined
   if (global.__pgPool) return global.__pgPool
-  const p = new Pool({ connectionString, max: 5 })
+  const p = new Pool(connectionString)
   global.__pgPool = p
   return p
 })()
