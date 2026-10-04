@@ -1,13 +1,14 @@
 'use client'
 
 import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { ArrowLeft, Check, FileText, Link2, Plus, Save, Skull, Unlink } from 'lucide-react'
 import { Suspense, useEffect, useRef, useState } from 'react'
 import useSWR from 'swr'
 import styles from './skills.module.css'
 
 const fetcher = (url: string) => fetch(url).then((response) => response.json())
+const router = useRouter()
 
 const tabs = [
   { id: 'identidade', label: 'Identidade', eyebrow: 'I / o nome antes da noite' },
@@ -313,7 +314,7 @@ function CriarPersonagemForm() {
     setSaved(true)
     window.setTimeout(() => setSaved(false), 2400)
     if (redirectUrl) {
-      window.location.href = redirectUrl
+      router.push(redirectUrl)
     }
     return true
   }
@@ -329,7 +330,7 @@ function CriarPersonagemForm() {
     <header className="sheet-header"><div className="flex items-center gap-4"><Link href="/characters" className="button-ghost inline-flex items-center gap-2" aria-label="Voltar para o arquivo"><ArrowLeft className="size-4" /> Arquivo</Link><div className="hidden border-l border-border pl-4 sm:block"><p className="eyebrow">Arquivos da Noite</p><p className="mt-1 text-xs text-muted-foreground">Novo registro de criatura</p></div></div><div className="sigil" aria-hidden="true">AN</div></header>
     <div className="mx-auto w-full max-w-6xl px-5 py-10 sm:px-8 lg:py-14">
       <div className="mb-8 flex flex-col justify-between gap-6 border-b border-border pb-8 sm:flex-row sm:items-end"><div><p className="eyebrow">Ficha nº 000 / em elaboração</p><h1 className="mt-3 font-serif text-4xl uppercase tracking-[0.08em] sm:text-6xl">Criar personagem</h1><p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">Registre a identidade, os dons e as fraquezas da criatura que será confiada aos arquivos.</p></div><div className="flex items-center gap-3 text-xs text-muted-foreground"><span className="status active"><span className="status-dot" /> Rascunho</span><span>{saving ? 'Salvando...' : 'Pronto para editar'}</span></div></div>
-      <form ref={formRef} onSubmit={(event) => { event.preventDefault(); void saveDraft('Ficha selada como rascunho.') }}>
+      <form ref={formRef} onSubmit={(event) => { event.preventDefault(); void saveDraft('Ficha selada como rascunho.', '/characters') }}>
         <div className="mb-6 border-b border-border" role="tablist" aria-label="Seções da ficha de personagem"><div className="flex gap-1 overflow-x-auto pb-px">{tabs.map((tab) => <button key={tab.id} type="button" role="tab" aria-selected={activeTab === tab.id} aria-controls={`panel-${tab.id}`} id={`tab-${tab.id}`} onClick={() => void changeTab(tab.id)} className={`whitespace-nowrap border-b-2 px-3 py-3 text-left font-mono text-[10px] uppercase tracking-[0.12em] transition-colors sm:px-4 ${activeTab === tab.id ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:border-border hover:text-foreground'}`}>{tab.label}</button>)}</div></div>
         <div role="tabpanel" id={`panel-${activeTab}`} aria-labelledby={`tab-${activeTab}`}>
           {activeTab === 'identidade' && <SheetSection title="Identidade" eyebrow="I / o nome antes da noite"><div className="sheet-grid sheet-grid-4"><Field label="Nome do personagem" name="nome" placeholder="Nome conhecido" className="span-2" /><Field label="Conceito" name="conceito" placeholder="O que define esta criatura?" className="span-2" /><Field label="Clã" name="cla" placeholder="Selecione" /><Field label="Predador" name="predador" placeholder="Instinto dominante" /><Field label="Geração" name="geracao" placeholder="—" /><Field label="Sire" name="sire" placeholder="Nome do criador" /></div><div className="identity-subsection"><div className="blood-heading"><h3>Potência de Sangue</h3>{dots(10, bloodPotency, setBloodPotency, 'potencia-de-sangue')}</div><div className="blood-grid">{[['Surto de Sangue', 'surto-de-sangue'], ['Quantidade Recuperada', 'quantidade-recuperada'], ['Bônus de Poder', 'bonus-de-poder'], ['Rerrolagem de Sangue', 'rerrolagem-de-sangue'], ['Penalidade de Alimentação', 'penalidade-de-alimentacao'], ['Gravidade da Perdição', 'gravidade-da-perdicao']].map(([label, name]) => <Field key={name} label={label} name={name} />)}</div><div className="experience-lines"><label className="sheet-field"><span>Experiência Total</span><input name="experiencia-total" type="number" min="0" value={totalXp} onChange={(event) => setTotalXp(event.target.value)} /></label><label className="sheet-field"><span>Experiência Gasta</span><input name="experiencia-gasta" type="number" min="0" value={spentXp} onChange={(event) => setSpentXp(event.target.value)} /></label><label className="sheet-field"><span>XP Disponível</span><input name="experiencia-disponivel" value={availableXp} readOnly aria-readonly="true" /></label></div><div className="sheet-grid sheet-grid-2 mt-4"><Field label="Idade Verdadeira" name="idade-verdadeira" /><Field label="Idade Aparente" name="idade-aparente" /></div><div className="sheet-grid sheet-grid-2 mt-6"><label className="sheet-field"><span>Dados de Vida</span><textarea name="dados-de-vida" rows={4} placeholder="Data de nascimento e a descrição do seu último dia de vida." /></label><label className="sheet-field"><span>Dados da Morte</span><textarea name="dados-da-morte" rows={4} placeholder="Data do Abraço e como você se tornou uma criatura da noite." /></label></div><CampaignLink characterId={characterId} onCampaignChange={() => void mutateCharacter()} /></div></SheetSection>}
