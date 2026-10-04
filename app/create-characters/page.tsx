@@ -224,7 +224,7 @@ function CriarPersonagemForm() {
     }))
   }
 
-  async function saveDraft(message = 'Alterações salvas automaticamente.') {
+  async function saveDraft(message = 'Alterações salvas automaticamente.', redirectUrl?: string) {
     setSaving(true)
     const formData = formRef.current ? Object.fromEntries(new FormData(formRef.current).entries()) : {}
     
@@ -237,7 +237,7 @@ function CriarPersonagemForm() {
       predador: formData.predador || '',
       geracao: formData.geracao || '',
       sire: formData.sire || '',
-      potencia-de-sangue: String(bloodPotency || 0),
+      'potencia-de-sangue': String(bloodPotency || 0),
       'surto-de-sangue': formData['surto-de-sangue'] || '',
       'quantidade-recuperada': formData['quantidade-recuperada'] || '',
       'bonus-de-poder': formData['bonus-de-poder'] || '',
@@ -312,6 +312,9 @@ function CriarPersonagemForm() {
     setSaving(false)
     setSaved(true)
     window.setTimeout(() => setSaved(false), 2400)
+    if (redirectUrl) {
+      window.location.href = redirectUrl
+    }
     return true
   }
 
