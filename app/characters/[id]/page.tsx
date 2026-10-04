@@ -99,6 +99,8 @@ async function getCharacterData(id: string, userId: string) {
       'Política': parseIntSafe(data['habilidade-política']),
       'Tecnologia': parseIntSafe(data['habilidade-tecnologia']),
     },
+    merits: Array.isArray(data['vantagens']) ? data['vantagens'] as Array<{ name?: string; level?: number; description?: string }> : [],
+    flaws: Array.isArray(data['defeitos']) ? data['defeitos'] as Array<{ name?: string; level?: number; description?: string }> : [],
     disciplines,
     resources: {
       humanidade: parseIntSafe(data['humanidade']),
@@ -148,7 +150,7 @@ export default async function CharacterPage({
         {/* Navegação entre Resumo e Ficha Completa */}
         <div className="mb-8 flex items-center gap-2 border-b border-border pb-4">
           <Link
-            href={`/characters/${params.id}`}
+            href={`/characters/${id}`}
             className="px-4 py-2 text-sm font-medium text-primary"
           >
             <div className="flex items-center gap-2">
@@ -157,7 +159,7 @@ export default async function CharacterPage({
             </div>
           </Link>
           <Link
-            href={`/characters/${params.id}/summary`}
+            href={`/characters/${id}/summary`}
             className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
           >
             <div className="flex items-center gap-2">
@@ -176,7 +178,7 @@ export default async function CharacterPage({
             Edite todos os detalhes da ficha em uma página interativa
           </p>
           <Link
-            href={`/create-characters?id=${params.id}`}
+            href={`/create-characters?id=${id}`}
             className="button-primary inline-flex items-center gap-2"
           >
             <Edit className="size-4" />

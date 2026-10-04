@@ -242,6 +242,15 @@ export function devGetCharactersForCampaign(campaignId: string) {
     }))
 }
 
+export function devUpdateCharacterResources(characterId: string, resources: Record<string, number>) {
+  const store = getStore()
+  const character = store.characters.find((c) => c.id === characterId)
+  if (!character) return null
+  character.data = { ...character.data, ...resources }
+  character.updatedAt = new Date()
+  return resources
+}
+
 export function devUpdateCharacterXp(characterId: string, totalXp: number) {
   const store = getStore()
   const character = store.characters.find((c) => c.id === characterId)
