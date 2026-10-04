@@ -227,10 +227,78 @@ function CriarPersonagemForm() {
   async function saveDraft(message = 'Alterações salvas automaticamente.') {
     setSaving(true)
     const formData = formRef.current ? Object.fromEntries(new FormData(formRef.current).entries()) : {}
+    
+    // Constrói o objeto data com todos os valores do estado e do formulário
+    const data = {
+      // Identidade
+      nome: formData.nome || '',
+      conceito: formData.conceito || '',
+      cla: formData.cla || '',
+      predador: formData.predador || '',
+      geracao: formData.geracao || '',
+      sire: formData.sire || '',
+      potencia-de-sangue: String(bloodPotency || 0),
+      'surto-de-sangue': formData['surto-de-sangue'] || '',
+      'quantidade-recuperada': formData['quantidade-recuperada'] || '',
+      'bonus-de-poder': formData['bonus-de-poder'] || '',
+      'rerrolagem-de-sangue': formData['rerrolagem-de-sangue'] || '',
+      'penalidade-de-alimentacao': formData['penalidade-de-alimentacao'] || '',
+      'gravidade-da-perdicao': formData['gravidade-da-perdicao'] || '',
+      'experiencia-total': totalXp,
+      'experiencia-gasta': spentXp,
+      'idade-verdadeira': formData['idade-verdadeira'] || '',
+      'idade-aparente': formData['idade-aparente'] || '',
+      'dados-de-vida': formData['dados-de-vida'] || '',
+      'dados-da-morte': formData['dados-da-morte'] || '',
+      
+      // Atributos
+      forca: String(attributes.forca || 1),
+      destreza: String(attributes.destreza || 1),
+      vigor: String(attributes.vigor || 1),
+      carisma: String(attributes.carisma || 1),
+      manipulacao: String(attributes.manipulacao || 1),
+      compostura: String(attributes.compostura || 1),
+      inteligencia: String(attributes.inteligencia || 1),
+      raciocinio: String(attributes.raciocinio || 1),
+      determinacao: String(attributes.determinacao || 1),
+      
+      // Habilidades
+      ...Object.fromEntries(Object.entries(skills).map(([key, value]) => [`habilidade-${key}`, String(value)])),
+      
+      // Disciplinas
+      disciplinas: disciplines.map(d => ({
+        id: d.id,
+        name: d.name,
+        level: d.level,
+        powers: d.powers.map(p => (typeof p === 'string' ? { ...createEmptyPower(), name: p } : p))
+      })),
+      
+      // Recursos
+      humanidade: String(resources.humanidade || 0),
+      vontade: String(resources.vontade || 0),
+      vitalidade: String(resources.vitalidade || 0),
+      fome: String(resources.fome || 0),
+      'convicoes-pilar-1': convictions[0]?.pilar || '',
+      'convicoes-crenca-1': convictions[0]?.crenca || '',
+      'convicoes-pilar-2': convictions[1]?.pilar || '',
+      'convicoes-crenca-2': convictions[1]?.crenca || '',
+      'convicoes-pilar-3': convictions[2]?.pilar || '',
+      'convicoes-crenca-3': convictions[2]?.crenca || '',
+      
+      // Vantagens e Defeitos
+      vantagens: merits.map(m => ({ name: m.name, level: m.level, description: m.description })),
+      defeitos: flaws.map(f => ({ name: f.name, level: f.level, description: f.description })),
+      pertences: possessions.map(p => ({ label: p.label, description: p.description, status: p.status })),
+      
+      // Histórico
+      historico: formData['historico'] || '',
+      notas: formData['notas'] || '',
+    }
+    
     const response = await fetch('/api/characters', {
       method: characterId ? 'PUT' : 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: characterId, name: formData.nome || 'Personagem sem nome', data: formData }),
+      body: JSON.stringify({ id: characterId, name: formData.nome || 'Personagem sem nome', data }),
     })
     if (!response.ok && response.status !== 401) {
       setSaving(false)
