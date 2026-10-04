@@ -45,12 +45,18 @@ async function getCharacterData(id: string, userId: string) {
     return Number.isNaN(num) ? 0 : num
   }
 
+  const getName = (): string => {
+    if (character.name && character.name.trim() !== '') return character.name
+    if (data['nome'] && String(data['nome']).trim() !== '') return String(data['nome'])
+    return 'Personagem sem nome'
+  }
+
   return {
     id: character.id,
-    name: character.name,
-    clan: data['cla'] as string | null,
-    predator: data['predador'] as string | null,
-    generation: data['geracao'] as string | null,
+    name: getName(),
+    clan: data['cla'] ? String(data['cla']) : null,
+    predator: data['predador'] ? String(data['predador']) : null,
+    generation: data['geracao'] ? String(data['geracao']) : null,
     campaignName,
     campaignTheme,
     attributes: {

@@ -128,3 +128,21 @@ Cada entrada deve incluir data, horário (BRT), tipo e resumo do que foi feito.
 - Atualização de seed para incluir personagem completo para testes de UI
 
 ---
+
+## [2026-09-18] — Correção de recuperação de dados de personagens
+
+**Horário:** 20:00 BRT
+**Tipo:** fix
+**Arquivos principais:** 
+- `app/characters/[id]/page.tsx`
+- `app/characters/[id]/summary/page.tsx`
+- `lib/characters.ts`
+
+- Correção de recuperação de dados quando `character.name` é `NULL` no banco
+- Adição de fallback para usar `data['nome']` caso `character.name` esteja vazio
+- Conversão de strings para números usando `parseIntSafe` em todos os dados numéricos
+- Garantia que `name` não seja `NULL` ao recuperar personagem
+- Ajuste para exibir personagens mesmo quando campos separados (`concept`, `clan`, `generation`) estão `NULL`
+- Build testado e funcionando localmente
+
+---

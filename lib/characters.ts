@@ -151,7 +151,7 @@ export async function getCharacterById(id: string, userId: string) {
   const normalizedData = normalizeDisciplines(
     (row.data && typeof row.data === 'object' ? row.data : {}) as Record<string, unknown>
   )
-  return { id: row.id, name: row.name, data: normalizedData, campaignId: row.campaign_id, campaign: null }
+  return { id: row.id, name: row.name ?? '', data: normalizedData, campaignId: row.campaign_id, campaign: null }
 }
 
 export async function createCharacter(

@@ -40,32 +40,43 @@ async function getCharacterData(id: string, userId: string) {
     }
   }
 
+  const parseIntSafe = (value: unknown): number => {
+    const num = Number.parseInt(String(value), 10)
+    return Number.isNaN(num) ? 0 : num
+  }
+
+  const getName = (): string => {
+    if (character.name && character.name.trim() !== '') return character.name
+    if (data['nome'] && String(data['nome']).trim() !== '') return String(data['nome'])
+    return 'Personagem sem nome'
+  }
+
   return {
     id: character.id,
-    name: character.name,
-    clan: data['cla'] as string | null,
-    predator: data['predador'] as string | null,
-    generation: data['geracao'] as string | null,
+    name: getName(),
+    clan: data['cla'] ? String(data['cla']) : null,
+    predator: data['predador'] ? String(data['predador']) : null,
+    generation: data['geracao'] ? String(data['geracao']) : null,
     campaignName,
     campaignTheme,
     attributes: {
-      forca: data['forca'] as number,
-      destreza: data['destreza'] as number,
-      vigor: data['vigor'] as number,
-      carisma: data['carisma'] as number,
-      manipulacao: data['manipulacao'] as number,
-      compostura: data['compostura'] as number,
-      inteligencia: data['inteligencia'] as number,
-      raciocinio: data['raciocinio'] as number,
-      determinacao: data['determinacao'] as number,
+      forca: parseIntSafe(data['forca']),
+      destreza: parseIntSafe(data['destreza']),
+      vigor: parseIntSafe(data['vigor']),
+      carisma: parseIntSafe(data['carisma']),
+      manipulacao: parseIntSafe(data['manipulacao']),
+      compostura: parseIntSafe(data['compostura']),
+      inteligencia: parseIntSafe(data['inteligencia']),
+      raciocinio: parseIntSafe(data['raciocinio']),
+      determinacao: parseIntSafe(data['determinacao']),
     },
     skills: {},
     disciplines,
     resources: {
-      humanidade: data['humanidade'] as number ?? 0,
-      vontade: data['vontade'] as number ?? 0,
-      vitalidade: data['vitalidade'] as number ?? 0,
-      fome: data['fome'] as number ?? 1,
+      humanidade: parseIntSafe(data['humanidade']),
+      vontade: parseIntSafe(data['vontade']),
+      vitalidade: parseIntSafe(data['vitalidade']),
+      fome: parseIntSafe(data['fome']),
     },
   }
 }
