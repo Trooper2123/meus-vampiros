@@ -463,3 +463,159 @@ export function devUpdatePossessionStatus(
   possession.updatedAt = new Date()
   return possession
 }
+
+// ─── Campaign Event Calendar Helpers ──────────────────────────────────────────
+
+declare global {
+  var __devDbCampaignCalendar: {
+    eventCalendars: Record<string, boolean>
+    schedulingCalendars: Record<string, boolean>
+    events: Array<{
+      id: string
+      campaignId: string
+      title: string
+      description: string | null
+      eventDate: string
+      eventTime: string | null
+      visibility: 'master' | 'everyone'
+      createdAt: string
+    }>
+    liveKitRooms: Record<string, {
+      roomName: string
+      roomUrl: string
+      hostUserId: string
+    }>
+  } | undefined
+}
+
+function getCalendarStore() {
+  if (!global.__devDbCampaignCalendar) {
+    global.__devDbCampaignCalendar = {
+      eventCalendars: {},
+      schedulingCalendars: {},
+      events: [],
+      liveKitRooms: {},
+    }
+  }
+  return global.__devDbCampaignCalendar
+}
+
+export function devGetCampaignEventCalendarStatus(campaignId: string): { enabled: boolean } | null {
+  const store = getCalendarStore()
+  const enabled = store.eventCalendars[campaignId]
+  if (enabled === undefined) return null
+  return { enabled }
+}
+
+export function devToggleCampaignEventCalendar(campaignId: string, enabled: boolean): { enabled: boolean } {
+  const store = getCalendarStore()
+  store.eventCalendars[campaignId] = enabled
+  return { enabled }
+}
+
+export function devGetCampaignSchedulingCalendarStatus(campaignId: string): { enabled: boolean } | null {
+  const store = getCalendarStore()
+  const enabled = store.schedulingCalendars[campaignId]
+  if (enabled === undefined) return null
+  return { enabled }
+}
+
+export function devToggleCampaignSchedulingCalendar(campaignId: string, enabled: boolean): { enabled: boolean } {
+  const store = getCalendarStore()
+  store.schedulingCalendars[campaignId] = enabled
+  return { enabled }
+}
+
+export function devCreateCampaignEvent(
+  campaignId: string,
+  title: string,
+  description: string | null,
+  eventDate: string,
+  eventTime: string | null,
+  visibility: 'master' | 'everyone'
+): { id: string } {
+  const store = getCalendarStore()
+  const id = randomUUID()
+  const now = new Date().toISOString()
+  
+  store.events.push({
+    id,
+    campaignId,
+    title,
+    description,
+    eventDate,
+    eventTime,
+    visibility,
+    createdAt: now,
+  })
+  
+  return { id }
+}
+
+export function devGetCampaignEventsByYear(campaignId: string, year: number) {
+  const store = getCalendarStore()
+  return store.events
+    .filter((e) => e.campaignId === campaignId)
+    .filter((e) => {
+      const eventYear = new Date(e.eventDate).getFullYear()
+      return eventYear === year
+    })
+    .map((e) => ({
+      id: e.id,
+      campaignId: e.campaignId,
+      title: e.title,
+      description: e.description,
+      eventDate: e.eventDate,
+      eventTime: e.eventTime,
+      visibility: e.visibility,
+      createdAt: new Date(e.createdAt),
+    }))
+}
+
+export function devUpdateCampaignEvent(
+  eventId: string,
+  data: Partial<{ title: string; description: string | null; eventDate: string; eventTime: string | null; visibility: 'master' | 'everyone' }>
+): void {
+  const store = getCalendarStore()
+  const event = store.events.find((e) => e.id === eventId)
+  if (!event) return
+
+  if (data.title !== undefined) event.title = data.title
+  if (data.description !== undefined) event.description = data.description
+  if (data.eventDate !== undefined) event.eventDate = data.eventDate
+  if (data.eventTime !== undefined) event.eventTime = data.eventTime
+  if (data.visibility !== undefined) event.visibility = data.visibility
+}
+
+export function devDeleteCampaignEvent(eventId: string): void {
+  const store = getCalendarStore()
+  const index = store.events.findIndex((e) => e.id === eventId)
+  if (index === -1) return
+  store.events.splice(index, 1)
+}
+
+export function devGetLiveKitRoom(campaignId: string) {
+  const store = getCalendarStore()
+  const room = store.liveKitRooms[campaignId]
+  if (!room) return null
+
+  const now = new Date()
+  return {
+    campaignId,
+    roomName: room.roomName,
+    roomUrl: room.roomUrl,
+    hostUserId: room.hostUserId,
+    createdAt: now,
+    updatedAt: now,
+  }
+}
+
+export function devCreateLiveKitRoom(
+  campaignId: string,
+  roomName: string,
+  roomUrl: string,
+  hostUserId: string
+): void {
+  const store = getCalendarStore()
+  store.liveKitRooms[campaignId] = { roomName, roomUrl, hostUserId }
+}

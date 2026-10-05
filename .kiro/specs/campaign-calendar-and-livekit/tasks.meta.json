@@ -1,0 +1,277 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "**task-001**: Atualizar `lib/db.ts` com as 4 novas tabelas": [
+      {
+        "executionId": "4ba8e915-110e-44eb-aed9-5c7d80e8ea1d",
+        "chatSessionId": "sess_b6a67f7d-6d92-4e28-a807-9fe286b16ce9",
+        "timestamp": 1791094109312
+      },
+      {
+        "executionId": "4ba8e915-110e-44eb-aed9-5c7d80e8ea1d",
+        "chatSessionId": "sess_b6a67f7d-6d92-4e28-a807-9fe286b16ce9",
+        "timestamp": 1791094124596
+      },
+      {
+        "executionId": "4ba8e915-110e-44eb-aed9-5c7d80e8ea1d",
+        "chatSessionId": "sess_b6a67f7d-6d92-4e28-a807-9fe286b16ce9",
+        "timestamp": 1791094182300
+      }
+    ],
+    "**task-002**: Atualizar `lib/db.ts` com funções auxiliares para as novas tabelas": [
+      {
+        "executionId": "4ba8e915-110e-44eb-aed9-5c7d80e8ea1d",
+        "chatSessionId": "sess_b6a67f7d-6d92-4e28-a807-9fe286b16ce9",
+        "timestamp": 1791094109417
+      },
+      {
+        "executionId": "4ba8e915-110e-44eb-aed9-5c7d80e8ea1d",
+        "chatSessionId": "sess_b6a67f7d-6d92-4e28-a807-9fe286b16ce9",
+        "timestamp": 1791094192847
+      },
+      {
+        "executionId": "4ba8e915-110e-44eb-aed9-5c7d80e8ea1d",
+        "chatSessionId": "sess_b6a67f7d-6d92-4e28-a807-9fe286b16ce9",
+        "timestamp": 1791094477935
+      }
+    ],
+    "**task-003**: Executar migration e verificar tabelas": [
+      {
+        "executionId": "4ba8e915-110e-44eb-aed9-5c7d80e8ea1d",
+        "chatSessionId": "sess_b6a67f7d-6d92-4e28-a807-9fe286b16ce9",
+        "timestamp": 1791094109455
+      },
+      {
+        "executionId": "4ba8e915-110e-44eb-aed9-5c7d80e8ea1d",
+        "chatSessionId": "sess_b6a67f7d-6d92-4e28-a807-9fe286b16ce9",
+        "timestamp": 1791094488765
+      }
+    ],
+    "**task-004**: Atualizar API `/api/campaigns/route.ts` para criar toggle de calendário de marcação": [
+      {
+        "executionId": "4ba8e915-110e-44eb-aed9-5c7d80e8ea1d",
+        "chatSessionId": "sess_b6a67f7d-6d92-4e28-a807-9fe286b16ce9",
+        "timestamp": 1791094109500
+      },
+      {
+        "executionId": "4a6382c2-e680-460b-aab6-36d7990889bc",
+        "chatSessionId": "sess_b3c09ae7-46ae-4722-9a43-6bb5a2300a7a",
+        "timestamp": 1791124603996
+      },
+      {
+        "executionId": "4a6382c2-e680-460b-aab6-36d7990889bc",
+        "chatSessionId": "sess_b3c09ae7-46ae-4722-9a43-6bb5a2300a7a",
+        "timestamp": 1791124789717
+      }
+    ],
+    "**task-005**: Criar API route GET/POST/PATCH/DELETE `/api/campaign-events/route.ts`": [
+      {
+        "executionId": "4ba8e915-110e-44eb-aed9-5c7d80e8ea1d",
+        "chatSessionId": "sess_b6a67f7d-6d92-4e28-a807-9fe286b16ce9",
+        "timestamp": 1791094109543
+      },
+      {
+        "executionId": "4a6382c2-e680-460b-aab6-36d7990889bc",
+        "chatSessionId": "sess_b3c09ae7-46ae-4722-9a43-6bb5a2300a7a",
+        "timestamp": 1791124798831
+      },
+      {
+        "executionId": "4a6382c2-e680-460b-aab6-36d7990889bc",
+        "chatSessionId": "sess_b3c09ae7-46ae-4722-9a43-6bb5a2300a7a",
+        "timestamp": 1791214636527
+      }
+    ],
+    "**task-006**: Criar API route GET/PATCH `/api/campaign-event-calendar/status/route.ts`": [
+      {
+        "executionId": "4ba8e915-110e-44eb-aed9-5c7d80e8ea1d",
+        "chatSessionId": "sess_b6a67f7d-6d92-4e28-a807-9fe286b16ce9",
+        "timestamp": 1791094109577
+      },
+      {
+        "executionId": "4a6382c2-e680-460b-aab6-36d7990889bc",
+        "chatSessionId": "sess_b3c09ae7-46ae-4722-9a43-6bb5a2300a7a",
+        "timestamp": 1791214642611
+      },
+      {
+        "executionId": "4a6382c2-e680-460b-aab6-36d7990889bc",
+        "chatSessionId": "sess_b3c09ae7-46ae-4722-9a43-6bb5a2300a7a",
+        "timestamp": 1791214932147
+      }
+    ],
+    "**task-007**: Criar API route PATCH `/api/campaign-event-calendar/toggle/route.ts`": [
+      {
+        "executionId": "4ba8e915-110e-44eb-aed9-5c7d80e8ea1d",
+        "chatSessionId": "sess_b6a67f7d-6d92-4e28-a807-9fe286b16ce9",
+        "timestamp": 1791094109653
+      }
+    ],
+    "**task-008**: Criar API route GET/PATCH `/api/campaign-scheduling-calendar/status/route.ts`": [
+      {
+        "executionId": "4ba8e915-110e-44eb-aed9-5c7d80e8ea1d",
+        "chatSessionId": "sess_b6a67f7d-6d92-4e28-a807-9fe286b16ce9",
+        "timestamp": 1791094109711
+      }
+    ],
+    "**task-009**: Criar API route PATCH `/api/campaign-scheduling-calendar/toggle/route.ts`": [
+      {
+        "executionId": "4ba8e915-110e-44eb-aed9-5c7d80e8ea1d",
+        "chatSessionId": "sess_b6a67f7d-6d92-4e28-a807-9fe286b16ce9",
+        "timestamp": 1791094109751
+      }
+    ],
+    "**task-010**: Criar API route GET `/api/livekit/room/route.ts`": [
+      {
+        "executionId": "4ba8e915-110e-44eb-aed9-5c7d80e8ea1d",
+        "chatSessionId": "sess_b6a67f7d-6d92-4e28-a807-9fe286b16ce9",
+        "timestamp": 1791094109783
+      }
+    ],
+    "**task-011**: Criar API route POST `/api/livekit/room/route.ts`": [
+      {
+        "executionId": "4ba8e915-110e-44eb-aed9-5c7d80e8ea1d",
+        "chatSessionId": "sess_b6a67f7d-6d92-4e28-a807-9fe286b16ce9",
+        "timestamp": 1791094109820
+      }
+    ],
+    "**task-012**: Criar utilitário `lib/livekit.ts` para geração de tokens": [
+      {
+        "executionId": "4ba8e915-110e-44eb-aed9-5c7d80e8ea1d",
+        "chatSessionId": "sess_b6a67f7d-6d92-4e28-a807-9fe286b16ce9",
+        "timestamp": 1791094109876
+      }
+    ],
+    "**task-013**: Atualizar `lib/auth/authorization.ts` com função para verificar se usuário é host da LiveKit room": [
+      {
+        "executionId": "4ba8e915-110e-44eb-aed9-5c7d80e8ea1d",
+        "chatSessionId": "sess_b6a67f7d-6d92-4e28-a807-9fe286b16ce9",
+        "timestamp": 1791094109916
+      }
+    ],
+    "**task-014**: Testar todas as API routes": [
+      {
+        "executionId": "4ba8e915-110e-44eb-aed9-5c7d80e8ea1d",
+        "chatSessionId": "sess_b6a67f7d-6d92-4e28-a807-9fe286b16ce9",
+        "timestamp": 1791094109965
+      }
+    ],
+    "**task-015**: Criar tipos TypeScript (`CampaignEvent`, `EventFormData`)": [
+      {
+        "executionId": "4ba8e915-110e-44eb-aed9-5c7d80e8ea1d",
+        "chatSessionId": "sess_b6a67f7d-6d92-4e28-a807-9fe286b16ce9",
+        "timestamp": 1791094110003
+      }
+    ],
+    "**task-016**: Criar componente `VisibilityBadge`": [
+      {
+        "executionId": "4ba8e915-110e-44eb-aed9-5c7d80e8ea1d",
+        "chatSessionId": "sess_b6a67f7d-6d92-4e28-a807-9fe286b16ce9",
+        "timestamp": 1791094110047
+      }
+    ],
+    "**task-017**: Criar componente `CalendarYearSelector`": [
+      {
+        "executionId": "4ba8e915-110e-44eb-aed9-5c7d80e8ea1d",
+        "chatSessionId": "sess_b6a67f7d-6d92-4e28-a807-9fe286b16ce9",
+        "timestamp": 1791094110111
+      }
+    ],
+    "**task-018**: Criar componente `EventFormModal`": [
+      {
+        "executionId": "4ba8e915-110e-44eb-aed9-5c7d80e8ea1d",
+        "chatSessionId": "sess_b6a67f7d-6d92-4e28-a807-9fe286b16ce9",
+        "timestamp": 1791094110147
+      }
+    ],
+    "**task-019**: Criar componente `EventCard`": [
+      {
+        "executionId": "4ba8e915-110e-44eb-aed9-5c7d80e8ea1d",
+        "chatSessionId": "sess_b6a67f7d-6d92-4e28-a807-9fe286b16ce9",
+        "timestamp": 1791094110197
+      }
+    ],
+    "**task-020**: Criar componente `CampaignEventCalendar`": [
+      {
+        "executionId": "4ba8e915-110e-44eb-aed9-5c7d80e8ea1d",
+        "chatSessionId": "sess_b6a67f7d-6d92-4e28-a807-9fe286b16ce9",
+        "timestamp": 1791094110240
+      }
+    ],
+    "**task-021**: Criar componente `CampaignCalendarToggle`": [
+      {
+        "executionId": "4ba8e915-110e-44eb-aed9-5c7d80e8ea1d",
+        "chatSessionId": "sess_b6a67f7d-6d92-4e28-a807-9fe286b16ce9",
+        "timestamp": 1791094110279
+      }
+    ],
+    "**task-022**: Criar componente `SchedulingCalendarIntroModal`": [
+      {
+        "executionId": "4ba8e915-110e-44eb-aed9-5c7d80e8ea1d",
+        "chatSessionId": "sess_b6a67f7d-6d92-4e28-a807-9fe286b16ce9",
+        "timestamp": 1791094110317
+      }
+    ],
+    "**task-023**: Criar componente `LiveKitRoomLink`": [
+      {
+        "executionId": "4ba8e915-110e-44eb-aed9-5c7d80e8ea1d",
+        "chatSessionId": "sess_b6a67f7d-6d92-4e28-a807-9fe286b16ce9",
+        "timestamp": 1791094110358
+      }
+    ],
+    "**task-024**: Criar componente `LiveKitRoom`": [
+      {
+        "executionId": "4ba8e915-110e-44eb-aed9-5c7d80e8ea1d",
+        "chatSessionId": "sess_b6a67f7d-6d92-4e28-a807-9fe286b16ce9",
+        "timestamp": 1791094110400
+      }
+    ],
+    "**task-025**: Atualizar página `/campaigns/new/page.tsx`": [
+      {
+        "executionId": "4ba8e915-110e-44eb-aed9-5c7d80e8ea1d",
+        "chatSessionId": "sess_b6a67f7d-6d92-4e28-a807-9fe286b16ce9",
+        "timestamp": 1791094110452
+      }
+    ],
+    "**task-026**: Atualizar página `/campaigns/[id]/page.tsx`": [
+      {
+        "executionId": "4ba8e915-110e-44eb-aed9-5c7d80e8ea1d",
+        "chatSessionId": "sess_b6a67f7d-6d92-4e28-a807-9fe286b16ce9",
+        "timestamp": 1791094110491
+      }
+    ],
+    "**task-027**: Instalar dependências LiveKit SDK": [
+      {
+        "executionId": "4ba8e915-110e-44eb-aed9-5c7d80e8ea1d",
+        "chatSessionId": "sess_b6a67f7d-6d92-4e28-a807-9fe286b16ce9",
+        "timestamp": 1791094110536
+      }
+    ],
+    "**task-028**: Configurar variáveis de ambiente LiveKit": [
+      {
+        "executionId": "4ba8e915-110e-44eb-aed9-5c7d80e8ea1d",
+        "chatSessionId": "sess_b6a67f7d-6d92-4e28-a807-9fe286b16ce9",
+        "timestamp": 1791094110581
+      }
+    ],
+    "**task-029**: Testar funcionalidade completa (unit + integration)": [
+      {
+        "executionId": "4ba8e915-110e-44eb-aed9-5c7d80e8ea1d",
+        "chatSessionId": "sess_b6a67f7d-6d92-4e28-a807-9fe286b16ce9",
+        "timestamp": 1791094110626
+      }
+    ],
+    "**task-030**: Verificar acessibilidade e ajustar UI": [
+      {
+        "executionId": "4ba8e915-110e-44eb-aed9-5c7d80e8ea1d",
+        "chatSessionId": "sess_b6a67f7d-6d92-4e28-a807-9fe286b16ce9",
+        "timestamp": 1791094110708
+      }
+    ],
+    "**task-031**: Ajustar performance e polimento final": [
+      {
+        "executionId": "4ba8e915-110e-44eb-aed9-5c7d80e8ea1d",
+        "chatSessionId": "sess_b6a67f7d-6d92-4e28-a807-9fe286b16ce9",
+        "timestamp": 1791094110805
+      }
+    ]
+  }
+}
