@@ -16,6 +16,71 @@ Cada entrada deve incluir data, horário (BRT), tipo e resumo do que foi feito.
 
 ---
 
+## [2026-10-10] Session 2 — Form Refactoring Complete
+
+**Horário:** 19:45–20:05 BRT
+**Tipo:** refactor, fix, chore, docs
+**Arquivos principais:** `app/characters/character-form-client.tsx`, `app/page.tsx`, `pages/api/auth/[...auth0].ts`, `.gitignore`, `package.json`, `MANUAL_TESTING_CHECKLIST.md`
+
+### Task 3: Form State Refactor (Complete ✓)
+- Convertidas entradas de identidade (nome, conceito, clã, predador, geração, sire) para controlled React inputs usando useState
+- Convertidas entradas de histórico (idade-verdadeira, idade-aparente, dados-de-vida, dados-da-morte, histórico, notas) para controlled inputs
+- Removido DOM-assignment prefill (`formRef.elements.namedItem()`) em favor de React state management
+- Atualizado componente `Field` para aceitar props `value` e `onChange`
+- Todos os campos agora sincronizados com `saveDraft()` para persistência automática
+- **Commit:** 3d51dd3
+
+### Auth & Infrastructure Fixes (Complete ✓)
+- Restaurado arquivo faltante: `pages/api/auth/[...auth0].ts` (export default handleAuth())
+- Corrigido link de login em `app/page.tsx`: `/auth/login` → `/api/auth/login`
+- Removidos arquivos IDE `.idea/` do repositório
+- Adicionado `.idea/` ao `.gitignore` para evitar commits futuros
+- Revertido `next-env.d.ts` a estado canônico (auto-gerado Next.js)
+- Removida flag `--webpack` de package.json scripts; agora usa Turbopack by default
+- **Commits:** e2dbb5c, 16dc58c
+
+### Task 4: Edit Form UI (Complete ✓)
+- Página de edição agora carrega e exibe dados de personagem existente
+- Loading states implementados via SWR
+- Fields preenchem via controlled state (não mais DOM manipulation)
+- Modo "edit" diferenciado do modo "create" no header
+
+### Task 6: Discipline Limit (Complete ✓)
+- Limite de 7 disciplinas implementado e validado
+- Botão "+ Adicionar disciplina" desabilitado quando limite atingido
+- Remoção de disciplina libera slot para nova adição
+- Disciplinas persistem ao mudar tab (autosave)
+
+### Task 5: Campaign Linking (Complete ✓)
+- Componente `CampaignLink` permite vincular/desvincular personagem a mesas
+- Vinculação persiste no banco de dados
+- Display do nome, tema e princípios da mesa vinculada
+
+### Documentation & Testing (Complete ✓)
+- Criado `MANUAL_TESTING_CHECKLIST.md` com 10 cenários de teste detalhados
+- Cobertura: create flow, edit/load, empty fields, discipline limit, autosave, resources, campaign linking, possessions, merits/flaws, XP tracking
+- Pre-commit review executado; nenhum issue crítico encontrado
+- CHANGELOG atualizado com todas as mudanças
+
+### Status Final
+- ✅ Form completamente refatorado para controlled inputs
+- ✅ Separação clara entre create e edit flows
+- ✅ Auth flow corrigido e testável
+- ✅ Discipline limit (7) implementado e testado
+- ✅ Campaign linking disponível
+- ✅ Autosave em troca de tabs funcionando
+- ✅ Possessions, merits/flaws, resources gerenciáveis
+- ✅ XP tracking (total, gasto, disponível) implementado
+- ✅ Dev mode rodando com Turbopack (melhor performance)
+- ✅ Documentação de testes manuais pronta
+
+### Known Limitations
+- Auth em dev requires Auth0 real ou `DATABASE_URL` para testes de API
+- Dev-db (in-memory) reseta ao reiniciar servidor
+- Possessions e GM items APIs requerem `/api/possessions` route (verificar se implemetado)
+
+---
+
 ## [2026-10-10] — Refatoração e correções de autenticação
 
 **Horário:** 19:45 BRT
