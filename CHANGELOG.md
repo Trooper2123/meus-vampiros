@@ -16,6 +16,21 @@ Cada entrada deve incluir data, horário (BRT), tipo e resumo do que foi feito.
 
 ---
 
+## [2026-10-10] — Refatoração e correções de autenticação
+
+**Horário:** 19:45 BRT
+**Tipo:** refactor, fix, chore
+**Arquivos principais:** `app/characters/character-form-client.tsx`, `app/page.tsx`, `pages/api/auth/[...auth0].ts`, `.gitignore`
+
+- **Task 3 (Refactor form state):** Convertidas entradas de identidade (nome, conceito, clã, predador, geração, sire) e histórico para controlled React inputs (useState). Removido DOM-assignment prefill em favor de controlled defaultValue.
+- **Task 3 cont:** Adicionadas states para idade verdadeira, idade aparente, dados de vida, dados de morte, histórico e notas. Todos sincronizados com saveDraft.
+- **Auth fix:** Restaurado handler Auth0 (`pages/api/auth/[...auth0].ts`) que estava faltando. Corrigido link de login em `app/page.tsx` para apontar a `/api/auth/login`.
+- **Cleanup:** Removidos arquivos `.idea/` do repositório. Adicionado `.idea/` ao `.gitignore` para evitar commits de IDEs.
+- **Revert:** Revertido `next-env.d.ts` para estado canônico (artefato auto-gerado Next.js).
+- **Pre-commit review:** Executada revisão de segurança antes de commit; nenhum problema crítico encontrado após correções.
+
+---
+
 ## [2026-10-04] — Janela de horário e múltiplas sugestões
 
 **Horário:** 09:00 BRT
