@@ -6,6 +6,7 @@ import { ArrowLeft, Check, FileText, Link2, Plus, Save, Skull, Unlink } from 'lu
 import { Suspense, useEffect, useRef, useState } from 'react'
 import useSWR from 'swr'
 import styles from './skills.module.css'
+import CharacterFormClient from '../characters/character-form-client'
 
 const fetcher = (url: string) => fetch(url).then((response) => response.json())
 
@@ -135,7 +136,7 @@ function CampaignLink({ characterId, onCampaignChange }: { characterId: string |
 
 export default function CriarPersonagemPage() {
   return <Suspense fallback={null}>
-    <CriarPersonagemForm />
+    <CharacterFormClient />
   </Suspense>
 }
 
