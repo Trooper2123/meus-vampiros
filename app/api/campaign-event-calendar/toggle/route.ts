@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server'
 import { getSessionOrDev } from '@/lib/auth0'
-import { hasMasterAccess } from '@/lib/campaigns'
 import { toggleCampaignEventCalendar } from '@/lib/campaigns'
 import { ensureAllTables } from '@/lib/db'
+import { canManageCampaign } from '@/lib/auth/authorization'
 
 export async function PATCH(request: Request) {
   try {
@@ -21,8 +21,7 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'Valor de habilitação inválido.' }, { status: 400 })
     }
 
-    const user = session.user
-    if (!await hasMasterAccess(user)) {
+    if (!await canManageCampaign(session.user.sub, campaignId)) {
       return NextResponse.json({ error: 'Apenas o mestre pode alterar o calendário de eventos.' }, { status: 403 })
     }
 
