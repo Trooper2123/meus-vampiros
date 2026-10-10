@@ -1,7 +1,8 @@
 import { auth0, getSessionOrDev } from '@/lib/auth0'
 import { NextResponse } from 'next/server'
 import { createCampaign, getCampaignsForMaster, hasMasterAccess } from '@/lib/campaigns'
-import { ensureAllTables } from '@/lib/db'
+import { db, ensureAllTables } from '@/lib/db'
+import { sql } from 'drizzle-orm'
 
 async function getAuthenticatedUser() {
   const session = await getSessionOrDev()
@@ -33,8 +34,16 @@ export async function POST(request: Request) {
     const averageXp = typeof body.averageXp === 'number' && Number.isFinite(body.averageXp) ? Math.trunc(body.averageXp) : typeof body.averageXp === 'string' && body.averageXp.trim() ? Number.parseInt(body.averageXp, 10) : null
     const status = typeof body.status === 'string' && body.status.trim() ? body.status.trim() : 'Ativa'
     const lastSessionAt = typeof body.lastSessionAt === 'string' && body.lastSessionAt.trim() ? body.lastSessionAt.trim() : null
+    const enableSchedulingCalendar = typeof body.enableSchedulingCalendar === 'boolean' ? body.enableSchedulingCalendar : true
 
     const campaign = await createCampaign(user.sub, { name, theme, principios, averageXp: Number.isFinite(averageXp) ? averageXp : null, status, lastSessionAt })
+
+    // Criar registro no calendário de marcação com valor padrão do checkbox
+    await db.execute(sql`
+      INSERT INTO campaign_scheduling_calendars (campaign_id, enabled)
+      VALUES (${campaign.id}, ${enableSchedulingCalendar})
+    `)
+
     return NextResponse.json({ campaign }, { status: 201 })
   } catch {
     return NextResponse.json({ error: 'Não foi possível criar a mesa.' }, { status: 500 })

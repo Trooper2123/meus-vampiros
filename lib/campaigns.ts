@@ -9,14 +9,22 @@ import {
 const ROLES_CLAIM = 'https://meus-vampiros.app/roles'
 const isDev = process.env.NODE_ENV !== 'production' && !process.env.DATABASE_URL
 
-export function isMaster(user: any): boolean {
+type Auth0User = {
+  sub: string
+  name?: string | null
+  email?: string | null
+  picture?: string | null
+  [ROLES_CLAIM]?: unknown
+}
+
+export function isMaster(user: Auth0User | null): boolean {
   if (!user) return false
   const roles = user[ROLES_CLAIM]
   if (!Array.isArray(roles)) return false
   return roles.includes('mestre')
 }
 
-export async function hasMasterAccess(user: any): Promise<boolean> {
+export async function hasMasterAccess(user: Auth0User | null): Promise<boolean> {
   if (!user?.sub) return false
   if (isMaster(user)) return true
   return (await getCampaignsForMaster(user.sub)).length > 0
@@ -107,4 +115,20 @@ export async function getCampaignById(id: string): Promise<{ id: string; name: s
   const row = result.rows[0]
   if (!row) return null
   return { id: row.id, name: row.name, theme: row.theme, principios: row.principios, averageXp: row.average_xp }
+}
+
+export async function toggleCampaignEventCalendar(campaignId: string, enabled: boolean): Promise<{ enabled: boolean }> {
+  if (isDev) {
+    // In dev mode, just return the enabled value (no actual persistence)
+    return { enabled }
+  }
+
+  const result = await db.execute<{ enabled: boolean }>(sql`
+    INSERT INTO campaign_event_calendars (campaign_id, enabled)
+    VALUES (${campaignId}, ${enabled})
+    ON CONFLICT (campaign_id) DO UPDATE SET enabled = EXCLUDED.enabled
+    RETURNING enabled
+  `)
+  const row = result.rows[0]
+  return { enabled: row.enabled }
 }
