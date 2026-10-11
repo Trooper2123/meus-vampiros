@@ -1,7 +1,6 @@
  'use client'
 
-import Link from 'next/link'
-import { ArrowRight, KeyRound } from 'lucide-react'
+ import { ArrowRight, KeyRound } from 'lucide-react'
 
 export default function Page() {
 
@@ -31,7 +30,7 @@ export default function Page() {
 
           <div className="space-y-5">
             <p className="text-sm leading-6 text-muted-foreground">A autenticação é protegida pelo Auth0. Você será direcionado para inserir seu e-mail e sua senha com segurança.</p>
-            <a href="/api/auth/login?returnTo=/characters" className="button-primary flex w-full items-center justify-center gap-3 py-3">
+            <a href="/auth/login?returnTo=/characters" className="button-primary flex w-full items-center justify-center gap-3 py-3">
               Verifique seus Contratos <ArrowRight className="size-4" aria-hidden="true" />
             </a>
           </div>

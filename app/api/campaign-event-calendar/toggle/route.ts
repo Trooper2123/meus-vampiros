@@ -13,7 +13,7 @@ export async function PATCH(request: Request) {
     const campaignId = typeof body.campaignId === 'string' ? body.campaignId : ''
     const enabled = body.enabled
 
-    if (!campaignId || !/^[0-9a-f-]{36}$/i.test(campaignId)) {
+    if (!campaignId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(campaignId)) {
       return NextResponse.json({ error: 'ID da mesa inválido.' }, { status: 400 })
     }
 
