@@ -80,7 +80,15 @@ async function getCharacterData(id: string, userId: string) {
       raciocinio: parseIntSafe(data['raciocinio']),
       determinacao: parseIntSafe(data['determinacao']),
     },
-    skills: {},
+    skills: Object.fromEntries(
+      [
+        'Armas brancas', 'Armas de fogo', 'Atletismo', 'Briga', 'Condução', 'Furtividade', 'Ladroagem', 'Ofícios', 'Sobrevivência',
+        'Empatia com animais', 'Etiqueta', 'Intimidação', 'Liderança', 'Manha', 'Performance', 'Persuasão', 'Sagacidade', 'Subterfúgio',
+        'Ciência', 'Erudição', 'Finanças', 'Investigação', 'Medicina', 'Ocultismo', 'Percepção', 'Política', 'Tecnologia',
+      ].map((skill) => [skill, parseIntSafe(data[skill])]),
+    ),
+    merits: Array.isArray(data['vantagens']) ? data['vantagens'] : [],
+    flaws: Array.isArray(data['defeitos']) ? data['defeitos'] : [],
     disciplines,
     resources: {
       humanidade: parseIntSafe(data['humanidade']),

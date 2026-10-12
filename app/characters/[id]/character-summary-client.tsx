@@ -13,6 +13,8 @@ type CharacterData = {
   campaignTheme: string | null
   attributes: Record<string, number>
   skills: Record<string, number>
+  merits: Array<{ name?: string; level?: number; description?: string }>
+  flaws: Array<{ name?: string; level?: number; description?: string }>
   disciplines: Array<{
     id: string
     name: string
