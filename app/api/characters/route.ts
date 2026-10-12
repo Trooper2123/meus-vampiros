@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server'
 import { getSessionOrDev } from '@/lib/auth0'
 import { getCharacterById, createCharacter, updateCharacter, getCharactersForCampaign, updateCharacterXp, normalizeDisciplines, deleteCharacter } from '@/lib/characters'
-import { getCampaignById } from '@/lib/campaigns'
+import { getCampaignById, hasMasterAccess } from '@/lib/campaigns'
 import { ensureAllTables } from '@/lib/db'
 import { canManageCampaign, canEditCharacter } from '@/lib/auth/authorization'
-import { CHARACTER_TYPES, CREATION_TYPES, type CharacterType, type CreationType } from '@/lib/vtm-v5/types'
+import { canCreateCharacterType, CHARACTER_TYPES, CREATION_TYPES, type CharacterType, type CreationType } from '@/lib/vtm-v5/types'
 
 async function getAuthenticatedUser() {
   const session = await getSessionOrDev()
@@ -66,6 +66,9 @@ export async function POST(request: Request) {
     const user = await getAuthenticatedUser()
     if (!user) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     const { name, data, campaignId } = await readPayload(request)
+    if (data?.characterType && !canCreateCharacterType(data.characterType as CharacterType, await hasMasterAccess(user))) {
+      return NextResponse.json({ error: 'Este tipo de ficha é exclusivo do Mestre.' }, { status: 403 })
+    }
 
     let validCampaignId: string | null = null
     if (campaignId) {
@@ -87,6 +90,9 @@ export async function PUT(request: Request) {
     if (!user) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     const { id, name, data, campaignId } = await readPayload(request)
     if (!id) return NextResponse.json({ error: 'Ficha inválida' }, { status: 400 })
+    if (data?.characterType && !canCreateCharacterType(data.characterType as CharacterType, await hasMasterAccess(user))) {
+      return NextResponse.json({ error: 'Este tipo de ficha é exclusivo do Mestre.' }, { status: 403 })
+    }
 
     let validCampaignId: string | null | undefined = undefined
     if (campaignId !== undefined) {

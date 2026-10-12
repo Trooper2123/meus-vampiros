@@ -31,6 +31,7 @@ O fluxo atual armazena a ficha como JSON flexível, mas não diferencia personag
 2. A ficha deve possuir de 1 a 3 convicções, cada uma com touchstone próprio.
 3. Cada ponto de disciplina deve possuir um poder escolhido.
 4. Erros bloqueiam submissão; avisos permanecem visíveis.
+5. A interface deve informar o orçamento de cada etapa e impedir novos pontos quando excederem a distribuição escolhida.
 
 ### US-002 — Aplicar perfil de criação
 
@@ -71,6 +72,8 @@ O fluxo atual armazena a ficha como JSON flexível, mas não diferencia personag
 - RB-008: thin-blood não compra Bonding, Mawla, Retainers ou Status diretamente sem override.
 - RB-009: um thrall possui no máximo um regente ativo e Bond Strength varia de 1 a 6.
 - RB-010: campos secretos nunca são retornados a jogador sem permissão.
+- RB-011: jogadores podem criar apenas vampiros jogáveis e retentores/carniçais; NPC humano e NPC vampiro são tipos exclusivos do Mestre.
+- RB-012: atributos, habilidades, disciplinas e vantagens devem exibir progresso em tempo real e impedir gasto acima dos limites da criação.
 
 ## 6. Requisitos não funcionais
 

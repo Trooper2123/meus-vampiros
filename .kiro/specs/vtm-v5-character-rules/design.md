@@ -51,6 +51,8 @@ Dados detalhados continuam em `data`, incluindo `creationType`, touchstones, pre
 ## 6. Interface e acessibilidade
 
 - Identidade recebe tipo de personagem e perfil de criação.
+- Atributos, habilidades, disciplinas e vantagens exibem a regra aplicável, pontos usados/restantes e bloqueiam incrementos que tornem a distribuição impossível.
+- Habilidades usam um dos perfis rápidos persistidos na ficha: generalista, equilibrado ou especialista.
 - “Selar ficha” valida primeiro; erros aparecem em painel com links textuais para campos quando possível.
 - O botão de submissão diferencia salvar rascunho de enviar para revisão.
 - NPCs e retentores terão formulários especializados em fases posteriores, reutilizando o mesmo relatório.
@@ -58,6 +60,7 @@ Dados detalhados continuam em `data`, incluindo `creationType`, touchstones, pre
 ## 7. Segurança
 
 - Nunca confiar no tipo/status enviado pelo cliente sem autorização.
+- A interface recebe do servidor os tipos permitidos para o perfil atual, e a API rejeita tipos exclusivos do Mestre em criações e atualizações feitas por jogadores.
 - Validar UUID, limites numéricos, enums e tamanhos no servidor.
 - Campos `privateNotes`, dados mecânicos secretos e overrides são removidos de respostas para jogadores não proprietários.
 
@@ -80,3 +83,5 @@ Dados detalhados continuam em `data`, incluindo `creationType`, touchstones, pre
 
 - A primeira implementação prioriza fundação, vampiro jogável e APIs. NPCs e lacaios recebem contratos e validadores puros antes de UIs completas.
 - Tabelas altamente normalizadas sugeridas na fonte serão introduzidas somente quando houver necessidade de consulta relacional; o JSON existente será mantido nesta fase.
+- Jogadores podem criar `PLAYER_VAMPIRE` e `RETAINER`; `HUMAN_NPC` e `VAMPIRE_NPC` ficam restritos ao Mestre tanto na interface quanto na API.
+- A assistência de preenchimento reutiliza as distribuições do domínio para evitar divergência entre dicas, bloqueios da interface e validação final.

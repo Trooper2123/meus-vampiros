@@ -16,6 +16,41 @@ Cada entrada deve incluir data, horário (BRT), tipo e resumo do que foi feito.
 
 ---
 
+## [2026-10-12] — Assistência na distribuição da ficha
+
+**Horário:** 14:04 BRT
+**Tipo:** feat, fix
+**Arquivos principais:** `app/characters/character-form-client.tsx`, `lib/vtm-v5/creation-guidance.ts`, `lib/vtm-v5/normalize.ts`, `lib/vtm-v5/validation.ts`, `tests/vtm-v5-creation-guidance.test.ts`
+
+- Incluídas instruções contextuais e contadores de pontos em atributos, habilidades, disciplinas, recursos, convicções, vantagens e defeitos.
+- Adicionados perfis rápidos de habilidades com bloqueio de níveis incompatíveis e proteção contra excesso em atributos e disciplinas.
+- Corrigida a validação para contabilizar os níveis reais de vantagens e defeitos, em vez da quantidade de registros.
+
+---
+
+## [2026-10-12] — Tipos de ficha por perfil
+
+**Horário:** 13:52 BRT
+**Tipo:** fix
+**Arquivos principais:** `app/create-characters/page.tsx`, `app/characters/character-form-client.tsx`, `app/api/characters/route.ts`, `lib/vtm-v5/types.ts`, `tests/character-type-access-route.test.ts`
+
+- Limitada a criação do jogador aos tipos Vampiro e Retentor ou carniçal.
+- Mantidos NPC humano e NPC vampiro somente para Mestres, com proteção adicional na API contra requisições manipuladas.
+- Adicionados seis cenários automatizados para validar as permissões de criação por perfil.
+
+---
+
+## [2026-10-12] — Hidratação do estado de autenticação
+
+**Horário:** 13:45 BRT
+**Tipo:** fix
+**Arquivos principais:** `components/ui/useAppUser.tsx`
+
+- Mantido o mesmo estado inicial de carregamento no servidor e na primeira renderização do navegador durante o bypass de autenticação local.
+- Tornada incondicional a chamada ao hook do Auth0, eliminando a violação das regras de hooks.
+
+---
+
 ## [2026-10-12] — Formulários V5, NPCs e ledger auditável
 
 **Horário:** 13:25 BRT

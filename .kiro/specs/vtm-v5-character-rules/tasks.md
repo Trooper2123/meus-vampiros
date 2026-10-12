@@ -3,8 +3,8 @@
 ## Status
 
 - `[ ]` `pending`; `[~]` `in_progress`; `[!]` `blocked`; `[x]` `completed`.
-- **Última atualização:** 2026-10-12 13:25 BRT.
-- **Concluídas:** task-001, task-002, task-003, task-004, task-005, task-006, task-007, task-008, task-009, task-010 e task-011.
+- **Última atualização:** 2026-10-12 14:04 BRT.
+- **Concluídas:** task-001, task-002, task-003, task-004, task-005, task-006, task-007, task-008, task-009, task-010, task-011, task-012 e task-013.
 - **Em andamento:** nenhuma.
 - **Pendentes:** nenhuma.
 
@@ -95,6 +95,20 @@
   - **Dependencies**: task-006, task-007, task-008, task-010
   - **Status**: completed
 
+- [x] **task-012**: Restringir tipos de ficha por perfil
+  - **Description**: Exibir vampiro e retentor/carniçal para jogadores, mantendo NPC humano e NPC vampiro exclusivos do Mestre na interface e na API.
+  - **Acceptance Criteria**: Jogadores não visualizam nem conseguem persistir tipos exclusivos do Mestre; Mestres mantêm acesso aos quatro tipos.
+  - **Validation**: Testes de rota, TypeScript e lint específico.
+  - **Dependencies**: task-006, task-009
+  - **Status**: completed
+
+- [x] **task-013**: Assistir a distribuição de pontos na criação
+  - **Description**: Exibir regras, progresso e pontos restantes, impedindo gasto além das distribuições de atributos, habilidades, disciplinas e vantagens.
+  - **Acceptance Criteria**: O jogador recebe feedback imediato e não consegue exceder o orçamento escolhido; a validação usa os pontos reais de vantagens e falhas.
+  - **Validation**: Testes unitários, TypeScript e lint específico.
+  - **Dependencies**: task-002, task-006
+  - **Status**: completed
+
 ## Summary
 
 | Phase | Tasks | Total | Completed |
@@ -104,4 +118,6 @@
 | Interface | 006 | 1 | 1 |
 | NPCs e lacaios | 007-009 | 3 | 3 |
 | Auditoria e entrega | 010-011 | 2 | 2 |
-| **Total** | **001-011** | **11** | **11** |
+| Controle por perfil | 012 | 1 | 1 |
+| Assistência de criação | 013 | 1 | 1 |
+| **Total** | **001-013** | **13** | **13** |
