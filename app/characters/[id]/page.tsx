@@ -110,6 +110,8 @@ async function getCharacterData(id: string, userId: string) {
       'Política': parseIntSafe(data['habilidade-política']),
       'Tecnologia': parseIntSafe(data['habilidade-tecnologia']),
     },
+    merits: Array.isArray(data['vantagens']) ? data['vantagens'] as Array<{ name?: string; level?: number; description?: string }> : [],
+    flaws: Array.isArray(data['defeitos']) ? data['defeitos'] as Array<{ name?: string; level?: number; description?: string }> : [],
     disciplines,
     resources: {
       humanidade: parseIntSafe(data['humanidade']),
