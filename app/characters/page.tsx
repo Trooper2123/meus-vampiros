@@ -10,7 +10,7 @@ import { DateAvailabilityCalendar } from '@/components/date-availability-calenda
 export default async function PersonagensPage() {
   if (!process.env.AUTH0_DOMAIN || !process.env.AUTH0_CLIENT_ID || !process.env.AUTH0_SECRET || !process.env.AUTH0_CLIENT_SECRET) {
     const session = await getSessionOrDev()
-    if (!session?.user) redirect('/auth/login?returnTo=/characters' as any)
+    if (!session?.user) redirect('/auth/login?returnTo=/characters')
   }
 
   const session = await getSessionOrDev()
@@ -127,7 +127,7 @@ export default async function PersonagensPage() {
                     <FileText className="size-3" /> Resumo da ficha
                   </Link>
                   <Link
-                    href={`/create-characters?id=${character.id}`}
+                    href={`/characters/${character.id}/edit`}
                     className="inline-flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.12em] text-primary hover:gap-3 transition-all"
                   >
                     Editar ficha <ArrowRight className="size-3 transition-transform group-hover:translate-x-1" />

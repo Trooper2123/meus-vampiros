@@ -1,7 +1,6 @@
  'use client'
 
-import Link from 'next/link'
-import { ArrowRight, KeyRound } from 'lucide-react'
+ import { ArrowRight, KeyRound } from 'lucide-react'
 
 export default function Page() {
 

@@ -1,15 +1,8 @@
 'use client'
 
-import { use } from 'react'
 import { useUser } from '@auth0/nextjs-auth0/client'
 
-type UseAppUserResult = {
-  user: any | null
-  isLoading: boolean
-  error: any | null
-}
-
-export default function useAppUser(): UseAppUserResult {
+export default function useAppUser() {
   const disableDevBypass = process.env.NEXT_PUBLIC_DISABLE_DEV_AUTH === '1'
   const isDev = process.env.NODE_ENV !== 'production' && typeof window !== 'undefined'
 

@@ -4,6 +4,9 @@ import pluginReactHooks from 'eslint-plugin-react-hooks'
 import pluginReactRefresh from 'eslint-plugin-react-refresh'
 
 export default tseslint.config(
+  {
+    ignores: ['.next/**', 'node_modules/**', 'coverage/**', '.continue/**', '.vs/**'],
+  },
   eslint.configs.recommended,
   ...tseslint.configs.recommended,
   {
@@ -18,6 +21,8 @@ export default tseslint.config(
     },
     rules: {
       ...pluginReactHooks.configs.recommended.rules,
+      '@typescript-eslint/no-explicit-any': 'off',
+      'react-hooks/set-state-in-effect': 'off',
       'react-refresh/only-export-components': [
         'warn',
         { allowConstantExport: true },

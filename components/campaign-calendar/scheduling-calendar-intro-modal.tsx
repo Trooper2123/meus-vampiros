@@ -1,0 +1,8 @@
+'use client'
+
+import { CalendarCheck, Users, X } from 'lucide-react'
+import styles from './campaign-calendar.module.css'
+
+export function SchedulingCalendarIntroModal({ onClose }: { onClose: () => void }) {
+  return <div className={styles.modalBackdrop} role="presentation"><section className={styles.modalPanel} role="dialog" aria-modal="true" aria-labelledby="scheduling-intro-title"><div className="flex items-start justify-between gap-4 border-b border-border pb-4"><div><p className="eyebrow">Calendário de marcação</p><h2 id="scheduling-intro-title" className="mt-2 font-serif text-2xl">Organize o próximo encontro</h2></div><button type="button" className="button-ghost" onClick={onClose} aria-label="Fechar instruções"><X className="size-4" /></button></div><ol className="mt-6 flex flex-col gap-4"><li className="flex gap-3"><CalendarCheck className="mt-1 size-5 shrink-0 text-primary" /><div><strong>1. Defina a janela</strong><p className="mt-1 text-sm text-muted-foreground">Informe os horários previstos para a sessão.</p></div></li><li className="flex gap-3"><Users className="mt-1 size-5 shrink-0 text-primary" /><div><strong>2. Colete disponibilidades</strong><p className="mt-1 text-sm text-muted-foreground">Cada participante marca os dias em que pode jogar.</p></div></li><li className="flex gap-3"><CalendarCheck className="mt-1 size-5 shrink-0 text-primary" /><div><strong>3. Escolha a melhor data</strong><p className="mt-1 text-sm text-muted-foreground">Compare as respostas e destaque as sugestões da mesa.</p></div></li></ol><div className="mt-6 flex justify-end border-t border-border pt-4"><button type="button" className="button-primary" onClick={onClose}>Entendi</button></div></section></div>
+}

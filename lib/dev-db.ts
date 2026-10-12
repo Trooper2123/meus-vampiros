@@ -17,6 +17,9 @@ export type DevCharacter = {
   clan: string | null
   generation: string | null
   status: string
+  characterType?: string
+  visibility?: string
+  validationReport?: unknown
   campaignId: string | null
   data: Record<string, unknown>
   spentXp: number
@@ -314,7 +317,9 @@ export function devCreateCharacter(
     concept: (payload.data?.conceito as string) ?? null,
     clan: (payload.data?.cla as string) ?? null,
     generation: (payload.data?.geracao as string) ?? null,
-    status: 'Ativo',
+    status: 'DRAFT',
+    characterType: String(payload.data?.characterType ?? 'PLAYER_VAMPIRE'),
+    visibility: 'PLAYER_VISIBLE',
     campaignId: payload.campaignId ?? null,
     data: payload.data ?? {},
     spentXp: 0,

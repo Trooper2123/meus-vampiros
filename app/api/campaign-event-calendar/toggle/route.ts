@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getSessionOrDev } from '@/lib/auth0'
-import { hasMasterAccess } from '@/lib/campaigns'
-import { toggleCampaignEventCalendar } from '@/lib/campaigns'
-import { ensureAllTables } from '@/lib/db'
+import { ensureAllTables, toggleCampaignEventCalendar } from '@/lib/db'
+import { canManageCampaign } from '@/lib/auth/authorization'
 
 export async function PATCH(request: Request) {
   try {
@@ -13,7 +12,7 @@ export async function PATCH(request: Request) {
     const campaignId = typeof body.campaignId === 'string' ? body.campaignId : ''
     const enabled = body.enabled
 
-    if (!campaignId || !/^[0-9a-f-]{36}$/i.test(campaignId)) {
+    if (!campaignId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(campaignId)) {
       return NextResponse.json({ error: 'ID da mesa inválido.' }, { status: 400 })
     }
 
@@ -21,8 +20,7 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'Valor de habilitação inválido.' }, { status: 400 })
     }
 
-    const user = session.user
-    if (!await hasMasterAccess(user)) {
+    if (!await canManageCampaign(session.user.sub, campaignId)) {
       return NextResponse.json({ error: 'Apenas o mestre pode alterar o calendário de eventos.' }, { status: 403 })
     }
 

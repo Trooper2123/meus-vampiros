@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { ArrowLeft, ArrowRight, Check, Copy, Plus } from 'lucide-react'
 import { hasMasterAccess, getCampaignsForMaster } from '@/lib/campaigns'
 import { getSessionOrDev } from '@/lib/auth0'
+import { SchedulingCalendarIntroModal } from '@/components/campaign-calendar/scheduling-calendar-intro-modal'
 
 function CopyId({ id }: { id: string }) {
   const [copied, setCopied] = useState(false)
@@ -38,6 +39,8 @@ export default function NewCampaignPage() {
   const [createdId, setCreatedId] = useState<string | null>(null)
   const [userIsMaster, setUserIsMaster] = useState<boolean | null>(null)
   const [hasCampaigns, setHasCampaigns] = useState(false)
+  const [enableSchedulingCalendar, setEnableSchedulingCalendar] = useState(true)
+  const [showSchedulingIntro, setShowSchedulingIntro] = useState(false)
 
   useEffect(() => {
     let mounted = true
@@ -77,7 +80,7 @@ export default function NewCampaignPage() {
     const response = await fetch('/api/campaigns', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, theme, principios, status, lastSessionAt: lastSessionAt || null }),
+      body: JSON.stringify({ name, theme, principios, status, lastSessionAt: lastSessionAt || null, enableSchedulingCalendar }),
     })
 
     setSubmitting(false)
@@ -90,6 +93,9 @@ export default function NewCampaignPage() {
 
     const { campaign } = await response.json()
     setCreatedId(campaign.id)
+    if (enableSchedulingCalendar && localStorage.getItem('scheduling-calendar-intro-seen') !== 'true') {
+      setShowSchedulingIntro(true)
+    }
   }
 
   return (
@@ -195,6 +201,15 @@ export default function NewCampaignPage() {
                   onChange={(e) => setLastSessionAt(e.target.value)}
                 />
               </label>
+              <label className="span-2 flex cursor-pointer items-start gap-3 border border-border bg-card p-4">
+                <input
+                  type="checkbox"
+                  checked={enableSchedulingCalendar}
+                  onChange={(event) => setEnableSchedulingCalendar(event.target.checked)}
+                  className="mt-1 size-4 accent-primary"
+                />
+                <span><strong className="block text-sm">Habilitar calendário de marcação</strong><span className="mt-1 block text-xs leading-5 text-muted-foreground">Permite que os participantes informem disponibilidade para os próximos encontros.</span></span>
+              </label>
             </div>
 
             {error && <p className="mt-4 text-sm" style={{ color: '#e17b78' }}>{error}</p>}
@@ -219,6 +234,7 @@ export default function NewCampaignPage() {
           </form>
         )}
       </div>
+      {showSchedulingIntro && <SchedulingCalendarIntroModal onClose={() => { localStorage.setItem('scheduling-calendar-intro-seen', 'true'); setShowSchedulingIntro(false) }} />}
     </main>
   )
 }

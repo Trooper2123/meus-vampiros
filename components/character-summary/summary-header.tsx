@@ -1,6 +1,6 @@
 'use client'
 
-import { Building2, FileText, User, MapPin, Link as LinkIcon } from 'lucide-react'
+import { Building2, FileText, User, MapPin } from 'lucide-react'
 
 type SummaryHeaderProps = {
   name: string

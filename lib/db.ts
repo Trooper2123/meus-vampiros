@@ -1,5 +1,7 @@
 import { drizzle } from 'drizzle-orm/neon-serverless'
 import { Pool } from '@neondatabase/serverless'
+import { sql } from 'drizzle-orm'
+import { sortCampaignEventsChronologically, type CampaignCalendarConfig, type CampaignCalendarMode, type CampaignEvent, type CampaignEventVisibility } from './types/campaign-event'
 
 declare global {
   // eslint-disable-next-line no-var
@@ -72,7 +74,12 @@ export async function ensureAllTables() {
       concept TEXT,
       clan TEXT,
       generation TEXT,
-      status TEXT NOT NULL DEFAULT 'Ativo',
+      status TEXT NOT NULL DEFAULT 'DRAFT',
+      created_by_user_id TEXT,
+      character_type TEXT NOT NULL DEFAULT 'PLAYER_VAMPIRE',
+      visibility TEXT NOT NULL DEFAULT 'PLAYER_VISIBLE',
+      validation_report JSONB,
+      validated_at TIMESTAMPTZ,
       spent_xp INT DEFAULT 0,
       total_xp INT DEFAULT 0,
       data JSONB DEFAULT '{}'::jsonb,
@@ -82,6 +89,14 @@ export async function ensureAllTables() {
 
     ALTER TABLE characters ADD COLUMN IF NOT EXISTS spent_xp INT DEFAULT 0;
     ALTER TABLE characters ADD COLUMN IF NOT EXISTS total_xp INT DEFAULT 0;
+    ALTER TABLE characters ADD COLUMN IF NOT EXISTS created_by_user_id TEXT;
+    ALTER TABLE characters ADD COLUMN IF NOT EXISTS character_type TEXT NOT NULL DEFAULT 'PLAYER_VAMPIRE';
+    ALTER TABLE characters ADD COLUMN IF NOT EXISTS visibility TEXT NOT NULL DEFAULT 'PLAYER_VISIBLE';
+    ALTER TABLE characters ADD COLUMN IF NOT EXISTS validation_report JSONB;
+    ALTER TABLE characters ADD COLUMN IF NOT EXISTS validated_at TIMESTAMPTZ;
+    ALTER TABLE characters ALTER COLUMN status SET DEFAULT 'DRAFT';
+    UPDATE characters SET created_by_user_id = user_id WHERE created_by_user_id IS NULL;
+    UPDATE characters SET status = 'DRAFT' WHERE status = 'Ativo';
 
   CREATE TABLE IF NOT EXISTS character_possessions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -112,6 +127,9 @@ export async function ensureAllTables() {
   CREATE TABLE IF NOT EXISTS campaign_event_calendars (
     campaign_id UUID PRIMARY KEY REFERENCES campaigns(id) ON DELETE CASCADE,
     enabled BOOLEAN NOT NULL DEFAULT false,
+    mode TEXT NOT NULL DEFAULT 'real',
+    weekdays JSONB NOT NULL DEFAULT '[]'::jsonb,
+    months JSONB NOT NULL DEFAULT '[]'::jsonb,
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now()
   );
@@ -122,12 +140,30 @@ export async function ensureAllTables() {
     campaign_id UUID NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
     title TEXT NOT NULL,
     description TEXT,
-    event_date DATE NOT NULL,
+    event_date DATE,
     event_time TIME,
+    fictional_year INTEGER,
+    fictional_month TEXT,
+    fictional_month_index INTEGER,
+    fictional_weekday TEXT,
+    fictional_weekday_index INTEGER,
     visibility TEXT NOT NULL CHECK (visibility IN ('master', 'everyone')),
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now()
   );
+
+  CREATE INDEX IF NOT EXISTS campaign_events_campaign_date_idx
+    ON campaign_events (campaign_id, event_date);
+
+  ALTER TABLE campaign_event_calendars ADD COLUMN IF NOT EXISTS mode TEXT NOT NULL DEFAULT 'real';
+  ALTER TABLE campaign_event_calendars ADD COLUMN IF NOT EXISTS weekdays JSONB NOT NULL DEFAULT '[]'::jsonb;
+  ALTER TABLE campaign_event_calendars ADD COLUMN IF NOT EXISTS months JSONB NOT NULL DEFAULT '[]'::jsonb;
+  ALTER TABLE campaign_events ALTER COLUMN event_date DROP NOT NULL;
+  ALTER TABLE campaign_events ADD COLUMN IF NOT EXISTS fictional_year INTEGER;
+  ALTER TABLE campaign_events ADD COLUMN IF NOT EXISTS fictional_month TEXT;
+  ALTER TABLE campaign_events ADD COLUMN IF NOT EXISTS fictional_month_index INTEGER;
+  ALTER TABLE campaign_events ADD COLUMN IF NOT EXISTS fictional_weekday TEXT;
+  ALTER TABLE campaign_events ADD COLUMN IF NOT EXISTS fictional_weekday_index INTEGER;
 
   -- Calendário de marcação (toggle)
   CREATE TABLE IF NOT EXISTS campaign_scheduling_calendars (
@@ -156,17 +192,6 @@ export type CampaignEventCalendar = {
   enabled: boolean
   createdAt: Date
   updatedAt: Date
-}
-
-export type CampaignEvent = {
-  id: string
-  campaignId: string
-  title: string
-  description: string | null
-  eventDate: string
-  eventTime: string | null
-  visibility: 'master' | 'everyone'
-  createdAt: Date
 }
 
 export type CampaignSchedulingCalendar = {
@@ -214,16 +239,27 @@ export const db = pool ? drizzle(pool) : (null as unknown as ReturnType<typeof d
 
 // ─── Helper Functions for New Tables ─────────────────────────────────────────
 
-export async function getCampaignEventCalendarStatus(campaignId: string): Promise<{ enabled: boolean } | null> {
+export async function getCampaignEventCalendarStatus(campaignId: string): Promise<({ enabled: boolean } & CampaignCalendarConfig) | null> {
   if (isDev) return devGetCampaignEventCalendarStatus(campaignId)
 
-  const result = await db.execute<{ enabled: boolean }>(sql`
-    SELECT enabled FROM campaign_event_calendars WHERE campaign_id = ${campaignId}::uuid
+  const result = await db.execute<{ enabled: boolean; mode: CampaignCalendarMode; weekdays: string[]; months: string[] }>(sql`
+    SELECT enabled, mode, weekdays, months FROM campaign_event_calendars WHERE campaign_id = ${campaignId}::uuid
   `)
 
   const row = result.rows[0]
   if (!row) return null
-  return { enabled: row.enabled }
+  return { enabled: row.enabled, mode: row.mode, weekdays: row.weekdays, months: row.months }
+}
+
+export async function updateCampaignEventCalendarConfig(campaignId: string, config: CampaignCalendarConfig): Promise<CampaignCalendarConfig> {
+  if (isDev) return devUpdateCampaignEventCalendarConfig(campaignId, config)
+  const result = await db.execute<{ mode: CampaignCalendarMode; weekdays: string[]; months: string[] }>(sql`
+    INSERT INTO campaign_event_calendars (campaign_id, mode, weekdays, months)
+    VALUES (${campaignId}::uuid, ${config.mode}, ${JSON.stringify(config.weekdays)}::jsonb, ${JSON.stringify(config.months)}::jsonb)
+    ON CONFLICT (campaign_id) DO UPDATE SET mode = EXCLUDED.mode, weekdays = EXCLUDED.weekdays, months = EXCLUDED.months, updated_at = now()
+    RETURNING mode, weekdays, months
+  `)
+  return result.rows[0]
 }
 
 export async function toggleCampaignEventCalendar(campaignId: string, enabled: boolean): Promise<{ enabled: boolean }> {
@@ -276,15 +312,16 @@ export async function createCampaignEvent(
   campaignId: string,
   title: string,
   description: string | null,
-  eventDate: string,
+  eventDate: string | null,
   eventTime: string | null,
-  visibility: 'master' | 'everyone'
+  visibility: CampaignEventVisibility,
+  fictionalDate?: Pick<CampaignEvent, 'fictionalYear' | 'fictionalMonth' | 'fictionalMonthIndex' | 'fictionalWeekday' | 'fictionalWeekdayIndex'>
 ): Promise<{ id: string }> {
-  if (isDev) return devCreateCampaignEvent(campaignId, title, description, eventDate, eventTime, visibility)
+  if (isDev) return devCreateCampaignEvent(campaignId, title, description, eventDate, eventTime, visibility, fictionalDate)
 
   const result = await db.execute<{ id: string }>(sql`
-    INSERT INTO campaign_events (campaign_id, title, description, event_date, event_time, visibility)
-    VALUES (${campaignId}::uuid, ${title}, ${description}, ${eventDate}::date, ${eventTime}::time, ${visibility})
+    INSERT INTO campaign_events (campaign_id, title, description, event_date, event_time, visibility, fictional_year, fictional_month, fictional_month_index, fictional_weekday, fictional_weekday_index)
+    VALUES (${campaignId}::uuid, ${title}, ${description}, ${eventDate}::date, ${eventTime}::time, ${visibility}, ${fictionalDate?.fictionalYear ?? null}, ${fictionalDate?.fictionalMonth ?? null}, ${fictionalDate?.fictionalMonthIndex ?? null}, ${fictionalDate?.fictionalWeekday ?? null}, ${fictionalDate?.fictionalWeekdayIndex ?? null})
     RETURNING id
   `)
 
@@ -293,67 +330,112 @@ export async function createCampaignEvent(
   return { id: row.id }
 }
 
-export async function getCampaignEventsByYear(campaignId: string, year: number): Promise<CampaignEvent[]> {
+export async function getCampaignEventsByYear(campaignId: string, year?: number): Promise<CampaignEvent[]> {
   if (isDev) return devGetCampaignEventsByYear(campaignId, year)
 
-  const result = await db.execute<{ id: string; campaign_id: string; title: string; description: string | null; event_date: string; event_time: string | null; visibility: string; created_at: string }>(sql`
-    SELECT id, campaign_id, title, description, event_date::text AS event_date, event_time::text AS event_time, visibility, created_at::text AS created_at
+  const result = await db.execute<{ id: string; campaign_id: string; title: string; description: string | null; event_date: string | null; event_time: string | null; visibility: string; fictional_year: number | null; fictional_month: string | null; fictional_month_index: number | null; fictional_weekday: string | null; fictional_weekday_index: number | null; created_at: string }>(sql`
+    SELECT id, campaign_id, title, description, event_date::text AS event_date, event_time::text AS event_time, visibility, fictional_year, fictional_month, fictional_month_index, fictional_weekday, fictional_weekday_index, created_at::text AS created_at
     FROM campaign_events
     WHERE campaign_id = ${campaignId}::uuid
-    AND EXTRACT(YEAR FROM event_date) = ${year}
-    ORDER BY event_date ASC, event_time ASC
+    AND (${year ?? null}::integer IS NULL OR COALESCE(EXTRACT(YEAR FROM event_date)::integer, fictional_year) = ${year ?? null})
+    ORDER BY COALESCE(EXTRACT(YEAR FROM event_date)::integer, fictional_year), COALESCE(EXTRACT(MONTH FROM event_date)::integer, fictional_month_index), COALESCE(EXTRACT(DAY FROM event_date)::integer, fictional_weekday_index), event_time ASC NULLS LAST
   `)
 
-  return result.rows.map((row) => ({
+  return sortCampaignEventsChronologically(result.rows.map((row) => ({
     id: row.id,
     campaignId: row.campaign_id,
     title: row.title,
     description: row.description,
     eventDate: row.event_date,
     eventTime: row.event_time,
+    fictionalYear: row.fictional_year,
+    fictionalMonth: row.fictional_month,
+    fictionalMonthIndex: row.fictional_month_index,
+    fictionalWeekday: row.fictional_weekday,
+    fictionalWeekdayIndex: row.fictional_weekday_index,
     visibility: row.visibility as 'master' | 'everyone',
     createdAt: new Date(row.created_at),
-  }))
+  })))
+}
+
+export async function getCampaignEventById(eventId: string): Promise<CampaignEvent | null> {
+  if (isDev) {
+    const event = getCalendarStore().events.find((item) => item.id === eventId)
+    return event ? { ...event, createdAt: new Date(event.createdAt) } : null
+  }
+
+  const result = await db.execute<{ id: string; campaign_id: string; title: string; description: string | null; event_date: string | null; event_time: string | null; visibility: CampaignEventVisibility; fictional_year: number | null; fictional_month: string | null; fictional_month_index: number | null; fictional_weekday: string | null; fictional_weekday_index: number | null; created_at: string }>(sql`
+    SELECT id, campaign_id, title, description, event_date::text AS event_date,
+      event_time::text AS event_time, visibility, fictional_year, fictional_month, fictional_month_index, fictional_weekday, fictional_weekday_index, created_at::text AS created_at
+    FROM campaign_events
+    WHERE id = ${eventId}::uuid
+  `)
+  const row = result.rows[0]
+  if (!row) return null
+  return {
+    id: row.id,
+    campaignId: row.campaign_id,
+    title: row.title,
+    description: row.description,
+    eventDate: row.event_date,
+    eventTime: row.event_time,
+    fictionalYear: row.fictional_year,
+    fictionalMonth: row.fictional_month,
+    fictionalMonthIndex: row.fictional_month_index,
+    fictionalWeekday: row.fictional_weekday,
+    fictionalWeekdayIndex: row.fictional_weekday_index,
+    visibility: row.visibility,
+    createdAt: new Date(row.created_at),
+  }
 }
 
 export async function updateCampaignEvent(
   eventId: string,
-  data: Partial<{ title: string; description: string | null; eventDate: string; eventTime: string | null; visibility: 'master' | 'everyone' }>
+  data: Partial<Omit<CampaignEvent, 'id' | 'campaignId' | 'createdAt'>>
 ): Promise<void> {
   if (isDev) return devUpdateCampaignEvent(eventId, data)
+  if (!pool) throw new Error('Banco de dados indisponível')
 
   const updates: string[] = []
-  const params: (string | number)[] = [eventId, eventId]
+  const params: Array<string | null> = [eventId]
 
   if (data.title !== undefined) {
-    updates.push(`title = $${params.length}`)
+    updates.push(`title = $${params.length + 1}`)
     params.push(data.title)
   }
   if (data.description !== undefined) {
-    updates.push(`description = $${params.length}`)
+    updates.push(`description = $${params.length + 1}`)
     params.push(data.description)
   }
   if (data.eventDate !== undefined) {
-    updates.push(`event_date = $${params.length}`)
+    updates.push(`event_date = $${params.length + 1}::date`)
     params.push(data.eventDate)
   }
+  const fictionalColumns = {
+    fictionalYear: 'fictional_year', fictionalMonth: 'fictional_month', fictionalMonthIndex: 'fictional_month_index',
+    fictionalWeekday: 'fictional_weekday', fictionalWeekdayIndex: 'fictional_weekday_index',
+  } as const
+  for (const [key, column] of Object.entries(fictionalColumns) as Array<[keyof typeof fictionalColumns, string]>) {
+    if (data[key] !== undefined) {
+      updates.push(`${column} = $${params.length + 1}`)
+      params.push(data[key] === null ? null : String(data[key]))
+    }
+  }
   if (data.eventTime !== undefined) {
-    updates.push(`event_time = $${params.length}`)
+    updates.push(`event_time = $${params.length + 1}::time`)
     params.push(data.eventTime)
   }
   if (data.visibility !== undefined) {
-    updates.push(`visibility = $${params.length}`)
+    updates.push(`visibility = $${params.length + 1}`)
     params.push(data.visibility)
   }
 
   if (updates.length === 0) return
 
-  await db.execute(sql`
-    UPDATE campaign_events
-    SET ${sql.join(updates.map(u => sql`${u}`), sql`, `)}
-    WHERE id = $1::uuid
-    AND campaign_id = $2::uuid
-  `, params)
+  await pool.query(
+    `UPDATE campaign_events SET ${updates.join(', ')}, updated_at = now() WHERE id = $1::uuid`,
+    params
+  )
 }
 
 export async function deleteCampaignEvent(eventId: string): Promise<void> {
@@ -396,6 +478,7 @@ export async function createLiveKitRoom(
   await db.execute(sql`
     INSERT INTO livekit_rooms (campaign_id, room_name, room_url, host_user_id)
     VALUES (${campaignId}::uuid, ${roomName}, ${roomUrl}, ${hostUserId})
+    ON CONFLICT (campaign_id) DO NOTHING
   `)
 }
 
@@ -404,16 +487,21 @@ export async function createLiveKitRoom(
 import { randomUUID } from 'crypto'
 
 declare global {
-  var __devDbCampaignCalendar: {
-    eventCalendars: Record<string, boolean>
+  var __devDbCampaignCalendarV2: {
+    eventCalendars: Record<string, { enabled: boolean } & CampaignCalendarConfig>
     schedulingCalendars: Record<string, boolean>
     events: Array<{
       id: string
       campaignId: string
       title: string
       description: string | null
-      eventDate: string
+      eventDate: string | null
       eventTime: string | null
+      fictionalYear: number | null
+      fictionalMonth: string | null
+      fictionalMonthIndex: number | null
+      fictionalWeekday: string | null
+      fictionalWeekdayIndex: number | null
       visibility: 'master' | 'everyone'
       createdAt: string
     }>
@@ -426,28 +514,32 @@ declare global {
 }
 
 function getCalendarStore() {
-  if (!global.__devDbCampaignCalendar) {
-    global.__devDbCampaignCalendar = {
+  if (!global.__devDbCampaignCalendarV2) {
+    global.__devDbCampaignCalendarV2 = {
       eventCalendars: {},
       schedulingCalendars: {},
       events: [],
       liveKitRooms: {},
     }
   }
-  return global.__devDbCampaignCalendar
+  return global.__devDbCampaignCalendarV2
 }
 
-export function devGetCampaignEventCalendarStatus(campaignId: string): { enabled: boolean } | null {
+export function devGetCampaignEventCalendarStatus(campaignId: string): ({ enabled: boolean } & CampaignCalendarConfig) | null {
   const store = getCalendarStore()
-  const enabled = store.eventCalendars[campaignId]
-  if (enabled === undefined) return null
-  return { enabled }
+  return store.eventCalendars[campaignId] ?? null
 }
 
 export function devToggleCampaignEventCalendar(campaignId: string, enabled: boolean): { enabled: boolean } {
   const store = getCalendarStore()
-  store.eventCalendars[campaignId] = enabled
+  store.eventCalendars[campaignId] = { ...(store.eventCalendars[campaignId] ?? { mode: 'real', weekdays: [], months: [] }), enabled }
   return { enabled }
+}
+
+export function devUpdateCampaignEventCalendarConfig(campaignId: string, config: CampaignCalendarConfig): CampaignCalendarConfig {
+  const store = getCalendarStore()
+  store.eventCalendars[campaignId] = { ...(store.eventCalendars[campaignId] ?? { enabled: false }), ...config }
+  return config
 }
 
 export function devGetCampaignSchedulingCalendarStatus(campaignId: string): { enabled: boolean } | null {
@@ -467,9 +559,10 @@ export function devCreateCampaignEvent(
   campaignId: string,
   title: string,
   description: string | null,
-  eventDate: string,
+  eventDate: string | null,
   eventTime: string | null,
-  visibility: 'master' | 'everyone'
+  visibility: 'master' | 'everyone',
+  fictionalDate?: Pick<CampaignEvent, 'fictionalYear' | 'fictionalMonth' | 'fictionalMonthIndex' | 'fictionalWeekday' | 'fictionalWeekdayIndex'>
 ): { id: string } {
   const store = getCalendarStore()
   const id = randomUUID()
@@ -482,6 +575,11 @@ export function devCreateCampaignEvent(
     description,
     eventDate,
     eventTime,
+    fictionalYear: fictionalDate?.fictionalYear ?? null,
+    fictionalMonth: fictionalDate?.fictionalMonth ?? null,
+    fictionalMonthIndex: fictionalDate?.fictionalMonthIndex ?? null,
+    fictionalWeekday: fictionalDate?.fictionalWeekday ?? null,
+    fictionalWeekdayIndex: fictionalDate?.fictionalWeekdayIndex ?? null,
     visibility,
     createdAt: now,
   })
@@ -489,13 +587,13 @@ export function devCreateCampaignEvent(
   return { id }
 }
 
-export function devGetCampaignEventsByYear(campaignId: string, year: number): CampaignEvent[] {
+export function devGetCampaignEventsByYear(campaignId: string, year?: number): CampaignEvent[] {
   const store = getCalendarStore()
-  return store.events
+  return sortCampaignEventsChronologically(store.events
     .filter((e) => e.campaignId === campaignId)
     .filter((e) => {
-      const eventYear = new Date(e.eventDate).getFullYear()
-      return eventYear === year
+      const eventYear = e.eventDate ? Number(e.eventDate.slice(0, 4)) : e.fictionalYear
+      return year === undefined || eventYear === year
     })
     .map((e) => ({
       id: e.id,
@@ -504,14 +602,19 @@ export function devGetCampaignEventsByYear(campaignId: string, year: number): Ca
       description: e.description,
       eventDate: e.eventDate,
       eventTime: e.eventTime,
+      fictionalYear: e.fictionalYear,
+      fictionalMonth: e.fictionalMonth,
+      fictionalMonthIndex: e.fictionalMonthIndex,
+      fictionalWeekday: e.fictionalWeekday,
+      fictionalWeekdayIndex: e.fictionalWeekdayIndex,
       visibility: e.visibility,
       createdAt: new Date(e.createdAt),
-    }))
+    })))
 }
 
 export function devUpdateCampaignEvent(
   eventId: string,
-  data: Partial<{ title: string; description: string | null; eventDate: string; eventTime: string | null; visibility: 'master' | 'everyone' }>
+  data: Partial<Omit<CampaignEvent, 'id' | 'campaignId' | 'createdAt'>>
 ): void {
   const store = getCalendarStore()
   const event = store.events.find((e) => e.id === eventId)
@@ -522,6 +625,11 @@ export function devUpdateCampaignEvent(
   if (data.eventDate !== undefined) event.eventDate = data.eventDate
   if (data.eventTime !== undefined) event.eventTime = data.eventTime
   if (data.visibility !== undefined) event.visibility = data.visibility
+  if (data.fictionalYear !== undefined) event.fictionalYear = data.fictionalYear
+  if (data.fictionalMonth !== undefined) event.fictionalMonth = data.fictionalMonth
+  if (data.fictionalMonthIndex !== undefined) event.fictionalMonthIndex = data.fictionalMonthIndex
+  if (data.fictionalWeekday !== undefined) event.fictionalWeekday = data.fictionalWeekday
+  if (data.fictionalWeekdayIndex !== undefined) event.fictionalWeekdayIndex = data.fictionalWeekdayIndex
 }
 
 export function devDeleteCampaignEvent(eventId: string): void {

@@ -1,6 +1,7 @@
 import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
+import '@livekit/components-styles'
 import AuthButton from '@/components/ui/auth'
 import AuthProvider from '@/components/ui/auth-provider'
 

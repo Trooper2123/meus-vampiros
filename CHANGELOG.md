@@ -16,6 +16,89 @@ Cada entrada deve incluir data, horário (BRT), tipo e resumo do que foi feito.
 
 ---
 
+## [2026-10-12] — Modelo de planejamento para novas tarefas
+
+**Horário:** 01:55 BRT
+**Tipo:** docs, chore
+**Arquivos principais:** `AGENTS.md`, `.kiro/specs/README.md`, `.kiro/specs/_template/`
+
+- Formalizado o roteiro do agente desde descoberta e requisitos até validação, revisão e entrega.
+- Criados modelos reutilizáveis para requisitos, design técnico, tarefas rastreáveis e metadados.
+- Vinculado o processo às regras do repositório para orientar futuras funcionalidades.
+
+---
+
+## [2026-10-12] — Calendários narrativos
+
+**Horário:** 00:49 BRT
+**Tipo:** feat
+**Arquivos principais:** `app/api/campaign-event-calendar/status/route.ts`, `app/api/campaign-events/route.ts`, `components/campaign-calendar/`, `lib/db.ts`, `lib/types/campaign-event.ts`
+
+- Adicionada escolha entre calendário real, data fictícia livre e calendário personalizado por mesa.
+- A data fictícia livre usa dias da semana e meses reais, permitindo combinações narrativas e qualquer ano.
+- O mestre pode definir nomes e ordem dos dias da semana e meses do cenário.
+- Eventos fictícios usam ano narrativo, aparecem formatados sem vínculo com datas reais e mantêm ordenação própria.
+- Preservada compatibilidade com eventos existentes no calendário real e adicionada migração automática das tabelas.
+- Filtros de ano e mês são exibidos apenas quando a mesa possui mais de 20 eventos cadastrados.
+
+---
+
+## [2026-10-12] — Ordenação cronológica dos eventos
+
+**Horário:** 00:39 BRT
+**Tipo:** fix
+**Arquivos principais:** `components/campaign-calendar/campaign-event-calendar.tsx`, `lib/db.ts`, `lib/types/campaign-event.ts`, `tests/campaign-calendar.integration.test.ts`
+
+- Eventos do calendário agora são exibidos em ordem crescente de data e horário.
+- Eventos sem horário aparecem após os eventos com horário no mesmo dia.
+- Adicionado teste de integração para garantir a ordem cronológica.
+
+---
+
+## [2026-10-12] — Calendários de campanha e mesa virtual
+
+**Horário:** 00:30 BRT
+**Tipo:** feat, fix, docs
+**Arquivos principais:** `app/api/campaign-events/route.ts`, `app/api/livekit/room/route.ts`, `app/campaigns/new/page.tsx`, `app/campaigns/[id]/page.tsx`, `components/campaign-calendar/`, `components/livekit/`, `lib/db.ts`, `lib/livekit.ts`
+
+- Implementados calendário anual de eventos, CRUD, visibilidade por participante e toggles persistentes dos calendários.
+- Adicionados checkbox e instruções do calendário de marcação na criação de mesas.
+- Integrada sala virtual LiveKit com token gerado no servidor e permissão de host para o mestre.
+- Adicionados testes de integração para toggles, CRUD de eventos e persistência da sala virtual.
+- Build, TypeScript e lint validados; criado índice de banco para consultas de eventos por mesa e data.
+- Documentadas as variáveis de ambiente e atualizados os status do plano de implementação.
+
+---
+
+## [2026-10-11] — Correção da edição de personagens
+
+**Horário:** 23:39 BRT
+**Tipo:** fix
+**Arquivos principais:** `app/characters/page.tsx`, `app/characters/[id]/page.tsx`, `app/characters/[id]/summary/page.tsx`, `app/characters/[id]/edit/page.tsx`, `app/characters/character-form-client.tsx`
+
+- Corrigida a leitura assíncrona do parâmetro `id` na rota dinâmica de edição para recuperar os dados da ficha.
+- Corrigidos os links da listagem, da ficha e do resumo para usarem o `id` já resolvido e abrirem a rota específica de edição.
+- Corrigida a recuperação do nome no resumo e o salvamento automático para não substituir o nome ao trocar de aba.
+- O resumo da ficha agora lista todos os poderes escolhidos em cada disciplina e seus detalhes preenchidos.
+- Impedido que o modo de edição crie outro personagem ou salve campos vazios antes do carregamento da ficha.
+
+---
+
+## [2026-10-10] — Refatoração e correções de autenticação
+
+**Horário:** 19:45 BRT
+**Tipo:** refactor, fix, chore
+**Arquivos principais:** `app/characters/character-form-client.tsx`, `app/page.tsx`, `pages/api/auth/[...auth0].ts`, `.gitignore`
+
+- **Task 3 (Refactor form state):** Convertidas entradas de identidade (nome, conceito, clã, predador, geração, sire) e histórico para controlled React inputs (useState). Removido DOM-assignment prefill em favor de controlled defaultValue.
+- **Task 3 cont:** Adicionadas states para idade verdadeira, idade aparente, dados de vida, dados de morte, histórico e notas. Todos sincronizados com saveDraft.
+- **Auth fix:** Restaurado handler Auth0 (`pages/api/auth/[...auth0].ts`) que estava faltando. Corrigido link de login em `app/page.tsx` para apontar a `/api/auth/login`.
+- **Cleanup:** Removidos arquivos `.idea/` do repositório. Adicionado `.idea/` ao `.gitignore` para evitar commits de IDEs.
+- **Revert:** Revertido `next-env.d.ts` para estado canônico (artefato auto-gerado Next.js).
+- **Pre-commit review:** Executada revisão de segurança antes de commit; nenhum problema crítico encontrado após correções.
+
+---
+
 ## [2026-10-04] — Janela de horário e múltiplas sugestões
 
 **Horário:** 09:00 BRT

@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSessionOrDev } from '@/lib/auth0'
-import { db, ensureAllTables, createCampaignEvent, getCampaignEventsByYear, updateCampaignEvent, deleteCampaignEvent } from '@/lib/db'
+import { ensureAllTables, createCampaignEvent, getCampaignEventById, getCampaignEventCalendarStatus, getCampaignEventsByYear, updateCampaignEvent, deleteCampaignEvent } from '@/lib/db'
 import { canManageCampaign } from '@/lib/auth/authorization'
-import { sql } from 'drizzle-orm'
+import { isUserInCampaign } from '@/lib/availability'
+import { REAL_MONTHS, REAL_WEEKDAYS, type EventFormData } from '@/lib/types/campaign-event'
 
 // ─── Validation Helpers ────────────────────────────────────────────────────────
 
@@ -24,16 +25,6 @@ function isValidVisibility(value: string): value is 'master' | 'everyone' {
 }
 
 // ─── Request Body Types ───────────────────────────────────────────────────────
-
-type EventFormData = {
-  campaignId?: string
-  title?: string
-  description?: string | null
-  eventDate?: string
-  eventTime?: string | null
-  visibility?: 'master' | 'everyone'
-  eventId?: string
-}
 
 // ─── Error Responses ──────────────────────────────────────────────────────────
 
@@ -65,7 +56,7 @@ export async function GET(request: NextRequest) {
     const yearParam = searchParams.get('year')
 
     // Validate required params
-    if (!campaignId || !yearParam) {
+    if (!campaignId) {
       return badRequest('Parâmetros campaignId e year são obrigatórios.')
     }
 
@@ -73,21 +64,20 @@ export async function GET(request: NextRequest) {
       return badRequest('ID da mesa inválido.')
     }
 
-    const year = Number.parseInt(yearParam, 10)
-    if (Number.isNaN(year) || year < 1900 || year > 9999) {
+    const year = yearParam === null ? undefined : Number.parseInt(yearParam, 10)
+    if (year !== undefined && (Number.isNaN(year) || year < 0 || year > 999999)) {
       return badRequest('Ano inválido.')
     }
 
     // Check if user is participant of the campaign
-    const isParticipant = await canManageCampaign(session.user.sub, campaignId)
-    if (!isParticipant) {
+    if (!await isUserInCampaign(campaignId, session.user.sub)) {
       return forbidden()
     }
 
-    // Get events for the specified year
+    const isMaster = await canManageCampaign(session.user.sub, campaignId)
     const events = await getCampaignEventsByYear(campaignId, year)
 
-    return NextResponse.json({ events })
+    return NextResponse.json({ events: isMaster ? events : events.filter((event) => event.visibility === 'everyone') })
   } catch (error) {
     console.error('[GET /api/campaign-events]', error)
     return NextResponse.json({ error: 'Não foi possível carregar os eventos.' }, { status: 500 })
@@ -106,10 +96,10 @@ export async function POST(request: NextRequest) {
     }
 
     const body: EventFormData = await request.json()
-    const { campaignId, title, description, eventDate, eventTime, visibility } = body
+    const { campaignId, title, description, eventDate, eventTime, visibility, fictionalYear, fictionalMonth, fictionalMonthIndex, fictionalWeekday, fictionalWeekdayIndex } = body
 
     // Validate required fields
-    if (!campaignId || !title || !eventDate || !visibility) {
+    if (!campaignId || !title || !visibility || (!eventDate && fictionalYear === undefined)) {
       return badRequest('Campos campaignId, title, eventDate e visibility são obrigatórios.')
     }
 
@@ -127,11 +117,15 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    if (!isValidDate(eventDate)) {
+    if (eventDate && !isValidDate(eventDate)) {
       return badRequest('Data inválida. Use o formato YYYY-MM-DD.')
     }
 
-    if (!isValidTime(eventTime)) {
+    if (!eventDate && (!Number.isInteger(fictionalYear) || Number(fictionalYear) < 0 || !fictionalMonth?.trim() || !fictionalWeekday?.trim())) {
+      return badRequest('Informe dia da semana, mês e ano fictícios válidos.')
+    }
+
+    if (!isValidTime(eventTime ?? null)) {
       return badRequest('Hora inválida. Use o formato HH:MM.')
     }
 
@@ -144,18 +138,27 @@ export async function POST(request: NextRequest) {
       return forbidden()
     }
 
+    const calendar = await getCampaignEventCalendarStatus(campaignId)
+    if (!eventDate && calendar?.mode === 'fictional' && (!REAL_MONTHS.includes(fictionalMonth as typeof REAL_MONTHS[number]) || !REAL_WEEKDAYS.includes(fictionalWeekday as typeof REAL_WEEKDAYS[number]))) {
+      return badRequest('Use um dia da semana e um mês reais no modo de data fictícia livre.')
+    }
+    if (!eventDate && calendar?.mode === 'custom' && (!calendar.months.includes(fictionalMonth ?? '') || !calendar.weekdays.includes(fictionalWeekday ?? ''))) {
+      return badRequest('Use os dias e meses definidos no calendário personalizado.')
+    }
+
     // Create the event
     const result = await createCampaignEvent(
       campaignId,
       title.trim(),
       description?.trim() || null,
-      eventDate,
-      eventTime,
-      visibility
+      eventDate ?? null,
+      eventTime ?? null,
+      visibility,
+      { fictionalYear: fictionalYear ?? null, fictionalMonth: fictionalMonth?.trim() ?? null, fictionalMonthIndex: fictionalMonthIndex ?? null, fictionalWeekday: fictionalWeekday?.trim() ?? null, fictionalWeekdayIndex: fictionalWeekdayIndex ?? null }
     )
 
     // Get the created event
-    const events = await getCampaignEventsByYear(campaignId, Number.parseInt(eventDate.split('-')[0], 10))
+    const events = await getCampaignEventsByYear(campaignId, eventDate ? Number.parseInt(eventDate.split('-')[0], 10) : Number(fictionalYear))
     const createdEvent = events.find(e => e.id === result.id)
 
     if (!createdEvent) {
@@ -181,7 +184,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body: EventFormData = await request.json()
-    const { eventId, title, description, eventDate, eventTime, visibility } = body
+    const { eventId, title, description, eventDate, eventTime, visibility, fictionalYear, fictionalMonth, fictionalMonthIndex, fictionalWeekday, fictionalWeekdayIndex } = body
 
     // Validate required fields
     if (!eventId) {
@@ -193,19 +196,19 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Check if event exists and get campaignId
-    const eventResult = await db.execute<{ campaign_id: string }>(sql`
-      SELECT campaign_id FROM campaign_events WHERE id = ${eventId}::uuid
-    `)
-
-    if (eventResult.rows.length === 0) {
+    const existingEvent = await getCampaignEventById(eventId)
+    if (!existingEvent) {
       return badRequest('Evento não encontrado.')
     }
 
-    const campaignId = eventResult.rows[0].campaign_id
-
     // Check authorization - only master can update events
-    if (!await canManageCampaign(session.user.sub, campaignId)) {
+    if (!await canManageCampaign(session.user.sub, existingEvent.campaignId)) {
       return forbidden()
+    }
+
+    const calendar = await getCampaignEventCalendarStatus(existingEvent.campaignId)
+    if (eventDate === null && calendar?.mode === 'fictional' && (!REAL_MONTHS.includes(fictionalMonth as typeof REAL_MONTHS[number]) || !REAL_WEEKDAYS.includes(fictionalWeekday as typeof REAL_WEEKDAYS[number]))) {
+      return badRequest('Use um dia da semana e um mês reais no modo de data fictícia livre.')
     }
 
     // Validate provided fields
@@ -226,11 +229,17 @@ export async function PATCH(request: NextRequest) {
     }
 
     if (eventDate !== undefined) {
-      if (!isValidDate(eventDate)) {
+      if (eventDate !== null && !isValidDate(eventDate)) {
         return badRequest('Data inválida. Use o formato YYYY-MM-DD.')
       }
       updateData.eventDate = eventDate
     }
+
+    if (fictionalYear !== undefined) updateData.fictionalYear = fictionalYear
+    if (fictionalMonth !== undefined) updateData.fictionalMonth = fictionalMonth?.trim() ?? null
+    if (fictionalMonthIndex !== undefined) updateData.fictionalMonthIndex = fictionalMonthIndex
+    if (fictionalWeekday !== undefined) updateData.fictionalWeekday = fictionalWeekday?.trim() ?? null
+    if (fictionalWeekdayIndex !== undefined) updateData.fictionalWeekdayIndex = fictionalWeekdayIndex
 
     if (eventTime !== undefined) {
       if (!isValidTime(eventTime)) {
@@ -253,10 +262,7 @@ export async function PATCH(request: NextRequest) {
 
     // Update the event
     await updateCampaignEvent(eventId, updateData)
-
-    // Get the updated event
-    const events = await getCampaignEventsByYear(campaignId, Number.parseInt(updateData.eventDate || eventDate || '', 10))
-    const updatedEvent = events.find(e => e.id === eventId)
+    const updatedEvent = await getCampaignEventById(eventId)
 
     if (!updatedEvent) {
       return badRequest('Não foi possível recuperar o evento atualizado.')
@@ -293,18 +299,13 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Check if event exists and get campaignId
-    const eventResult = await db.execute<{ campaign_id: string }>(sql`
-      SELECT campaign_id FROM campaign_events WHERE id = ${eventId}::uuid
-    `)
-
-    if (eventResult.rows.length === 0) {
+    const existingEvent = await getCampaignEventById(eventId)
+    if (!existingEvent) {
       return badRequest('Evento não encontrado.')
     }
 
-    const campaignId = eventResult.rows[0].campaign_id
-
     // Check authorization - only master can delete events
-    if (!await canManageCampaign(session.user.sub, campaignId)) {
+    if (!await canManageCampaign(session.user.sub, existingEvent.campaignId)) {
       return forbidden()
     }
 

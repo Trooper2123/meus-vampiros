@@ -90,7 +90,7 @@ export async function getCharactersForUser(userId: string): Promise<CharacterSum
     clan: character.clan,
     generation: character.generation,
     status: character.status,
-    updatedAt: character.updated_at && character.updated_at !== '' ? (character.updated_at instanceof Date ? character.updated_at.toISOString() : new Date(character.updated_at).toISOString()) : null,
+    updatedAt: new Date(character.updated_at).toISOString(),
     campaignId: character.campaign_id,
     campaignName: character.campaign_name,
     campaignTheme: character.campaign_theme,
@@ -156,6 +156,36 @@ export async function getCharacterById(id: string, userId: string) {
   return { id: row.id, name: row.name ?? '', data: normalizedData, campaignId: row.campaign_id, campaign: null }
 }
 
+export async function getCharacterAccessRecord(id: string) {
+  if (isDev) {
+    const character = global.__devDb?.characters.find((entry) => entry.id === id)
+    return character ? { id: character.id, userId: character.userId, campaignId: character.campaignId, status: character.status, characterType: character.characterType ?? 'PLAYER_VAMPIRE', data: normalizeDisciplines(character.data) } : null
+  }
+  const result = await db.execute<{ id: string; user_id: string; campaign_id: string | null; status: string; character_type: string; data: unknown }>(sql`
+    SELECT id, user_id, campaign_id, status, character_type, data FROM characters WHERE id = ${id}::uuid
+  `)
+  const row = result.rows[0]
+  return row ? { id: row.id, userId: row.user_id, campaignId: row.campaign_id, status: row.status, characterType: row.character_type, data: normalizeDisciplines((row.data ?? {}) as Record<string, unknown>) } : null
+}
+
+export async function saveCharacterValidation(id: string, report: unknown) {
+  if (isDev) {
+    const character = global.__devDb?.characters.find((entry) => entry.id === id)
+    if (character) character.validationReport = report
+    return
+  }
+  await db.execute(sql`UPDATE characters SET validation_report = ${JSON.stringify(report)}::jsonb, validated_at = NOW() WHERE id = ${id}::uuid`)
+}
+
+export async function setCharacterStatus(id: string, status: string) {
+  if (isDev) {
+    const character = global.__devDb?.characters.find((entry) => entry.id === id)
+    if (character) { character.status = status; character.updatedAt = new Date() }
+    return
+  }
+  await db.execute(sql`UPDATE characters SET status = ${status}, updated_at = NOW() WHERE id = ${id}::uuid`)
+}
+
 export async function createCharacter(
   userId: string,
   payload: { name?: string; data?: Record<string, unknown>; campaignId?: string | null }
@@ -164,8 +194,8 @@ export async function createCharacter(
 
   const { name, data, campaignId } = payload
   const result = await db.execute<{ id: string }>(sql`
-    INSERT INTO characters (user_id, name, concept, clan, generation, data, campaign_id)
-    VALUES (${userId}, ${name}, ${data?.conceito ?? null}, ${data?.cla ?? null}, ${data?.geracao ?? null}, ${JSON.stringify(data ?? {})}::jsonb, ${campaignId ?? null}::uuid)
+    INSERT INTO characters (user_id, created_by_user_id, character_type, name, concept, clan, generation, data, campaign_id, status)
+    VALUES (${userId}, ${userId}, ${data?.characterType ?? 'PLAYER_VAMPIRE'}, ${name}, ${data?.conceito ?? null}, ${data?.cla ?? null}, ${data?.geracao ?? null}, ${JSON.stringify(data ?? {})}::jsonb, ${campaignId ?? null}::uuid, 'DRAFT')
     RETURNING id
   `)
   return { id: result.rows[0]?.id }

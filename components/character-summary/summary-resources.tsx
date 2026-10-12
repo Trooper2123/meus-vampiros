@@ -1,6 +1,5 @@
 'use client'
 
-import { useState } from 'react'
 import { Heart, Shield, Activity, Flame } from 'lucide-react'
 
 type SummaryResourcesProps = {

@@ -27,6 +27,13 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
   - Arquivos principais alterados
   - Resumo em bullets do que foi implementado
 
+## Planejamento de funcionalidades
+
+- Para toda nova funcionalidade relevante, seguir o roteiro de [`.kiro/specs/README.md`](./.kiro/specs/README.md).
+- Criar a spec em `.kiro/specs/<nome-da-funcionalidade>/` a partir de [`.kiro/specs/_template/`](./.kiro/specs/_template/).
+- Manter `requirements.md`, `design.md` e `tasks.md` sincronizados com as decisões e o estado real da implementação.
+- Atualizar o status da tarefa para `in_progress` antes de editar código e para `completed` somente após as validações previstas.
+
 ## Revisão pré-commit
 
 - Antes de sugerir um commit, usar a skill `pre-commit-review` para revisar as mudanças.
