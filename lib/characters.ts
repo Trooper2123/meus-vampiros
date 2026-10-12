@@ -9,7 +9,10 @@ import {
   devUpdateCharacterXp,
   devUpdateCharacterStatus,
   devDeleteCharacter,
+  devAppendCharacterLedgerEvent,
 } from '@/lib/dev-db'
+import { CREATION_ADJUSTMENTS } from '@/lib/vtm-v5/presets'
+import type { CreationType } from '@/lib/vtm-v5/types'
 
 const isDev = process.env.NODE_ENV !== 'production' && !process.env.DATABASE_URL
 
@@ -145,15 +148,15 @@ export async function updateCharacterXp(characterId: string, totalXp: number) {
 export async function getCharacterById(id: string, userId: string) {
   if (isDev) return devGetCharacterById(id, userId)
 
-  const result = await db.execute<{ id: string; name: string; data: unknown; campaign_id: string | null }>(sql`
-    SELECT id, name, data, campaign_id FROM characters WHERE id = ${id}::uuid AND user_id = ${userId}
+  const result = await db.execute<{ id: string; name: string; status: string; character_type: string; data: unknown; campaign_id: string | null }>(sql`
+    SELECT id, name, status, character_type, data, campaign_id FROM characters WHERE id = ${id}::uuid AND user_id = ${userId}
   `)
   const row = result.rows[0]
   if (!row) return null
   const normalizedData = normalizeDisciplines(
     (row.data && typeof row.data === 'object' ? row.data : {}) as Record<string, unknown>
   )
-  return { id: row.id, name: row.name ?? '', data: normalizedData, campaignId: row.campaign_id, campaign: null }
+  return { id: row.id, name: row.name ?? '', status: row.status, characterType: row.character_type, data: normalizedData, campaignId: row.campaign_id, campaign: null }
 }
 
 export async function getCharacterAccessRecord(id: string) {
@@ -171,7 +174,10 @@ export async function getCharacterAccessRecord(id: string) {
 export async function saveCharacterValidation(id: string, report: unknown) {
   if (isDev) {
     const character = global.__devDb?.characters.find((entry) => entry.id === id)
-    if (character) character.validationReport = report
+    if (character) {
+      character.validationReport = report
+      character.validatedAt = new Date()
+    }
     return
   }
   await db.execute(sql`UPDATE characters SET validation_report = ${JSON.stringify(report)}::jsonb, validated_at = NOW() WHERE id = ${id}::uuid`)
@@ -190,7 +196,13 @@ export async function createCharacter(
   userId: string,
   payload: { name?: string; data?: Record<string, unknown>; campaignId?: string | null }
 ) {
-  if (isDev) return devCreateCharacter(userId, payload)
+  if (isDev) {
+    const character = devCreateCharacter(userId, payload)
+    const creationType = (payload.data?.creationType ?? 'FLEDGLING') as CreationType
+    const adjustment = CREATION_ADJUSTMENTS[creationType] ?? CREATION_ADJUSTMENTS.FLEDGLING
+    devAppendCharacterLedgerEvent(character.id, 'INITIAL_ADJUSTMENT', 'RULE_ENGINE', { creationType, ...adjustment }, userId)
+    return character
+  }
 
   const { name, data, campaignId } = payload
   const result = await db.execute<{ id: string }>(sql`
@@ -198,7 +210,22 @@ export async function createCharacter(
     VALUES (${userId}, ${userId}, ${data?.characterType ?? 'PLAYER_VAMPIRE'}, ${name}, ${data?.conceito ?? null}, ${data?.cla ?? null}, ${data?.geracao ?? null}, ${JSON.stringify(data ?? {})}::jsonb, ${campaignId ?? null}::uuid, 'DRAFT')
     RETURNING id
   `)
-  return { id: result.rows[0]?.id }
+  const id = result.rows[0]?.id
+  if (id) {
+    const creationType = (data?.creationType ?? 'FLEDGLING') as CreationType
+    const adjustment = CREATION_ADJUSTMENTS[creationType] ?? CREATION_ADJUSTMENTS.FLEDGLING
+    await appendCharacterLedgerEvent(id, 'INITIAL_ADJUSTMENT', 'RULE_ENGINE', { creationType, ...adjustment }, userId)
+  }
+  return { id }
+}
+
+export async function appendCharacterLedgerEvent(characterId: string, eventType: string, origin: string, payload: Record<string, unknown>, createdByUserId: string) {
+  if (isDev) return devAppendCharacterLedgerEvent(characterId, eventType, origin, payload, createdByUserId)
+  await db.execute(sql`
+    INSERT INTO character_ledger_events (character_id, event_type, origin, payload, created_by_user_id)
+    VALUES (${characterId}::uuid, ${eventType}, ${origin}, ${JSON.stringify(payload)}::jsonb, ${createdByUserId})
+  `)
+  return { ok: true }
 }
 
 export async function updateCharacterStatus(id: string, userId: string, status: string) {
@@ -242,7 +269,8 @@ export async function updateCharacter(
     await db.execute(sql`
       UPDATE characters
       SET name = ${name}, concept = ${data?.conceito ?? null}, clan = ${data?.cla ?? null}, generation = ${data?.geracao ?? null},
-          data = ${JSON.stringify(data ?? {})}::jsonb, campaign_id = ${campaignId ?? null}::uuid, updated_at = NOW()
+          character_type = ${data?.characterType ?? 'PLAYER_VAMPIRE'}, data = ${JSON.stringify(data ?? {})}::jsonb,
+          campaign_id = ${campaignId ?? null}::uuid, updated_at = NOW()
       WHERE id = ${id}::uuid AND user_id = ${userId}
     `)
     return { ok: true, campaignId }
@@ -251,7 +279,7 @@ export async function updateCharacter(
   await db.execute(sql`
     UPDATE characters
     SET name = ${name}, concept = ${data?.conceito ?? null}, clan = ${data?.cla ?? null}, generation = ${data?.geracao ?? null},
-        data = ${JSON.stringify(data ?? {})}::jsonb, updated_at = NOW()
+        character_type = ${data?.characterType ?? 'PLAYER_VAMPIRE'}, data = ${JSON.stringify(data ?? {})}::jsonb, updated_at = NOW()
     WHERE id = ${id}::uuid AND user_id = ${userId}
   `)
   return { ok: true }

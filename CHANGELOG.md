@@ -16,6 +16,33 @@ Cada entrada deve incluir data, horário (BRT), tipo e resumo do que foi feito.
 
 ---
 
+## [2026-10-12] — Formulários V5, NPCs e ledger auditável
+
+**Horário:** 13:25 BRT
+**Tipo:** feat, fix, docs
+**Arquivos principais:** `app/characters/character-form-client.tsx`, `app/api/characters/`, `lib/characters.ts`, `lib/db.ts`, `lib/dev-db.ts`, `lib/vtm-v5/`, `tests/`, `.kiro/specs/vtm-v5-character-rules/tasks.md`
+
+- Integrados tipo de ficha, perfil de criação, valores derivados, relatório mecânico e envio para revisão ao formulário.
+- Adicionados fluxos rápidos para NPC humano, NPC vampiro, retentor e carniçal usando presets do domínio.
+- Criado ledger persistente de ajustes iniciais, validações e mudanças de status com origem, autor e timestamp.
+- Finalizadas as onze tarefas da spec; 20 testes, TypeScript e build aprovados, com lint sem erros.
+
+---
+
+## [2026-10-12] — Persistência, validação e workflow de fichas V5
+
+**Horário:** 13:14 BRT
+**Tipo:** feat, fix, chore, docs
+**Arquivos principais:** `lib/db.ts`, `lib/dev-db.ts`, `lib/characters.ts`, `lib/vtm-v5/validation.ts`, `app/api/characters/[id]/validate/route.ts`, `app/api/characters/[id]/status/route.ts`, `tests/`, `vitest.config.ts`, `.kiro/specs/vtm-v5-character-rules/tasks.md`
+
+- Concluída a migração retrocompatível dos metadados comuns de fichas no PostgreSQL e no banco em memória.
+- Cobertas autenticação, autorização e persistência do relatório na API de validação de fichas.
+- Validado o workflow de submissão, aprovação, devolução, arquivamento e desativação, impedindo aprovação de fichas inválidas.
+- Configurado o alias `@/` no Vitest para permitir testes diretos dos Route Handlers do Next.js.
+- Consolidado no plano o status individual das onze tarefas da entrega.
+
+---
+
 ## [2026-10-12] — Modelo de planejamento para novas tarefas
 
 **Horário:** 01:55 BRT

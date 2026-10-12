@@ -4,6 +4,7 @@ import { getCharacterById, createCharacter, updateCharacter, getCharactersForCam
 import { getCampaignById } from '@/lib/campaigns'
 import { ensureAllTables } from '@/lib/db'
 import { canManageCampaign, canEditCharacter } from '@/lib/auth/authorization'
+import { CHARACTER_TYPES, CREATION_TYPES, type CharacterType, type CreationType } from '@/lib/vtm-v5/types'
 
 async function getAuthenticatedUser() {
   const session = await getSessionOrDev()
@@ -12,10 +13,16 @@ async function getAuthenticatedUser() {
 
 async function readPayload(request: Request) {
   const body = await request.json()
+  const rawData = body.data && typeof body.data === 'object' ? body.data as Record<string, unknown> : body.data === undefined ? undefined : {}
+  const data = rawData ? {
+    ...rawData,
+    characterType: CHARACTER_TYPES.includes(rawData.characterType as CharacterType) ? rawData.characterType : 'PLAYER_VAMPIRE',
+    creationType: CREATION_TYPES.includes(rawData.creationType as CreationType) ? rawData.creationType : 'FLEDGLING',
+  } : undefined
   return {
     id: typeof body.id === 'string' ? body.id : null,
     name: typeof body.name === 'string' && body.name.trim() ? body.name.trim() : body.name === undefined ? undefined : 'Personagem sem nome',
-    data: body.data && typeof body.data === 'object' ? body.data : body.data === undefined ? undefined : {},
+    data,
     campaignId: typeof body.campaignId === 'string' && body.campaignId.trim() ? body.campaignId.trim() : body.campaignId === null ? null : undefined,
   }
 }
@@ -48,7 +55,7 @@ export async function GET(request: Request) {
     const safeData = normalizeDisciplines(
       (character.data && typeof character.data === 'object' ? character.data : {}) as Record<string, unknown>
     )
-    return NextResponse.json({ character: { id: character.id, name: character.name, data: safeData, campaignId: character.campaignId }, campaign })
+    return NextResponse.json({ character: { id: character.id, name: character.name, status: character.status, characterType: character.characterType, data: safeData, campaignId: character.campaignId }, campaign })
   } catch {
     return NextResponse.json({ error: 'Não foi possível carregar a ficha.' }, { status: 500 })
   }

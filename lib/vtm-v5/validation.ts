@@ -72,5 +72,6 @@ const STATUS_TRANSITIONS: Record<CharacterStatus, CharacterStatus[]> = {
 export function canTransitionCharacterStatus(current: CharacterStatus, next: CharacterStatus, isMaster: boolean, reportValid: boolean) {
   if (!CHARACTER_STATUSES.includes(current) || !CHARACTER_STATUSES.includes(next) || !STATUS_TRANSITIONS[current].includes(next)) return false
   if (next === 'PENDING_REVIEW') return !isMaster && current === 'DRAFT' && reportValid
+  if (next === 'APPROVED') return isMaster && reportValid
   return isMaster
 }

@@ -3,6 +3,10 @@
 ## Status
 
 - `[ ]` `pending`; `[~]` `in_progress`; `[!]` `blocked`; `[x]` `completed`.
+- **Última atualização:** 2026-10-12 13:25 BRT.
+- **Concluídas:** task-001, task-002, task-003, task-004, task-005, task-006, task-007, task-008, task-009, task-010 e task-011.
+- **Em andamento:** nenhuma.
+- **Pendentes:** nenhuma.
 
 ## Phase 1: Fundação
 
@@ -20,37 +24,37 @@
   - **Dependencies**: task-001
   - **Status**: completed
 
-- [~] **task-003**: Migrar metadados comuns da ficha
+- [x] **task-003**: Migrar metadados comuns da ficha
   - **Description**: Adicionar tipo, criador, visibilidade e último relatório à tabela existente com defaults retrocompatíveis.
   - **Acceptance Criteria**: Migração idempotente e fichas existentes legíveis.
   - **Validation**: TypeScript e build.
   - **Dependencies**: task-001
-  - **Status**: in_progress
+  - **Status**: completed
 
 ## Phase 2: APIs e workflow
 
-- [ ] **task-004**: Criar API de validação
+- [x] **task-004**: Criar API de validação
   - **Description**: Validar ficha persistida com autenticação e autorização.
   - **Acceptance Criteria**: Relatório contém erros, avisos e derivados.
   - **Validation**: Testes de rota e build.
   - **Dependencies**: task-002, task-003
-  - **Status**: pending
+  - **Status**: completed
 
-- [ ] **task-005**: Criar workflow de status
+- [x] **task-005**: Criar workflow de status
   - **Description**: Implementar submissão, aprovação, devolução, arquivamento e desativação.
   - **Acceptance Criteria**: Transições e permissões respeitam requisitos.
   - **Validation**: Testes de transição e autorização.
   - **Dependencies**: task-004
-  - **Status**: pending
+  - **Status**: completed
 
 ## Phase 3: Interface do vampiro jogável
 
-- [ ] **task-006**: Integrar tipo, perfil e validação ao formulário
+- [x] **task-006**: Integrar tipo, perfil e validação ao formulário
   - **Description**: Adicionar campos de criação, derivados, painel de relatório e submissão para revisão.
   - **Acceptance Criteria**: Erros bloqueiam submissão sem impedir salvar rascunho.
   - **Validation**: Teste manual, lint e build.
   - **Dependencies**: task-004, task-005
-  - **Status**: pending
+  - **Status**: completed
 
 ## Phase 4: NPCs e lacaios
 
@@ -68,36 +72,36 @@
   - **Dependencies**: task-001
   - **Status**: completed
 
-- [ ] **task-009**: Criar interfaces especializadas de NPCs e lacaios
+- [x] **task-009**: Criar interfaces especializadas de NPCs e lacaios
   - **Description**: Formulários rápidos para Mestre usando presets do domínio.
   - **Acceptance Criteria**: NPC humano por template pode ser criado em menos de um minuto.
   - **Validation**: Teste manual, acessibilidade e build.
   - **Dependencies**: task-007, task-008
-  - **Status**: pending
+  - **Status**: completed
 
 ## Phase 5: Auditoria e entrega
 
-- [ ] **task-010**: Adicionar ledger e eventos de validação
+- [x] **task-010**: Adicionar ledger e eventos de validação
   - **Description**: Registrar ajustes iniciais, XP e mudanças de status de forma auditável.
   - **Acceptance Criteria**: Cada ajuste automático possui origem e timestamp.
   - **Validation**: Testes de persistência.
   - **Dependencies**: task-005
-  - **Status**: pending
+  - **Status**: completed
 
-- [ ] **task-011**: Validar e documentar a entrega
+- [x] **task-011**: Validar e documentar a entrega
   - **Description**: Executar suíte, TypeScript, lint e build; atualizar changelog e resumo.
   - **Acceptance Criteria**: Sem erros relacionados e documentação sincronizada.
   - **Validation**: `npm test`, `npx tsc --noEmit`, `npm run lint`, `npm run build`.
   - **Dependencies**: task-006, task-007, task-008, task-010
-  - **Status**: pending
+  - **Status**: completed
 
 ## Summary
 
 | Phase | Tasks | Total | Completed |
 |---|---|---:|---:|
-| Fundação | 001-003 | 3 | 2 |
-| APIs e workflow | 004-005 | 2 | 0 |
-| Interface | 006 | 1 | 0 |
-| NPCs e lacaios | 007-009 | 3 | 2 |
-| Auditoria e entrega | 010-011 | 2 | 0 |
-| **Total** | **001-011** | **11** | **4** |
+| Fundação | 001-003 | 3 | 3 |
+| APIs e workflow | 004-005 | 2 | 2 |
+| Interface | 006 | 1 | 1 |
+| NPCs e lacaios | 007-009 | 3 | 3 |
+| Auditoria e entrega | 010-011 | 2 | 2 |
+| **Total** | **001-011** | **11** | **11** |

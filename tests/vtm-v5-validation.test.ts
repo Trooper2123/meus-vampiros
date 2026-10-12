@@ -51,6 +51,7 @@ describe('regras de criação VtM V5', () => {
     expect(canTransitionCharacterStatus('DRAFT', 'PENDING_REVIEW', false, true)).toBe(true)
     expect(canTransitionCharacterStatus('DRAFT', 'PENDING_REVIEW', false, false)).toBe(false)
     expect(canTransitionCharacterStatus('PENDING_REVIEW', 'APPROVED', true, true)).toBe(true)
+    expect(canTransitionCharacterStatus('PENDING_REVIEW', 'APPROVED', true, false)).toBe(false)
     expect(canTransitionCharacterStatus('PENDING_REVIEW', 'APPROVED', false, true)).toBe(false)
   })
 })
