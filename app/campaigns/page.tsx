@@ -8,7 +8,7 @@ import { MasterPanel } from '@/components/master-panel'
 export default async function CampaignsPage() {
   if (!process.env.AUTH0_DOMAIN || !process.env.AUTH0_CLIENT_ID || !process.env.AUTH0_SECRET || !process.env.AUTH0_CLIENT_SECRET) {
     const session = await getSessionOrDev()
-    if (!session?.user) redirect('/auth/login?returnTo=/campaigns' as any)
+    if (!session?.user) redirect('/auth/login?returnTo=/campaigns')
   }
 
   const session = await getSessionOrDev()

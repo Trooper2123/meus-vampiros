@@ -1,19 +1,9 @@
 'use client'
 
-import Link from 'next/link'
-import { useEffect, useState } from 'react'
 import useAppUser from './useAppUser'
 
 export default function AuthButton() {
   const { user, error, isLoading } = useAppUser()
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  // Render the same fallback the server renders to avoid hydration mismatch
-  if (!mounted) return <div className="auth-status">Carregando...</div>
   if (isLoading) return <div className="auth-status">Carregando...</div>
   if (error) return <div className="auth-status">Erro de autenticação</div>
 

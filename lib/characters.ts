@@ -90,7 +90,7 @@ export async function getCharactersForUser(userId: string): Promise<CharacterSum
     clan: character.clan,
     generation: character.generation,
     status: character.status,
-    updatedAt: character.updated_at && character.updated_at !== '' ? (character.updated_at instanceof Date ? character.updated_at.toISOString() : new Date(character.updated_at).toISOString()) : null,
+    updatedAt: new Date(character.updated_at).toISOString(),
     campaignId: character.campaign_id,
     campaignName: character.campaign_name,
     campaignTheme: character.campaign_theme,

@@ -22,6 +22,10 @@ pnpm dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+## Mesa virtual com LiveKit
+
+Configure `LIVEKIT_URL`, `LIVEKIT_API_KEY` e `LIVEKIT_API_SECRET` no ambiente do servidor. Use `.env.local.example` como referência. As credenciais ficam disponíveis no painel do projeto LiveKit Cloud; nunca exponha `LIVEKIT_API_SECRET` no cliente.
+
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 ## Learn More

@@ -59,8 +59,8 @@ export async function getPossessionsForCharacter(characterId: string): Promise<P
     origin: row.origin,
     status: row.status,
     masterComment: row.master_comment,
-    createdAt: row.created_at && row.created_at !== '' ? (row.created_at instanceof Date ? row.created_at.toISOString() : new Date(row.created_at).toISOString()) : null,
-    updatedAt: row.updated_at && row.updated_at !== '' ? (row.updated_at instanceof Date ? row.updated_at.toISOString() : new Date(row.updated_at).toISOString()) : null,
+    createdAt: new Date(row.created_at).toISOString(),
+    updatedAt: new Date(row.updated_at).toISOString(),
   }))
 }
 
@@ -101,8 +101,8 @@ export async function getPossessionsForCampaign(campaignId: string): Promise<Pos
     origin: row.origin,
     status: row.status,
     masterComment: row.master_comment,
-    createdAt: row.created_at && row.created_at !== '' ? (row.created_at instanceof Date ? row.created_at.toISOString() : new Date(row.created_at).toISOString()) : null,
-    updatedAt: row.updated_at && row.updated_at !== '' ? (row.updated_at instanceof Date ? row.updated_at.toISOString() : new Date(row.updated_at).toISOString()) : null,
+    createdAt: new Date(row.created_at).toISOString(),
+    updatedAt: new Date(row.updated_at).toISOString(),
   }))
 }
 
@@ -148,8 +148,8 @@ export async function createPossession(
     origin: row.origin,
     status: row.status,
     masterComment: row.master_comment,
-    createdAt: row.created_at && row.created_at !== '' ? (row.created_at instanceof Date ? row.created_at.toISOString() : new Date(row.created_at).toISOString()) : null,
-    updatedAt: row.updated_at && row.updated_at !== '' ? (row.updated_at instanceof Date ? row.updated_at.toISOString() : new Date(row.updated_at).toISOString()) : null,
+    createdAt: new Date(row.created_at).toISOString(),
+    updatedAt: new Date(row.updated_at).toISOString(),
   }
 }
 
@@ -196,7 +196,7 @@ export async function updatePossessionStatus(
     origin: row.origin,
     status: row.status,
     masterComment: row.master_comment,
-    createdAt: row.created_at && row.created_at !== '' ? (row.created_at instanceof Date ? row.created_at.toISOString() : new Date(row.created_at).toISOString()) : null,
-    updatedAt: row.updated_at && row.updated_at !== '' ? (row.updated_at instanceof Date ? row.updated_at.toISOString() : new Date(row.updated_at).toISOString()) : null,
+    createdAt: new Date(row.created_at).toISOString(),
+    updatedAt: new Date(row.updated_at).toISOString(),
   }
 }

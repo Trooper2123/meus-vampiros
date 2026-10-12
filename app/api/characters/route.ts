@@ -92,7 +92,7 @@ export async function PUT(request: Request) {
       }
     }
 
-    const result = await updateCharacter(id, user.sub, { name, data, campaignId: validCampaignId })
+    await updateCharacter(id, user.sub, { name, data, campaignId: validCampaignId })
     return NextResponse.json({ ok: true, campaignId: validCampaignId })
   } catch {
     return NextResponse.json({ error: 'Não foi possível atualizar a ficha.' }, { status: 500 })
@@ -123,7 +123,7 @@ export async function PATCH(request: Request) {
     if (!user || !user.sub) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
     const body = await request.json()
-    const { characterId, totalXp, addXp } = body
+    const { characterId, totalXp } = body
 
     if (!characterId || typeof characterId !== 'string') {
       return NextResponse.json({ error: 'characterId é obrigatório.' }, { status: 400 })

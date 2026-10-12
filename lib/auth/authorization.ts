@@ -1,6 +1,6 @@
 import { getCharacterById } from '@/lib/characters'
 import { getCampaignsForMaster } from '@/lib/campaigns'
-import { db } from '@/lib/db'
+import { db, getLiveKitRoom } from '@/lib/db'
 import { sql } from 'drizzle-orm'
 
 /**
@@ -33,4 +33,9 @@ export async function canManagePossession(userId: string, possessionId: string):
   const row = result.rows[0]
   if (!row || !row.campaign_id) return false
   return canManageCampaign(userId, row.campaign_id)
+}
+
+export async function isLiveKitHost(userId: string, campaignId: string): Promise<boolean> {
+  const room = await getLiveKitRoom(campaignId)
+  return room?.hostUserId === userId
 }

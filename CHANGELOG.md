@@ -16,6 +16,21 @@ Cada entrada deve incluir data, horário (BRT), tipo e resumo do que foi feito.
 
 ---
 
+## [2026-10-12] — Calendários de campanha e mesa virtual
+
+**Horário:** 00:30 BRT
+**Tipo:** feat, fix, docs
+**Arquivos principais:** `app/api/campaign-events/route.ts`, `app/api/livekit/room/route.ts`, `app/campaigns/new/page.tsx`, `app/campaigns/[id]/page.tsx`, `components/campaign-calendar/`, `components/livekit/`, `lib/db.ts`, `lib/livekit.ts`
+
+- Implementados calendário anual de eventos, CRUD, visibilidade por participante e toggles persistentes dos calendários.
+- Adicionados checkbox e instruções do calendário de marcação na criação de mesas.
+- Integrada sala virtual LiveKit com token gerado no servidor e permissão de host para o mestre.
+- Adicionados testes de integração para toggles, CRUD de eventos e persistência da sala virtual.
+- Build, TypeScript e lint validados; criado índice de banco para consultas de eventos por mesa e data.
+- Documentadas as variáveis de ambiente e atualizados os status do plano de implementação.
+
+---
+
 ## [2026-10-11] — Correção da edição de personagens
 
 **Horário:** 23:39 BRT

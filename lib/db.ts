@@ -1,5 +1,7 @@
 import { drizzle } from 'drizzle-orm/neon-serverless'
 import { Pool } from '@neondatabase/serverless'
+import { sql } from 'drizzle-orm'
+import type { CampaignEvent, CampaignEventVisibility } from '@/lib/types/campaign-event'
 
 declare global {
   // eslint-disable-next-line no-var
@@ -129,6 +131,9 @@ export async function ensureAllTables() {
     updated_at TIMESTAMPTZ DEFAULT now()
   );
 
+  CREATE INDEX IF NOT EXISTS campaign_events_campaign_date_idx
+    ON campaign_events (campaign_id, event_date);
+
   -- Calendário de marcação (toggle)
   CREATE TABLE IF NOT EXISTS campaign_scheduling_calendars (
     campaign_id UUID PRIMARY KEY REFERENCES campaigns(id) ON DELETE CASCADE,
@@ -156,17 +161,6 @@ export type CampaignEventCalendar = {
   enabled: boolean
   createdAt: Date
   updatedAt: Date
-}
-
-export type CampaignEvent = {
-  id: string
-  campaignId: string
-  title: string
-  description: string | null
-  eventDate: string
-  eventTime: string | null
-  visibility: 'master' | 'everyone'
-  createdAt: Date
 }
 
 export type CampaignSchedulingCalendar = {
@@ -278,7 +272,7 @@ export async function createCampaignEvent(
   description: string | null,
   eventDate: string,
   eventTime: string | null,
-  visibility: 'master' | 'everyone'
+  visibility: CampaignEventVisibility
 ): Promise<{ id: string }> {
   if (isDev) return devCreateCampaignEvent(campaignId, title, description, eventDate, eventTime, visibility)
 
@@ -316,44 +310,69 @@ export async function getCampaignEventsByYear(campaignId: string, year: number):
   }))
 }
 
+export async function getCampaignEventById(eventId: string): Promise<CampaignEvent | null> {
+  if (isDev) {
+    const event = getCalendarStore().events.find((item) => item.id === eventId)
+    return event ? { ...event, createdAt: new Date(event.createdAt) } : null
+  }
+
+  const result = await db.execute<{ id: string; campaign_id: string; title: string; description: string | null; event_date: string; event_time: string | null; visibility: CampaignEventVisibility; created_at: string }>(sql`
+    SELECT id, campaign_id, title, description, event_date::text AS event_date,
+      event_time::text AS event_time, visibility, created_at::text AS created_at
+    FROM campaign_events
+    WHERE id = ${eventId}::uuid
+  `)
+  const row = result.rows[0]
+  if (!row) return null
+  return {
+    id: row.id,
+    campaignId: row.campaign_id,
+    title: row.title,
+    description: row.description,
+    eventDate: row.event_date,
+    eventTime: row.event_time,
+    visibility: row.visibility,
+    createdAt: new Date(row.created_at),
+  }
+}
+
 export async function updateCampaignEvent(
   eventId: string,
-  data: Partial<{ title: string; description: string | null; eventDate: string; eventTime: string | null; visibility: 'master' | 'everyone' }>
+  data: Partial<{ title: string; description: string | null; eventDate: string; eventTime: string | null; visibility: CampaignEventVisibility }>
 ): Promise<void> {
   if (isDev) return devUpdateCampaignEvent(eventId, data)
+  if (!pool) throw new Error('Banco de dados indisponível')
 
   const updates: string[] = []
-  const params: (string | number)[] = [eventId, eventId]
+  const params: Array<string | null> = [eventId]
 
   if (data.title !== undefined) {
-    updates.push(`title = $${params.length}`)
+    updates.push(`title = $${params.length + 1}`)
     params.push(data.title)
   }
   if (data.description !== undefined) {
-    updates.push(`description = $${params.length}`)
+    updates.push(`description = $${params.length + 1}`)
     params.push(data.description)
   }
   if (data.eventDate !== undefined) {
-    updates.push(`event_date = $${params.length}`)
+    updates.push(`event_date = $${params.length + 1}::date`)
     params.push(data.eventDate)
   }
   if (data.eventTime !== undefined) {
-    updates.push(`event_time = $${params.length}`)
+    updates.push(`event_time = $${params.length + 1}::time`)
     params.push(data.eventTime)
   }
   if (data.visibility !== undefined) {
-    updates.push(`visibility = $${params.length}`)
+    updates.push(`visibility = $${params.length + 1}`)
     params.push(data.visibility)
   }
 
   if (updates.length === 0) return
 
-  await db.execute(sql`
-    UPDATE campaign_events
-    SET ${sql.join(updates.map(u => sql`${u}`), sql`, `)}
-    WHERE id = $1::uuid
-    AND campaign_id = $2::uuid
-  `, params)
+  await pool.query(
+    `UPDATE campaign_events SET ${updates.join(', ')}, updated_at = now() WHERE id = $1::uuid`,
+    params
+  )
 }
 
 export async function deleteCampaignEvent(eventId: string): Promise<void> {
@@ -396,6 +415,7 @@ export async function createLiveKitRoom(
   await db.execute(sql`
     INSERT INTO livekit_rooms (campaign_id, room_name, room_url, host_user_id)
     VALUES (${campaignId}::uuid, ${roomName}, ${roomUrl}, ${hostUserId})
+    ON CONFLICT (campaign_id) DO NOTHING
   `)
 }
 

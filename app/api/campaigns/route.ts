@@ -1,4 +1,4 @@
-import { auth0, getSessionOrDev } from '@/lib/auth0'
+import { getSessionOrDev } from '@/lib/auth0'
 import { NextResponse } from 'next/server'
 import { createCampaign, getCampaignsForMaster, hasMasterAccess } from '@/lib/campaigns'
 import { db, ensureAllTables } from '@/lib/db'

@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { ArrowLeft, Check, FileText, Link2, Plus, Save, Skull, Unlink } from 'lucide-react'
-import { Suspense, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import useSWR from 'swr'
 import styles from '../create-characters/skills.module.css'
 
@@ -260,7 +260,7 @@ export default function CharacterFormClient({ initialCharacterId = null, mode = 
       setConvictions(loadedConvictions)
       // Carregar vantagens e defeitos
       if (Array.isArray(data['vantagens'])) {
-        setMerits((data['vantagens'] as Array<{ name?: string; level?: number; description?: string }>).map((m, i) => ({
+        setMerits((data['vantagens'] as Array<{ name?: string; level?: number; description?: string }>).map((m) => ({
           name: m.name || '',
           level: Number(m.level) || 0,
           description: m.description || '',
@@ -268,7 +268,7 @@ export default function CharacterFormClient({ initialCharacterId = null, mode = 
         })))
       }
       if (Array.isArray(data['defeitos'])) {
-        setFlaws((data['defeitos'] as Array<{ name?: string; level?: number; description?: string }>).map((f, i) => ({
+        setFlaws((data['defeitos'] as Array<{ name?: string; level?: number; description?: string }>).map((f) => ({
           name: f.name || '',
           level: Number(f.level) || 0,
           description: f.description || '',
@@ -321,6 +321,7 @@ export default function CharacterFormClient({ initialCharacterId = null, mode = 
   }
 
   async function saveDraft(message = 'Alterações salvas automaticamente.', redirectUrl?: string) {
+    void message
     if (mode === 'edit' && (!characterId || !characterData?.character)) return false
     setSaving(true)
     const formData = formRef.current ? Object.fromEntries(new FormData(formRef.current).entries()) : {}

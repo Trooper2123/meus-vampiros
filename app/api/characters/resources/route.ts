@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import { getSessionOrDev } from '@/lib/auth0'
-import { getCharacterById } from '@/lib/characters'
 import { ensureAllTables } from '@/lib/db'
 import { canEditCharacter } from '@/lib/auth/authorization'
 import { db } from '@/lib/db'
@@ -46,14 +45,14 @@ export async function PATCH(request: Request) {
     await db.execute(sql`
       UPDATE characters
       SET data = data || jsonb_build_object(
-        'humanidade', $1,
-        'vontade', $2,
-        'vitalidade', $3,
-        'fome', $4
+        'humanidade', ${humanidade},
+        'vontade', ${vontade},
+        'vitalidade', ${vitalidade},
+        'fome', ${fome}
       ),
       updated_at = NOW()
-      WHERE id = $5::uuid
-    `, [humanidade, vontade, vitalidade, fome, characterId])
+      WHERE id = ${characterId}::uuid
+    `)
 
     return NextResponse.json({
       ok: true,

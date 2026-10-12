@@ -4,7 +4,6 @@ import { useState } from 'react'
 import useSWR from 'swr'
 import { Check, Copy, Plus, CalendarDays, Users } from 'lucide-react'
 import Link from 'next/link'
-import { DateAvailabilityCalendar } from '@/components/date-availability-calendar'
 
 export type CampaignSummary = {
   id: string
