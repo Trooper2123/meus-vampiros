@@ -52,10 +52,10 @@
   - **Dependencies**: task-004, task-005
   - **Status**: pending
 
-## Phase 4: PNCs e lacaios
+## Phase 4: NPCs e lacaios
 
-- [x] **task-007**: Implementar presets e validação de PNCs
-  - **Description**: Suportar PNC humano simples/templates e PNC vampiro simplificado/arquétipos.
+- [x] **task-007**: Implementar presets e validação de NPCs
+  - **Description**: Suportar NPC humano simples/templates e NPC vampiro simplificado/arquétipos.
   - **Acceptance Criteria**: Presets geram pools e campos mínimos válidos.
   - **Validation**: Testes unitários.
   - **Dependencies**: task-001
@@ -68,9 +68,9 @@
   - **Dependencies**: task-001
   - **Status**: completed
 
-- [ ] **task-009**: Criar interfaces especializadas de PNCs e lacaios
+- [ ] **task-009**: Criar interfaces especializadas de NPCs e lacaios
   - **Description**: Formulários rápidos para Mestre usando presets do domínio.
-  - **Acceptance Criteria**: PNC humano por template pode ser criado em menos de um minuto.
+  - **Acceptance Criteria**: NPC humano por template pode ser criado em menos de um minuto.
   - **Validation**: Teste manual, acessibilidade e build.
   - **Dependencies**: task-007, task-008
   - **Status**: pending
@@ -98,6 +98,6 @@
 | Fundação | 001-003 | 3 | 2 |
 | APIs e workflow | 004-005 | 2 | 0 |
 | Interface | 006 | 1 | 0 |
-| PNCs e lacaios | 007-009 | 3 | 2 |
+| NPCs e lacaios | 007-009 | 3 | 2 |
 | Auditoria e entrega | 010-011 | 2 | 0 |
 | **Total** | **001-011** | **11** | **4** |

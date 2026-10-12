@@ -2,15 +2,15 @@
 
 ## 1. Contexto
 
-O fluxo atual armazena a ficha como JSON flexível, mas não diferencia personagens jogáveis, PNCs e lacaios nem valida as distribuições mecânicas de VtM V5. A referência funcional completa está em `.kiro/specs/spec-regras-criacao-fichas-vtm-v5.md`.
+O fluxo atual armazena a ficha como JSON flexível, mas não diferencia personagens jogáveis, NPCs e lacaios nem valida as distribuições mecânicas de VtM V5. A referência funcional completa está em `.kiro/specs/spec-regras-criacao-fichas-vtm-v5.md`.
 
 ## 2. Objetivos
 
 - Validar fichas de vampiros jogáveis antes da submissão ao Mestre.
-- Suportar PNC humano, PNC vampiro e retentor/carniçal no mesmo domínio.
+- Suportar NPC humano, NPC vampiro e retentor/carniçal no mesmo domínio.
 - Separar erros bloqueantes de avisos que permitem override narrativo do Mestre.
 - Persistir tipo, status, visibilidade e origem de valores calculados sem invalidar fichas existentes.
-- Disponibilizar presets de predadores, PNCs e retentores em código versionado.
+- Disponibilizar presets de predadores, NPCs e retentores em código versionado.
 
 ## 3. Fora do escopo
 
@@ -43,11 +43,11 @@ O fluxo atual armazena a ficha como JSON flexível, mas não diferencia personag
 
 ### US-003 — Criar personagens do Mestre
 
-**Como** Mestre, **quero** criar PNC humano, PNC vampiro e retentor por presets, **para** reduzir o tempo de preparação.
+**Como** Mestre, **quero** criar NPC humano, NPC vampiro e retentor por presets, **para** reduzir o tempo de preparação.
 
 **Critérios de aceitação:**
-1. PNC humano simples aceita dificuldade entre 1 e 5 e calcula pool sugerido.
-2. PNC vampiro aceita modo simplificado com pools e dados vampíricos mínimos.
+1. NPC humano simples aceita dificuldade entre 1 e 5 e calcula pool sugerido.
+2. NPC vampiro aceita modo simplificado com pools e dados vampíricos mínimos.
 3. Retentor/carniçal exige método de controle e, quando ghoul, domitor ou justificativa de vitae.
 
 ### US-004 — Revisar ficha

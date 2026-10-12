@@ -52,8 +52,8 @@ export function validateCharacter(input: CharacterRulesInput): ValidationReport 
     if (input.flaws.length < 2 + adjustment.flawDots) errors.push(issue('FLAWS_MINIMUM_NOT_MET', 'flaws', 'A ficha precisa do mínimo de falhas exigido pela criação.'))
   }
 
-  if (input.characterType === 'HUMAN_NPC' && input.npc?.mode === 'SIMPLE' && (!Number.isInteger(input.npc.difficulty) || (input.npc.difficulty ?? 0) < 1 || (input.npc.difficulty ?? 0) > 5)) errors.push(issue('NPC_DIFFICULTY_INVALID', 'npc.difficulty', 'A dificuldade do PNC humano deve estar entre 1 e 5.'))
-  if (input.characterType === 'VAMPIRE_NPC' && !input.clan && !input.isCaitiff && !input.isThinBlood) errors.push(issue('VAMPIRE_NPC_ORIGIN_REQUIRED', 'clan', 'PNC vampiro deve possuir clã, Caitiff ou thin-blood.'))
+  if (input.characterType === 'HUMAN_NPC' && input.npc?.mode === 'SIMPLE' && (!Number.isInteger(input.npc.difficulty) || (input.npc.difficulty ?? 0) < 1 || (input.npc.difficulty ?? 0) > 5)) errors.push(issue('NPC_DIFFICULTY_INVALID', 'npc.difficulty', 'A dificuldade do NPC humano deve estar entre 1 e 5.'))
+  if (input.characterType === 'VAMPIRE_NPC' && !input.clan && !input.isCaitiff && !input.isThinBlood) errors.push(issue('VAMPIRE_NPC_ORIGIN_REQUIRED', 'clan', 'NPC vampiro deve possuir clã, Caitiff ou thin-blood.'))
   if (input.characterType === 'RETAINER') {
     if (!input.retainer?.controlMethod) errors.push(issue('RETAINER_CONTROL_REQUIRED', 'retainer.controlMethod', 'Todo retentor precisa de um método de controle.'))
     if (input.retainer?.isGhoul && !input.retainer.domitorCharacterId && !input.retainer.storedVitaeJustification?.trim()) errors.push(issue('GHOUL_VITAE_SOURCE_REQUIRED', 'retainer.domitorCharacterId', 'Ghoul exige domitor ou justificativa de vitae armazenada.'))
