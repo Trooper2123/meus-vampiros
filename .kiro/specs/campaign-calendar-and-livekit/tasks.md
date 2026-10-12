@@ -182,4 +182,12 @@
 | UI Updates | 025-026 | 2 |
 | LiveKit Integration | 027-028 | 2 |
 | Testing and Polish | 029-031 | 3 |
-| **Total** | 001-031 | **31** |
+| Narrative Calendar Extension | 032 | 1 |
+| **Total** | 001-032 | **32** |
+
+### Phase 7: Narrative Calendar Extension (1 task)
+
+- [x] **task-032**: Adicionar modos de calendário narrativo
+  - **Description**: Permitir ao mestre escolher entre calendário real, data fictícia livre e calendário personalizado, definindo dias da semana e meses próprios. Adaptar persistência, API, formulário, filtros, ordenação e exibição dos eventos.
+  - **Dependencies**: task-031
+  - **Status**: completed

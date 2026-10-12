@@ -1,111 +1,61 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSessionOrDev } from '@/lib/auth0'
-import { ensureAllTables, getCampaignEventCalendarStatus, toggleCampaignEventCalendar } from '@/lib/db'
 import { canManageCampaign } from '@/lib/auth/authorization'
 import { isUserInCampaign } from '@/lib/availability'
+import { ensureAllTables, getCampaignEventCalendarStatus, toggleCampaignEventCalendar, updateCampaignEventCalendarConfig } from '@/lib/db'
+import type { CampaignCalendarMode } from '@/lib/types/campaign-event'
 
-// ─── Validation Helpers ────────────────────────────────────────────────────────
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
-function isValidUUID(value: string): boolean {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)
+function cleanNames(names: unknown): string[] {
+  if (!Array.isArray(names)) return []
+  return names.filter((name): name is string => typeof name === 'string').map((name) => name.trim()).filter(Boolean).slice(0, 24)
 }
-
-// ─── Request Body Types ───────────────────────────────────────────────────────
-
-type ToggleStatusBody = {
-  campaignId: string
-  enabled: boolean
-}
-
-// ─── Error Responses ──────────────────────────────────────────────────────────
-
-function unauthorized(): NextResponse {
-  return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
-}
-
-function forbidden(): NextResponse {
-  return NextResponse.json({ error: 'Acesso negado. Apenas mestres podem realizar esta ação.' }, { status: 403 })
-}
-
-function badRequest(message: string): NextResponse {
-  return NextResponse.json({ error: message }, { status: 400 })
-}
-
-// ─── GET /api/campaign-event-calendar/status ──────────────────────────────────
 
 export async function GET(request: NextRequest) {
   try {
     await ensureAllTables()
     const session = await getSessionOrDev()
-    
-    if (!session?.user) {
-      return unauthorized()
-    }
+    if (!session?.user) return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
 
-    const { searchParams } = new URL(request.url)
-    const campaignId = searchParams.get('campaignId')
+    const campaignId = new URL(request.url).searchParams.get('campaignId') ?? ''
+    if (!UUID_PATTERN.test(campaignId)) return NextResponse.json({ error: 'ID da mesa inválido.' }, { status: 400 })
+    if (!await isUserInCampaign(campaignId, session.user.sub)) return NextResponse.json({ error: 'Acesso negado.' }, { status: 403 })
 
-    // Validate required params
-    if (!campaignId) {
-      return badRequest('Parâmetro campaignId é obrigatório.')
-    }
-
-    if (!isValidUUID(campaignId)) {
-      return badRequest('ID da mesa inválido.')
-    }
-
-    // Check if user is participant of the campaign (master or has a character)
-    if (!(await isUserInCampaign(campaignId, session.user.sub))) {
-      return forbidden()
-    }
-
-    // Get calendar status (returns null if no record exists)
     const status = await getCampaignEventCalendarStatus(campaignId)
-
-    // Return enabled: false if no record exists
-    const enabled = status?.enabled ?? false
-
-    return NextResponse.json({ enabled })
+    return NextResponse.json({ enabled: status?.enabled ?? false, mode: status?.mode ?? 'real', weekdays: status?.weekdays ?? [], months: status?.months ?? [] })
   } catch (error) {
     console.error('[GET /api/campaign-event-calendar/status]', error)
-    return NextResponse.json({ error: 'Não foi possível verificar o status do calendário.' }, { status: 500 })
+    return NextResponse.json({ error: 'Não foi possível verificar o calendário.' }, { status: 500 })
   }
 }
-
-// ─── PATCH /api/campaign-event-calendar/status ────────────────────────────────
 
 export async function PATCH(request: NextRequest) {
   try {
     await ensureAllTables()
     const session = await getSessionOrDev()
-    
-    if (!session?.user) {
-      return unauthorized()
-    }
+    if (!session?.user) return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
 
-    const body: ToggleStatusBody = await request.json()
-    const { campaignId, enabled } = body
+    const body = await request.json().catch(() => ({}))
+    const campaignId = typeof body.campaignId === 'string' ? body.campaignId : ''
+    if (!UUID_PATTERN.test(campaignId)) return NextResponse.json({ error: 'ID da mesa inválido.' }, { status: 400 })
+    if (!await canManageCampaign(session.user.sub, campaignId)) return NextResponse.json({ error: 'Apenas o mestre pode configurar o calendário.' }, { status: 403 })
 
-    // Validate required fields
-    if (!campaignId || typeof enabled !== 'boolean') {
-      return badRequest('Campos campaignId e enabled são obrigatórios.')
-    }
+    const current = await getCampaignEventCalendarStatus(campaignId)
+    const enabled = body.enabled === undefined ? current?.enabled ?? false : body.enabled
+    if (typeof enabled !== 'boolean') return NextResponse.json({ error: 'Valor de habilitação inválido.' }, { status: 400 })
 
-    if (!isValidUUID(campaignId)) {
-      return badRequest('ID da mesa inválido.')
-    }
+    const mode = (body.mode ?? current?.mode ?? 'real') as CampaignCalendarMode
+    if (!['real', 'fictional', 'custom'].includes(mode)) return NextResponse.json({ error: 'Modo de calendário inválido.' }, { status: 400 })
+    const weekdays = cleanNames(body.weekdays ?? current?.weekdays)
+    const months = cleanNames(body.months ?? current?.months)
+    if (mode === 'custom' && (weekdays.length === 0 || months.length === 0)) return NextResponse.json({ error: 'Informe os dias da semana e os meses personalizados.' }, { status: 400 })
 
-    // Check authorization - only master can toggle the calendar
-    if (!await canManageCampaign(session.user.sub, campaignId)) {
-      return forbidden()
-    }
-
-    // Toggle the calendar status
-    const result = await toggleCampaignEventCalendar(campaignId, enabled)
-
-    return NextResponse.json({ enabled: result.enabled })
+    await toggleCampaignEventCalendar(campaignId, enabled)
+    const config = await updateCampaignEventCalendarConfig(campaignId, { mode, weekdays, months })
+    return NextResponse.json({ enabled, ...config })
   } catch (error) {
     console.error('[PATCH /api/campaign-event-calendar/status]', error)
-    return NextResponse.json({ error: 'Não foi possível atualizar o status do calendário.' }, { status: 500 })
+    return NextResponse.json({ error: 'Não foi possível atualizar o calendário.' }, { status: 500 })
   }
 }

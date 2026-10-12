@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getSessionOrDev } from '@/lib/auth0'
-import { toggleCampaignEventCalendar } from '@/lib/campaigns'
-import { ensureAllTables } from '@/lib/db'
+import { ensureAllTables, toggleCampaignEventCalendar } from '@/lib/db'
 import { canManageCampaign } from '@/lib/auth/authorization'
 
 export async function PATCH(request: Request) {

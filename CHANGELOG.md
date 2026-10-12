@@ -16,6 +16,33 @@ Cada entrada deve incluir data, horário (BRT), tipo e resumo do que foi feito.
 
 ---
 
+## [2026-10-12] — Calendários narrativos
+
+**Horário:** 00:49 BRT
+**Tipo:** feat
+**Arquivos principais:** `app/api/campaign-event-calendar/status/route.ts`, `app/api/campaign-events/route.ts`, `components/campaign-calendar/`, `lib/db.ts`, `lib/types/campaign-event.ts`
+
+- Adicionada escolha entre calendário real, data fictícia livre e calendário personalizado por mesa.
+- A data fictícia livre usa dias da semana e meses reais, permitindo combinações narrativas e qualquer ano.
+- O mestre pode definir nomes e ordem dos dias da semana e meses do cenário.
+- Eventos fictícios usam ano narrativo, aparecem formatados sem vínculo com datas reais e mantêm ordenação própria.
+- Preservada compatibilidade com eventos existentes no calendário real e adicionada migração automática das tabelas.
+- Filtros de ano e mês são exibidos apenas quando a mesa possui mais de 20 eventos cadastrados.
+
+---
+
+## [2026-10-12] — Ordenação cronológica dos eventos
+
+**Horário:** 00:39 BRT
+**Tipo:** fix
+**Arquivos principais:** `components/campaign-calendar/campaign-event-calendar.tsx`, `lib/db.ts`, `lib/types/campaign-event.ts`, `tests/campaign-calendar.integration.test.ts`
+
+- Eventos do calendário agora são exibidos em ordem crescente de data e horário.
+- Eventos sem horário aparecem após os eventos com horário no mesmo dia.
+- Adicionado teste de integração para garantir a ordem cronológica.
+
+---
+
 ## [2026-10-12] — Calendários de campanha e mesa virtual
 
 **Horário:** 00:30 BRT
