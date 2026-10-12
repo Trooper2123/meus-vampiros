@@ -38,7 +38,7 @@ describe('regras de criação VtM V5', () => {
     expect(validateCharacter(validVampire({ creationType: 'THIN_BLOOD', isThinBlood: true, advantages: ['Retainers'] })).errors.map((entry) => entry.code)).toContain('THIN_BLOOD_ADVANTAGE_RESTRICTED')
   })
 
-  it('valida PNC simples, ghoul e Blood Bond', () => {
+  it('valida NPC simples, ghoul e Blood Bond', () => {
     const npc = validateCharacter(validVampire({ characterType: 'HUMAN_NPC', npc: { mode: 'SIMPLE', difficulty: 6 } }))
     expect(npc.errors.map((entry) => entry.code)).toContain('NPC_DIFFICULTY_INVALID')
     const ghoul = validateCharacter(validVampire({ characterType: 'RETAINER', retainer: { isGhoul: true, controlMethod: 'VITAE', activeRegnantIds: ['a', 'b'], bondStrength: 7 } }))
@@ -51,6 +51,7 @@ describe('regras de criação VtM V5', () => {
     expect(canTransitionCharacterStatus('DRAFT', 'PENDING_REVIEW', false, true)).toBe(true)
     expect(canTransitionCharacterStatus('DRAFT', 'PENDING_REVIEW', false, false)).toBe(false)
     expect(canTransitionCharacterStatus('PENDING_REVIEW', 'APPROVED', true, true)).toBe(true)
+    expect(canTransitionCharacterStatus('PENDING_REVIEW', 'APPROVED', true, false)).toBe(false)
     expect(canTransitionCharacterStatus('PENDING_REVIEW', 'APPROVED', false, true)).toBe(false)
   })
 })

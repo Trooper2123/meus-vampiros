@@ -12,6 +12,7 @@ import { randomUUID } from 'crypto'
 export type DevCharacter = {
   id: string
   userId: string
+  createdByUserId: string
   name: string
   concept: string | null
   clan: string | null
@@ -20,6 +21,7 @@ export type DevCharacter = {
   characterType?: string
   visibility?: string
   validationReport?: unknown
+  validatedAt?: Date
   campaignId: string | null
   data: Record<string, unknown>
   spentXp: number
@@ -54,12 +56,23 @@ export type DevPossession = {
   updatedAt: Date
 }
 
+export type DevCharacterLedgerEvent = {
+  id: string
+  characterId: string
+  eventType: string
+  origin: string
+  payload: Record<string, unknown>
+  createdByUserId: string
+  createdAt: Date
+}
+
 // ─── Singleton store ───────────────────────────────────────────────────────────
 
 type DevStore = {
   characters: DevCharacter[]
   campaigns: DevCampaign[]
   possessions: DevPossession[]
+  characterLedgerEvents: DevCharacterLedgerEvent[]
 }
 
 declare global {
@@ -92,11 +105,14 @@ function seed(): DevStore {
     {
       id: randomUUID(),
       userId: DEV_USER_ID,
+      createdByUserId: DEV_USER_ID,
       name: 'Míriam das Sombras',
       concept: 'Artista decadente',
       clan: 'Toreador',
       generation: '9ª',
-      status: 'Ativo',
+      status: 'DRAFT',
+      characterType: 'PLAYER_VAMPIRE',
+      visibility: 'PLAYER_VISIBLE',
       campaignId,
       data: {
         conceito: 'Artista decadente',
@@ -176,11 +192,14 @@ function seed(): DevStore {
     {
       id: randomUUID(),
       userId: DEV_USER_ID,
+      createdByUserId: DEV_USER_ID,
       name: 'Viktor Morel',
       concept: 'Advogado corrupto',
       clan: 'Ventrue',
       generation: '10ª',
-      status: 'Ativo',
+      status: 'DRAFT',
+      characterType: 'PLAYER_VAMPIRE',
+      visibility: 'PLAYER_VISIBLE',
       campaignId: null,
       data: { conceito: 'Advogado corrupto', cla: 'Ventrue', geracao: '10ª' },
       spentXp: 0,
@@ -217,7 +236,7 @@ function seed(): DevStore {
     },
   ]
 
-  return { characters, campaigns, possessions }
+  return { characters, campaigns, possessions, characterLedgerEvents: [] }
 }
 
 function getStore(): DevStore {
@@ -296,6 +315,8 @@ export function devGetCharacterById(id: string, userId: string) {
   return {
     id: c.id,
     name: c.name,
+    status: c.status,
+    characterType: c.characterType ?? 'PLAYER_VAMPIRE',
     data: c.data,
     campaignId: c.campaignId,
     campaign: campaign
@@ -313,6 +334,7 @@ export function devCreateCharacter(
   const character: DevCharacter = {
     id: randomUUID(),
     userId,
+    createdByUserId: userId,
     name: payload.name ?? 'Personagem sem nome',
     concept: (payload.data?.conceito as string) ?? null,
     clan: (payload.data?.cla as string) ?? null,
@@ -343,6 +365,7 @@ export function devUpdateCharacter(
   if (payload.name !== undefined) character.name = payload.name
   if (payload.data !== undefined) {
     character.data = payload.data
+    character.characterType = String(payload.data.characterType ?? character.characterType ?? 'PLAYER_VAMPIRE')
     character.concept = (payload.data.conceito as string) ?? null
     character.clan = (payload.data.cla as string) ?? null
     character.generation = (payload.data.geracao as string) ?? null
@@ -367,6 +390,13 @@ export function devDeleteCharacter(id: string, userId: string) {
   if (index === -1) return null
   store.characters.splice(index, 1)
   return { ok: true }
+}
+
+export function devAppendCharacterLedgerEvent(characterId: string, eventType: string, origin: string, payload: Record<string, unknown>, createdByUserId: string) {
+  const store = getStore()
+  const event: DevCharacterLedgerEvent = { id: randomUUID(), characterId, eventType, origin, payload, createdByUserId, createdAt: new Date() }
+  store.characterLedgerEvents.push(event)
+  return event
 }
 
 // ─── Campaigns ────────────────────────────────────────────────────────────────

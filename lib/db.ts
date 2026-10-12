@@ -111,6 +111,19 @@ export async function ensureAllTables() {
   updated_at TIMESTAMPTZ DEFAULT now()
   );
 
+  CREATE TABLE IF NOT EXISTS character_ledger_events (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    character_id UUID NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
+    event_type TEXT NOT NULL,
+    origin TEXT NOT NULL,
+    payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+    created_by_user_id TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  );
+
+  CREATE INDEX IF NOT EXISTS character_ledger_events_character_created_idx
+    ON character_ledger_events (character_id, created_at DESC);
+
   CREATE TABLE IF NOT EXISTS campaign_availability (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     campaign_id UUID NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,

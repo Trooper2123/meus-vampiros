@@ -5,6 +5,10 @@ const numberOrNull = (value: unknown) => {
   return value === '' || value === null || value === undefined || !Number.isFinite(parsed) ? null : parsed
 }
 const stringArray = (value: unknown) => Array.isArray(value) ? value.map(String).filter(Boolean) : []
+const traitDots = (value: unknown) => Array.isArray(value) ? value.reduce((total, item) => {
+  if (!item || typeof item !== 'object') return total
+  return total + Math.max(0, Number((item as Record<string, unknown>).level) || 0)
+}, 0) : 0
 
 export function normalizeCharacterRulesInput(data: Record<string, unknown>): CharacterRulesInput {
   const characterType = CHARACTER_TYPES.includes(data.characterType as CharacterType) ? data.characterType as CharacterType : 'PLAYER_VAMPIRE'
@@ -36,6 +40,8 @@ export function normalizeCharacterRulesInput(data: Record<string, unknown>): Cha
     predatorType: String(data.predador ?? '').trim() || null,
     advantages: stringArray(data.advantages ?? (Array.isArray(data.vantagens) ? data.vantagens.map((item) => typeof item === 'object' && item ? (item as Record<string, unknown>).name : item) : [])),
     flaws: stringArray(data.flaws ?? (Array.isArray(data.defeitos) ? data.defeitos.map((item) => typeof item === 'object' && item ? (item as Record<string, unknown>).name : item) : [])),
+    advantageDots: traitDots(data.vantagens),
+    flawDots: traitDots(data.defeitos),
     masterOverride: data.masterOverride === true,
     npc: data.npc && typeof data.npc === 'object' ? data.npc as CharacterRulesInput['npc'] : undefined,
     retainer: data.retainer && typeof data.retainer === 'object' ? data.retainer as CharacterRulesInput['retainer'] : undefined,

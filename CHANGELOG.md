@@ -16,6 +16,68 @@ Cada entrada deve incluir data, horário (BRT), tipo e resumo do que foi feito.
 
 ---
 
+## [2026-10-12] — Assistência na distribuição da ficha
+
+**Horário:** 14:04 BRT
+**Tipo:** feat, fix
+**Arquivos principais:** `app/characters/character-form-client.tsx`, `lib/vtm-v5/creation-guidance.ts`, `lib/vtm-v5/normalize.ts`, `lib/vtm-v5/validation.ts`, `tests/vtm-v5-creation-guidance.test.ts`
+
+- Incluídas instruções contextuais e contadores de pontos em atributos, habilidades, disciplinas, recursos, convicções, vantagens e defeitos.
+- Adicionados perfis rápidos de habilidades com bloqueio de níveis incompatíveis e proteção contra excesso em atributos e disciplinas.
+- Corrigida a validação para contabilizar os níveis reais de vantagens e defeitos, em vez da quantidade de registros.
+
+---
+
+## [2026-10-12] — Tipos de ficha por perfil
+
+**Horário:** 13:52 BRT
+**Tipo:** fix
+**Arquivos principais:** `app/create-characters/page.tsx`, `app/characters/character-form-client.tsx`, `app/api/characters/route.ts`, `lib/vtm-v5/types.ts`, `tests/character-type-access-route.test.ts`
+
+- Limitada a criação do jogador aos tipos Vampiro e Retentor ou carniçal.
+- Mantidos NPC humano e NPC vampiro somente para Mestres, com proteção adicional na API contra requisições manipuladas.
+- Adicionados seis cenários automatizados para validar as permissões de criação por perfil.
+
+---
+
+## [2026-10-12] — Hidratação do estado de autenticação
+
+**Horário:** 13:45 BRT
+**Tipo:** fix
+**Arquivos principais:** `components/ui/useAppUser.tsx`
+
+- Mantido o mesmo estado inicial de carregamento no servidor e na primeira renderização do navegador durante o bypass de autenticação local.
+- Tornada incondicional a chamada ao hook do Auth0, eliminando a violação das regras de hooks.
+
+---
+
+## [2026-10-12] — Formulários V5, NPCs e ledger auditável
+
+**Horário:** 13:25 BRT
+**Tipo:** feat, fix, docs
+**Arquivos principais:** `app/characters/character-form-client.tsx`, `app/api/characters/`, `lib/characters.ts`, `lib/db.ts`, `lib/dev-db.ts`, `lib/vtm-v5/`, `tests/`, `.kiro/specs/vtm-v5-character-rules/tasks.md`
+
+- Integrados tipo de ficha, perfil de criação, valores derivados, relatório mecânico e envio para revisão ao formulário.
+- Adicionados fluxos rápidos para NPC humano, NPC vampiro, retentor e carniçal usando presets do domínio.
+- Criado ledger persistente de ajustes iniciais, validações e mudanças de status com origem, autor e timestamp.
+- Finalizadas as onze tarefas da spec; 20 testes, TypeScript e build aprovados, com lint sem erros.
+
+---
+
+## [2026-10-12] — Persistência, validação e workflow de fichas V5
+
+**Horário:** 13:14 BRT
+**Tipo:** feat, fix, chore, docs
+**Arquivos principais:** `lib/db.ts`, `lib/dev-db.ts`, `lib/characters.ts`, `lib/vtm-v5/validation.ts`, `app/api/characters/[id]/validate/route.ts`, `app/api/characters/[id]/status/route.ts`, `tests/`, `vitest.config.ts`, `.kiro/specs/vtm-v5-character-rules/tasks.md`
+
+- Concluída a migração retrocompatível dos metadados comuns de fichas no PostgreSQL e no banco em memória.
+- Cobertas autenticação, autorização e persistência do relatório na API de validação de fichas.
+- Validado o workflow de submissão, aprovação, devolução, arquivamento e desativação, impedindo aprovação de fichas inválidas.
+- Configurado o alias `@/` no Vitest para permitir testes diretos dos Route Handlers do Next.js.
+- Consolidado no plano o status individual das onze tarefas da entrega.
+
+---
+
 ## [2026-10-12] — Modelo de planejamento para novas tarefas
 
 **Horário:** 01:55 BRT

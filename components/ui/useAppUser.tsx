@@ -1,12 +1,25 @@
 'use client'
 
+import { useSyncExternalStore } from 'react'
 import { useUser } from '@auth0/nextjs-auth0/client'
 
+const subscribeToHydration = () => () => {}
+
 export default function useAppUser() {
+  const auth0User = useUser()
   const disableDevBypass = process.env.NEXT_PUBLIC_DISABLE_DEV_AUTH === '1'
-  const isDev = process.env.NODE_ENV !== 'production' && typeof window !== 'undefined'
+  const isDev = process.env.NODE_ENV !== 'production'
+  const isHydrated = useSyncExternalStore(
+    subscribeToHydration,
+    () => true,
+    () => false,
+  )
 
   if (isDev && !disableDevBypass) {
+    if (!isHydrated) {
+      return { user: undefined, isLoading: true, error: null }
+    }
+
     const devUser = {
       sub: 'dev|local',
       name: process.env.NEXT_PUBLIC_DEV_USER_NAME || 'Dev User',
@@ -17,8 +30,5 @@ export default function useAppUser() {
     return { user: devUser, isLoading: false, error: null }
   }
 
-  // In production or when bypass disabled, delegate to Auth0 hook
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  const { user, error, isLoading } = useUser()
-  return { user, isLoading, error }
+  return auth0User
 }

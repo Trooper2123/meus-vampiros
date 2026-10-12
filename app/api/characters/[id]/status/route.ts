@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { getSessionOrDev } from '@/lib/auth0'
 import { canManageCampaign } from '@/lib/auth/authorization'
 import { ensureAllTables } from '@/lib/db'
-import { getCharacterAccessRecord, saveCharacterValidation, setCharacterStatus } from '@/lib/characters'
+import { appendCharacterLedgerEvent, getCharacterAccessRecord, saveCharacterValidation, setCharacterStatus } from '@/lib/characters'
 import { normalizeCharacterRulesInput } from '@/lib/vtm-v5/normalize'
 import { canTransitionCharacterStatus, validateCharacter } from '@/lib/vtm-v5/validation'
 import { CHARACTER_STATUSES, type CharacterStatus } from '@/lib/vtm-v5/types'
@@ -26,12 +26,13 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
     const isMaster = Boolean(character.campaignId && await canManageCampaign(session.user.sub, character.campaignId))
     if (!isOwner && !isMaster) return NextResponse.json({ error: 'Acesso negado.' }, { status: 403 })
 
-    const report = validateCharacter(normalizeCharacterRulesInput(character.data))
+    const report = validateCharacter(normalizeCharacterRulesInput({ ...character.data, characterType: character.characterType }))
     await saveCharacterValidation(id, report)
     if (!canTransitionCharacterStatus(character.status as CharacterStatus, nextStatus, isMaster, report.valid)) {
       return NextResponse.json({ error: report.valid ? 'Transição de status não permitida.' : 'Corrija os erros da ficha antes de enviá-la.', report }, { status: report.valid ? 409 : 422 })
     }
     await setCharacterStatus(id, nextStatus)
+    await appendCharacterLedgerEvent(id, 'STATUS_CHANGE', 'USER_ACTION', { from: character.status, to: nextStatus }, session.user.sub)
     return NextResponse.json({ status: nextStatus, report })
   } catch (error) {
     console.error('[PATCH /api/characters/[id]/status]', error)

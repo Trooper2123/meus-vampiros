@@ -1,4 +1,5 @@
 export const CHARACTER_TYPES = ['PLAYER_VAMPIRE', 'HUMAN_NPC', 'VAMPIRE_NPC', 'RETAINER'] as const
+export const PLAYER_CHARACTER_TYPES = ['PLAYER_VAMPIRE', 'RETAINER'] as const satisfies readonly CharacterType[]
 export const CHARACTER_STATUSES = ['DRAFT', 'PENDING_REVIEW', 'APPROVED', 'ARCHIVED', 'DISABLED'] as const
 export const CHARACTER_VISIBILITIES = ['PLAYER_VISIBLE', 'ST_ONLY', 'PARTIAL'] as const
 export const CREATION_TYPES = ['FLEDGLING', 'NEONATE', 'ANCILLA', 'THIN_BLOOD'] as const
@@ -7,6 +8,10 @@ export type CharacterType = typeof CHARACTER_TYPES[number]
 export type CharacterStatus = typeof CHARACTER_STATUSES[number]
 export type CharacterVisibility = typeof CHARACTER_VISIBILITIES[number]
 export type CreationType = typeof CREATION_TYPES[number]
+
+export function canCreateCharacterType(characterType: CharacterType, isMaster: boolean): boolean {
+  return isMaster || PLAYER_CHARACTER_TYPES.includes(characterType as (typeof PLAYER_CHARACTER_TYPES)[number])
+}
 
 export type ValidationIssue = { code: string; field: string; message: string }
 export type ValidationReport = {
@@ -36,6 +41,8 @@ export type CharacterRulesInput = {
   predatorType: string | null
   advantages: string[]
   flaws: string[]
+  advantageDots?: number
+  flawDots?: number
   masterOverride?: boolean
   npc?: { mode?: 'SIMPLE' | 'POOLS' | 'COMPLETE'; difficulty?: number; physicalPool?: number; socialPool?: number; mentalPool?: number }
   retainer?: { controlMethod?: string; isGhoul?: boolean; domitorCharacterId?: string | null; storedVitaeJustification?: string; disciplineLevel?: number | null; activeRegnantIds?: string[]; bondStrength?: number | null }
