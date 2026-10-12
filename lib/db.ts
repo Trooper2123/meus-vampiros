@@ -74,7 +74,12 @@ export async function ensureAllTables() {
       concept TEXT,
       clan TEXT,
       generation TEXT,
-      status TEXT NOT NULL DEFAULT 'Ativo',
+      status TEXT NOT NULL DEFAULT 'DRAFT',
+      created_by_user_id TEXT,
+      character_type TEXT NOT NULL DEFAULT 'PLAYER_VAMPIRE',
+      visibility TEXT NOT NULL DEFAULT 'PLAYER_VISIBLE',
+      validation_report JSONB,
+      validated_at TIMESTAMPTZ,
       spent_xp INT DEFAULT 0,
       total_xp INT DEFAULT 0,
       data JSONB DEFAULT '{}'::jsonb,
@@ -84,6 +89,14 @@ export async function ensureAllTables() {
 
     ALTER TABLE characters ADD COLUMN IF NOT EXISTS spent_xp INT DEFAULT 0;
     ALTER TABLE characters ADD COLUMN IF NOT EXISTS total_xp INT DEFAULT 0;
+    ALTER TABLE characters ADD COLUMN IF NOT EXISTS created_by_user_id TEXT;
+    ALTER TABLE characters ADD COLUMN IF NOT EXISTS character_type TEXT NOT NULL DEFAULT 'PLAYER_VAMPIRE';
+    ALTER TABLE characters ADD COLUMN IF NOT EXISTS visibility TEXT NOT NULL DEFAULT 'PLAYER_VISIBLE';
+    ALTER TABLE characters ADD COLUMN IF NOT EXISTS validation_report JSONB;
+    ALTER TABLE characters ADD COLUMN IF NOT EXISTS validated_at TIMESTAMPTZ;
+    ALTER TABLE characters ALTER COLUMN status SET DEFAULT 'DRAFT';
+    UPDATE characters SET created_by_user_id = user_id WHERE created_by_user_id IS NULL;
+    UPDATE characters SET status = 'DRAFT' WHERE status = 'Ativo';
 
   CREATE TABLE IF NOT EXISTS character_possessions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

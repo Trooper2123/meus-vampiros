@@ -16,6 +16,18 @@ Cada entrada deve incluir data, horário (BRT), tipo e resumo do que foi feito.
 
 ---
 
+## [2026-10-12] — Modelo de planejamento para novas tarefas
+
+**Horário:** 01:55 BRT
+**Tipo:** docs, chore
+**Arquivos principais:** `AGENTS.md`, `.kiro/specs/README.md`, `.kiro/specs/_template/`
+
+- Formalizado o roteiro do agente desde descoberta e requisitos até validação, revisão e entrega.
+- Criados modelos reutilizáveis para requisitos, design técnico, tarefas rastreáveis e metadados.
+- Vinculado o processo às regras do repositório para orientar futuras funcionalidades.
+
+---
+
 ## [2026-10-12] — Calendários narrativos
 
 **Horário:** 00:49 BRT
