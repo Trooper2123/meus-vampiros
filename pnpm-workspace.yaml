@@ -1,5 +1,5 @@
 allowBuilds:
-  bufferutil: set this to true or false
-  esbuild: set this to true or false
+  bufferutil: true
+  esbuild: true
 overrides:
   hono: 4.12.25
