@@ -4,7 +4,6 @@ import { getCharacterById } from '@/lib/characters'
 import { getCampaignById } from '@/lib/campaigns'
 import { CharacterSummaryClient } from '../character-summary-client'
 import Link from 'next/link'
-import { FileText } from 'lucide-react'
 
 async function getCharacterData(id: string, userId: string) {
   const character = await getCharacterById(id, userId)
@@ -18,7 +17,18 @@ async function getCharacterData(id: string, userId: string) {
     id?: string
     name?: string
     level?: number
-    powers?: any[]
+    powers?: Array<{
+      name?: string
+      effect?: string
+      cost?: string
+      prerequisite?: string
+      amalgam?: string
+      duration?: string
+      dicePool?: string
+      opposingPool?: string
+      additionalNotes?: string
+      source?: string
+    }>
   }
   const disciplines = Array.isArray(rawDisciplines) 
     ? (rawDisciplines as LegacyDiscipline[]).map((d) => ({
@@ -46,8 +56,8 @@ async function getCharacterData(id: string, userId: string) {
   }
 
   const getName = (): string => {
-    if (character.name && character.name.trim() !== '') return character.name
     if (data['nome'] && String(data['nome']).trim() !== '') return String(data['nome'])
+    if (character.name && character.name.trim() !== '') return character.name
     return 'Personagem sem nome'
   }
 
@@ -121,9 +131,9 @@ export default async function CharacterSummaryPage({
               Visão Geral
             </h2>
           </div>
-          <a href={`/create-characters?id=${params.id}`} className="button-primary inline-flex items-center gap-2">
+          <Link href={`/characters/${id}/edit`} className="button-primary inline-flex items-center gap-2">
             <span className="text-xs">Editar ficha completa</span>
-          </a>
+          </Link>
         </div>
 
         <CharacterSummaryClient data={characterData} />

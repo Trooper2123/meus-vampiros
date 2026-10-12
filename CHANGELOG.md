@@ -16,6 +16,20 @@ Cada entrada deve incluir data, horário (BRT), tipo e resumo do que foi feito.
 
 ---
 
+## [2026-10-11] — Correção da edição de personagens
+
+**Horário:** 23:39 BRT
+**Tipo:** fix
+**Arquivos principais:** `app/characters/page.tsx`, `app/characters/[id]/page.tsx`, `app/characters/[id]/summary/page.tsx`, `app/characters/[id]/edit/page.tsx`, `app/characters/character-form-client.tsx`
+
+- Corrigida a leitura assíncrona do parâmetro `id` na rota dinâmica de edição para recuperar os dados da ficha.
+- Corrigidos os links da listagem, da ficha e do resumo para usarem o `id` já resolvido e abrirem a rota específica de edição.
+- Corrigida a recuperação do nome no resumo e o salvamento automático para não substituir o nome ao trocar de aba.
+- O resumo da ficha agora lista todos os poderes escolhidos em cada disciplina e seus detalhes preenchidos.
+- Impedido que o modo de edição crie outro personagem ou salve campos vazios antes do carregamento da ficha.
+
+---
+
 ## [2026-10-10] — Refatoração e correções de autenticação
 
 **Horário:** 19:45 BRT

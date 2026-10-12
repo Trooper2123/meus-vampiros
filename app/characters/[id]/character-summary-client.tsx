@@ -36,7 +36,7 @@ type CharacterSummaryClientProps = {
 
 export function CharacterSummaryClient({ data }: CharacterSummaryClientProps) {
   const [characterData, setCharacterData] = useState<CharacterData>(data)
-  const [loading, setLoading] = useState(false)
+  const [, setLoading] = useState(false)
 
   const handleResourcesChange = async (newResources: CharacterData['resources']) => {
     setLoading(true)

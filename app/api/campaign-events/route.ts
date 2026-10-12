@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getSessionOrDev } from '@/lib/auth0'
-import { db, ensureAllTables, createCampaignEvent, getCampaignEventsByYear, updateCampaignEvent, deleteCampaignEvent } from '@/lib/db'
+import { ensureAllTables, createCampaignEvent, getCampaignEventById, getCampaignEventsByYear, updateCampaignEvent, deleteCampaignEvent } from '@/lib/db'
 import { canManageCampaign } from '@/lib/auth/authorization'
-import { sql } from 'drizzle-orm'
+import { isUserInCampaign } from '@/lib/availability'
+import type { EventFormData } from '@/lib/types/campaign-event'
 
 // ─── Validation Helpers ────────────────────────────────────────────────────────
 
@@ -24,16 +25,6 @@ function isValidVisibility(value: string): value is 'master' | 'everyone' {
 }
 
 // ─── Request Body Types ───────────────────────────────────────────────────────
-
-type EventFormData = {
-  campaignId?: string
-  title?: string
-  description?: string | null
-  eventDate?: string
-  eventTime?: string | null
-  visibility?: 'master' | 'everyone'
-  eventId?: string
-}
 
 // ─── Error Responses ──────────────────────────────────────────────────────────
 
@@ -79,15 +70,14 @@ export async function GET(request: NextRequest) {
     }
 
     // Check if user is participant of the campaign
-    const isParticipant = await canManageCampaign(session.user.sub, campaignId)
-    if (!isParticipant) {
+    if (!await isUserInCampaign(campaignId, session.user.sub)) {
       return forbidden()
     }
 
-    // Get events for the specified year
+    const isMaster = await canManageCampaign(session.user.sub, campaignId)
     const events = await getCampaignEventsByYear(campaignId, year)
 
-    return NextResponse.json({ events })
+    return NextResponse.json({ events: isMaster ? events : events.filter((event) => event.visibility === 'everyone') })
   } catch (error) {
     console.error('[GET /api/campaign-events]', error)
     return NextResponse.json({ error: 'Não foi possível carregar os eventos.' }, { status: 500 })
@@ -131,7 +121,7 @@ export async function POST(request: NextRequest) {
       return badRequest('Data inválida. Use o formato YYYY-MM-DD.')
     }
 
-    if (!isValidTime(eventTime)) {
+    if (!isValidTime(eventTime ?? null)) {
       return badRequest('Hora inválida. Use o formato HH:MM.')
     }
 
@@ -150,7 +140,7 @@ export async function POST(request: NextRequest) {
       title.trim(),
       description?.trim() || null,
       eventDate,
-      eventTime,
+      eventTime ?? null,
       visibility
     )
 
@@ -193,18 +183,13 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Check if event exists and get campaignId
-    const eventResult = await db.execute<{ campaign_id: string }>(sql`
-      SELECT campaign_id FROM campaign_events WHERE id = ${eventId}::uuid
-    `)
-
-    if (eventResult.rows.length === 0) {
+    const existingEvent = await getCampaignEventById(eventId)
+    if (!existingEvent) {
       return badRequest('Evento não encontrado.')
     }
 
-    const campaignId = eventResult.rows[0].campaign_id
-
     // Check authorization - only master can update events
-    if (!await canManageCampaign(session.user.sub, campaignId)) {
+    if (!await canManageCampaign(session.user.sub, existingEvent.campaignId)) {
       return forbidden()
     }
 
@@ -253,10 +238,7 @@ export async function PATCH(request: NextRequest) {
 
     // Update the event
     await updateCampaignEvent(eventId, updateData)
-
-    // Get the updated event
-    const events = await getCampaignEventsByYear(campaignId, Number.parseInt(updateData.eventDate || eventDate || '', 10))
-    const updatedEvent = events.find(e => e.id === eventId)
+    const updatedEvent = await getCampaignEventById(eventId)
 
     if (!updatedEvent) {
       return badRequest('Não foi possível recuperar o evento atualizado.')
@@ -293,18 +275,13 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Check if event exists and get campaignId
-    const eventResult = await db.execute<{ campaign_id: string }>(sql`
-      SELECT campaign_id FROM campaign_events WHERE id = ${eventId}::uuid
-    `)
-
-    if (eventResult.rows.length === 0) {
+    const existingEvent = await getCampaignEventById(eventId)
+    if (!existingEvent) {
       return badRequest('Evento não encontrado.')
     }
 
-    const campaignId = eventResult.rows[0].campaign_id
-
     // Check authorization - only master can delete events
-    if (!await canManageCampaign(session.user.sub, campaignId)) {
+    if (!await canManageCampaign(session.user.sub, existingEvent.campaignId)) {
       return forbidden()
     }
 

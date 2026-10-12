@@ -7,49 +7,49 @@
 - [x] **task-001**: Atualizar `lib/db.ts` com as 4 novas tabelas
   - **Description**: Adicionar as tabelas `campaign_event_calendars`, `campaign_events`, `campaign_scheduling_calendars` e `livekit_rooms` à função `ensureAllTables()` em `lib/db.ts`, seguindo o schema do design document.
   - **Dependencies**: none
-  - **Status**: not_started
+  - **Status**: completed
 
 - [x] **task-002**: Atualizar `lib/db.ts` com funções auxiliares para as novas tabelas
   - **Description**: Criar funções auxiliares para operações CRUD das novas tabelas: `getCampaignEventCalendarStatus`, `toggleCampaignEventCalendar`, `getCampaignSchedulingCalendarStatus`, `toggleCampaignSchedulingCalendar`, `createCampaignEvent`, `getCampaignEventsByYear`, `updateCampaignEvent`, `deleteCampaignEvent`, `getLiveKitRoom`, `createLiveKitRoom`.
   - **Dependencies**: task-001
-  - **Status**: not_started
+  - **Status**: completed
 
-- [-] **task-003**: Executar migration e verificar tabelas
+- [x] **task-003**: Executar migration e verificar tabelas
   - **Description**: Executar a migration via `/api/migrate` e verificar se as 4 tabelas foram criadas corretamente no banco de dados.
   - **Dependencies**: task-002
-  - **Status**: not_started
+  - **Status**: completed
 
 - [x] **task-004**: Atualizar API `/api/campaigns/route.ts` para criar toggle de calendário de marcação
   - **Description**: Atualizar a rota de criação de campanhas para inserir registro em `campaign_scheduling_calendars` ao criar nova mesa (com valor padrão do checkbox do formulário).
   - **Dependencies**: task-002
-  - **Status**: not_started
+  - **Status**: completed
 
 ### Phase 2: API Routes (10 tasks)
 
 - [x] **task-005**: Criar API route GET/POST/PATCH/DELETE `/api/campaign-events/route.ts`
   - **Description**: Implementar todas as operações CRUD para eventos da campanha: GET para listar por ano, POST para criar, PATCH para atualizar, DELETE para excluir. Implementar validação, autenticação e autorização (apenas mestre para POST/PATCH/DELETE).
   - **Dependencies**: task-002
-  - **Status**: not_started
+  - **Status**: completed
 
 - [x] **task-006**: Criar API route GET/PATCH `/api/campaign-event-calendar/status/route.ts`
   - **Description**: Implementar endpoint para verificar status de habilitação do calendário de eventos. GET deve retornar `enabled: boolean` e handle caso não exista registro (retornar false). Implementar autorização (apenas participantes da mesa).
   - **Dependencies**: task-002
-  - **Status**: not_started
+  - **Status**: completed
 
-- [~] **task-007**: Criar API route PATCH `/api/campaign-event-calendar/toggle/route.ts`
+- [x] **task-007**: Criar API route PATCH `/api/campaign-event-calendar/toggle/route.ts`
   - **Description**: Implementar endpoint para habilitar/desabilitar o calendário de eventos. Usar `INSERT ... ON CONFLICT` para garantir unicidade e evitar race conditions. Implementar autorização (apenas mestre).
   - **Dependencies**: task-002
-  - **Status**: in_progress
+  - **Status**: completed
 
-- [~] **task-008**: Criar API route GET/PATCH `/api/campaign-scheduling-calendar/status/route.ts`
+- [x] **task-008**: Criar API route GET/PATCH `/api/campaign-scheduling-calendar/status/route.ts`
   - **Description**: Implementar endpoint para verificar status de habilitação do calendário de marcação. Seguir mesmo padrão do task-006 (GET para status).
   - **Dependencies**: task-002
-  - **Status**: not_started
+  - **Status**: completed
 
-- [~] **task-009**: Criar API route PATCH `/api/campaign-scheduling-calendar/toggle/route.ts`
+- [x] **task-009**: Criar API route PATCH `/api/campaign-scheduling-calendar/toggle/route.ts`
   - **Description**: Implementar endpoint para habilitar/desabilitar o calendário de marcação. Seguir mesmo padrão do task-007 (PATCH para toggle).
   - **Dependencies**: task-002
-  - **Status**: not_started
+  - **Status**: completed
 
 - [~] **task-010**: Criar API route GET `/api/livekit/room/route.ts`
   - **Description**: Implementar endpoint GET para obter informações da sala LiveKit (roomName, roomUrl, hostUserId, isHost). Criar sala se não existir e o usuário for mestre. Implementar autorização (apenas participantes da mesa).
@@ -78,10 +78,10 @@
 
 ### Phase 3: Frontend Components (8 tasks)
 
-- [~] **task-015**: Criar tipos TypeScript (`CampaignEvent`, `EventFormData`)
+- [x] **task-015**: Criar tipos TypeScript (`CampaignEvent`, `EventFormData`)
   - **Description**: Criar arquivo `lib/types/campaign-event.ts` com interfaces `CampaignEvent` e `EventFormData` seguindo o schema do banco de dados e validações do design.
   - **Dependencies**: none
-  - **Status**: not_started
+  - **Status**: completed
 
 - [~] **task-016**: Criar componente `VisibilityBadge`
   - **Description**: Criar componente `VisibilityBadge.tsx` que renderiza um badge com ícone e texto baseado no valor de `visibility` ('master': cadeado + "Apenas mestre", 'everyone': olho + "Todos participantes"). Usar design system e CSS Modules.

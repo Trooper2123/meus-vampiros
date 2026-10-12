@@ -41,5 +41,18 @@
     "tailwindcss": "^4.3.3",
     "typescript": "5.7.3",
     "typescript-eslint": "^8.71.0"
+  },
+  "allowScripts": {
+    "cosmiconfig@9.0.2": true,
+    "dedent@1.7.2": true,
+    "esbuild@0.27.0": true,
+    "luxon@3.7.2": true,
+    "postcss-selector-parser@7.1.5": true,
+    "recast@0.23.21": true,
+    "uuid@14.0.1": true,
+    "whatwg-fetch@3.6.20": true,
+    "zod-validation-error@4.0.2": true,
+    "@humanfs/node@0.16.8": true,
+    "@humanwhocodes/module-importer@1.0.1": true
   }
 }

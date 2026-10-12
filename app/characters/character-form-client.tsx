@@ -321,6 +321,7 @@ export default function CharacterFormClient({ initialCharacterId = null, mode = 
   }
 
   async function saveDraft(message = 'Alterações salvas automaticamente.', redirectUrl?: string) {
+    if (mode === 'edit' && (!characterId || !characterData?.character)) return false
     setSaving(true)
     const formData = formRef.current ? Object.fromEntries(new FormData(formRef.current).entries()) : {}
     
@@ -392,9 +393,13 @@ export default function CharacterFormClient({ initialCharacterId = null, mode = 
     }
     
     const response = await fetch('/api/characters', {
-      method: characterId ? 'PUT' : 'POST',
+      method: mode === 'edit' || characterId ? 'PUT' : 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id: characterId, name: formData.nome || 'Personagem sem nome', data }),
+      body: JSON.stringify({
+        id: characterId,
+        name: nome.trim() || characterData?.character?.name || 'Personagem sem nome',
+        data,
+      }),
     })
     if (!response.ok && response.status !== 401) {
       setSaving(false)

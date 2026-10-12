@@ -4,7 +4,7 @@ import { getCharacterById } from '@/lib/characters'
 import { getCampaignById } from '@/lib/campaigns'
 import { CharacterSummaryClient } from './character-summary-client'
 import Link from 'next/link'
-import { ArrowRight, BookOpen, Edit, FileText } from 'lucide-react'
+import { BookOpen, Edit, FileText } from 'lucide-react'
 
 async function getCharacterData(id: string, userId: string) {
   const character = await getCharacterById(id, userId)
@@ -18,7 +18,18 @@ async function getCharacterData(id: string, userId: string) {
     id?: string
     name?: string
     level?: number
-    powers?: any[]
+    powers?: Array<{
+      name?: string
+      effect?: string
+      cost?: string
+      prerequisite?: string
+      amalgam?: string
+      duration?: string
+      dicePool?: string
+      opposingPool?: string
+      additionalNotes?: string
+      source?: string
+    }>
   }
   const disciplines = Array.isArray(rawDisciplines) 
     ? (rawDisciplines as LegacyDiscipline[]).map((d) => ({
@@ -46,8 +57,8 @@ async function getCharacterData(id: string, userId: string) {
   }
 
   const getName = (): string => {
-    if (character.name && character.name.trim() !== '') return character.name
     if (data['nome'] && String(data['nome']).trim() !== '') return String(data['nome'])
+    if (character.name && character.name.trim() !== '') return character.name
     return 'Personagem sem nome'
   }
 
@@ -148,7 +159,7 @@ export default async function CharacterPage({
         {/* Navegação entre Resumo e Ficha Completa */}
         <div className="mb-8 flex items-center gap-2 border-b border-border pb-4">
           <Link
-            href={`/characters/${params.id}`}
+            href={`/characters/${id}`}
             className="px-4 py-2 text-sm font-medium text-primary"
           >
             <div className="flex items-center gap-2">
@@ -157,7 +168,7 @@ export default async function CharacterPage({
             </div>
           </Link>
           <Link
-            href={`/characters/${params.id}/summary`}
+            href={`/characters/${id}/summary`}
             className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
           >
             <div className="flex items-center gap-2">
@@ -176,7 +187,7 @@ export default async function CharacterPage({
             Edite todos os detalhes da ficha em uma página interativa
           </p>
           <Link
-            href={`/create-characters?id=${params.id}`}
+            href={`/characters/${id}/edit`}
             className="button-primary inline-flex items-center gap-2"
           >
             <Edit className="size-4" />
