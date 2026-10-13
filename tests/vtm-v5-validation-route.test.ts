@@ -52,6 +52,7 @@ function validPersistedData() {
     predador: 'Siren',
     advantages: ['Recursos', 'Aliados'],
     flaws: ['Inimigo', 'Segredo sombrio'],
+    vantagens: [{ name: 'Recursos', level: 3 }, { name: 'Aliados', level: 4 }], defeitos: [{ name: 'Inimigo', level: 1 }, { name: 'Segredo sombrio', level: 1 }],
   }
 }
 
@@ -99,7 +100,7 @@ describe('POST /api/characters/[id]/validate', () => {
   })
 
   it('permite que o Mestre da campanha valide a ficha', async () => {
-    mocks.getSessionOrDev.mockResolvedValue({ user: { sub: 'auth0|mestre' } })
+    mocks.getSessionOrDev.mockResolvedValue({ user: { sub: 'auth0|modelo.md' } })
     mocks.getCharacterAccessRecord.mockResolvedValue({
       id: CHARACTER_ID,
       userId: 'auth0|owner',

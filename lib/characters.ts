@@ -4,8 +4,8 @@ import {
   devGetCharactersForUser,
   devGetCharactersForCampaign,
   devGetCharacterById,
+  devGetCharacterAccessRecord,
   devCreateCharacter,
-  devUpdateCharacter,
   devUpdateCharacterXp,
   devUpdateCharacterStatus,
   devDeleteCharacter,
@@ -13,6 +13,11 @@ import {
 } from '@/lib/dev-db'
 import { CREATION_ADJUSTMENTS } from '@/lib/vtm-v5/presets'
 import type { CreationType } from '@/lib/vtm-v5/types'
+import { applySecondaryAttributes } from '@/lib/vtm-v5/secondary-attributes'
+import { projectIndependentCharacter } from '@/lib/character-duplicate'
+import { getCommandCharacter, runCharacterCommand, CharacterCommandError } from '@/lib/character-commands'
+import { randomUUID } from 'node:crypto'
+import { readSessionState, type SessionState } from '@/lib/vtm-v5/session-state'
 
 const isDev = process.env.NODE_ENV !== 'production' && !process.env.DATABASE_URL
 
@@ -45,6 +50,7 @@ export function normalizeDisciplines(data: Record<string, unknown>): Record<stri
 
 export type CharacterSummary = {
   id: string
+  characterType?: string
   name: string
   concept: string | null
   clan: string | null
@@ -69,6 +75,7 @@ export async function getCharactersForUser(userId: string): Promise<CharacterSum
     clan: string | null
     generation: string | null
     status: string
+    character_type: string
     updated_at: Date
     campaign_id: string | null
     campaign_name: string | null
@@ -77,7 +84,7 @@ export async function getCharactersForUser(userId: string): Promise<CharacterSum
     spent_xp: string | null
     total_xp: string | null
   }>(sql`
-    SELECT ch.id, ch.name, ch.concept, ch.clan, ch.generation, ch.status, ch.updated_at,
+    SELECT ch.id, ch.character_type, ch.name, ch.concept, ch.clan, ch.generation, ch.status, ch.updated_at,
            ch.campaign_id, c.name AS campaign_name, c.theme AS campaign_theme, c.principios AS campaign_principios,
            ch.spent_xp, ch.total_xp
     FROM characters ch
@@ -88,6 +95,7 @@ export async function getCharactersForUser(userId: string): Promise<CharacterSum
 
   return result.rows.map((character) => ({
     id: character.id,
+    characterType: character.character_type,
     name: character.name,
     concept: character.concept,
     clan: character.clan,
@@ -146,22 +154,37 @@ export async function updateCharacterXp(characterId: string, totalXp: number) {
 }
 
 export async function getCharacterById(id: string, userId: string) {
-  if (isDev) return devGetCharacterById(id, userId)
+  if (isDev) {
+    const character = devGetCharacterById(id, userId)
+    const stored = devGetCharacterAccessRecord(id)
+    if (character && stored?.gameState && Object.keys(stored.gameState).length) {
+      const state = readSessionState(character.data, stored.gameState)
+      character.data = { ...character.data, fome: state.hunger, humanidade: state.humanity, vitalidade: state.healthCurrent, vontade: state.willpowerCurrent, healthDamage: state.healthDamage, willpowerDamage: state.willpowerDamage }
+    }
+    return character
+  }
 
-  const result = await db.execute<{ id: string; name: string; status: string; character_type: string; data: unknown; campaign_id: string | null }>(sql`
-    SELECT id, name, status, character_type, data, campaign_id FROM characters WHERE id = ${id}::uuid AND user_id = ${userId}
+  const result = await db.execute<{ id: string; name: string; status: string; character_type: string; data: unknown; campaign_id: string | null; total_xp: number; spent_xp: number; revision: number; game_state: Record<string, unknown> }>(sql`
+    SELECT id, name, status, character_type, data, campaign_id, total_xp, spent_xp, revision, game_state FROM characters WHERE id = ${id}::uuid AND user_id = ${userId}
   `)
   const row = result.rows[0]
   if (!row) return null
   const normalizedData = normalizeDisciplines(
     (row.data && typeof row.data === 'object' ? row.data : {}) as Record<string, unknown>
   )
-  return { id: row.id, name: row.name ?? '', status: row.status, characterType: row.character_type, data: normalizedData, campaignId: row.campaign_id, campaign: null }
+  const state: Partial<SessionState> = Object.keys(row.game_state ?? {}).length ? readSessionState(normalizedData, row.game_state) : {}
+  return { id: row.id, name: row.name ?? '', status: row.status, characterType: row.character_type, revision: row.revision, data: { ...normalizedData, 'experiencia-total': row.total_xp, 'experiencia-gasta': row.spent_xp, ...(state.hunger !== undefined ? { fome: state.hunger } : {}), ...(state.humanity !== undefined ? { humanidade: state.humanity } : {}), ...(state.healthCurrent !== undefined ? { vitalidade: state.healthCurrent } : {}), ...(state.willpowerCurrent !== undefined ? { vontade: state.willpowerCurrent } : {}), ...(state.healthDamage ? { healthDamage: state.healthDamage, willpowerDamage: state.willpowerDamage } : {}) }, campaignId: row.campaign_id, campaign: null }
+}
+
+export async function getCharacterForViewer(id: string, viewerId: string) {
+  const access = await getCommandCharacter(id)
+  if (!access || (access.ownerId !== viewerId && access.masterId !== viewerId)) return null
+  return getCharacterById(id, access.ownerId)
 }
 
 export async function getCharacterAccessRecord(id: string) {
   if (isDev) {
-    const character = global.__devDb?.characters.find((entry) => entry.id === id)
+    const character = devGetCharacterAccessRecord(id)
     return character ? { id: character.id, userId: character.userId, campaignId: character.campaignId, status: character.status, characterType: character.characterType ?? 'PLAYER_VAMPIRE', data: normalizeDisciplines(character.data) } : null
   }
   const result = await db.execute<{ id: string; user_id: string; campaign_id: string | null; status: string; character_type: string; data: unknown }>(sql`
@@ -173,7 +196,7 @@ export async function getCharacterAccessRecord(id: string) {
 
 export async function saveCharacterValidation(id: string, report: unknown) {
   if (isDev) {
-    const character = global.__devDb?.characters.find((entry) => entry.id === id)
+    const character = devGetCharacterAccessRecord(id)
     if (character) {
       character.validationReport = report
       character.validatedAt = new Date()
@@ -194,27 +217,33 @@ export async function setCharacterStatus(id: string, status: string) {
 
 export async function createCharacter(
   userId: string,
-  payload: { name?: string; data?: Record<string, unknown>; campaignId?: string | null }
+  payload: { name?: string; data?: Record<string, unknown>; campaignId?: string | null },
+  resourceSource?: Record<string, unknown>
 ) {
+  payload = { ...payload, data: applySecondaryAttributes(payload.data ?? {}, resourceSource) }
+  const initialXp = CREATION_ADJUSTMENTS[(payload.data?.creationType ?? 'FLEDGLING') as CreationType]?.initialXp ?? 0
+  const initialState = readSessionState(payload.data ?? {}, resourceSource ? { healthDamage: resourceSource.healthDamage, willpowerDamage: resourceSource.willpowerDamage } : {})
   if (isDev) {
     const character = devCreateCharacter(userId, payload)
+    character.totalXp = character.characterType === 'PLAYER_VAMPIRE' ? initialXp : 0
+    character.gameState = character.characterType === 'PLAYER_VAMPIRE' ? { ...initialState } : {}
     const creationType = (payload.data?.creationType ?? 'FLEDGLING') as CreationType
     const adjustment = CREATION_ADJUSTMENTS[creationType] ?? CREATION_ADJUSTMENTS.FLEDGLING
-    devAppendCharacterLedgerEvent(character.id, 'INITIAL_ADJUSTMENT', 'RULE_ENGINE', { creationType, ...adjustment }, userId)
+    devAppendCharacterLedgerEvent(character.id, 'INITIAL_ADJUSTMENT', 'RULE_ENGINE', { creationType, ...adjustment, secondaryAttributes: payload.data?.secondaryAttributes }, userId)
     return character
   }
 
   const { name, data, campaignId } = payload
   const result = await db.execute<{ id: string }>(sql`
-    INSERT INTO characters (user_id, created_by_user_id, character_type, name, concept, clan, generation, data, campaign_id, status)
-    VALUES (${userId}, ${userId}, ${data?.characterType ?? 'PLAYER_VAMPIRE'}, ${name}, ${data?.conceito ?? null}, ${data?.cla ?? null}, ${data?.geracao ?? null}, ${JSON.stringify(data ?? {})}::jsonb, ${campaignId ?? null}::uuid, 'DRAFT')
+    INSERT INTO characters (user_id, created_by_user_id, character_type, name, concept, clan, generation, data, game_state, total_xp, campaign_id, status)
+    VALUES (${userId}, ${userId}, ${data?.characterType ?? 'PLAYER_VAMPIRE'}, ${name}, ${data?.conceito ?? null}, ${data?.cla ?? null}, ${data?.geracao ?? null}, ${JSON.stringify(data ?? {})}::jsonb, ${JSON.stringify((data?.characterType ?? 'PLAYER_VAMPIRE') === 'PLAYER_VAMPIRE' ? initialState : {})}::jsonb, ${(data?.characterType ?? 'PLAYER_VAMPIRE') === 'PLAYER_VAMPIRE' ? initialXp : 0}, ${campaignId ?? null}::uuid, 'DRAFT')
     RETURNING id
   `)
   const id = result.rows[0]?.id
   if (id) {
     const creationType = (data?.creationType ?? 'FLEDGLING') as CreationType
     const adjustment = CREATION_ADJUSTMENTS[creationType] ?? CREATION_ADJUSTMENTS.FLEDGLING
-    await appendCharacterLedgerEvent(id, 'INITIAL_ADJUSTMENT', 'RULE_ENGINE', { creationType, ...adjustment }, userId)
+    await appendCharacterLedgerEvent(id, 'INITIAL_ADJUSTMENT', 'RULE_ENGINE', { creationType, ...adjustment, secondaryAttributes: data?.secondaryAttributes }, userId)
   }
   return { id }
 }
@@ -251,36 +280,30 @@ export async function deleteCharacter(id: string, userId: string) {
 export async function updateCharacter(
   id: string,
   userId: string,
-  payload: { name?: string; data?: Record<string, unknown>; campaignId?: string | null | undefined }
+  payload: { name?: string; data?: Record<string, unknown>; campaignId?: string | null; expectedRevision?: number }
 ) {
-  if (isDev) return devUpdateCharacter(id, userId, payload)
+  const previous = await getCharacterById(id, userId)
+  if (!previous) return null
+  const mechanicalFields = new Set(['forca', 'destreza', 'vigor', 'carisma', 'manipulacao', 'compostura', 'inteligencia', 'raciocinio', 'determinacao', 'cla', 'geracao', 'characterType', 'creationType', 'disciplinas', 'vantagens', 'defeitos', 'retainer', 'npc', 'potencia-de-sangue', 'isCaitiff', 'isThinBlood'])
+  return runCharacterCommand(userId, id, { key: randomUUID(), type: 'CHARACTER_EDITED', expectedRevision: payload.expectedRevision ?? previous.revision, payload }, character => character.ownerId === userId, character => {
+    if (['ARCHIVED', 'DISABLED'].includes(character.status)) throw new CharacterCommandError(409, 'Esta ficha precisa ser reativada pelo Narrador antes da edição.')
+    if (payload.campaignId !== undefined && payload.campaignId !== character.campaignId) throw new CharacterCommandError(409, 'A alteração do vínculo exige aprovação da mesa.')
+    if (payload.data) {
+      const changedMechanics = Object.entries(payload.data).some(([field, value]) => (mechanicalFields.has(field) || field.startsWith('habilidade-') || field.startsWith('convicoes-')) && JSON.stringify(value) !== JSON.stringify(character.data[field]))
+      if (changedMechanics && character.status !== 'DRAFT') character.status = 'DRAFT'
+      character.data = applySecondaryAttributes({ ...character.data, ...payload.data }, character.data)
+      delete character.data['experiencia-total']
+      delete character.data['experiencia-gasta']
+    }
+    if (payload.name !== undefined) { character.name = payload.name; if ('nome' in character.data) character.data.nome = payload.name }
+    character.characterType = String(character.data.characterType ?? character.characterType)
+    return { ok: true, status: character.status }
+  })
+}
 
-  const { name, data, campaignId } = payload
-
-  if (name === undefined && data === undefined) {
-    await db.execute(sql`
-      UPDATE characters SET campaign_id = ${campaignId ?? null}::uuid, updated_at = NOW()
-      WHERE id = ${id}::uuid AND user_id = ${userId}
-    `)
-    return { ok: true, campaignId }
-  }
-
-  if (campaignId !== undefined) {
-    await db.execute(sql`
-      UPDATE characters
-      SET name = ${name}, concept = ${data?.conceito ?? null}, clan = ${data?.cla ?? null}, generation = ${data?.geracao ?? null},
-          character_type = ${data?.characterType ?? 'PLAYER_VAMPIRE'}, data = ${JSON.stringify(data ?? {})}::jsonb,
-          campaign_id = ${campaignId ?? null}::uuid, updated_at = NOW()
-      WHERE id = ${id}::uuid AND user_id = ${userId}
-    `)
-    return { ok: true, campaignId }
-  }
-
-  await db.execute(sql`
-    UPDATE characters
-    SET name = ${name}, concept = ${data?.conceito ?? null}, clan = ${data?.cla ?? null}, generation = ${data?.geracao ?? null},
-        character_type = ${data?.characterType ?? 'PLAYER_VAMPIRE'}, data = ${JSON.stringify(data ?? {})}::jsonb, updated_at = NOW()
-    WHERE id = ${id}::uuid AND user_id = ${userId}
-  `)
-  return { ok: true }
+export async function duplicateCharacter(id: string, userId: string) {
+  const original = await getCharacterById(id, userId)
+  if (!original || original.characterType !== 'PLAYER_VAMPIRE') return null
+  const data = projectIndependentCharacter(original.data as Record<string, unknown>)
+  return createCharacter(userId, { name: `${original.name} — Cópia`, campaignId: null, data }, data)
 }

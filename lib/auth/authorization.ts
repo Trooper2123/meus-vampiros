@@ -1,7 +1,7 @@
-import { getCharacterById } from '@/lib/characters'
+import { getCharacterById, getCharacterAccessRecord } from '@/lib/characters'
 import { getCampaignsForMaster } from '@/lib/campaigns'
-import { db, getLiveKitRoom } from '@/lib/db'
-import { sql } from 'drizzle-orm'
+import { getLiveKitRoom } from '@/lib/db'
+import { getPossessionsForCampaign } from '@/lib/possessions'
 
 /**
  * Checks if the given user is the creator of the character.
@@ -24,15 +24,14 @@ export async function canManageCampaign(userId: string, campaignId: string): Pro
  * The user must be the master of the campaign the possession belongs to.
  */
 export async function canManagePossession(userId: string, possessionId: string): Promise<boolean> {
-  const result = await db.execute<{ campaign_id: string | null }>(sql`
-    SELECT c.campaign_id
-    FROM possessions p
-    JOIN characters c ON p.character_id = c.id
-    WHERE p.id = ${possessionId}::uuid
-  `)
-  const row = result.rows[0]
-  if (!row || !row.campaign_id) return false
-  return canManageCampaign(userId, row.campaign_id)
+  const campaigns = await getCampaignsForMaster(userId)
+  for (const campaign of campaigns) {
+    const possession = (await getPossessionsForCampaign(campaign.id)).find((item) => item.id === possessionId)
+    if (!possession) continue
+    const character = await getCharacterAccessRecord(possession.characterId)
+    return character?.campaignId === campaign.id
+  }
+  return false
 }
 
 export async function isLiveKitHost(userId: string, campaignId: string): Promise<boolean> {

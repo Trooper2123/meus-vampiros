@@ -6,6 +6,7 @@ import { getCharactersForUser } from '@/lib/characters'
 import { getCampaignsForMaster, hasMasterAccess } from '@/lib/campaigns'
 import { MasterPanel } from '@/components/master-panel'
 import { DateAvailabilityCalendar } from '@/components/date-availability-calendar'
+import { DuplicateCharacterButton } from '@/components/duplicate-character-button'
 
 export default async function PersonagensPage() {
   if (!process.env.AUTH0_DOMAIN || !process.env.AUTH0_CLIENT_ID || !process.env.AUTH0_SECRET || !process.env.AUTH0_CLIENT_SECRET) {
@@ -17,6 +18,11 @@ export default async function PersonagensPage() {
   if (!session?.user) redirect('/auth/login?returnTo=/characters')
 
   const characters = await getCharactersForUser(session.user.sub)
+  const characterGroups = [
+    { label: 'Sem campanha', characters: characters.filter((character) => !character.campaignId && character.status !== 'ARCHIVED') },
+    { label: 'Vinculados a campanhas', characters: characters.filter((character) => character.campaignId && character.status !== 'ARCHIVED') },
+    { label: 'Arquivados', characters: characters.filter((character) => character.status === 'ARCHIVED') },
+  ]
   const userIsMaster = await hasMasterAccess(session.user)
   const campaigns = userIsMaster ? await getCampaignsForMaster(session.user.sub) : []
   const displayName = session.user.name ?? session.user.email ?? 'Guardião'
@@ -85,8 +91,9 @@ export default async function PersonagensPage() {
             </Link>
           </section>
         ) : (
-          <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-            {characters.map((character) => (
+          <div className="flex flex-col gap-8">
+            {characterGroups.filter((group) => group.characters.length > 0).map((group) => <section key={group.label} aria-label={group.label}><h2 className="mb-4 font-serif text-2xl">{group.label}</h2><div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+            {group.characters.map((character) => (
               <div key={character.id} className="group border border-border bg-card p-6 transition-colors hover:border-primary">
                 <div className="flex items-start justify-between gap-4">
                   <div>
@@ -133,8 +140,10 @@ export default async function PersonagensPage() {
                     Editar ficha <ArrowRight className="size-3 transition-transform group-hover:translate-x-1" />
                   </Link>
                 </div>
+                {character.characterType === 'PLAYER_VAMPIRE' && <DuplicateCharacterButton characterId={character.id} />}
               </div>
             ))}
+            </div></section>)}
           </div>
         )}
 

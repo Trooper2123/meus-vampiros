@@ -1,115 +1,87 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const mocks = vi.hoisted(() => ({
-  canManageCampaign: vi.fn(),
-  ensureAllTables: vi.fn(),
-  getCharacterAccessRecord: vi.fn(),
-  getSessionOrDev: vi.fn(),
-  saveCharacterValidation: vi.fn(),
-  setCharacterStatus: vi.fn(),
-  appendCharacterLedgerEvent: vi.fn(),
-}))
+const session = vi.hoisted(() => { vi.stubEnv('DATABASE_URL', undefined); vi.stubEnv('NODE_ENV', 'test'); return vi.fn() })
+vi.mock('@/lib/auth0', () => ({ getSessionOrDev: session }))
+import { PATCH } from '@/app/api/characters/[id]/status/route'
 
-vi.mock('@/lib/auth0', () => ({ getSessionOrDev: mocks.getSessionOrDev }))
-vi.mock('@/lib/auth/authorization', () => ({ canManageCampaign: mocks.canManageCampaign }))
-vi.mock('@/lib/db', () => ({ ensureAllTables: mocks.ensureAllTables }))
-vi.mock('@/lib/characters', () => ({
-  appendCharacterLedgerEvent: mocks.appendCharacterLedgerEvent,
-  getCharacterAccessRecord: mocks.getCharacterAccessRecord,
-  saveCharacterValidation: mocks.saveCharacterValidation,
-  setCharacterStatus: mocks.setCharacterStatus,
-}))
-
-import { PATCH } from '../app/api/characters/[id]/status/route'
-
-const CHARACTER_ID = '11111111-1111-4111-8111-111111111111'
-const CAMPAIGN_ID = '22222222-2222-4222-8222-222222222222'
-
-function request(status: string) {
-  return new Request('http://localhost', {
-    method: 'PATCH',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ status }),
-  })
-}
-
-function context() {
-  return { params: Promise.resolve({ id: CHARACTER_ID }) }
-}
+const id = '11111111-1111-4111-8111-111111111111'
+const campaignId = '22222222-2222-4222-8222-222222222222'
+const context = { params: Promise.resolve({ id }) }
 
 function validData() {
-  return {
-    creationType: 'FLEDGLING', cla: 'Toreador', geracao: 13, humanidade: 7, 'potencia-de-sangue': 1,
+  return { creationType: 'FLEDGLING', cla: 'Toreador', geracao: 13, humanidade: 7, 'potencia-de-sangue': 1,
     forca: 4, destreza: 3, vigor: 3, carisma: 3, manipulacao: 2, compostura: 2, inteligencia: 2, raciocinio: 2, determinacao: 1,
     'convicoes-crenca-1': 'Proteger os inocentes', 'convicoes-pilar-1': 'Helena', predador: 'Siren',
     disciplinas: [{ name: 'Presença', level: 2, powers: ['Fascínio', 'Assombro'] }, { name: 'Rapidez', level: 1, powers: ['Reflexos rápidos'] }],
     advantages: ['Recursos', 'Aliados'], flaws: ['Inimigo', 'Segredo sombrio'],
-  }
+    vantagens: [{ name: 'Recursos', level: 3 }, { name: 'Aliados', level: 4 }], defeitos: [{ name: 'Inimigo', level: 1 }, { name: 'Segredo sombrio', level: 1 }] }
+}
+function request(status: string, expectedRevision = 0) {
+  return new Request('http://localhost', { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ status, expectedRevision }) })
 }
 
-describe('PATCH /api/characters/[id]/status', () => {
+describe('PATCH status com transação real em memória', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-    mocks.getSessionOrDev.mockResolvedValue({ user: { sub: 'auth0|owner' } })
-    mocks.canManageCampaign.mockResolvedValue(false)
-    mocks.getCharacterAccessRecord.mockResolvedValue({
-      id: CHARACTER_ID, userId: 'auth0|owner', campaignId: CAMPAIGN_ID,
-      status: 'DRAFT', characterType: 'PLAYER_VAMPIRE', data: validData(),
-    })
+    const now = new Date()
+    global.__devDb = { characters: [{ id, userId: 'owner', createdByUserId: 'owner', name: 'Helena', concept: null, clan: 'Toreador', generation: '13', status: 'DRAFT', characterType: 'PLAYER_VAMPIRE', campaignId, data: validData(), totalXp: 0, spentXp: 0, revision: 0, gameState: {}, createdAt: now, updatedAt: now }], campaigns: [{ id: campaignId, masterUserId: 'narrator', name: 'Mesa', theme: null, principios: null, averageXp: null, status: 'Ativa', lastSessionAt: null, createdAt: now, updatedAt: now }], possessions: [], characterLedgerEvents: [] }
+    session.mockReset()
+    session.mockResolvedValue({ user: { sub: 'owner' } })
   })
-
-  it('permite que o dono envie uma ficha válida para revisão', async () => {
-    const response = await PATCH(request('PENDING_REVIEW'), context())
-
+  it('conclui ficha independente sem Narrador após validação', async () => {
+    global.__devDb!.characters[0].campaignId = null
+    expect((await PATCH(request('APPROVED'), context)).status).toBe(200)
+    expect(global.__devDb!.characters[0]).toMatchObject({ status: 'APPROVED', revision: 1, validationReport: { valid: true } })
+  })
+  it('não envia ficha independente a Narrador inexistente', async () => {
+    global.__devDb!.characters[0].campaignId = null
+    expect((await PATCH(request('PENDING_REVIEW'), context)).status).toBe(409)
+    expect(global.__devDb!.characters[0].status).toBe('DRAFT')
+    expect(global.__devDb!.characterLedgerEvents).toHaveLength(0)
+  })
+  it('dono envia ficha válida para revisão, com relatório e evento atômicos', async () => {
+    const response = await PATCH(request('PENDING_REVIEW'), context)
     expect(response.status).toBe(200)
-    expect(mocks.setCharacterStatus).toHaveBeenCalledWith(CHARACTER_ID, 'PENDING_REVIEW')
-    expect(mocks.appendCharacterLedgerEvent).toHaveBeenCalledWith(CHARACTER_ID, 'STATUS_CHANGE', 'USER_ACTION', { from: 'DRAFT', to: 'PENDING_REVIEW' }, 'auth0|owner')
+    expect(await response.json()).toMatchObject({ status: 'PENDING_REVIEW', revision: 1, report: { valid: true } })
+    expect(global.__devDb!.characters[0]).toMatchObject({ status: 'PENDING_REVIEW', revision: 1, validationReport: { valid: true } })
+    expect(global.__devDb!.characterLedgerEvents[0]).toMatchObject({ eventType: 'STATUS_CHANGE', createdByUserId: 'owner', payload: { input: { status: 'PENDING_REVIEW' }, after: { status: 'PENDING_REVIEW' } } })
   })
-
-  it('bloqueia o envio de uma ficha inválida', async () => {
-    mocks.getCharacterAccessRecord.mockResolvedValue({
-      id: CHARACTER_ID, userId: 'auth0|owner', campaignId: CAMPAIGN_ID,
-      status: 'DRAFT', characterType: 'PLAYER_VAMPIRE', data: {},
-    })
-
-    const response = await PATCH(request('PENDING_REVIEW'), context())
-
-    expect(response.status).toBe(422)
-    expect(mocks.setCharacterStatus).not.toHaveBeenCalled()
+  it('bloqueia envio inválido sem mudar status, revisão ou ledger', async () => {
+    global.__devDb!.characters[0].data = {}
+    expect((await PATCH(request('PENDING_REVIEW'), context)).status).toBe(422)
+    expect(global.__devDb!.characters[0]).toMatchObject({ status: 'DRAFT', revision: 0 })
+    expect(global.__devDb!.characterLedgerEvents).toHaveLength(0)
   })
-
-  it('permite que somente o Mestre aprove uma ficha válida', async () => {
-    mocks.getSessionOrDev.mockResolvedValue({ user: { sub: 'auth0|mestre' } })
-    mocks.canManageCampaign.mockResolvedValue(true)
-    mocks.getCharacterAccessRecord.mockResolvedValue({
-      id: CHARACTER_ID, userId: 'auth0|owner', campaignId: CAMPAIGN_ID,
-      status: 'PENDING_REVIEW', characterType: 'PLAYER_VAMPIRE', data: validData(),
-    })
-
-    const response = await PATCH(request('APPROVED'), context())
-
-    expect(response.status).toBe(200)
-    expect(mocks.setCharacterStatus).toHaveBeenCalledWith(CHARACTER_ID, 'APPROVED')
+  it('Narrador da campanha aprova ficha válida em revisão', async () => {
+    session.mockResolvedValue({ user: { sub: 'narrator' } })
+    global.__devDb!.characters[0].status = 'PENDING_REVIEW'
+    expect((await PATCH(request('APPROVED'), context)).status).toBe(200)
+    expect(global.__devDb!.characters[0]).toMatchObject({ status: 'APPROVED', revision: 1, validationReport: { valid: true } })
   })
-
-  it('rejeita aprovação de ficha inválida pelo Mestre', async () => {
-    mocks.getSessionOrDev.mockResolvedValue({ user: { sub: 'auth0|mestre' } })
-    mocks.canManageCampaign.mockResolvedValue(true)
-    mocks.getCharacterAccessRecord.mockResolvedValue({
-      id: CHARACTER_ID, userId: 'auth0|owner', campaignId: CAMPAIGN_ID,
-      status: 'PENDING_REVIEW', characterType: 'PLAYER_VAMPIRE', data: {},
-    })
-
-    const response = await PATCH(request('APPROVED'), context())
-
-    expect(response.status).toBe(422)
-    expect(mocks.setCharacterStatus).not.toHaveBeenCalled()
+  it('Narrador não aprova ficha inválida mesmo com relatório anterior válido', async () => {
+    session.mockResolvedValue({ user: { sub: 'narrator' } })
+    Object.assign(global.__devDb!.characters[0], { status: 'PENDING_REVIEW', data: {}, validationReport: { valid: true } })
+    expect((await PATCH(request('APPROVED'), context)).status).toBe(422)
+    expect(global.__devDb!.characters[0]).toMatchObject({ status: 'PENDING_REVIEW', revision: 0 })
+    expect(global.__devDb!.characterLedgerEvents).toHaveLength(0)
   })
-
-  it('retorna 409 para transição inexistente', async () => {
-    const response = await PATCH(request('APPROVED'), context())
-
-    expect(response.status).toBe(409)
-    expect(mocks.setCharacterStatus).not.toHaveBeenCalled()
+  it('dono não aprova ficha vinculada nem usa transição inexistente', async () => {
+    expect((await PATCH(request('APPROVED'), context)).status).toBe(409)
+    global.__devDb!.characters[0].status = 'PENDING_REVIEW'
+    expect((await PATCH(request('APPROVED'), context)).status).toBe(409)
+    expect(global.__devDb!.characterLedgerEvents).toHaveLength(0)
+  })
+  it('exige autenticação e recusa terceiros e Narrador de outra mesa', async () => {
+    session.mockResolvedValue(null)
+    expect((await PATCH(request('PENDING_REVIEW'), context)).status).toBe(401)
+    for (const actor of ['other', 'other-narrator']) {
+      session.mockResolvedValue({ user: { sub: actor } })
+      expect((await PATCH(request('PENDING_REVIEW'), context)).status).toBe(403)
+    }
+    expect(global.__devDb!.characterLedgerEvents).toHaveLength(0)
+  })
+  it('revisão antiga recebe conflito antes de validar ou alterar status', async () => {
+    expect((await PATCH(request('PENDING_REVIEW', 5), context)).status).toBe(409)
+    expect(global.__devDb!.characters[0]).toMatchObject({ status: 'DRAFT', revision: 0 })
+    expect(global.__devDb!.characterLedgerEvents).toHaveLength(0)
   })
 })

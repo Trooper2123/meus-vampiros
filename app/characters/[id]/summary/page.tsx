@@ -1,15 +1,17 @@
 import { redirect } from 'next/navigation'
 import { getSessionOrDev } from '@/lib/auth0'
-import { getCharacterById } from '@/lib/characters'
+import { getCharacterForViewer } from '@/lib/characters'
 import { getCampaignById } from '@/lib/campaigns'
 import { CharacterSummaryClient } from '../character-summary-client'
 import Link from 'next/link'
+import { PREDATOR_TYPE_BY_CODE, normalizePredatorType, type PredatorTypeSelection } from '@/lib/vtm-v5/predator-types'
 
 async function getCharacterData(id: string, userId: string) {
-  const character = await getCharacterById(id, userId)
+  const character = await getCharacterForViewer(id, userId)
   if (!character) return null
 
   const data = character.data as Record<string, unknown>
+  const predatorDefinition = PREDATOR_TYPE_BY_CODE.get(normalizePredatorType(data.predatorTypeCode ?? data.predador)!)
   
   // Normalizar disciplinas (converter formato legado para array)
   const rawDisciplines = data['disciplinas']
@@ -63,9 +65,13 @@ async function getCharacterData(id: string, userId: string) {
 
   return {
     id: character.id,
+    characterType: character.characterType,
     name: getName(),
     clan: data['cla'] ? String(data['cla']) : null,
     predator: data['predador'] ? String(data['predador']) : null,
+    predatorRoll: predatorDefinition?.predatorRoll ?? null,
+    predatorSource: predatorDefinition?.source ?? null,
+    predatorSelection: data.predatorTypeSelection && typeof data.predatorTypeSelection === 'object' ? data.predatorTypeSelection as Partial<PredatorTypeSelection> : null,
     generation: data['geracao'] ? String(data['geracao']) : null,
     campaignName,
     campaignTheme,

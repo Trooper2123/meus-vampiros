@@ -36,7 +36,7 @@ export async function PATCH(request: Request) {
   const date = typeof body.date === 'string' ? body.date : ''
   const startTime = typeof body.startTime === 'string' ? body.startTime : null
   const endTime = typeof body.endTime === 'string' ? body.endTime : null
-  if (!session?.user || !campaignId || (await getCampaignOwner(campaignId)) !== session.user.sub) return NextResponse.json({ error: 'Apenas o mestre pode alterar o planejamento da mesa.' }, { status: 403 })
+  if (!session?.user || !campaignId || (await getCampaignOwner(campaignId)) !== session.user.sub) return NextResponse.json({ error: 'Apenas o modelo.md pode alterar o planejamento da mesa.' }, { status: 403 })
   if (body.action === 'schedule') {
     if ((startTime && !/^([01]\d|2[0-3]):[0-5]\d$/.test(startTime)) || (endTime && !/^([01]\d|2[0-3]):[0-5]\d$/.test(endTime)) || (startTime && endTime && startTime >= endTime)) return NextResponse.json({ error: 'Informe um intervalo de horário válido.' }, { status: 400 })
     await ensureAllTables()

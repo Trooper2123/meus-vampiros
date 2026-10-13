@@ -16,7 +16,7 @@ export default async function CampaignsPage() {
 
   const userIsMaster = await hasMasterAccess(session.user)
 
-  // Quem não é mestre não tem o que ver aqui
+  // Quem não é modelo.md não tem o que ver aqui
   if (!userIsMaster) redirect('/master')
 
   const campaigns = await getCampaignsForMaster(session.user.sub)
