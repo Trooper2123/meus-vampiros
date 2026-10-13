@@ -6,6 +6,7 @@ import { CharacterSpecialties } from '@/components/character-summary/character-s
 import { CharacterRolls } from '@/components/character-summary/character-rolls'
 import { PlayerPredatorSummary } from '@/components/predator-types/player-predator-selector'
 import { CharacterClanSummary } from '@/components/character-summary/character-clan'
+import { NotesBacklinks } from '@/components/notes/notes-panel'
 import type { PredatorTypeSelection } from '@/lib/vtm-v5/predator-types'
 
 type CharacterData = {
@@ -46,5 +47,5 @@ type CharacterSummaryClientProps = {
 }
 
 export function CharacterSummaryClient({ data }: CharacterSummaryClientProps) {
-  return <div className="flex flex-col gap-6"><CharacterSummary data={data} />{data.characterType === 'PLAYER_VAMPIRE' && <><CharacterClanSummary characterId={data.id} /><SessionResources characterId={data.id} /><CharacterSpecialties characterId={data.id} /><CharacterRolls characterId={data.id} /></>}{data.predator && <PlayerPredatorSummary name={data.predator} roll={data.predatorRoll} source={data.predatorSource} selection={data.predatorSelection} />}</div>
+  return <div className="flex flex-col gap-6"><CharacterSummary data={data} /><NotesBacklinks targetType={['HUMAN_NPC', 'VAMPIRE_NPC'].includes(data.characterType ?? '') ? 'NPC' : 'CHARACTER'} targetId={data.id} />{data.characterType === 'PLAYER_VAMPIRE' && <><CharacterClanSummary characterId={data.id} /><SessionResources characterId={data.id} /><CharacterSpecialties characterId={data.id} /><CharacterRolls characterId={data.id} /></>}{data.predator && <PlayerPredatorSummary name={data.predator} roll={data.predatorRoll} source={data.predatorSource} selection={data.predatorSelection} />}</div>
 }

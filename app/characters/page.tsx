@@ -19,8 +19,8 @@ export default async function PersonagensPage() {
 
   const characters = await getCharactersForUser(session.user.sub)
   const characterGroups = [
-    { label: 'Sem campanha', characters: characters.filter((character) => !character.campaignId && character.status !== 'ARCHIVED') },
-    { label: 'Vinculados a campanhas', characters: characters.filter((character) => character.campaignId && character.status !== 'ARCHIVED') },
+    { label: 'Desvinculados', characters: characters.filter((character) => !character.campaignId && character.status !== 'ARCHIVED') },
+    { label: 'Vinculados', characters: characters.filter((character) => character.campaignId && character.status !== 'ARCHIVED') },
     { label: 'Arquivados', characters: characters.filter((character) => character.status === 'ARCHIVED') },
   ]
   const userIsMaster = await hasMasterAccess(session.user)
@@ -31,6 +31,7 @@ export default async function PersonagensPage() {
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-background text-foreground">
+      <Link href="/notes" className="button-ghost relative m-4 inline-flex">Anotações</Link>
       <div className="noise" aria-hidden="true" />
       <header className="sheet-header">
         <div>

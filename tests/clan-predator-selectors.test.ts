@@ -10,6 +10,17 @@ import { PREDATOR_TYPES, toPlayerPredatorTypeDto } from '@/lib/vtm-v5/predator-t
 const characterId = '11111111-1111-4111-8111-111111111111'
 
 describe('projeções renderizadas dos seletores', () => {
+  it('oferece clãs públicos antes de salvar o primeiro rascunho', () => {
+    const html = renderToStaticMarkup(createElement(CharacterClan, { characterId: null, onBeforeSubmit: async () => characterId, onChange: () => {} }))
+    expect(html).toContain('value="BRUJAH"')
+    expect(html).toContain('value="THIN_BLOOD"')
+    expect(html).not.toContain('Revise os gatilhos')
+  })
+  it('respeita clãs habilitados no seletor da ficha vinculada', () => {
+    const html = renderToStaticMarkup(createElement(SWRConfig, { value: { provider: () => new Map(), revalidateOnMount: false, fallback: { [`/api/characters/${characterId}/clan`]: { revision: 0, selection: null, clans: CLANS, enabledClanCodes: ['BRUJAH'] } } } }, createElement(CharacterClan, { characterId, onBeforeSubmit: async () => characterId, onChange: () => {} })))
+    expect(html).toContain('value="BRUJAH"')
+    expect(html).not.toContain('value="VENTRUE"')
+  })
   it('exibe catálogo público e disciplinas, sem orientações privadas', () => {
     const clans = CLANS.map(({ code, name, disciplines, bane, compulsion }) => ({ code, name, disciplines, bane, compulsion }))
     const html = renderToStaticMarkup(createElement(SWRConfig, { value: { provider: () => new Map(), revalidateOnMount: false, fallback: { [`/api/characters/${characterId}/clan`]: { revision: 0, selection: null, clans } } } }, createElement(CharacterClan, { characterId, onBeforeSubmit: async () => characterId, onChange: () => {} })))

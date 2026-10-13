@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { devCreateCampaign, devCreateCharacter } from '../lib/dev-db'
-import { getPredatorTypeSettings, persistPredatorTypeData, sanitizePredatorTypeSettings, savePredatorTypeSettings } from '../lib/predator-types'
+import { getPredatorTypeSettings, isPredatorTypeEnabled, persistPredatorTypeData, sanitizePredatorTypeSettings, savePredatorTypeSettings } from '../lib/predator-types'
+import { PREDATOR_TYPES } from '../lib/vtm-v5/predator-types'
 
 const settings = { enabledSources: ['COREBOOK'] as ['COREBOOK'], enabledCodes: null, disabledCodes: [] }
 
@@ -14,6 +15,27 @@ describe('segurança dos serviços de predação em memória real', () => {
 
   const campaign = (masterUserId = 'master') => devCreateCampaign(masterUserId, { name: 'Mesa', theme: null, principios: null, averageXp: 0, status: 'Ativa', lastSessionAt: null })
   const operation = { expectedRevision: 0, eventType: 'PREDATOR_TYPE_APPLIED', payload: { code: 'SIREN' } }
+
+  it('libera todas as fontes sem mesa e mantém o padrão restrito da campanha', async () => {
+    const independent = await getPredatorTypeSettings(null)
+    expect(independent.enabledSources).toEqual(['COREBOOK', 'PLAYERS_GUIDE'])
+    expect(PREDATOR_TYPES.every(entry => isPredatorTypeEnabled(entry.code, independent))).toBe(true)
+    independent.enabledSources.length = 0
+    expect((await getPredatorTypeSettings(null)).enabledSources).toHaveLength(2)
+    const linked = await getPredatorTypeSettings(campaign().id)
+    expect(isPredatorTypeEnabled('BUSINESS_OWNER', linked)).toBe(false)
+    expect(isPredatorTypeEnabled('SIREN', linked)).toBe(true)
+  })
+
+  it('permite gravar predação do Livro do Jogador sem mesa e rejeita após vínculo restrito', async () => {
+    const character = devCreateCharacter('owner', { data: { humanidade: 7 } })
+    const data = { ...character.data, predatorTypeCode: 'BUSINESS_OWNER', predador: 'Business Owner' }
+    await persistPredatorTypeData(character.id, data, 'owner', operation)
+    expect(character.data.predatorTypeCode).toBe('BUSINESS_OWNER')
+    character.campaignId = campaign().id
+    await expect(persistPredatorTypeData(character.id, data, 'owner', { ...operation, expectedRevision: 1 })).rejects.toMatchObject({ status: 422 })
+    expect(character.revision).toBe(1)
+  })
 
   it.each([[], {}, { ...settings, enabledSources: ['INVALID'] }, { ...settings, enabledCodes: ['INVALID'] }, { ...settings, disabledCodes: [1] }, { ...settings, masterOverride: true }])('rejeita configurações inválidas sem normalização permissiva: %j', input => {
     expect(sanitizePredatorTypeSettings(input)).toBeNull()

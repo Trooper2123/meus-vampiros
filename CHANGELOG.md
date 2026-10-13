@@ -1,6 +1,49 @@
 ﻿# CHANGELOG — Ledger Command
 
 Registro cronológico de todas as alterações relevantes implementadas no projeto.
+
+## [2026-10-13] Preparação de commit — anotações e gestão contextual
+**Horário:** 19:23 BRT
+**Tipo:** feat | fix | style
+**Arquivos principais:** app/api/campaigns/[id]/clans/route.ts, app/api/campaigns/[id]/predator-types/route.ts, components/character-summary/campaign-clans.tsx, components/predator-types/master-catalog.tsx, components/duplicate-character-button.tsx, app/characters/page.tsx
+
+- Gestão exibe somente clãs/predações representados entre os participantes, deduplicando aliases e ignorando fichas de outra mesa. Rotas permanecem restritas ao Narrador atual; testes validam autenticação, ID, autorização e ausência de dados privados das fichas.
+- Rótulos da listagem simplificados para Vinculados/Desvinculados e ação Duplicar, sem mudar a duplicação independente.
+- Commit inclui P2 em memória e ajustes da mesa/ficha já documentados; specs/backlogs locais, exclusões .kiro, arquivos gerados, label local do calendário e configuração de clãs/predações na criação da campanha ficam fora.
+- Pré-commit: 502 testes/39 arquivos aprovados e 13 testes específicos de rotas após ampliar cobertura; TypeScript e lint sem erros (4 avisos anteriores), diff e scan de segredos aprovados. Sem push solicitado.
+- Build de produção aprovado e pnpm audit sem vulnerabilidades conhecidas na revisão pré-commit.
+- Build de produção aprovado e pnpm audit sem vulnerabilidades conhecidas na revisão pré-commit.
+
+## [2026-10-13] Ordem dos seletores de identidade
+**Horário:** 19:18 BRT
+**Tipo:** style
+**Arquivos principais:** app/characters/character-form-client.tsx
+
+- Seletor de clã exibido antes de predação, sem alterar regras, permissões ou salvamento.
+
+## [2026-10-13] Gestão contextual da mesa e catálogo inicial de clãs
+**Horário:** 19:07 BRT
+**Tipo:** feat | fix
+**Arquivos principais:** components/master-panel.tsx, components/notes/campaign-notes-dialog.tsx, components/notes/notes-panel.tsx, app/campaigns/[id]/page.tsx, components/character-summary/character-clan.tsx, app/characters/character-form-client.tsx
+
+- Revisão de pertences aparece somente com pendências; revalidação após revisão, foco e a cada 15 segundos detecta novas solicitações. Concessão e XP permanecem disponíveis.
+- Anotações destacadas no topo da gestão abrem dialog modal nativo sem sair da mesa; fechar mantém o rascunho montado. Novas anotações usam o contexto da mesa e continuam privadas por padrão.
+- Participantes possuem link para ficha resumida, reutilizando autorização do proprietário/Narrador atual, com teste de revogação após troca e desvínculo.
+- Catálogo público de clãs disponível antes do primeiro rascunho; confirmação salva a ficha e usa o ID/revisão retornados, mantendo validação da política no servidor.
+- Preparação da SPEC em processo isolado de testes: reset único de memória, modelo atual e seeds (8 personagens/3 mesas), integridade aprovada; nenhum banco externo ou servidor em execução alterado.
+- Testes específicos: 19 aprovados em 4 arquivos; build aprovado e auditoria sem vulnerabilidades conhecidas. QA manual posterior; notas permanecem exclusivamente em memória no desenvolvimento.
+- Suíte completa: 502 testes/39 arquivos; TypeScript aprovado, lint sem erros (4 avisos preexistentes). Revisão de segurança desta SPEC sem achados críticos/altos; não constitui aprovação de alterações anteriores para commit.
+
+
+## [2026-10-13] Predações de personagens sem mesa
+**Horário:** 19:02 BRT
+**Tipo:** fix
+**Arquivos principais:** lib/predator-types.ts, tests/predator-types-security.test.ts
+
+- Catálogo e validação de gravação liberam Livro básico e Livro do Jogador para personagens independentes, mantendo as restrições das campanhas.
+- Regressão cobre catálogo, isolamento de referências, gravação sem mesa e rejeição após vínculo restrito. Suíte: 493 testes aprovados em 37 arquivos.
+- TypeScript sem emissão e lint dos arquivos alterados aprovados. Sem alteração das autorizações ou dos dados existentes; build e QA visual não repetidos nesta correção.
+
 Cada entrada deve incluir data, horário (BRT), tipo e resumo do que foi feito.
 
 **Formato de entrada:**
@@ -15,6 +58,39 @@ Cada entrada deve incluir data, horário (BRT), tipo e resumo do que foi feito.
 ```
 
 ---
+
+## [2026-10-13] — P2 em memória, planejamento P1 e validação do backlog
+
+**Horário:** 15:00 BRT
+**Tipo:** feat | fix | docs
+**Arquivos principais:** `lib/notes.ts`, `lib/notes-http.ts`, `lib/availability.ts`, `lib/dev-db.ts`, `app/api/notes/`, `app/notes/page.tsx`, `components/notes/notes-panel.tsx`, `app/characters/page.tsx`, `app/characters/[id]/character-summary-client.tsx`, `components/campaign-calendar/event-card.tsx`, `components/awake-panel.tsx`, `tests/notes*.test.ts`, `codex/specs/sistema-anotacoes/`, `codex/specs/modo-sessao/`, `codex/backlog/backlog-mestre.md`, `codex/backlog/validacao-implementacao.md`, `codex/specs/README.md`.
+
+- P2: notas pessoais/exclusivas do Narrador atual, compartilhamento explícito somente leitura/revogação, CRUD revisado/idempotente e backlinks para fichas/NPCs/eventos/noites; projeções omitem alvos secretos e contagens ocultas. Armazenamento exclusivamente dev/test em memória, SQL/produção explicitamente indisponíveis.
+- Corrigida participação de dev no helper compartilhado, sem acesso universal. APIs validam entrada/limites em streaming, CSRF/sessão, UUIDs/IDs Auth0, autoria/status e revisões; nenhuma publicação realtime ou log de texto privado.
+- Editor/listagem paginada e opções autorizadas, confirmação de compartilhar/excluir, cache por perfil/perda de acesso e links contextuais. Cópia de ficha não copia notas; exclusão de entidade no provider remove relações sem apagar texto pessoal.
+- P1 planejado em requirements/design/tasks/meta: sessão real distinta de noite/sala, LiveKit existente, comandos canônicos, SSE autorizado/reconexão e ferramentas contextuais. Oito tasks pending; nenhum código P1/reset dessa SPEC.
+- Oito itens do backlog confrontados com código/testes; ambas as tabelas repetidas atualizadas sem limpar registros históricos. Itens, sessão central/realtime e exclusões seguem parciais/pendentes; duplicação e núcleo de rolagens já testados.
+- Validações: 490 testes/37 arquivos, tipos aprovados com incremental desabilitado para evitar diagnóstico de cache antigo, build aprovado, lint zero erros/quatro avisos preexistentes e auditoria zerada; diff-check/scan sem achados. Review final registrado na SPEC; SQL/LiveKit reais e QA manual não executados. Nenhum commit/staging/push solicitado nesta rodada.
+
+## [2026-10-13] — Preparação P2 de anotações
+
+**Horário:** 14:39 BRT
+**Tipo:** chore | docs
+**Arquivos principais:** `tests/notes-preparation.test.ts`, `scripts/prepare-v5-development.mjs`, `codex/specs/sistema-anotacoes/tasks.md`, `CHANGELOG.md`.
+
+- Confirmada configuração efetiva de desenvolvimento somente em memória, sem DATABASE_URL. Script existente usado no processo isolado de testes, sem alterar servidor em execução, conexão externa ou autenticação.
+- Reset/inicialização descartável e seeds validados: duas mesas de testes, jogadores, personagem independente, NPC reservado, evento e noite registrada. Relações/integridade aprovadas; execuções de teste usam fixtures isoladas e não resetam banco persistente.
+- Preparação registrada antes de desenvolver o módulo; SESSION referencia noite registrada, não sala LiveKit. Membership permissivo de dev será corrigido no helper compartilhado.
+
+## [2026-10-13] — Preparação P2 de anotações
+
+**Horário:** 14:39 BRT
+**Tipo:** chore | docs
+**Arquivos principais:** `tests/notes-preparation.test.ts`, `scripts/prepare-v5-development.mjs`, `codex/specs/sistema-anotacoes/tasks.md`, `CHANGELOG.md`.
+
+- Confirmada configuração efetiva de desenvolvimento somente em memória, sem DATABASE_URL. Script existente usado no processo isolado de testes, sem alterar servidor em execução, conexão externa ou autenticação.
+- Reset/inicialização descartável e seeds validados: duas mesas de testes, jogadores, personagem independente, NPC reservado, evento e noite registrada. Relações/integridade aprovadas; execuções de teste usam fixtures isoladas e não resetam banco persistente.
+- Preparação registrada antes de desenvolver o módulo; SESSION referencia noite registrada, não sala LiveKit. Membership permissivo de dev será corrigido no helper compartilhado.
 
 ## [2026-10-13] — Preparação e revisão do commit
 

@@ -1,6 +1,7 @@
 import { CalendarDays, Clock3, Pencil, Trash2 } from 'lucide-react'
 import type { CampaignEvent } from '@/lib/types/campaign-event'
 import { VisibilityBadge } from './visibility-badge'
+import { NotesBacklinks } from '@/components/notes/notes-panel'
 
 function formatDate(value: string) {
   const [year, month, day] = value.split('-').map(Number)
@@ -19,6 +20,7 @@ export function EventCard({ event, master, onEdit, onDelete }: { event: Campaign
       <h3 className="mt-4 font-serif text-xl">{event.title}</h3>
       <div className="mt-3 flex flex-wrap gap-4 text-xs text-muted-foreground"><span className="inline-flex items-center gap-2"><CalendarDays className="size-3.5" aria-hidden="true" /> {formatEventDate(event)}</span>{event.eventTime && <span className="inline-flex items-center gap-2"><Clock3 className="size-3.5" aria-hidden="true" /> {event.eventTime.slice(0, 5)}</span>}</div>
       {event.description && <p className="mt-4 text-sm leading-6 text-muted-foreground">{event.description}</p>}
+      <NotesBacklinks targetType="EVENT" targetId={event.id} />
     </article>
   )
 }

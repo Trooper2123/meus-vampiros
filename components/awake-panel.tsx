@@ -1,5 +1,7 @@
 'use client'
 
+import { NotesBacklinks } from '@/components/notes/notes-panel'
+
 import { useRef, useState } from 'react'
 import useSWR, { useSWRConfig } from 'swr'
 import type { NightRequest, NightResult } from '@/lib/chronicle-nights'
@@ -86,7 +88,7 @@ export function AwakePanel({ campaignId }: { campaignId: string }) {
         </fieldset>
         <button className="button-primary self-start" type="submit" disabled={processing || (!retrying && !selected.length)}>{processing ? 'Processando despertares…' : retrying ? 'Reenviar início de noite' : 'Confirmar início de noite'}</button>
       </form>
-      {history.length > 0 && <div className="mt-6 flex flex-col gap-4 border-t border-border pt-5"><h3 className="font-serif text-xl">Histórico de despertares</h3>{history.map(night => <article key={night.id} className="border border-border p-4"><h4 className="font-semibold">Noite {night.nightNumber} · {night.inGameDate}</h4><ul className="mt-3 flex flex-col gap-3">{night.results.map(entry => <li key={entry.characterId} className="text-sm"><strong>{entry.name}</strong>: {outcomes[entry.outcome] ?? 'Resultado não reconhecido'}<span className="mt-1 block text-xs text-muted-foreground">D10: {entry.roll ?? 'não rolado'} · Fome {entry.before.hunger} → {entry.after.hunger} · {conditions[entry.after.condition] ?? 'Condição inválida'}{entry.after.torpor && ` · Causa: ${{ HUNGER: 'Fome', DAMAGE: 'Dano', VOLUNTARY: 'Voluntário' }[entry.after.torpor.cause]}`}</span></li>)}</ul></article>)}</div>}
+      {history.length > 0 && <div className="mt-6 flex flex-col gap-4 border-t border-border pt-5"><h3 className="font-serif text-xl">Histórico de despertares</h3>{history.map(night => <article key={night.id} className="border border-border p-4"><h4 className="font-semibold">Noite {night.nightNumber} · {night.inGameDate}</h4><ul className="mt-3 flex flex-col gap-3">{night.results.map(entry => <li key={entry.characterId} className="text-sm"><strong>{entry.name}</strong>: {outcomes[entry.outcome] ?? 'Resultado não reconhecido'}<span className="mt-1 block text-xs text-muted-foreground">D10: {entry.roll ?? 'não rolado'} · Fome {entry.before.hunger} → {entry.after.hunger} · {conditions[entry.after.condition] ?? 'Condição inválida'}{entry.after.torpor && ` · Causa: ${{ HUNGER: 'Fome', DAMAGE: 'Dano', VOLUNTARY: 'Voluntário' }[entry.after.torpor.cause]}`}</span></li>)}</ul><NotesBacklinks targetType="SESSION" targetId={night.id} /></article>)}</div>}
     </>}
   </section>
 }

@@ -172,7 +172,11 @@ type CampaignCharacter = {
 
 export function CampaignPossessionsManager({ campaignId }: { campaignId: string }) {
   const { data: charData, mutate: mutateCharacters } = useSWR<{ characters: CampaignCharacter[] }>(`/api/characters?campaignId=${campaignId}`, fetcher)
-  const { data: possData, mutate: mutatePossessions } = useSWR<{ possessions: Possession[] }>(`/api/possessions?campaignId=${campaignId}`, fetcher)
+  const { data: possData, error: possessionsError, mutate: mutatePossessions } = useSWR<{ possessions: Possession[] }>(`/api/possessions?campaignId=${campaignId}`, async url => {
+    const response = await fetch(url)
+    if (!response.ok) throw new Error('Não foi possível carregar os pertences.')
+    return response.json()
+  }, { refreshInterval: 15000 })
 
   const characters = charData?.characters ?? []
   const possessions = possData?.possessions ?? []
@@ -280,11 +284,8 @@ export function CampaignPossessionsManager({ campaignId }: { campaignId: string 
     finally { setGranting(false) }
   }
 
-  const STATUS_ORDER: Record<string, number> = { pendente: 0, aprovado: 1, reprovado: 2 }
-  const filteredPossessions = (selectedCharacterId
-    ? possessions.filter((p) => p.characterId === selectedCharacterId)
-    : possessions
-  ).slice().sort((a, b) => (STATUS_ORDER[a.status] ?? 1) - (STATUS_ORDER[b.status] ?? 1))
+  const pendingPossessions = possessions.filter(item => item.status === 'pendente')
+  const filteredPossessions = selectedCharacterId ? pendingPossessions.filter(item => item.characterId === selectedCharacterId) : pendingPossessions
 
   return (
     <div className="border border-[#6b3436] bg-[#131316] p-6 flex flex-col gap-6">
@@ -297,6 +298,7 @@ export function CampaignPossessionsManager({ campaignId }: { campaignId: string 
       </div>
 
       {feedback && <p role="status" className="text-sm text-muted-foreground">{feedback}</p>}
+      {possessionsError && <p role="alert">{possessionsError.message}</p>}
       <label className="flex flex-col gap-2 text-sm">Motivo da concessão de XP<input className="input" value={xpReason} maxLength={500} onChange={(event) => setXpReason(event.target.value)} required /></label>
       {xpRetry && <p className="text-xs text-muted-foreground">Há uma concessão incompleta. Reenviar usa a mesma operação, sem duplicar XP.</p>}
       {/* Atribuir XP a Toda a Mesa */}
@@ -364,6 +366,7 @@ export function CampaignPossessionsManager({ campaignId }: { campaignId: string 
                       {char.clan ?? 'Clã não definido'} • {char.concept ?? 'Sem conceito'}
                     </p>
                   </button>
+                  <Link href={`/characters/${char.id}/summary`} className="button-ghost mt-2 text-xs">Ver ficha resumida</Link>
 
                   <div className="mt-3 pt-2 border-t border-border/60 flex items-center justify-between gap-2 text-[11px]">
                     <div className="flex flex-col">
@@ -397,7 +400,7 @@ export function CampaignPossessionsManager({ campaignId }: { campaignId: string 
       </div>
 
       {/* Painel de Revisão de Pertences */}
-      <div className="flex flex-col gap-4 border-t border-border pt-4">
+      {pendingPossessions.length > 0 && <div className="flex flex-col gap-4 border-t border-border pt-4">
         <h4 className="font-mono text-xs uppercase text-[#d47776] tracking-wider">
           Painel de Revisão de Pertences {selectedCharacterId ? `(${characters.find(c => c.id === selectedCharacterId)?.name ?? 'Personagem'})` : '(Todos)'}
         </h4>
@@ -459,8 +462,7 @@ export function CampaignPossessionsManager({ campaignId }: { campaignId: string 
             })}
           </div>
         )}
-      </div>
-
+      </div>}
       {/* Interface para Criar / Conceder Itens Restritos ao Jogador */}
       <form onSubmit={grantMasterItem} className="border-t border-border pt-4 flex flex-col gap-4">
         <h4 className="font-mono text-xs uppercase text-[#9ac59b] tracking-wider">Conceder Item Restrito a um Personagem</h4>

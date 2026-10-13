@@ -7,6 +7,7 @@ vi.mock('@/lib/characters', () => ({ getCharactersForCampaign: mocks.getCharacte
 vi.mock('@/lib/predator-types', async (importOriginal) => ({ ...(await importOriginal<typeof import('@/lib/predator-types')>()), getPredatorTypeSettings: mocks.getPredatorTypeSettings, savePredatorTypeSettings: mocks.savePredatorTypeSettings, persistPredatorTypeData: mocks.persistPredatorTypeData }))
 
 import { GET } from '@/app/api/campaigns/[id]/predator-types/route'
+import { GET as getClans } from '@/app/api/campaigns/[id]/clans/route'
 import { PATCH } from '@/app/api/campaigns/[id]/predator-types/settings/route'
 import { POST } from '@/app/api/characters/[id]/predator-type/override/route'
 
@@ -23,10 +24,35 @@ describe('rotas do Mestre para tipos de predação', () => {
     expect((await GET(new Request('http://localhost'), campaignContext)).status).toBe(403)
   })
 
-  it('retorna os 28 tipos com dados privados ao Mestre', async () => {
+  it('protege o catálogo de clãs por sessão, identificador e Narrador atual', async () => {
+    mocks.getSessionOrDev.mockResolvedValue(null)
+    expect((await getClans(new Request('http://localhost'), campaignContext)).status).toBe(401)
+    mocks.getSessionOrDev.mockResolvedValue({ user: { sub: 'auth0|master' } })
+    expect((await getClans(new Request('http://localhost'), { params: Promise.resolve({ id: 'invalid' }) })).status).toBe(400)
+    mocks.canManageCampaign.mockResolvedValue(false)
+    expect((await getClans(new Request('http://localhost'), campaignContext)).status).toBe(403)
+    expect(mocks.getCharactersForCampaign).not.toHaveBeenCalled()
+  })
+
+  it('projeta apenas clãs usados na mesa e não expõe dados das fichas', async () => {
+    mocks.getCharactersForCampaign.mockResolvedValue([{ id: 'a' }, { id: 'b' }, { id: 'c' }])
+    mocks.getCharacterAccessRecord.mockImplementation(async (id: string) => ({ campaignId: id === 'c' ? 'other' : '22222222-2222-4222-8222-222222222222', data: id === 'a' ? { clanCode: 'BRUJAH', secret: 'privado' } : id === 'b' ? { cla: 'Brujah' } : { clanCode: 'VENTRUE' } }))
+    const body = await (await getClans(new Request('http://localhost'), campaignContext)).json()
+    expect(body.clans.map((clan: { code: string }) => clan.code)).toEqual(['BRUJAH'])
+    expect(JSON.stringify(body)).not.toContain('privado')
+  })
+
+  it('retorna somente tipos utilizados, deduplicando nomes legados e ignorando outra mesa', async () => {
+    mocks.getCharactersForCampaign.mockResolvedValue([{ id: 'a' }, { id: 'b' }, { id: 'c' }, { id: 'd' }])
+    mocks.getCharacterAccessRecord.mockImplementation(async (id: string) => ({ campaignId: id === 'd' ? 'outra-mesa' : '22222222-2222-4222-8222-222222222222', data: id === 'a' ? { predatorTypeCode: 'SIREN' } : id === 'b' ? { predador: 'Sereia' } : id === 'c' ? { predador: 'desconhecido' } : { predatorTypeCode: 'ALLEYCAT' } }))
     const response = await GET(new Request('http://localhost'), campaignContext); const body = await response.json()
-    expect(body.predatorTypes).toHaveLength(28)
+    expect(body.predatorTypes.map((entry: { code: string }) => entry.code)).toEqual(['SIREN'])
     expect(body.predatorTypes[0]).toHaveProperty('commonRisks')
+  })
+
+  it('não retorna catálogo completo quando não há personagens com predação', async () => {
+    const response = await GET(new Request('http://localhost'), campaignContext)
+    expect((await response.json()).predatorTypes).toEqual([])
   })
 
   it('habilita Players Guide e audita a configuração', async () => {
