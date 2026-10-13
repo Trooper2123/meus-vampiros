@@ -1,3 +1,5 @@
+import { normalizeSkillId, SPECIALTY_SKILL_NAMES, validateSkillValues } from './skills'
+
 export type Specialty = {
   id: string
   skillId: string
@@ -22,7 +24,7 @@ export type SpecialtyRules = {
   limits?: Record<string, number>
 }
 
-const skillIds = new Set(['armas-brancas', 'armas-de-fogo', 'atletismo', 'briga', 'conducao', 'furtividade', 'ladroagem', 'oficios', 'sobrevivencia', 'empatia-com-animais', 'etiqueta', 'intimidacao', 'lideranca', 'manha', 'performance', 'persuasao', 'sagacidade', 'subterfugio', 'ciencia', 'academicos', 'financas', 'investigacao', 'medicina', 'ocultismo', 'percepcao', 'politica', 'tecnologia'])
+const skillIds = new Set(Object.keys(SPECIALTY_SKILL_NAMES))
 const freeSkills = ['academicos', 'oficios', 'performance', 'ciencia']
 
 export function normalizeSpecialtyName(name: string): string {
@@ -30,18 +32,25 @@ export function normalizeSpecialtyName(name: string): string {
 }
 
 export function normalizeSpecialtySkillId(skillId: string): string {
-  const normalized = skillId.replace(/^habilidade-/u, '').normalize('NFD').replace(/\p{M}/gu, '').trim().toLowerCase().replace(/\s+/gu, '-')
-  return normalized === 'erudicao' ? 'academicos' : normalized
+  return normalizeSkillId(skillId)
 }
 
 function normalizeSkills(skills: Record<string, number>): Record<string, number> {
-  const normalized: Record<string, number> = {}
-  for (const [skill, dots] of Object.entries(skills)) {
-    const skillId = normalizeSpecialtySkillId(skill)
-    if (!skillIds.has(skillId) || !Number.isSafeInteger(dots) || dots < 0 || dots > 5 || Object.hasOwn(normalized, skillId)) throw new Error('Habilidade ou pontos inválidos.')
-    normalized[skillId] = dots
-  }
-  return normalized
+  const validation = validateSkillValues(skills)
+  if (!validation.valid) throw new Error('Habilidade ou pontos inválidos.')
+  return validation.skills
+}
+
+export function eligibleSpecialtySkills(rules: SpecialtyRules, existing: readonly Specialty[], grant?: SpecialtyGrant) {
+  const skills = normalizeSkills(rules.skills)
+  return Object.entries(skills).filter(([skillId, dots]) => {
+    if (dots < 1 || (grant?.skillId && normalizeSkillId(grant.skillId) !== skillId)) return false
+    const count = existing.filter(specialty => normalizeSkillId(specialty.skillId) === skillId).length
+    const limit = rules.limits?.[skillId] ?? dots
+    if (!Number.isSafeInteger(limit) || limit < 0) throw new Error('Limite de especialidades inválido.')
+    if (count >= limit) return false
+    return !grant?.options || grant.options.some(option => normalizeSkillId(option.skillId) === skillId && !existing.some(specialty => normalizeSkillId(specialty.skillId) === skillId && normalizeSpecialtyName(specialty.name).toLocaleLowerCase('pt-BR') === normalizeSpecialtyName(option.name).toLocaleLowerCase('pt-BR')))
+  }).map(([skillId, dots]) => ({ skillId, dots, name: SPECIALTY_SKILL_NAMES[skillId] }))
 }
 
 export function calculateSpecialtyGrants(rules: SpecialtyRules): SpecialtyGrant[] {

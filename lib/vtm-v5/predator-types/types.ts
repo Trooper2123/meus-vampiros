@@ -1,3 +1,5 @@
+import type { PredatorChoiceGroup } from './mechanics'
+
 export const PREDATOR_TYPE_SOURCES = ['COREBOOK', 'PLAYERS_GUIDE'] as const
 export type PredatorTypeSource = typeof PREDATOR_TYPE_SOURCES[number]
 
@@ -28,6 +30,7 @@ export type PredatorTypeDefinition = {
   commonRisks: readonly string[]
   validationNotes: string
   relationshipRequirements: readonly RelationshipRequirement[]
+  choiceGroups?: readonly PredatorChoiceGroup[]
 }
 
 export type PredatorTypeIssue = { code: string; message: string; blocking: boolean }
@@ -46,6 +49,7 @@ export type PlayerPredatorTypeDto = {
   disciplineOptions: string[]
   publicWarnings: PredatorTypeIssue[]
   selectable: boolean
+  choiceGroups?: PredatorChoiceGroup[]
 }
 
 export type MasterPredatorTypeDto = PlayerPredatorTypeDto & {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isMaster } from '../lib/campaigns'
+import { isMaster } from '@/lib/campaigns'
 
 describe('papel de Narrador no claim Auth0', () => {
   it('reconhece o papel mestre sem depender de possuir uma campanha', () => {

@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { applyPredatorTypeSelection, removePredatorTypeSelection, PREDATOR_TYPE_BY_CODE } from '../lib/vtm-v5/predator-types'
+import { applyPredatorTypeSelection, removePredatorTypeSelection, PREDATOR_TYPE_BY_CODE } from '@/lib/vtm-v5/predator-types'
 
 const mocks = vi.hoisted(() => ({ session: vi.fn(), access: vi.fn(), persist: vi.fn(), ledger: vi.fn() }))
 vi.mock('@/lib/auth0', () => ({ getSessionOrDev: mocks.session }))
 vi.mock('@/lib/characters', () => ({ getCharacterAccessRecord: mocks.access, appendCharacterLedgerEvent: mocks.ledger }))
 vi.mock('@/lib/predator-types', () => ({ persistPredatorTypeData: mocks.persist, getPredatorTypeSettings: vi.fn(), isPredatorTypeEnabled: vi.fn() }))
 
-import { DELETE } from '../app/api/characters/[id]/predator-type/route'
+import { DELETE } from '@/app/api/characters/[id]/predator-type/route'
 
 const id = '11111111-1111-4111-8111-111111111111'
 const context = { params: Promise.resolve({ id }) }
@@ -36,8 +36,8 @@ describe('remoção de predador e recursos consumidos', () => {
 
   it('permite remoção pelo proprietário em rascunho', async () => {
     expect((await DELETE(request(), context)).status).toBe(200)
-    expect(mocks.persist).toHaveBeenCalledWith(id, expect.objectContaining({ predador: '', humanidade: 6 }))
-    expect(mocks.ledger).toHaveBeenCalledOnce()
+    expect(mocks.persist).toHaveBeenCalledWith(id, expect.objectContaining({ predador: '', humanidade: 6 }), 'owner', expect.objectContaining({ eventType: 'PREDATOR_TYPE_REMOVED' }))
+    expect(mocks.ledger).not.toHaveBeenCalled()
   })
 
   it('recusa acesso não autenticado e de terceiros', async () => {

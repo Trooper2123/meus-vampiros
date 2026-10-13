@@ -16,6 +16,90 @@ Cada entrada deve incluir data, horário (BRT), tipo e resumo do que foi feito.
 
 ---
 
+## [2026-10-13] — Preparação e revisão do commit
+
+**Horário:** 14:29 BRT
+**Tipo:** chore | docs
+**Arquivos principais:** `CHANGELOG.md`, `codex/specs/vtm-v5-fichas-e-inicio-de-noite/review.md`, `codex/specs/vtm-v5-fichas-e-inicio-de-noite/tasks.md`.
+
+- Revisão pré-commit do candidato de clãs, efeitos/segurança de predação, elegibilidade de especialidades, APIs/UI, testes e instruções. Removidas entradas duplicadas de clãs/especialidades deste changelog, sem remover registros únicos.
+- Revalidação: 468 testes/34 arquivos aprovados, TypeScript/build aprovados, lint zero erros/4 avisos preexistentes, pnpm audit zero vulnerabilidades; diff-check e scan direcionado sem achados. Build pula tipos, portanto tsc foi executado separadamente.
+- Specs/backlog locais (`codex/` e `.codex/`), exclusões da antiga `.kiro/`, artefatos gerados, script isolado de preparação não reexecutado e mudança avulsa de label do calendário ficam fora do candidato. Nenhum reset, acesso SQL externo ou commit executado. SQL/QA manual continuam posteriores.
+
+## [2026-10-13] — Preparação e revisão do commit
+
+**Horário:** 14:29 BRT
+**Tipo:** chore | docs
+**Arquivos principais:** `CHANGELOG.md`, `codex/specs/vtm-v5-fichas-e-inicio-de-noite/review.md`, `codex/specs/vtm-v5-fichas-e-inicio-de-noite/tasks.md`.
+
+- Revisão pré-commit do candidato de clãs, efeitos/segurança de predação, elegibilidade de especialidades, APIs/UI, testes e instruções. Removidas entradas duplicadas de clãs/especialidades deste changelog, sem remover registros únicos.
+- Revalidação: 468 testes/34 arquivos aprovados, TypeScript/build aprovados, lint zero erros/4 avisos preexistentes, pnpm audit zero vulnerabilidades; diff-check e scan direcionado sem achados. Build pula tipos, portanto tsc foi executado separadamente.
+- Specs/backlog locais (`codex/` e `.codex/`), exclusões da antiga `.kiro/`, artefatos gerados, script isolado de preparação não reexecutado e mudança avulsa de label do calendário ficam fora do candidato. Nenhum reset, acesso SQL externo ou commit executado. SQL/QA manual continuam posteriores.
+
+## [2026-10-13] — Planejamento do sistema de anotações P2
+
+**Horário:** 14:14 BRT
+**Tipo:** docs
+**Arquivos principais:** `codex/specs/sistema-anotacoes/requirements.md`, `codex/specs/sistema-anotacoes/design.md`, `codex/specs/sistema-anotacoes/tasks.md`, `codex/specs/sistema-anotacoes/tasks.meta.json`, `codex/specs/README.md`, `codex/backlog/backlog-mestre.md`, `CHANGELOG.md`.
+
+- Elaborada SPEC do P2 com notas privadas/exclusivas do Narrador, grants explícitos revogáveis e backlinks autorizados de fichas/NPCs/eventos/sessões.
+- Dez tarefas dependentes, todas pending: preparação única de memória futura, domínio/APIs/UI, segurança e revisão. Nenhuma implementação/reset ou conexão externa nesta etapa.
+- Documentado helper permissivo de participação em dev como pré-requisito de correção; contratos tratam metadados privados, concorrência, lifecycle e decisão de sessão/noite. Sem migração de textos existentes/editor rico/realtime.
+
+## [2026-10-13] — Instruções Ponytail para agentes
+
+**Horário:** 14:08 BRT
+**Tipo:** docs
+**Arquivos principais:** `AGENTS.md`, `CHANGELOG.md`.
+
+- Adicionado integralmente o bloco solicitado de desenvolvimento mínimo, escopo, reutilização, validação e comunicação de limitações/riscos, preservando as regras existentes.
+
+## [2026-10-13] — Clãs e concessões completas de predação
+
+**Horário:** 13:33 BRT
+**Tipo:** feat | fix | docs
+**Arquivos principais:** `lib/vtm-v5/clans.ts`, `lib/character-clans.ts`, `lib/creation-effects.ts`, `lib/predator-effects.ts`, `lib/vtm-v5/predator-types/`, `lib/characters.ts`, `lib/vtm-v5/normalize.ts`, `lib/vtm-v5/validation.ts`, `app/api/characters/[id]/clan/route.ts`, `app/api/characters/[id]/predator-type/route.ts`, `app/api/characters/route.ts`, `components/character-summary/character-clan.tsx`, `components/predator-types/player-predator-selector.tsx`, `app/characters/character-form-client.tsx`, `app/characters/[id]/character-summary-client.tsx`, `tests/character-clans.test.ts`, `tests/clans-and-predator-mechanics.test.ts`, `tests/clan-predator-selectors.test.ts`, `tests/predator-types-core.test.ts`, `codex/specs/`.
+
+- Preparação compartilhada da SPEC reutilizada: reset/seeds/integridade em memória concluídos em 12/10/2026 22:01 BRT. Nenhum novo reset, migração, backfill automático ou acesso a banco externo.
+- Catálogo versionado dos sete clãs básicos, Caitiff e sangue-fraco; disciplinas 2+1, preferências/categoria específicas, Perdição/Compulsão públicas e orientação separada por perfil. Clãs com referência incompleta não são habilitados.
+- Seleção de clã autorizada no servidor, revisão otimista, replay idempotente e ledger; Narrador da mesa retorna ficha a rascunho. Nosferatu/Caitiff recebem defeitos rastreados, com restrições cruzadas e perfil sangue-fraco separado.
+- Os 28 predadores materializam disciplina extra, especialidade pendente, traços fixos e escolhas alternativas/distribuições; restrições Tremere/Nosferatu e exceção explícita do Narrador para sangue-fraco. Troca/remoção preserva outras origens, XP e danos; inconsistências são rejeitadas atomicamente.
+- Humanidade é recalculada sobre o estado canônico da sessão dentro do comando, preservando mudanças posteriores do Narrador; respostas retornam valores persistidos, não projeções antigas de JSON.
+- Formulário e resumo exibem clã, escolhas e regras; confirmação salva o rascunho antes da seleção. Orçamentos excluem concessões automáticas e consideram a disciplina de predação; IDs de traços são preservados. Duplicação copia somente origens públicas, sem aprovação, mesa ou dados privados.
+- Validações: 468 testes/34 arquivos, TypeScript/build aprovados; lint zero erros/quatro avisos preexistentes; pnpm audit zero vulnerabilidades; diff-check e scan direcionado sem achados. Build configura skip de tipos, por isso TypeScript foi validado separadamente. Revisão pré-commit direcionada realizada; nenhum commit/staging.
+- Referências exclusivamente locais; poderes continuam manuais. Automação contextual de Perdição/Compulsão, catálogo adicional/Alquimia, configuração avançada por mesa e histórico refinado permanecem pendentes. QA de navegador e SQL operacional continuam posteriores, não gates desta entrega em memória.
+
+## [2026-10-13] — Resumo das implementações e pendências das SPECs
+
+**Horário:** 12:35 BRT
+**Tipo:** docs
+**Arquivos principais:** `codex/specs/resumo-implementacao.md`, `codex/specs/README.md`, `codex/specs/vtm-v5-fichas-e-inicio-de-noite/spec.md`, `CHANGELOG.md`.
+
+- Percorridos os sete diretórios de funcionalidades, documentos de apoio e metadados; consolidado panorama de implementação, limitações, pendências e próximos passos, confrontado com código/rotas/componentes existentes.
+- Diferenciados checklists históricos e evidências atuais: auditoria zerada, SQL adiado e QA desejável não constituem bloqueios antigos ainda ativos. Não promovidas tarefas automaticamente; clãs, efeitos de predadores, itens/vínculo e evolução de jogo permanecem parciais.
+- README aponta o resumo e caminho atual codex/specs; corrigidos status geral desatualizado da SPEC de fichas e localização da referência de clãs. Atualização exclusivamente documental, sem reset, novos testes de aplicação ou commit; resultados de 385 testes são evidências anteriores.
+
+## [2026-10-13] — Validação de habilidades e seletor de especialidades
+
+**Horário:** 12:18 BRT
+**Tipo:** fix | feat | docs
+**Arquivos principais:** `lib/vtm-v5/skills.ts`, `lib/vtm-v5/specialties.ts`, `lib/character-specialties.ts`, `lib/characters.ts`, `components/character-summary/character-specialties.tsx`, `app/characters/character-form-client.tsx`, `tests/vtm-v5-skills.test.ts`, `tests/character-specialties-selector.test.ts`, `tests/character-specialties-command.test.ts`, `CHANGELOG.md`.
+
+- Centralizados IDs/rótulos, aliases e validação de pontos inteiros 0–5. Aliases equivalentes deduplicados, conflitos/desconhecidos/valores inválidos diagnosticados. Elegibilidade considera pontos, limites, concessões, opções do predador e especialidades pendentes/aprovadas. API gera opções por compra/grantId, sem confiar no cliente para custo/aprovação.
+- Formulário carrega rótulos corretos e salva chaves canônicas; merge parcial substitui aliases editados sem perder outras habilidades. Prefixos em caixa diferente também invalidam aprovação, impedindo bypass de revisão. Seletor acompanha pontos em edição e revisões salvas; antes de confirmar, salva alterações e relê elegibilidade/revisão autoritativas. Falha impede envio; retry já enviado preserva comando/chave.
+- Validação: 31 arquivos/385 testes aprovados, TypeScript/build aprovados, lint direcionado sem erros; lint completo zero erros/cinco avisos existentes, pnpm audit zero. Testes de renderização verificam opções salvas/rascunho/sem pontos (não equivalem a QA de navegador). Sem banco externo, reset de SPEC ou commit. Documentação encontrada em codex/ após movimentação externa durante a execução; arquivos locais não adicionados ao staging.
+
+## [2026-10-13] — Endurecimento de segurança de predação
+
+**Horário:** 11:54 BRT
+**Tipo:** fix | docs
+**Arquivos principais:** `lib/predator-types.ts`, `lib/characters.ts`, rotas de seleção/remoção/override/configuração de predadores, `app/api/migrate/route.ts`, `components/predator-types/master-catalog.tsx`, `tests/predator-types-security.test.ts`, testes adjacentes de rotas, `CHANGELOG.md`; documentação local .codex fora do commit.
+
+- Configurações agora rejeitam objetos/arrays/códigos/campos inválidos e listas excessivas; leituras/gravações em memória isoladas por clone e associadas ao store atual, sem referências compartilhadas após reset. Serviço de configuração reverifica Narrador; UUIDs inválidos e falhas de infraestrutura recebem respostas controladas.
+- Seleção/remoção/override usam comandos com autorização e status atuais, revisão e ledger atômicos. Projeção de campos impede escrita econômica/narrativa alheia; mudanças concorrentes são rejeitadas. Política de mesa/restrições são reverificadas na gravação em memória, inclusive escolha preparada antes de desabilitação. Overrides usam allowlist de regras, rejeitam duplicatas ativas e retornam ficha a rascunho.
+- Mudança de configuração invalida aprovação das fichas elegíveis já com predador e incrementa revisão, preservando escolhas/recursos, com eventos do Narrador; atualização e auditoria no mesmo commit síncrono em memória/transação SQL planejada. UI comunica necessidade de nova aprovação. Removido backfill automático de predadores da rota administrativa e helper legado, sem executar migração/reset.
+- Validação: 29 arquivos/364 testes aprovados, incluindo 12 testes de serviço em memória real e negativos 401/403/UUID/regra/duplicata; TypeScript/build aprovados, lint zero erros/cinco avisos existentes, audit pnpm zero vulnerabilidades e diff-check/scan direcionados sem achados. SQL real continua backlog; não declarar implementação persistente pronta ou efeitos mecânicos completos. Nenhum commit executado.
+
 ## [2026-10-13] — Simplificação da projeção de duplicação
 
 **Horário:** 02:12 BRT

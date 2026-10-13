@@ -6,9 +6,9 @@ vi.mock('@/lib/auth/authorization', () => ({ canManageCampaign: mocks.canManageC
 vi.mock('@/lib/characters', () => ({ getCharactersForCampaign: mocks.getCharactersForCampaign, getCharacterAccessRecord: mocks.getCharacterAccessRecord, appendCharacterLedgerEvent: mocks.appendCharacterLedgerEvent }))
 vi.mock('@/lib/predator-types', async (importOriginal) => ({ ...(await importOriginal<typeof import('@/lib/predator-types')>()), getPredatorTypeSettings: mocks.getPredatorTypeSettings, savePredatorTypeSettings: mocks.savePredatorTypeSettings, persistPredatorTypeData: mocks.persistPredatorTypeData }))
 
-import { GET } from '../app/api/campaigns/[id]/predator-types/route'
-import { PATCH } from '../app/api/campaigns/[id]/predator-types/settings/route'
-import { POST } from '../app/api/characters/[id]/predator-type/override/route'
+import { GET } from '@/app/api/campaigns/[id]/predator-types/route'
+import { PATCH } from '@/app/api/campaigns/[id]/predator-types/settings/route'
+import { POST } from '@/app/api/characters/[id]/predator-type/override/route'
 
 const campaignContext = { params: Promise.resolve({ id: '22222222-2222-4222-8222-222222222222' }) }
 const characterContext = { params: Promise.resolve({ id: '11111111-1111-4111-8111-111111111111' }) }
@@ -42,11 +42,45 @@ describe('rotas do Mestre para tipos de predação', () => {
     mocks.getCharacterAccessRecord.mockResolvedValue({ id: '11111111-1111-4111-8111-111111111111', campaignId: '22222222-2222-4222-8222-222222222222', data: { predatorTypeOverrides: created.overrides } })
     const revoke = await POST(new Request('http://localhost', { method: 'POST', body: JSON.stringify({ ruleCode: 'PREDATOR_BAGGER_VENTRUE', action: 'REVOKE', justification: 'A exceção não é mais necessária.' }) }), characterContext)
     expect(revoke.status).toBe(200)
-    expect(mocks.appendCharacterLedgerEvent).toHaveBeenCalledTimes(2)
+    expect(mocks.appendCharacterLedgerEvent).not.toHaveBeenCalled()
+    expect(mocks.persistPredatorTypeData).toHaveBeenCalledTimes(2)
   })
 
   it('recusa override sem justificativa', async () => {
     const response = await POST(new Request('http://localhost', { method: 'POST', body: JSON.stringify({ ruleCode: 'X', action: 'CREATE', justification: '' }) }), characterContext)
     expect(response.status).toBe(400)
+  })
+
+  it('exige autenticação para configuração e override', async () => {
+    mocks.getSessionOrDev.mockResolvedValue(null)
+    expect((await PATCH(new Request('http://localhost', { method: 'PATCH' }), campaignContext)).status).toBe(401)
+    expect((await POST(new Request('http://localhost', { method: 'POST' }), characterContext)).status).toBe(401)
+    expect(mocks.persistPredatorTypeData).not.toHaveBeenCalled()
+  })
+
+  it('nega override a outro Narrador e preserva a ficha', async () => {
+    mocks.canManageCampaign.mockResolvedValue(false)
+    expect((await POST(new Request('http://localhost', { method: 'POST' }), characterContext)).status).toBe(403)
+    expect(mocks.persistPredatorTypeData).not.toHaveBeenCalled()
+  })
+
+  it('rejeita regra desconhecida com justificativa válida', async () => {
+    const response = await POST(new Request('http://localhost', { method: 'POST', body: JSON.stringify({ ruleCode: 'PREDATOR_TYPE_DISABLED_FOR_CAMPAIGN', action: 'CREATE', justification: 'Tentativa de ignorar política.' }) }), characterContext)
+    expect(response.status).toBe(400)
+    expect(mocks.persistPredatorTypeData).not.toHaveBeenCalled()
+  })
+
+  it('rejeita duplicação de override ativo', async () => {
+    mocks.getCharacterAccessRecord.mockResolvedValue({ campaignId: '22222222-2222-4222-8222-222222222222', data: { predatorTypeOverrides: [{ ruleCode: 'PREDATOR_BAGGER_VENTRUE' }] } })
+    const response = await POST(new Request('http://localhost', { method: 'POST', body: JSON.stringify({ ruleCode: 'PREDATOR_BAGGER_VENTRUE', action: 'CREATE', justification: 'Duplicação.' }) }), characterContext)
+    expect(response.status).toBe(409)
+    expect(mocks.persistPredatorTypeData).not.toHaveBeenCalled()
+  })
+
+  it('rejeita UUID inválido e configuração com campos forjados', async () => {
+    expect((await PATCH(new Request('http://localhost', { method: 'PATCH' }), { params: Promise.resolve({ id: 'invalid' }) })).status).toBe(400)
+    const response = await PATCH(new Request('http://localhost', { method: 'PATCH', body: JSON.stringify({ enabledSources: ['COREBOOK'], enabledCodes: null, disabledCodes: [], masterOverride: true }) }), campaignContext)
+    expect(response.status).toBe(400)
+    expect(mocks.savePredatorTypeSettings).not.toHaveBeenCalled()
   })
 })

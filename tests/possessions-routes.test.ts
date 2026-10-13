@@ -4,8 +4,8 @@ const mocks = vi.hoisted(() => ({ session: vi.fn(), ensure: vi.fn() }))
 vi.mock('@/lib/auth0', () => ({ getSessionOrDev: mocks.session }))
 vi.mock('@/lib/db', () => ({ ensureAllTables: mocks.ensure, db: null, getLiveKitRoom: vi.fn() }))
 
-import { GET, POST, PUT } from '../app/api/possessions/route'
-import { devCreateCharacter, devCreateCampaign, devGetCharacterAccessRecord } from '../lib/dev-db'
+import { GET, POST, PUT } from '@/app/api/possessions/route'
+import { devCreateCharacter, devCreateCampaign, devGetCharacterAccessRecord } from '@/lib/dev-db'
 
 const request = (body: unknown, method = 'POST') => new Request('http://localhost/api/possessions', { method, headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
 

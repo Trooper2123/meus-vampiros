@@ -18,6 +18,10 @@ import { projectIndependentCharacter } from '@/lib/character-duplicate'
 import { getCommandCharacter, runCharacterCommand, CharacterCommandError } from '@/lib/character-commands'
 import { randomUUID } from 'node:crypto'
 import { readSessionState, type SessionState } from '@/lib/vtm-v5/session-state'
+import { mergeCharacterSkills } from '@/lib/vtm-v5/skills'
+import { creationEffects, validateCreationEffects, type CreationEffect } from '@/lib/creation-effects'
+import { characterSpecialties } from '@/lib/character-specialties'
+import type { Specialty } from '@/lib/vtm-v5/specialties'
 
 const isDev = process.env.NODE_ENV !== 'production' && !process.env.DATABASE_URL
 
@@ -185,13 +189,13 @@ export async function getCharacterForViewer(id: string, viewerId: string) {
 export async function getCharacterAccessRecord(id: string) {
   if (isDev) {
     const character = devGetCharacterAccessRecord(id)
-    return character ? { id: character.id, userId: character.userId, campaignId: character.campaignId, status: character.status, characterType: character.characterType ?? 'PLAYER_VAMPIRE', data: normalizeDisciplines(character.data) } : null
+    return character ? { id: character.id, userId: character.userId, campaignId: character.campaignId, status: character.status, revision: character.revision ?? 0, characterType: character.characterType ?? 'PLAYER_VAMPIRE', data: normalizeDisciplines(character.data) } : null
   }
-  const result = await db.execute<{ id: string; user_id: string; campaign_id: string | null; status: string; character_type: string; data: unknown }>(sql`
-    SELECT id, user_id, campaign_id, status, character_type, data FROM characters WHERE id = ${id}::uuid
+  const result = await db.execute<{ id: string; user_id: string; campaign_id: string | null; status: string; revision: number; character_type: string; data: unknown }>(sql`
+    SELECT id, user_id, campaign_id, status, revision, character_type, data FROM characters WHERE id = ${id}::uuid
   `)
   const row = result.rows[0]
-  return row ? { id: row.id, userId: row.user_id, campaignId: row.campaign_id, status: row.status, characterType: row.character_type, data: normalizeDisciplines((row.data ?? {}) as Record<string, unknown>) } : null
+  return row ? { id: row.id, userId: row.user_id, campaignId: row.campaign_id, status: row.status, revision: row.revision, characterType: row.character_type, data: normalizeDisciplines((row.data ?? {}) as Record<string, unknown>) } : null
 }
 
 export async function saveCharacterValidation(id: string, report: unknown) {
@@ -218,11 +222,12 @@ export async function setCharacterStatus(id: string, status: string) {
 export async function createCharacter(
   userId: string,
   payload: { name?: string; data?: Record<string, unknown>; campaignId?: string | null },
-  resourceSource?: Record<string, unknown>
+  resourceSource?: Record<string, unknown>,
+  creationState?: { creationEffects: CreationEffect[]; specialties: Specialty[] }
 ) {
   payload = { ...payload, data: applySecondaryAttributes(payload.data ?? {}, resourceSource) }
   const initialXp = CREATION_ADJUSTMENTS[(payload.data?.creationType ?? 'FLEDGLING') as CreationType]?.initialXp ?? 0
-  const initialState = readSessionState(payload.data ?? {}, resourceSource ? { healthDamage: resourceSource.healthDamage, willpowerDamage: resourceSource.willpowerDamage } : {})
+  const initialState = { ...readSessionState(payload.data ?? {}, resourceSource ? { healthDamage: resourceSource.healthDamage, willpowerDamage: resourceSource.willpowerDamage } : {}), ...(creationState ? structuredClone(creationState) : {}) }
   if (isDev) {
     const character = devCreateCharacter(userId, payload)
     character.totalXp = character.characterType === 'PLAYER_VAMPIRE' ? initialXp : 0
@@ -288,10 +293,19 @@ export async function updateCharacter(
   return runCharacterCommand(userId, id, { key: randomUUID(), type: 'CHARACTER_EDITED', expectedRevision: payload.expectedRevision ?? previous.revision, payload }, character => character.ownerId === userId, character => {
     if (['ARCHIVED', 'DISABLED'].includes(character.status)) throw new CharacterCommandError(409, 'Esta ficha precisa ser reativada pelo Narrador antes da edição.')
     if (payload.campaignId !== undefined && payload.campaignId !== character.campaignId) throw new CharacterCommandError(409, 'A alteração do vínculo exige aprovação da mesa.')
-    if (payload.data) {
-      const changedMechanics = Object.entries(payload.data).some(([field, value]) => (mechanicalFields.has(field) || field.startsWith('habilidade-') || field.startsWith('convicoes-')) && JSON.stringify(value) !== JSON.stringify(character.data[field]))
+      if (payload.data) {
+        if (character.data.clanRulesVersion || character.data.predatorEffectsVersion) {
+          for (const field of ['cla', 'clanCode', 'clanSelection', 'clanRulesVersion', 'isCaitiff', 'isThinBlood', 'creationType', 'creationAdvantageDots', 'creationFlawDots']) {
+            if (Object.hasOwn(payload.data, field) && JSON.stringify(payload.data[field]) !== JSON.stringify(character.data[field])) throw new CharacterCommandError(422, 'Altere o clã pelo seletor específico, não pela edição geral.')
+          }
+        }
+      const changedMechanics = Object.entries(payload.data).some(([field, value]) => (mechanicalFields.has(field) || /^habilidade-/iu.test(field) || field.startsWith('convicoes-')) && JSON.stringify(value) !== JSON.stringify(character.data[field]))
       if (changedMechanics && character.status !== 'DRAFT') character.status = 'DRAFT'
-      character.data = applySecondaryAttributes({ ...character.data, ...payload.data }, character.data)
+      let mergedData: Record<string, unknown>
+      try { mergedData = mergeCharacterSkills(character.data, payload.data) }
+      catch { throw new CharacterCommandError(422, 'Habilidades ou pontos inválidos.') }
+        character.data = applySecondaryAttributes(mergedData, character.data)
+        validateCreationEffects(character)
       delete character.data['experiencia-total']
       delete character.data['experiencia-gasta']
     }
@@ -304,6 +318,17 @@ export async function updateCharacter(
 export async function duplicateCharacter(id: string, userId: string) {
   const original = await getCharacterById(id, userId)
   if (!original || original.characterType !== 'PLAYER_VAMPIRE') return null
-  const data = projectIndependentCharacter(original.data as Record<string, unknown>)
-  return createCharacter(userId, { name: `${original.name} — Cópia`, campaignId: null, data }, data)
+    const data = projectIndependentCharacter(original.data as Record<string, unknown>)
+    const source = await getCommandCharacter(id)
+    if (!source || source.ownerId !== userId) return null
+    const effects = creationEffects(source).map(({ origin, kind, id: effectId, name, dots, baseDots }) => ({ origin, kind, id: effectId, name, dots, baseDots }))
+    for (const field of ['disciplinas', 'vantagens', 'defeitos']) {
+      const originals = Array.isArray(source.data[field]) ? source.data[field] as Record<string, unknown>[] : []
+      const copies = Array.isArray(data[field]) ? data[field] as Record<string, unknown>[] : []
+      copies.forEach((row, index) => { if (effects.some(effect => effect.id === originals[index]?.id)) row.id = originals[index].id })
+    }
+    for (const field of ['clanCode', 'clanRulesVersion', 'predatorDisciplineBonus', 'predatorEffectsVersion', 'creationAdvantageDots', 'creationFlawDots']) if (source.data[field] !== undefined) data[field] = structuredClone(source.data[field])
+    if (source.data.clanSelection) data.clanSelection = structuredClone(source.data.clanSelection)
+    const specialties = characterSpecialties(source).filter(entry => entry.origin === 'PREDATOR').map(({ id: specialtyId, skillId, name, origin, grantId }) => ({ id: specialtyId, skillId, name, origin, grantId, status: 'PENDING' as const, costXp: 0 }))
+    return createCharacter(userId, { name: `${original.name} — Cópia`, campaignId: null, data }, data, { creationEffects: effects, specialties })
 }

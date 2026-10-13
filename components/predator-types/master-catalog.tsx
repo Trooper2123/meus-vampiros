@@ -13,6 +13,7 @@ export function MasterPredatorCatalog({ campaignId }: { campaignId: string }) {
   const [availability, setAvailability] = useState<'ALL' | 'ENABLED' | 'DISABLED'>('ALL')
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const types = data?.predatorTypes ?? []
   const filtered = useMemo(() => types.filter((entry) => (source === 'ALL' || entry.source === source) && (availability === 'ALL' || entry.enabled === (availability === 'ENABLED')) && `${entry.name} ${entry.commonRisks.join(' ')} ${entry.disciplineOptions.join(' ')}`.toLocaleLowerCase('pt-BR').includes(query.toLocaleLowerCase('pt-BR'))), [types, source, availability, query])
 
@@ -23,7 +24,7 @@ export function MasterPredatorCatalog({ campaignId }: { campaignId: string }) {
     const response = await fetch(`/api/campaigns/${campaignId}/predator-types/settings`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...data.settings, enabledSources }) })
     const body = await response.json().catch(() => ({})); setSaving(false)
     if (!response.ok) { setMessage(body.error ?? 'Não foi possível atualizar a configuração.'); return }
-    setMessage(`Configuração salva. ${body.flaggedCharacters} ficha(s) com escolha existente foram preservadas.`); await mutate()
+    setMessage(`Configuração salva. ${body.flaggedCharacters} ficha(s) possuem escolhas preservadas; fichas elegíveis voltam a rascunho para nova aprovação.`); await mutate()
   }
 
   async function toggleCode(code: MasterPredatorTypeDto['code'], enabled: boolean) {
@@ -37,7 +38,7 @@ export function MasterPredatorCatalog({ campaignId }: { campaignId: string }) {
     const response = await fetch(`/api/campaigns/${campaignId}/predator-types/settings`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...data.settings, enabledCodes, disabledCodes }) })
     const body = await response.json().catch(() => ({})); setSaving(false)
     if (!response.ok) { setMessage(body.error ?? 'Não foi possível atualizar o tipo.'); return }
-    setMessage('Disponibilidade atualizada sem apagar escolhas existentes.'); await mutate()
+    setMessage('Disponibilidade atualizada sem apagar escolhas. Fichas elegíveis voltam a rascunho para nova aprovação.'); await mutate()
   }
 
   const playersGuideEnabled = data?.settings.enabledSources.includes('PLAYERS_GUIDE') ?? false

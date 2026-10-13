@@ -7,8 +7,8 @@ vi.mock('@/lib/availability', () => ({ isUserInCampaign: mocks.isUserInCampaign 
 vi.mock('@/lib/characters', () => ({ getCharacterAccessRecord: mocks.getCharacterAccessRecord, appendCharacterLedgerEvent: mocks.appendCharacterLedgerEvent }))
 vi.mock('@/lib/predator-types', async (importOriginal) => ({ ...(await importOriginal<typeof import('@/lib/predator-types')>()), getPredatorTypeSettings: mocks.getPredatorTypeSettings, persistPredatorTypeData: mocks.persistPredatorTypeData }))
 
-import { GET } from '../app/api/predator-types/route'
-import { POST } from '../app/api/characters/[id]/predator-type/route'
+import { GET } from '@/app/api/predator-types/route'
+import { POST } from '@/app/api/characters/[id]/predator-type/route'
 
 const context = { params: Promise.resolve({ id: '11111111-1111-4111-8111-111111111111' }) }
 const settings = { enabledSources: ['COREBOOK'] as const, enabledCodes: null, disabledCodes: [] }
@@ -41,7 +41,8 @@ describe('rotas públicas de tipos de predação', () => {
     const first = await POST(request(), context)
     expect(first.status).toBe(200)
     expect(mocks.persistPredatorTypeData).toHaveBeenCalledOnce()
-    expect(mocks.appendCharacterLedgerEvent).toHaveBeenCalledOnce()
+    expect(mocks.appendCharacterLedgerEvent).not.toHaveBeenCalled()
+    expect(mocks.persistPredatorTypeData).toHaveBeenCalledWith(expect.any(String), expect.any(Object), 'auth0|owner', expect.objectContaining({ eventType: 'PREDATOR_TYPE_APPLIED' }))
   })
 
   it('recusa ficha fora de rascunho e escolhas incompletas', async () => {

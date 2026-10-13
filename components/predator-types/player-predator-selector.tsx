@@ -10,7 +10,7 @@ const fetcher = (url: string) => fetch(url).then(async (response) => {
   return body
 })
 
-export function PlayerPredatorSelector({ characterId, selectedCode, onApplied }: { characterId: string | null; selectedCode?: string | null; onApplied?: (name: string) => void }) {
+export function PlayerPredatorSelector({ characterId, selectedCode, onApplied, onBeforeSubmit }: { characterId: string | null; selectedCode?: string | null; onApplied?: (name: string) => void; onBeforeSubmit?: () => Promise<string | null> }) {
   const url = characterId ? `/api/predator-types?characterId=${characterId}` : '/api/predator-types'
   const { data, error, isLoading, mutate } = useSWR<{ predatorTypes: PlayerPredatorTypeDto[]; selectedCode: string | null }>(url, fetcher)
   const [query, setQuery] = useState('')
@@ -18,11 +18,16 @@ export function PlayerPredatorSelector({ characterId, selectedCode, onApplied }:
   const [selected, setSelected] = useState<string | null>(selectedCode ?? null)
   const [specialty, setSpecialty] = useState('')
   const [discipline, setDiscipline] = useState('')
+  const [choices, setChoices] = useState<Record<string, number>>({})
   const [submitting, setSubmitting] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
-  const types = data?.predatorTypes ?? []
+  const types = useMemo(() => data?.predatorTypes ?? [], [data?.predatorTypes])
   const filtered = useMemo(() => types.filter((entry) => (source === 'ALL' || entry.source === source) && `${entry.name} ${entry.summary} ${entry.feedingStyle}`.toLocaleLowerCase('pt-BR').includes(query.toLocaleLowerCase('pt-BR'))), [types, query, source])
   const selectedType = types.find((entry) => entry.code === selected) ?? null
+
+  function updateChoice(groupCode: string, optionCode: string, dots: number, exclusive: boolean) {
+    setChoices(current => ({ ...Object.fromEntries(Object.entries(current).filter(([key]) => !exclusive || !key.startsWith(`${groupCode}:`))), [`${groupCode}:${optionCode}`]: dots }))
+  }
 
   async function removeSelection() {
     if (!characterId) return
@@ -35,6 +40,7 @@ export function PlayerPredatorSelector({ characterId, selectedCode, onApplied }:
       setSelected(null)
       setSpecialty('')
       setDiscipline('')
+      setChoices({})
       onApplied?.('')
       setMessage('Tipo de predação removido. Os modificadores anteriores foram desfeitos.')
       await mutate()
@@ -48,13 +54,17 @@ export function PlayerPredatorSelector({ characterId, selectedCode, onApplied }:
   async function confirmSelection() {
     if (!characterId || !selectedType) { setMessage('Salve o rascunho antes de confirmar o tipo de predação.'); return }
     setSubmitting(true); setMessage(null)
-    const response = await fetch(`/api/characters/${characterId}/predator-type`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: selectedType.code, specialty, discipline, optionCodes: [] }) })
-    const body = await response.json().catch(() => ({}))
-    setSubmitting(false)
-    if (!response.ok) { setMessage(body.error ?? 'Não foi possível aplicar o tipo de predação.'); return }
-    setMessage('Tipo de predação aplicado à ficha.')
-    onApplied?.(selectedType.name)
-    await mutate()
+    try {
+      if (onBeforeSubmit && !await onBeforeSubmit()) throw new Error('Salve o rascunho antes de confirmar a predação.')
+      const optionCodes = Object.entries(choices).filter(([, dots]) => dots > 0).map(([key, dots]) => `${key}:${dots}`)
+      const response = await fetch(`/api/characters/${characterId}/predator-type`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: selectedType.code, specialty, discipline, optionCodes }) })
+      const body = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(body.error ?? 'Não foi possível aplicar o tipo de predação.')
+      setMessage('Tipo de predação aplicado à ficha.')
+      onApplied?.(selectedType.name)
+      await mutate()
+    } catch (failure) { setMessage(failure instanceof Error ? failure.message : 'Não foi possível aplicar o tipo de predação.') }
+    finally { setSubmitting(false) }
   }
 
   return <section className="mt-6 border border-border bg-card p-5" aria-labelledby="predator-selector-title">
@@ -65,8 +75,15 @@ export function PlayerPredatorSelector({ characterId, selectedCode, onApplied }:
     {isLoading && <p className="mt-4 text-sm text-muted-foreground" role="status">Carregando tipos de predação...</p>}
     {error && <p className="mt-4 text-sm text-primary" role="alert">{error.message}</p>}
     {!isLoading && !error && filtered.length === 0 && <p className="empty-state mt-4">Nenhum tipo disponível para estes filtros.</p>}
-    <div className="mt-4 grid gap-3 md:grid-cols-2">{filtered.map((entry) => <button key={entry.code} type="button" disabled={!entry.selectable} onClick={() => { setSelected(entry.code); setSpecialty(''); setDiscipline(''); setMessage(null) }} className={`character-card text-left ${selected === entry.code ? 'border-primary' : ''}`} aria-pressed={selected === entry.code}><span className="eyebrow">{entry.source === 'COREBOOK' ? 'Livro básico' : 'Players Guide'}</span><strong className="mt-2 block font-serif text-lg">{entry.name}</strong><span className="mt-2 block text-sm text-muted-foreground">{entry.summary}</span><span className="mt-2 block text-xs">Rolagem: {entry.predatorRoll}</span>{entry.publicWarnings.map((warning) => <span key={warning.code} className="mt-2 block text-xs text-primary">{warning.message}</span>)}</button>)}</div>
+    <div className="mt-4 grid gap-3 md:grid-cols-2">{filtered.map((entry) => <button key={entry.code} type="button" disabled={!entry.selectable} onClick={() => { setSelected(entry.code); setChoices({}); setSpecialty(''); setDiscipline(''); setMessage(null) }} className={`character-card text-left ${selected === entry.code ? 'border-primary' : ''}`} aria-pressed={selected === entry.code}><span className="eyebrow">{entry.source === 'COREBOOK' ? 'Livro básico' : 'Players Guide'}</span><strong className="mt-2 block font-serif text-lg">{entry.name}</strong><span className="mt-2 block text-sm text-muted-foreground">{entry.summary}</span><span className="mt-2 block text-xs">Rolagem: {entry.predatorRoll}</span>{entry.publicWarnings.map((warning) => <span key={warning.code} className="mt-2 block text-xs text-primary">{warning.message}</span>)}</button>)}</div>
     {selectedType && <div className="mt-5 border-t border-border pt-5"><h4 className="font-serif text-lg">Revisar {selectedType.name}</h4><p className="mt-2 text-sm text-muted-foreground">{selectedType.feedingStyle}</p><div className="mt-4 grid gap-3 sm:grid-cols-2"><label className="sheet-field"><span>Especialidade</span><select className="select" value={specialty} onChange={(event) => setSpecialty(event.target.value)}><option value="">Selecione...</option>{selectedType.specialtyOptions.map((option) => <option key={option}>{option}</option>)}</select></label><label className="sheet-field"><span>Disciplina</span><select className="select" value={discipline} onChange={(event) => setDiscipline(event.target.value)}><option value="">Selecione...</option>{selectedType.disciplineOptions.map((option) => <option key={option}>{option}</option>)}</select></label></div><button type="button" className="button-primary mt-4" disabled={submitting || !selectedType.selectable || !specialty || !discipline} onClick={confirmSelection}>{submitting ? 'Aplicando...' : 'Confirmar tipo de predação'}</button></div>}
+    {selectedType?.choiceGroups?.map(group => <fieldset key={`${selectedType.code}:${group.code}`} className="mt-4 border border-border p-3">
+      <legend className="text-sm">Escolhas adicionais: distribua {group.totalDots} ponto(s){group.mode === 'ONE' ? ' em uma opção' : ''}</legend>
+      {group.options.map(option => <label key={option.code} className="sheet-field mt-2"><span>{option.label}</span><select className="select" value={choices[`${group.code}:${option.code}`] ?? 0} onChange={event => updateChoice(group.code, option.code, Number(event.target.value), group.mode === 'ONE')}>
+        <option value={0}>Não selecionar</option>
+        {Array.from({ length: group.mode === 'ONE' ? 1 : option.dots ?? group.totalDots }, (_, index) => group.mode === 'ONE' ? group.totalDots : index + 1).map(dots => <option key={dots} value={dots}>{dots} ponto(s)</option>)}
+      </select></label>)}
+    </fieldset>)}
     {message && <p className="mt-4 text-sm text-muted-foreground" role={message.includes('aplicado') ? 'status' : 'alert'}>{message}</p>}
   </section>
 }

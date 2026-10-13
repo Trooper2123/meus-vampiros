@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import { ensureAllTables } from '@/lib/db'
-import { backfillLegacyPredatorTypes } from '@/lib/predator-types'
 
 const MIGRATE_SECRET = process.env.MIGRATE_SECRET
 
@@ -30,8 +29,7 @@ export async function POST(request: Request) {
 
   try {
     await ensureAllTables()
-    const predatorTypes = await backfillLegacyPredatorTypes()
-    return NextResponse.json({ ok: true, message: 'Migração executada com sucesso.', predatorTypes })
+    return NextResponse.json({ ok: true, message: 'Migração executada com sucesso.' })
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
     return NextResponse.json({ error: 'Falha na migração.', details: message }, { status: 500 })

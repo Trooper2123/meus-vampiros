@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const session = vi.hoisted(() => vi.fn())
 vi.mock('@/lib/auth0', () => ({ getSessionOrDev: session }))
-import { PATCH } from '../app/api/characters/resources/route'
+import { PATCH } from '@/app/api/characters/resources/route'
 
 const id = '11111111-1111-4111-8111-111111111111'
 const request = (body: unknown) => new Request('http://localhost', { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })

@@ -1,4 +1,5 @@
 import type { MechanicalOption, PredatorTypeCode, PredatorTypeDefinition, PredatorTypeSource, RelationshipRequirement } from './types'
+import { predatorMechanics } from './mechanics'
 
 type Entry = Omit<PredatorTypeDefinition, 'optional' | 'enabledByDefault' | 'bonusOptions' | 'flawsOrCosts' | 'commonRisks' | 'validationNotes' | 'relationshipRequirements'> & Partial<Pick<PredatorTypeDefinition, 'bonusOptions' | 'flawsOrCosts' | 'commonRisks' | 'validationNotes' | 'relationshipRequirements'>>
 const merit = (code: string, label: string, dots: number): MechanicalOption => ({ code, label, dots, kind: 'MERIT' })
@@ -39,10 +40,11 @@ const entries: Entry[] = [
 
 export const PREDATOR_TYPES: readonly PredatorTypeDefinition[] = Object.freeze(entries.map((entry) => Object.freeze({
   ...entry,
+  ...predatorMechanics(entry.code),
   optional: entry.source === 'PLAYERS_GUIDE',
   enabledByDefault: entry.source === 'COREBOOK',
-  bonusOptions: Object.freeze([...(entry.bonusOptions ?? [])]),
-  flawsOrCosts: Object.freeze([...(entry.flawsOrCosts ?? [])]),
+  bonusOptions: Object.freeze([...predatorMechanics(entry.code).bonusOptions]),
+  flawsOrCosts: Object.freeze([...predatorMechanics(entry.code).flawsOrCosts]),
   commonRisks: Object.freeze([...(entry.commonRisks ?? [])]),
   validationNotes: entry.validationNotes ?? 'Aplicar restrições e escolhas conforme a campanha.',
   relationshipRequirements: Object.freeze([...(entry.relationshipRequirements ?? [])]),

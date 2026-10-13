@@ -9,6 +9,7 @@ vi.mock('@/lib/auth0', () => ({ getSessionOrDev: session }))
 
 import { changeSpecialty, specialtyView } from '@/lib/character-specialties'
 import { getCommandCharacter } from '@/lib/character-commands'
+import { updateCharacter } from '@/lib/characters'
 import { GET, POST } from '@/app/api/characters/[id]/specialties/route'
 import type { Specialty } from '@/lib/vtm-v5/specialties'
 
@@ -135,5 +136,42 @@ describe('comandos de especialidades e autorização real em memória', () => {
     expect((await GET(new Request('http://localhost'), context)).status).toBe(403)
     expect((await POST(request(purchase), context)).status).toBe(403)
     expect(global.__devDb!.characterLedgerEvents).toHaveLength(0)
+  })
+
+  it('gera opções canônicas e atualiza elegibilidade depois de salvar habilidades', async () => {
+    session.mockResolvedValue({ user: { sub: 'player' } })
+    const record = global.__devDb!.characters[0]
+    record.data['habilidade-Acadêmicos'] = 2
+    const before = await (await GET(new Request('http://localhost'), context)).json()
+    expect(before.skillValidation.valid).toBe(true)
+    expect(before.eligibility.purchase.map((option: { skillId: string }) => option.skillId)).toContain('briga')
+    await updateCharacter(id, 'player', { expectedRevision: 0, data: { 'habilidade-Ciência': 1, 'habilidade-briga': 0 } })
+    const after = await (await GET(new Request('http://localhost'), context)).json()
+    expect(after.revision).toBe(1)
+    expect(after.eligibility.purchase.map((option: { skillId: string }) => option.skillId)).not.toContain('briga')
+    expect(after.eligibility.grants['skill:ciencia:first-dot']).toEqual([{ skillId: 'ciencia', name: 'Ciência', dots: 1 }])
+    expect(record.data).toHaveProperty('habilidade-ciencia', 1)
+    expect(record.data).not.toHaveProperty('habilidade-Ciência')
+  })
+
+  it('mostra diagnóstico de pontos inválidos e bloqueia escolha sem debitar XP', async () => {
+    session.mockResolvedValue({ user: { sub: 'player' } })
+    global.__devDb!.characters[0].data['habilidade-briga'] = true
+    const response = await GET(new Request('http://localhost'), context)
+    expect(response.status).toBe(200)
+    const body = await response.json()
+    expect(body.skillValidation.valid).toBe(false)
+    expect(body.eligibility.purchase.some((option: { skillId: string }) => option.skillId === 'briga')).toBe(false)
+    expect((await POST(request(purchase), context)).status).toBe(422)
+    expect(global.__devDb!.characters[0].spentXp).toBe(0)
+  })
+
+  it('aliases de habilidades não contornam a revisão de uma ficha aprovada', async () => {
+    const record = global.__devDb!.characters[0]
+    record.status = 'APPROVED'
+    await updateCharacter(id, 'player', { expectedRevision: 0, data: { 'HABILIDADE-Briga': 3 } })
+    expect(record.status).toBe('DRAFT')
+    expect(record.data).toHaveProperty('habilidade-briga', 3)
+    expect(record.data).not.toHaveProperty('HABILIDADE-Briga')
   })
 })

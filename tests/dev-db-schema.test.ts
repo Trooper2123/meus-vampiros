@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { randomUUID } from 'node:crypto'
-import { devAppendCharacterLedgerEvent, devCreateCharacter, devCreatePossession, devDeleteCharacter, devGetCharacterAccessRecord, devGetCharacterById, devGetCharactersForUser } from '../lib/dev-db'
-import { runCharacterCommand } from '../lib/character-commands'
+import { devAppendCharacterLedgerEvent, devCreateCharacter, devCreatePossession, devDeleteCharacter, devGetCharacterAccessRecord, devGetCharacterById, devGetCharactersForUser } from '@/lib/dev-db'
+import { runCharacterCommand } from '@/lib/character-commands'
 
 describe('paridade do provider de memória com o schema de personagens', () => {
   beforeEach(() => { global.__devDb = undefined })

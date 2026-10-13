@@ -18,7 +18,7 @@ vi.mock('@/lib/characters', () => ({
   saveCharacterValidation: mocks.saveCharacterValidation,
 }))
 
-import { POST } from '../app/api/characters/[id]/validate/route'
+import { POST } from '@/app/api/characters/[id]/validate/route'
 
 const CHARACTER_ID = '11111111-1111-4111-8111-111111111111'
 

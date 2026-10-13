@@ -9,7 +9,7 @@ vi.mock('@/lib/availability', () => ({ isUserInCampaign: mocks.membership }))
 vi.mock('@/lib/characters', () => ({ getCharacterAccessRecord: mocks.access, duplicateCharacter: mocks.duplicate, getCharacterById: mocks.get, createCharacter: mocks.create, updateCharacter: mocks.update, getCharactersForCampaign: vi.fn(), updateCharacterXp: vi.fn(), normalizeDisciplines: vi.fn(), deleteCharacter: vi.fn() }))
 
 import { POST as duplicate } from '../app/api/characters/[id]/duplicate/route'
-import { GET, POST, PUT } from '../app/api/characters/route'
+import { GET, POST, PUT } from '@/app/api/characters/route'
 
 const id = '11111111-1111-4111-8111-111111111111'
 const context = { params: Promise.resolve({ id }) }

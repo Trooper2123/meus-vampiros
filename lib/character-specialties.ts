@@ -1,14 +1,15 @@
 import { randomUUID } from 'node:crypto'
 import { CharacterCommandError, runCharacterCommand, type CommandCharacter } from './character-commands'
-import { normalizeCharacterRulesInput } from './vtm-v5/normalize'
+import { validateCharacterSkills } from './vtm-v5/skills'
 import { PREDATOR_TYPE_BY_CODE, type PredatorTypeCode } from './vtm-v5/predator-types'
-import { calculateSpecialtyGrants, selectSpecialtyGrant, validateSpecialty, calculateSpecialtyPurchase, normalizeSpecialtySkillId, normalizeSpecialtyName, type SpecialtyRules, type Specialty } from './vtm-v5/specialties'
+import { calculateSpecialtyGrants, eligibleSpecialtySkills, selectSpecialtyGrant, validateSpecialty, calculateSpecialtyPurchase, normalizeSpecialtySkillId, normalizeSpecialtyName, type SpecialtyRules, type Specialty } from './vtm-v5/specialties'
 
-export function specialtyRules(character: CommandCharacter): SpecialtyRules {
-  const input = normalizeCharacterRulesInput(character.data)
+export function specialtyRules(character: CommandCharacter, preview = false): SpecialtyRules {
+  const validation = validateCharacterSkills(character.data)
+  if (!preview && !validation.valid) throw new CharacterCommandError(422, 'Revise as habilidades inválidas antes de escolher uma especialidade.')
   const selection = character.data.predatorTypeSelection as { code?: PredatorTypeCode } | undefined
   const predator = selection?.code ? PREDATOR_TYPE_BY_CODE.get(selection.code) : undefined
-  return { skills: input.skills, creation: true, ...(predator ? { predator: { code: predator.code, options: predator.specialtyOptions.map(name => ({ skillId: normalizeSpecialtySkillId(name.split('(')[0]), name })) } } : {}) }
+  return { skills: validation.skills, creation: true, ...(predator ? { predator: { code: predator.code, options: predator.specialtyOptions.map(name => ({ skillId: normalizeSpecialtySkillId(name.split('(')[0]), name })) } } : {}) }
 }
 
 export function characterSpecialties(character: CommandCharacter): Specialty[] {
@@ -17,9 +18,10 @@ export function characterSpecialties(character: CommandCharacter): Specialty[] {
 
 export function specialtyView(character: CommandCharacter, actorId: string) {
   const specialties = characterSpecialties(character)
-  const rules = specialtyRules(character)
+  const rules = specialtyRules(character, true)
   const skills = Object.fromEntries(Object.entries(rules.skills).map(([skill, dots]) => [normalizeSpecialtySkillId(skill), dots]))
-  return { specialties, skills, grants: calculateSpecialtyGrants(rules).filter(grant => !specialties.some(specialty => specialty.grantId === grant.id)), availableXp: character.totalXp - character.spentXp, revision: character.revision, canApprove: character.masterId === actorId }
+  const grants = calculateSpecialtyGrants(rules).filter(grant => !specialties.some(specialty => specialty.grantId === grant.id))
+  return { specialties, skills, grants, skillValidation: validateCharacterSkills(character.data), eligibility: { purchase: eligibleSpecialtySkills(rules, specialties), grants: Object.fromEntries(grants.map(grant => [grant.id, eligibleSpecialtySkills(rules, specialties, grant)])) }, availableXp: character.totalXp - character.spentXp, revision: character.revision, canApprove: character.masterId === actorId }
 }
 
 type SpecialtyInput = { kind: 'GRANT' | 'PURCHASE' | 'APPROVE' | 'REJECT'; grantId?: string; skillId?: string; name?: string; specialtyId?: string; reason: string; expectedRevision: number; idempotencyKey: string }

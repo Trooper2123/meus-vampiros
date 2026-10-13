@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest'
 import { createCharacter, duplicateCharacter, getCharacterById, updateCharacter } from '../lib/characters'
-import { projectIndependentCharacter } from '../lib/character-duplicate'
-import { calculateSecondaryAttributes } from '../lib/vtm-v5/secondary-attributes'
+import { projectIndependentCharacter } from '@/lib/character-duplicate'
+import { calculateSecondaryAttributes } from '@/lib/vtm-v5/secondary-attributes'
 
 describe('fichas independentes e atributos secundários', () => {
   beforeEach(() => { global.__devDb = undefined })

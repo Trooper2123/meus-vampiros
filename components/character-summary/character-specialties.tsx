@@ -1,8 +1,9 @@
 'use client'
 
-import { useId, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import useSWR from 'swr'
-import type { Specialty, SpecialtyGrant } from '@/lib/vtm-v5/specialties'
+import { calculateSpecialtyGrants, eligibleSpecialtySkills, type Specialty, type SpecialtyGrant } from '@/lib/vtm-v5/specialties'
+import { SPECIALTY_SKILL_NAMES, validateSkillValues, type SkillValidationIssue } from '@/lib/vtm-v5/skills'
 
 type SpecialtyData = {
   specialties: Specialty[]
@@ -11,6 +12,8 @@ type SpecialtyData = {
   availableXp: number
   revision: number
   canApprove: boolean
+  skillValidation: { valid: boolean; issues: SkillValidationIssue[] }
+  eligibility: { purchase: ReturnType<typeof eligibleSpecialtySkills>; grants: Record<string, ReturnType<typeof eligibleSpecialtySkills>> }
 }
 
 type SpecialtyCommand = {
@@ -24,9 +27,7 @@ type SpecialtyCommand = {
   reason: string
 }
 
-const skillNames: Record<string, string> = {
-  'armas-brancas': 'Armas brancas', 'armas-de-fogo': 'Armas de fogo', atletismo: 'Atletismo', briga: 'Briga', conducao: 'Condução', furtividade: 'Furtividade', ladroagem: 'Ladroagem', oficios: 'Ofícios', sobrevivencia: 'Sobrevivência', 'empatia-com-animais': 'Empatia com animais', etiqueta: 'Etiqueta', intimidacao: 'Intimidação', lideranca: 'Liderança', manha: 'Manha', performance: 'Performance', persuasao: 'Persuasão', sagacidade: 'Sagacidade', subterfugio: 'Subterfúgio', ciencia: 'Ciência', academicos: 'Erudição', financas: 'Finanças', investigacao: 'Investigação', medicina: 'Medicina', ocultismo: 'Ocultismo', percepcao: 'Percepção', politica: 'Política', tecnologia: 'Tecnologia',
-}
+const skillNames = SPECIALTY_SKILL_NAMES
 const originNames: Record<Specialty['origin'], string> = { SKILL: 'Primeiro ponto na habilidade', CREATION: 'Concessão de criação', PREDATOR: 'Tipo de predação', XP: 'Compra com XP', CUSTOM: 'Personalizada' }
 
 async function fetchSpecialties(url: string): Promise<SpecialtyData> {
@@ -36,11 +37,13 @@ async function fetchSpecialties(url: string): Promise<SpecialtyData> {
   return body
 }
 
-export function CharacterSpecialties(props: { characterId: string; onChange?: () => void }) {
+type SpecialtyPanelProps = { characterId: string; onChange?: () => void; draftSkills?: Record<string, number>; characterRevision?: number; onBeforeSubmit?: () => Promise<string | null> }
+
+export function CharacterSpecialties(props: SpecialtyPanelProps) {
   return <SpecialtyPanel key={props.characterId} {...props} />
 }
 
-function SpecialtyPanel({ characterId, onChange }: { characterId: string; onChange?: () => void }) {
+function SpecialtyPanel({ characterId, onChange, draftSkills, characterRevision, onBeforeSubmit }: SpecialtyPanelProps) {
   const fieldId = useId()
   const endpoint = `/api/characters/${characterId}/specialties`
   const { data, error: loadError, isLoading, mutate } = useSWR<SpecialtyData>(endpoint, fetchSpecialties)
@@ -53,10 +56,20 @@ function SpecialtyPanel({ characterId, onChange }: { characterId: string; onChan
   const [busy, setBusy] = useState(false)
   const [retryCommand, setRetryCommand] = useState<SpecialtyCommand | null>(null)
   const submitting = useRef(false)
-  const grant = data?.grants.find(entry => entry.id === grantId)
-  const eligibleSkills = Object.entries(data?.skills ?? {}).filter(([id, dots]) => dots > 0 && (!grant || !grant.skillId || grant.skillId === id) && (!grant?.options || grant.options.some(option => option.skillId === id)))
+  const preparing = useRef(false)
+  const validation = validateSkillValues(draftSkills ?? data?.skills ?? {})
+  const previewRules = { skills: validation.skills, creation: true }
+  const grants = draftSkills && data ? [...calculateSpecialtyGrants(previewRules).filter(entry => !data.specialties.some(specialty => specialty.grantId === entry.id)), ...data.grants.filter(entry => entry.origin === 'PREDATOR')] : data?.grants ?? []
+  const grant = grants.find(entry => entry.id === grantId)
+  const options = draftSkills ? eligibleSpecialtySkills(previewRules, data?.specialties ?? [], grant) : grant ? data?.eligibility.grants[grant.id] ?? [] : data?.eligibility.purchase ?? []
+  const eligibleSkills = options.map(option => [option.skillId, option.dots] as const)
   const selectedSkill = eligibleSkills.some(([id]) => id === skillId) ? skillId : eligibleSkills[0]?.[0] ?? ''
   const disabled = busy || retryCommand !== null
+  const hasUnsavedSkills = Boolean(draftSkills && data && (!data.skillValidation.valid || JSON.stringify(validation.skills) !== JSON.stringify(validateSkillValues(data.skills).skills)))
+
+  useEffect(() => {
+    if (characterRevision !== undefined && data?.revision !== undefined && characterRevision !== data.revision) void mutate().catch(() => setError('Não foi possível atualizar as habilidades salvas.'))
+  }, [characterRevision, data?.revision, mutate])
 
   async function execute(command: SpecialtyCommand) {
     if (submitting.current) return
@@ -88,10 +101,29 @@ function SpecialtyPanel({ characterId, onChange }: { characterId: string; onChan
     }
   }
 
-  function submit(kind: SpecialtyCommand['kind'], specialtyId?: string) {
-    if (!data || disabled) return
+  async function submit(kind: SpecialtyCommand['kind'], specialtyId?: string) {
+    if (!data || disabled || preparing.current) return
     if (kind === 'REJECT' && !window.confirm('Rejeitar esta especialidade? O servidor devolverá o XP da compra, quando aplicável.')) return
-    void execute({ kind, ...(specialtyId ? { specialtyId } : { skillId: selectedSkill, name: name.trim(), ...(kind === 'GRANT' ? { grantId } : {}) }), expectedRevision: data.revision, idempotencyKey: crypto.randomUUID(), reason: reason.trim() })
+    preparing.current = true
+    setBusy(true)
+    setError('')
+    try {
+      let current = data
+      if (kind === 'GRANT' || kind === 'PURCHASE') {
+        if (!validation.valid) throw new Error('Revise os pontos das habilidades antes de continuar.')
+        if (hasUnsavedSkills && (!onBeforeSubmit || !await onBeforeSubmit())) throw new Error('Não foi possível salvar as habilidades. A especialidade não foi enviada.')
+        current = await fetchSpecialties(endpoint)
+        await mutate(current, { revalidate: false })
+        const allowed = kind === 'GRANT' ? current.eligibility.grants[grantId] ?? [] : current.eligibility.purchase
+        if (!current.skillValidation.valid || !allowed.some(option => option.skillId === selectedSkill)) throw new Error('Esta habilidade não está disponível para a seleção atual. Revise a ficha.')
+      }
+      await execute({ kind, ...(specialtyId ? { specialtyId } : { skillId: selectedSkill, name: name.trim(), ...(kind === 'GRANT' ? { grantId } : {}) }), expectedRevision: current.revision, idempotencyKey: crypto.randomUUID(), reason: reason.trim() })
+    } catch (failure) {
+      setError(failure instanceof Error ? failure.message : 'Não foi possível validar as habilidades.')
+    } finally {
+      preparing.current = false
+      setBusy(false)
+    }
   }
 
   return (
@@ -111,7 +143,7 @@ function SpecialtyPanel({ characterId, onChange }: { characterId: string; onChan
         </ul>}
         <p className="text-sm text-muted-foreground">Uma especialidade aprovada e aplicável concede +1 dado. Apenas uma especialidade por rolagem.</p>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <label className="flex flex-col gap-2 text-sm" htmlFor={`${fieldId}-grant`}>Concessão gratuita<select id={`${fieldId}-grant`} className="select w-full min-h-10" disabled={disabled} value={grant ? grantId : ''} onChange={event => setGrantId(event.target.value)}><option value="">Selecionar concessão ou comprar com XP</option>{data.grants.map(entry => <option key={entry.id} value={entry.id}>{originNames[entry.origin]}{entry.skillId ? `: ${skillNames[entry.skillId] ?? entry.skillId}` : ''}</option>)}</select></label>
+          <label className="flex flex-col gap-2 text-sm" htmlFor={`${fieldId}-grant`}>Concessão gratuita<select id={`${fieldId}-grant`} className="select w-full min-h-10" disabled={disabled} value={grant ? grantId : ''} onChange={event => setGrantId(event.target.value)}><option value="">Selecionar concessão ou comprar com XP</option>{grants.map(entry => <option key={entry.id} value={entry.id}>{originNames[entry.origin]}{entry.skillId ? `: ${skillNames[entry.skillId] ?? entry.skillId}` : ''}</option>)}</select></label>
           <label className="flex flex-col gap-2 text-sm" htmlFor={`${fieldId}-skill`}>Habilidade<select id={`${fieldId}-skill`} className="select w-full min-h-10" disabled={disabled || eligibleSkills.length === 0} value={selectedSkill} onChange={event => setSkillId(event.target.value)}>{eligibleSkills.length === 0 && <option value="">Nenhuma habilidade disponível</option>}{eligibleSkills.map(([id, dots]) => <option key={id} value={id}>{skillNames[id] ?? id} ({dots})</option>)}</select></label>
           <label className="flex flex-col gap-2 text-sm sm:col-span-2" htmlFor={`${fieldId}-name`}>Nome da especialidade<input id={`${fieldId}-name`} className="input w-full min-h-10" disabled={disabled} value={name} maxLength={100} onChange={event => setName(event.target.value)} placeholder="Ex.: História medieval" /></label>
           {grant?.options && <p className="text-sm text-muted-foreground sm:col-span-2">Opções da predação: {grant.options.filter(option => option.skillId === selectedSkill).map(option => option.name).join(', ')}.</p>}
@@ -119,6 +151,8 @@ function SpecialtyPanel({ characterId, onChange }: { characterId: string; onChan
         </div>
         <div className="flex flex-col gap-3 sm:flex-row"><button type="button" className="button-primary min-h-10" disabled={disabled || !grant || !selectedSkill || !name.trim() || !reason.trim()} onClick={() => submit('GRANT')}>Usar concessão gratuita</button><button type="button" className="button-ghost min-h-10" disabled={disabled || Boolean(grant) || data.availableXp < 3 || !selectedSkill || !name.trim() || !reason.trim()} onClick={() => submit('PURCHASE')}>Comprar por 3 XP</button></div>
         <p className="text-xs text-muted-foreground">Escolhas personalizadas aguardam aprovação do Narrador. A compra reserva 3 XP até a decisão.</p>
+        {hasUnsavedSkills && <p role="status" className="text-sm text-muted-foreground">A lista acompanha as habilidades em edição. Elas serão salvas e validadas antes de enviar a especialidade.</p>}
+        {(!validation.valid || !data.skillValidation.valid) && <p role="alert" className="text-sm text-primary">Há habilidades desconhecidas, pontos inválidos ou aliases conflitantes. Revise e salve as habilidades da ficha.</p>}
       </div>}
       {message && <p role="status" className="mt-4 text-sm">{message}</p>}
       {error && <p role="alert" className="mt-4 text-sm text-primary">{error}</p>}

@@ -7,7 +7,7 @@ vi.mock('@/lib/db', () => ({ ensureAllTables: mocks.ensure, db: null }))
 vi.mock('@/lib/vtm-v5/dice-provider', () => ({ serverDiceProvider: { rollD10: mocks.rollD10 } }))
 
 import { devCreateCampaign, devCreateCharacter, devGetCharacterAccessRecord } from '@/lib/dev-db'
-import { GET, POST } from '../app/api/campaigns/[id]/nights/awake/route'
+import { GET, POST } from '@/app/api/campaigns/[id]/nights/awake/route'
 
 const request = (body: unknown) => new Request('http://localhost/api/campaigns/awake', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
 
