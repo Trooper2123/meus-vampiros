@@ -1,4 +1,5 @@
 import { CHARACTER_TYPES, CREATION_TYPES, type CharacterRulesInput, type CharacterType, type CreationType, type DisciplineInput } from './types'
+import { normalizePredatorType } from './predator-types'
 
 const numberOrNull = (value: unknown) => {
   const parsed = Number(value)
@@ -37,11 +38,12 @@ export function normalizeCharacterRulesInput(data: Record<string, unknown>): Cha
     skillMode: typeof data.skillMode === 'string' ? data.skillMode as CharacterRulesInput['skillMode'] : undefined,
     convictions,
     disciplines,
-    predatorType: String(data.predador ?? '').trim() || null,
+    predatorDisciplineBonus: data.predatorDisciplineBonus === 1 ? 1 : 0,
+    predatorType: normalizePredatorType(data.predatorTypeCode ?? data.predador) ?? (String(data.predador ?? '').trim() || null),
     advantages: stringArray(data.advantages ?? (Array.isArray(data.vantagens) ? data.vantagens.map((item) => typeof item === 'object' && item ? (item as Record<string, unknown>).name : item) : [])),
     flaws: stringArray(data.flaws ?? (Array.isArray(data.defeitos) ? data.defeitos.map((item) => typeof item === 'object' && item ? (item as Record<string, unknown>).name : item) : [])),
-    advantageDots: traitDots(data.vantagens),
-    flawDots: traitDots(data.defeitos),
+    advantageDots: Math.max(0, traitDots(data.vantagens) - (Number(data.creationAdvantageDots) || 0)),
+    flawDots: Math.max(0, traitDots(data.defeitos) - (Number(data.creationFlawDots) || 0)),
     masterOverride: data.masterOverride === true,
     npc: data.npc && typeof data.npc === 'object' ? data.npc as CharacterRulesInput['npc'] : undefined,
     retainer: data.retainer && typeof data.retainer === 'object' ? data.retainer as CharacterRulesInput['retainer'] : undefined,

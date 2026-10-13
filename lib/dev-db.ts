@@ -6,6 +6,7 @@
  */
 
 import { randomUUID } from 'crypto'
+import { readSessionState } from './vtm-v5/session-state'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -26,6 +27,8 @@ export type DevCharacter = {
   data: Record<string, unknown>
   spentXp: number
   totalXp: number
+  revision?: number
+  gameState?: Record<string, unknown>
   updatedAt: Date
   createdAt: Date
 }
@@ -76,7 +79,7 @@ type DevStore = {
 }
 
 declare global {
-  // eslint-disable-next-line no-var
+
   var __devDb: DevStore | undefined
 }
 
@@ -236,6 +239,10 @@ function seed(): DevStore {
     },
   ]
 
+  for (const character of characters) {
+    character.revision = 0
+    character.gameState = character.characterType === 'PLAYER_VAMPIRE' ? readSessionState(character.data, {}) : {}
+  }
   return { characters, campaigns, possessions, characterLedgerEvents: [] }
 }
 
@@ -264,15 +271,6 @@ export function devGetCharactersForCampaign(campaignId: string) {
     }))
 }
 
-export function devUpdateCharacterResources(characterId: string, resources: Record<string, number>) {
-  const store = getStore()
-  const character = store.characters.find((c) => c.id === characterId)
-  if (!character) return null
-  character.data = { ...character.data, ...resources }
-  character.updatedAt = new Date()
-  return resources
-}
-
 export function devUpdateCharacterXp(characterId: string, totalXp: number) {
   const store = getStore()
   const character = store.characters.find((c) => c.id === characterId)
@@ -291,6 +289,7 @@ export function devGetCharactersForUser(userId: string) {
       const campaign = c.campaignId ? campaigns.find((camp) => camp.id === c.campaignId) : null
       return {
         id: c.id,
+        characterType: c.characterType ?? 'PLAYER_VAMPIRE',
         name: c.name,
         concept: c.concept,
         clan: c.clan,
@@ -312,12 +311,14 @@ export function devGetCharacterById(id: string, userId: string) {
   const c = characters.find((ch) => ch.id === id && ch.userId === userId)
   if (!c) return null
   const campaign = c.campaignId ? campaigns.find((camp) => camp.id === c.campaignId) : null
+  const state = c.gameState ?? {}
   return {
     id: c.id,
     name: c.name,
     status: c.status,
     characterType: c.characterType ?? 'PLAYER_VAMPIRE',
-    data: c.data,
+    revision: c.revision ?? 0,
+    data: structuredClone({ ...c.data, 'experiencia-total': c.totalXp, 'experiencia-gasta': c.spentXp, ...(state.hunger !== undefined ? { fome: state.hunger } : {}), ...(state.humanity !== undefined ? { humanidade: state.humanity } : {}), ...(state.healthCurrent !== undefined ? { vitalidade: state.healthCurrent } : {}), ...(state.willpowerCurrent !== undefined ? { vontade: state.willpowerCurrent } : {}), ...(state.healthDamage ? { healthDamage: state.healthDamage, willpowerDamage: state.willpowerDamage } : {}) }) as Record<string, unknown>,
     campaignId: c.campaignId,
     campaign: campaign
       ? { id: campaign.id, name: campaign.name, theme: campaign.theme, principios: campaign.principios, averageXp: campaign.averageXp }
@@ -330,6 +331,7 @@ export function devCreateCharacter(
   payload: { name?: string; data?: Record<string, unknown>; campaignId?: string | null }
 ) {
   const store = getStore()
+  if (payload.campaignId && !store.campaigns.some(campaign => campaign.id === payload.campaignId)) throw new Error('Campanha inexistente.')
   const now = new Date()
   const character: DevCharacter = {
     id: randomUUID(),
@@ -343,9 +345,11 @@ export function devCreateCharacter(
     characterType: String(payload.data?.characterType ?? 'PLAYER_VAMPIRE'),
     visibility: 'PLAYER_VISIBLE',
     campaignId: payload.campaignId ?? null,
-    data: payload.data ?? {},
+    data: structuredClone(payload.data ?? {}),
     spentXp: 0,
     totalXp: 0,
+    revision: 0,
+    gameState: {},
     updatedAt: now,
     createdAt: now,
   }
@@ -388,13 +392,24 @@ export function devDeleteCharacter(id: string, userId: string) {
   const store = getStore()
   const index = store.characters.findIndex((c) => c.id === id && c.userId === userId)
   if (index === -1) return null
+  if (global.__chronicleNightMemory?.store === store && global.__chronicleNightMemory.nights.some(night => night.result.results.some(result => result.characterId === id))) throw new Error('A ficha possui registros de despertar.')
   store.characters.splice(index, 1)
+  store.possessions = store.possessions.filter(possession => possession.characterId !== id)
+  store.characterLedgerEvents = store.characterLedgerEvents.filter(event => event.characterId !== id)
+  if (global.__characterCommandMemory?.store === store) {
+    for (const key of global.__characterCommandMemory.commands.keys()) if (key.startsWith(`${id}:`)) global.__characterCommandMemory.commands.delete(key)
+  }
   return { ok: true }
+}
+
+export function devGetCharacterAccessRecord(id: string) {
+  return getStore().characters.find((character) => character.id === id) ?? null
 }
 
 export function devAppendCharacterLedgerEvent(characterId: string, eventType: string, origin: string, payload: Record<string, unknown>, createdByUserId: string) {
   const store = getStore()
-  const event: DevCharacterLedgerEvent = { id: randomUUID(), characterId, eventType, origin, payload, createdByUserId, createdAt: new Date() }
+  if (!store.characters.some(character => character.id === characterId)) throw new Error('Ficha inexistente.')
+  const event: DevCharacterLedgerEvent = { id: randomUUID(), characterId, eventType, origin, payload: structuredClone(payload), createdByUserId, createdAt: new Date() }
   store.characterLedgerEvents.push(event)
   return event
 }
@@ -478,6 +493,8 @@ export function devCreatePossession(
   input: { label: string; description?: string | null; origin?: 'player' | 'master'; campaignId?: string | null }
 ) {
   const store = getStore()
+  if (!store.characters.some(character => character.id === characterId)) throw new Error('Ficha inexistente.')
+  if (input.campaignId && !store.campaigns.some(campaign => campaign.id === input.campaignId)) throw new Error('Campanha inexistente.')
   const now = new Date()
   const possession: DevPossession = {
     id: randomUUID(),

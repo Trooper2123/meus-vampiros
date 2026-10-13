@@ -6,9 +6,11 @@ import { SummarySkills } from './summary-skills'
 import { SummaryDisciplines } from './summary-disciplines'
 import { SummaryResources } from './summary-resources'
 import { SummaryMerits } from './summary-merits'
+import { calculateSecondaryAttributes } from '@/lib/vtm-v5/secondary-attributes'
 
 type CharacterData = {
   id: string
+  characterType?: string
   name: string
   clan: string | null
   predator: string | null
@@ -52,6 +54,7 @@ type CharacterSummaryProps = {
 }
 
 export function CharacterSummary({ data, onChangeResources }: CharacterSummaryProps) {
+  const maxima = data.characterType === 'PLAYER_VAMPIRE' ? calculateSecondaryAttributes(data.attributes) : undefined
   const handleResourcesChange = (newResources: CharacterData['resources']) => {
     onChangeResources?.(newResources)
   }
@@ -71,7 +74,7 @@ export function CharacterSummary({ data, onChangeResources }: CharacterSummaryPr
       <SummaryMerits merits={data.merits} flaws={data.flaws} />
       <SummaryDisciplines disciplines={data.disciplines} />
       {onChangeResources && (
-        <SummaryResources resources={data.resources} onChange={handleResourcesChange} />
+        <SummaryResources resources={data.resources} maxima={maxima} onChange={handleResourcesChange} />
       )}
     </div>
   )

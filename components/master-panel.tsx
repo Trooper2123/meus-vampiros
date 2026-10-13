@@ -185,60 +185,82 @@ export function CampaignPossessionsManager({ campaignId }: { campaignId: string 
   const [granting, setGranting] = useState(false)
   const [xpToAdd, setXpToAdd] = useState('2')
   const [updatingXp, setUpdatingXp] = useState(false)
+  const [feedback, setFeedback] = useState('')
+  const [xpReason, setXpReason] = useState('Concessão do narrador')
+  const [xpRetry, setXpRetry] = useState<{ characterIds: string[]; amount: number; reason: string; idempotencyKey: string } | null>(null)
+  const [singleXpRetry, setSingleXpRetry] = useState<Record<string, { amount: number; reason: string; idempotencyKey: string }>>({})
 
   async function handleAddXpToCharacter(character: CampaignCharacter, amount: number) {
-    const currentTotal = typeof character.totalXp === 'number' ? character.totalXp : Number.parseInt(String(character.totalXp ?? '0'), 10) || 0
-    const nextTotal = currentTotal + amount
-    const response = await fetch('/api/characters', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ characterId: character.id, totalXp: nextTotal }),
-    })
-    if (!response.ok) {
-      const body = await response.json().catch(() => ({}))
-      console.error('Erro ao atribuir XP:', body.error)
-      return
+    if (updatingXp || !xpReason.trim()) return
+    const operation = singleXpRetry[character.id] ?? { amount, reason: xpReason.trim(), idempotencyKey: crypto.randomUUID() }
+    setSingleXpRetry((current) => ({ ...current, [character.id]: operation }))
+    setUpdatingXp(true)
+    try {
+      const response = await fetch('/api/characters', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ characterId: character.id, ...operation }),
+      })
+      if (!response.ok) {
+        const body = await response.json().catch(() => ({}))
+        setFeedback(`${character.name}: ${body.error ?? 'Falha na concessão. Tente novamente para repetir a mesma operação.'}`)
+        return
+      }
+      setSingleXpRetry((current) => { const next = { ...current }; delete next[character.id]; return next })
+      setFeedback(`${character.name}: XP concedido.`)
+      await mutateCharacters(undefined, { revalidate: true })
+    } catch {
+      setFeedback(`${character.name}: falha de conexão. Tente novamente para repetir a mesma operação.`)
+    } finally {
+      setUpdatingXp(false)
     }
-    await mutateCharacters(undefined, { revalidate: true })
   }
 
   async function handleGrantXpToAll(event: React.FormEvent) {
     event.preventDefault()
-    const amount = Number.parseInt(xpToAdd, 10)
-    if (!amount || amount <= 0 || characters.length === 0) return
+    const amount = Number(xpToAdd)
+    if (updatingXp || !Number.isInteger(amount) || amount <= 0 || amount > 10000 || !xpReason.trim() || characters.length === 0) return
+    const operation = xpRetry ?? { characterIds: characters.map((character) => character.id), amount, reason: xpReason.trim(), idempotencyKey: crypto.randomUUID() }
+    setXpRetry(operation)
     setUpdatingXp(true)
-    for (const char of characters) {
-      const currentTotal = typeof char.totalXp === 'number' ? char.totalXp : Number.parseInt(String(char.totalXp ?? '0'), 10) || 0
-      const nextTotal = currentTotal + amount
-      const response = await fetch('/api/characters', {
-        method: 'PATCH',
+    try {
+      const response = await fetch(`/api/campaigns/${campaignId}/xp`, {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ characterId: char.id, totalXp: nextTotal }),
+        body: JSON.stringify(operation),
       })
-      if (!response.ok) {
-        const body = await response.json().catch(() => ({}))
-        console.error('Erro ao atribuir XP a', char.name, ':', body.error)
-      }
+      const body = await response.json().catch(() => null)
+      if (!response.ok) throw new Error(body?.error ?? 'Falha na concessão de XP.')
+      setFeedback((body?.results ?? []).map((result: { characterId: string; ok: boolean; error?: string }) => `${characters.find((character) => character.id === result.characterId)?.name ?? result.characterId}: ${result.ok ? 'XP concedido' : result.error ?? 'falha'}`).join(' · '))
+      if (body?.complete) setXpRetry(null)
+      await mutateCharacters(undefined, { revalidate: true })
+    } catch (error) {
+      setFeedback(error instanceof Error ? error.message : 'Falha de conexão. Tente novamente para repetir a mesma operação.')
+    } finally {
+      setUpdatingXp(false)
     }
-    setUpdatingXp(false)
-    await mutateCharacters(undefined, { revalidate: true })
   }
 
   async function updateStatus(id: string, status: 'aprovado' | 'reprovado') {
-    await fetch('/api/possessions', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, status, masterComment: comments[id] || null }),
-    })
-    await mutatePossessions()
+    try {
+      const response = await fetch('/api/possessions', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, status, masterComment: comments[id] || null }),
+      })
+      if (!response.ok) { const body = await response.json().catch(() => null); throw new Error(body?.error ?? 'Falha ao revisar o pertence.') }
+      await mutatePossessions()
+      setFeedback('Revisão do pertence salva.')
+    } catch (error) { setFeedback(error instanceof Error ? error.message : 'Falha de conexão ao revisar o pertence.') }
   }
 
   async function grantMasterItem(event: React.FormEvent) {
     event.preventDefault()
     const charId = targetCharId || selectedCharacterId || characters[0]?.id
-    if (!newItemLabel.trim() || !charId) return
+    if (granting || !newItemLabel.trim() || !charId) return
     setGranting(true)
-    await fetch('/api/possessions', {
+    try {
+      const response = await fetch('/api/possessions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -249,10 +271,13 @@ export function CampaignPossessionsManager({ campaignId }: { campaignId: string 
         origin: 'master',
       }),
     })
-    setGranting(false)
+    if (!response.ok) { const body = await response.json().catch(() => null); throw new Error(body?.error ?? 'Falha ao conceder o pertence.') }
     setNewItemLabel('')
     setNewItemDesc('')
     await mutatePossessions()
+    setFeedback('Pertence concedido.')
+    } catch (error) { setFeedback(error instanceof Error ? error.message : 'Falha de conexão. Os campos foram preservados.') }
+    finally { setGranting(false) }
   }
 
   const STATUS_ORDER: Record<string, number> = { pendente: 0, aprovado: 1, reprovado: 2 }
@@ -271,6 +296,9 @@ export function CampaignPossessionsManager({ campaignId }: { campaignId: string 
         <span className="eyebrow text-xs">Painel do Narrador</span>
       </div>
 
+      {feedback && <p role="status" className="text-sm text-muted-foreground">{feedback}</p>}
+      <label className="flex flex-col gap-2 text-sm">Motivo da concessão de XP<input className="input" value={xpReason} maxLength={500} onChange={(event) => setXpReason(event.target.value)} required /></label>
+      {xpRetry && <p className="text-xs text-muted-foreground">Há uma concessão incompleta. Reenviar usa a mesma operação, sem duplicar XP.</p>}
       {/* Atribuir XP a Toda a Mesa */}
       {characters.length > 0 && (
         <form onSubmit={handleGrantXpToAll} className="border border-[#45362a] bg-[#1a1410] p-4 flex flex-wrap items-center justify-between gap-4">

@@ -1,72 +1,10 @@
 import { NextResponse } from 'next/server'
 import { getSessionOrDev } from '@/lib/auth0'
-import { ensureAllTables } from '@/lib/db'
-import { canEditCharacter } from '@/lib/auth/authorization'
-import { db } from '@/lib/db'
-import { sql } from 'drizzle-orm'
-import { devUpdateCharacterResources } from '@/lib/dev-db'
-
-async function getAuthenticatedUser() {
-  const session = await getSessionOrDev()
-  return session?.user ?? null
-}
 
 export async function PATCH(request: Request) {
-  try {
-    await ensureAllTables()
-    const user = await getAuthenticatedUser()
-    if (!user || !user.sub) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
-
-    const body = await request.json()
-    const { characterId, humanidade, vontade, vitalidade, fome } = body
-
-    if (!characterId || typeof characterId !== 'string') {
-      return NextResponse.json({ error: 'characterId é obrigatório.' }, { status: 400 })
-    }
-
-    // Validar se é um UUID válido
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-    if (!uuidRegex.test(characterId)) {
-      return NextResponse.json({ error: 'characterId inválido.' }, { status: 400 })
-    }
-
-    if (!(await canEditCharacter(user.sub, characterId))) {
-      return NextResponse.json({ error: 'Proibido' }, { status: 403 })
-    }
-
-    // Validar limites dos recursos
-    const resourceLimits = { humanidade: 10, vontade: 10, vitalidade: 10, fome: 5 }
-    for (const [key, value] of Object.entries({ humanidade, vontade, vitalidade, fome })) {
-      if (typeof value !== 'number' || value < 0 || value > resourceLimits[key as keyof typeof resourceLimits]) {
-        return NextResponse.json({ error: `Valor inválido para ${key}. Deve estar entre 0 e ${resourceLimits[key as keyof typeof resourceLimits]}.` }, { status: 400 })
-      }
-    }
-
-    if (process.env.NODE_ENV !== 'production' && !process.env.DATABASE_URL) {
-      const resources = devUpdateCharacterResources(characterId, { humanidade, vontade, vitalidade, fome })
-      if (!resources) return NextResponse.json({ error: 'Personagem não encontrado.' }, { status: 404 })
-      return NextResponse.json({ ok: true, resources })
-    }
-
-    // Atualiza apenas os recursos no campo data da ficha usando parâmetros seguros
-    await db.execute(sql`
-      UPDATE characters
-      SET data = data || jsonb_build_object(
-        'humanidade', ${humanidade},
-        'vontade', ${vontade},
-        'vitalidade', ${vitalidade},
-        'fome', ${fome}
-      ),
-      updated_at = NOW()
-      WHERE id = ${characterId}::uuid
-    `)
-
-    return NextResponse.json({
-      ok: true,
-      resources: { humanidade, vontade, vitalidade, fome },
-    })
-  } catch (error) {
-    console.error('Erro ao atualizar recursos:', error)
-    return NextResponse.json({ error: 'Não foi possível atualizar os recursos.' }, { status: 500 })
-  }
+  const session = await getSessionOrDev()
+  if (!session?.user?.sub) return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
+  const body = await request.json().catch(() => null)
+  if (!body || typeof body.characterId !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(body.characterId)) return NextResponse.json({ error: 'Ficha inválida.' }, { status: 400 })
+  return NextResponse.json({ error: 'Utilize o fluxo de recursos com motivo, revisão e trilhas de dano.' }, { status: 409 })
 }

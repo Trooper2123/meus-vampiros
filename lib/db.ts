@@ -4,7 +4,7 @@ import { sql } from 'drizzle-orm'
 import { sortCampaignEventsChronologically, type CampaignCalendarConfig, type CampaignCalendarMode, type CampaignEvent, type CampaignEventVisibility } from './types/campaign-event'
 
 declare global {
-  // eslint-disable-next-line no-var
+
   var __neonPool: Pool | undefined
 }
 
@@ -94,6 +94,8 @@ export async function ensureAllTables() {
     ALTER TABLE characters ADD COLUMN IF NOT EXISTS visibility TEXT NOT NULL DEFAULT 'PLAYER_VISIBLE';
     ALTER TABLE characters ADD COLUMN IF NOT EXISTS validation_report JSONB;
     ALTER TABLE characters ADD COLUMN IF NOT EXISTS validated_at TIMESTAMPTZ;
+    ALTER TABLE characters ADD COLUMN IF NOT EXISTS revision INTEGER NOT NULL DEFAULT 0;
+    ALTER TABLE characters ADD COLUMN IF NOT EXISTS game_state JSONB NOT NULL DEFAULT '{}'::jsonb;
     ALTER TABLE characters ALTER COLUMN status SET DEFAULT 'DRAFT';
     UPDATE characters SET created_by_user_id = user_id WHERE created_by_user_id IS NULL;
     UPDATE characters SET status = 'DRAFT' WHERE status = 'Ativo';
@@ -123,6 +125,56 @@ export async function ensureAllTables() {
 
   CREATE INDEX IF NOT EXISTS character_ledger_events_character_created_idx
     ON character_ledger_events (character_id, created_at DESC);
+
+  CREATE TABLE IF NOT EXISTS character_commands (
+    character_id UUID NOT NULL REFERENCES characters(id) ON DELETE CASCADE,
+    command_key TEXT NOT NULL,
+    actor_user_id TEXT NOT NULL,
+    request_hash TEXT NOT NULL,
+    result JSONB NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (character_id, command_key)
+  );
+
+  CREATE TABLE IF NOT EXISTS chronicle_nights (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    campaign_id UUID NOT NULL REFERENCES campaigns(id),
+    night_number INTEGER NOT NULL,
+    in_game_date DATE NOT NULL,
+    status TEXT NOT NULL,
+    started_by_user_id TEXT NOT NULL,
+    started_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    completed_at TIMESTAMPTZ,
+    idempotency_key TEXT NOT NULL,
+    request_hash TEXT NOT NULL,
+    ruleset_version TEXT NOT NULL,
+    result JSONB,
+    UNIQUE(campaign_id, night_number),
+    UNIQUE(campaign_id, idempotency_key)
+  );
+  CREATE UNIQUE INDEX IF NOT EXISTS chronicle_nights_processing_idx ON chronicle_nights(campaign_id) WHERE status = 'PROCESSING';
+  CREATE TABLE IF NOT EXISTS night_awakenings (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    night_id UUID NOT NULL REFERENCES chronicle_nights(id),
+    character_id UUID NOT NULL REFERENCES characters(id),
+    status TEXT NOT NULL,
+    roll INTEGER CHECK(roll BETWEEN 1 AND 10),
+    before_state JSONB NOT NULL,
+    after_state JSONB NOT NULL,
+    outcome TEXT NOT NULL,
+    processed_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    UNIQUE(night_id, character_id)
+  );
+
+  CREATE TABLE IF NOT EXISTS campaign_predator_type_settings (
+    campaign_id UUID PRIMARY KEY REFERENCES campaigns(id) ON DELETE CASCADE,
+    enabled_sources JSONB NOT NULL DEFAULT '["COREBOOK"]'::jsonb,
+    enabled_codes JSONB,
+    disabled_codes JSONB NOT NULL DEFAULT '[]'::jsonb,
+    updated_by_user_id TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  );
 
   CREATE TABLE IF NOT EXISTS campaign_availability (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

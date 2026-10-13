@@ -32,13 +32,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const dbUser = await upsertUserFromAuth0(user)
       return res.status(200).json({ user, dbUser })
     } catch (dbErr) {
-      // eslint-disable-next-line no-console
+       
       console.error('DB upsert error:', dbErr)
       // Still return the session user even if DB fails
       return res.status(200).json({ user })
     }
   } catch (err) {
-    // eslint-disable-next-line no-console
+     
     console.error('Error in /api/auth/me:', err)
     return res.status(500).json({ error: 'internal_error' })
   }

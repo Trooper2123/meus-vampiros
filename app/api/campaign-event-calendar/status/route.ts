@@ -39,7 +39,7 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json().catch(() => ({}))
     const campaignId = typeof body.campaignId === 'string' ? body.campaignId : ''
     if (!UUID_PATTERN.test(campaignId)) return NextResponse.json({ error: 'ID da mesa inválido.' }, { status: 400 })
-    if (!await canManageCampaign(session.user.sub, campaignId)) return NextResponse.json({ error: 'Apenas o mestre pode configurar o calendário.' }, { status: 403 })
+    if (!await canManageCampaign(session.user.sub, campaignId)) return NextResponse.json({ error: 'Apenas o modelo.md pode configurar o calendário.' }, { status: 403 })
 
     const current = await getCampaignEventCalendarStatus(campaignId)
     const enabled = body.enabled === undefined ? current?.enabled ?? false : body.enabled

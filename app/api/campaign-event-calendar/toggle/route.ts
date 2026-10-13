@@ -21,7 +21,7 @@ export async function PATCH(request: Request) {
     }
 
     if (!await canManageCampaign(session.user.sub, campaignId)) {
-      return NextResponse.json({ error: 'Apenas o mestre pode alterar o calendário de eventos.' }, { status: 403 })
+      return NextResponse.json({ error: 'Apenas o modelo.md pode alterar o calendário de eventos.' }, { status: 403 })
     }
 
     await ensureAllTables()

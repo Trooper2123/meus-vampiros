@@ -3,6 +3,7 @@
 import { Heart, Shield, Activity, Flame } from 'lucide-react'
 
 type SummaryResourcesProps = {
+  maxima?: { healthMax: number; willpowerMax: number }
   resources: {
     humanidade: number
     vontade: number
@@ -18,10 +19,10 @@ type SummaryResourcesProps = {
 }
 
 const resourceDefinitions = [
-  { label: 'Humanidade', name: 'humanidade', total: 10, icon: Heart, color: 'text-[#b5d9b7]' },
-  { label: 'Força de vontade', name: 'vontade', total: 10, icon: Shield, color: 'text-[#e5a07e]' },
-  { label: 'Vitalidade', name: 'vitalidade', total: 10, icon: Activity, color: 'text-[#d47776]' },
-  { label: 'Fome', name: 'fome', total: 5, icon: Flame, color: 'text-[#e5c069]' },
+  { label: 'Humanidade', name: 'humanidade', total: 10, icon: Heart, color: 'text-foreground' },
+  { label: 'Força de vontade', name: 'vontade', total: 10, icon: Shield, color: 'text-muted-foreground' },
+  { label: 'Vitalidade', name: 'vitalidade', total: 10, icon: Activity, color: 'text-primary' },
+  { label: 'Fome', name: 'fome', total: 5, icon: Flame, color: 'text-muted-foreground' },
 ] as const
 
 function DotTrack({ total, value, onChange, color }: { total: number; value: number; onChange: (value: number) => void; color: string }) {
@@ -46,13 +47,14 @@ function DotTrack({ total, value, onChange, color }: { total: number; value: num
   )
 }
 
-export function SummaryResources({ resources, onChange }: SummaryResourcesProps) {
+export function SummaryResources({ resources, maxima, onChange }: SummaryResourcesProps) {
+  const maximum = (name: keyof typeof resources) => name === 'vitalidade' && maxima ? maxima.healthMax : name === 'vontade' && maxima ? maxima.willpowerMax : resourceDefinitions.find((resource) => resource.name === name)?.total ?? 10
   const handleChange = (name: keyof typeof resources, value: number) => {
-    onChange({ ...resources, [name]: Math.max(0, Math.min(value, resourceDefinitions.find((r) => r.name === name)?.total ?? 10)) })
+    onChange({ ...resources, [name]: Math.max(0, Math.min(value, maximum(name))) })
   }
 
   return (
-    <div className="border border-border bg-[#101013] p-6">
+    <div className="border border-border bg-card p-6">
       <h2 className="font-serif text-lg uppercase tracking-[0.08em] mb-4">
         Recursos
       </h2>
@@ -61,10 +63,10 @@ export function SummaryResources({ resources, onChange }: SummaryResourcesProps)
           <div key={resource.name} className="flex flex-col gap-2">
             <div className="flex items-center gap-3">
               <resource.icon className={`size-5 ${resource.color}`} />
-              <span className="font-semibold text-sm">{resource.label}</span>
+              <span className="font-semibold text-sm">{resource.label} — {resources[resource.name]} / {maximum(resource.name)}</span>
             </div>
             <DotTrack
-              total={resource.total}
+              total={maximum(resource.name)}
               value={resources[resource.name]}
               onChange={(value) => handleChange(resource.name, value)}
               color={resource.color}

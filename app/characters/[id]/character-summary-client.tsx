@@ -1,13 +1,22 @@
 'use client'
 
 import { CharacterSummary } from '@/components/character-summary/character-summary'
-import { useState } from 'react'
+import { SessionResources } from '@/components/character-summary/session-resources'
+import { CharacterSpecialties } from '@/components/character-summary/character-specialties'
+import { CharacterRolls } from '@/components/character-summary/character-rolls'
+import { PlayerPredatorSummary } from '@/components/predator-types/player-predator-selector'
+import { CharacterClanSummary } from '@/components/character-summary/character-clan'
+import type { PredatorTypeSelection } from '@/lib/vtm-v5/predator-types'
 
 type CharacterData = {
   id: string
+  characterType?: string
   name: string
   clan: string | null
   predator: string | null
+  predatorRoll?: string | null
+  predatorSource?: string | null
+  predatorSelection?: Partial<PredatorTypeSelection> | null
   generation: string | null
   campaignName: string | null
   campaignTheme: string | null
@@ -37,27 +46,5 @@ type CharacterSummaryClientProps = {
 }
 
 export function CharacterSummaryClient({ data }: CharacterSummaryClientProps) {
-  const [characterData, setCharacterData] = useState<CharacterData>(data)
-  const [, setLoading] = useState(false)
-
-  const handleResourcesChange = async (newResources: CharacterData['resources']) => {
-    setLoading(true)
-    const response = await fetch('/api/characters/resources', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ characterId: characterData.id, ...newResources }),
-    })
-    setLoading(false)
-    if (response.ok) {
-      const result = await response.json()
-      setCharacterData({
-        ...characterData,
-        resources: result.resources,
-      })
-    }
-  }
-
-  return (
-    <CharacterSummary data={characterData} onChangeResources={handleResourcesChange} />
-  )
+  return <div className="flex flex-col gap-6"><CharacterSummary data={data} />{data.characterType === 'PLAYER_VAMPIRE' && <><CharacterClanSummary characterId={data.id} /><SessionResources characterId={data.id} /><CharacterSpecialties characterId={data.id} /><CharacterRolls characterId={data.id} /></>}{data.predator && <PlayerPredatorSummary name={data.predator} roll={data.predatorRoll} source={data.predatorSource} selection={data.predatorSelection} />}</div>
 }

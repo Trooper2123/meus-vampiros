@@ -10,6 +10,8 @@ This repository is linked to a [v0](https://v0.app) project. You can continue de
 
 ## Getting Started
 
+A CLI `vercel` não faz parte das dependências da aplicação: os scripts usam Next.js diretamente e o deploy automático do projeto não depende de instalar essa CLI no runtime. O pacote `@vercel/analytics` permanece disponível. Se precisar de comandos de deploy local, configure a CLI separadamente em uma versão auditada; não reintroduza a árvore vulnerável no projeto.
+
 First, run the development server:
 
 ```bash

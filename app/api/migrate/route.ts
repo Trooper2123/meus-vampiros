@@ -35,4 +35,3 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Falha na migração.', details: message }, { status: 500 })
   }
 }
-

@@ -40,7 +40,7 @@ export async function POST(request: Request) {
     const body = await request.json().catch(() => ({}))
     const campaignId = typeof body.campaignId === 'string' ? body.campaignId : ''
     if (!UUID_PATTERN.test(campaignId)) return NextResponse.json({ error: 'ID da mesa inválido.' }, { status: 400 })
-    if (!await canManageCampaign(session.user.sub, campaignId)) return NextResponse.json({ error: 'Apenas o mestre pode criar a sala virtual.' }, { status: 403 })
+    if (!await canManageCampaign(session.user.sub, campaignId)) return NextResponse.json({ error: 'Apenas o modelo.md pode criar a sala virtual.' }, { status: 403 })
     if (!await getLiveKitRoom(campaignId)) await createLiveKitRoom(campaignId, `campanha-${campaignId}`, getLiveKitUrl(), session.user.sub)
     return roomResponse(campaignId, session.user)
   } catch (error) {
