@@ -35,7 +35,7 @@ export function validateClanSelection(selection: ClanSelection) {
   const available = selection.code === 'CAITIFF' ? selection.caitiffDisciplines ?? [] : [...definition.disciplines]
   if (selection.code === 'CAITIFF' && (!Array.isArray(available) || available.length !== 3 || new Set(available).size !== 3 || available.some(name => !DISCIPLINE_NAMES.includes(name as typeof DISCIPLINE_NAMES[number])))) throw new Error('Caitiff deve escolher três disciplinas disponíveis distintas.')
   const choices = Object.entries(selection.disciplineDots)
-  if (choices.length !== 2 || choices.some(([name, dots]) => !available.includes(name as never) || !Number.isSafeInteger(dots)) || choices.map(([, dots]) => dots).sort().join(',') !== '1,2') throw new Error('Escolha duas disciplinas disponíveis, uma com 2 pontos e outra com 1.')
+  if (choices.length !== 2 || choices.some(([name, dots]) => !available.includes(name as never) || !Number.isSafeInteger(dots)) || choices.map(([, dots]) => dots).sort((first, second) => first - second).join(',') !== '1,2') throw new Error('Escolha duas disciplinas disponíveis, uma com 2 pontos e outra com 1.')
   if (selection.code === 'VENTRUE' && (typeof selection.feedingPreference !== 'string' || !selection.feedingPreference.trim() || selection.feedingPreference.length > 200)) throw new Error('Defina a preferência alimentar do Ventrue.')
   if (selection.code === 'MALKAVIAN' && !['PHYSICAL', 'SOCIAL', 'MENTAL'].includes(selection.afflictionCategory ?? '')) throw new Error('Escolha a categoria de pools afetada pela Perdição.')
   return definition

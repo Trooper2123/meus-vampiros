@@ -1,11 +1,12 @@
 import { CHARACTER_TYPES, CREATION_TYPES, type CharacterRulesInput, type CharacterType, type CreationType, type DisciplineInput } from './types'
 import { normalizePredatorType } from './predator-types'
+import { characterText } from './text'
 
 const numberOrNull = (value: unknown) => {
   const parsed = Number(value)
   return value === '' || value === null || value === undefined || !Number.isFinite(parsed) ? null : parsed
 }
-const stringArray = (value: unknown) => Array.isArray(value) ? value.map(String).filter(Boolean) : []
+const stringArray = (value: unknown) => Array.isArray(value) ? value.map(characterText).filter(Boolean) : []
 const traitDots = (value: unknown) => Array.isArray(value) ? value.reduce((total, item) => {
   if (!item || typeof item !== 'object') return total
   return total + Math.max(0, Number((item as Record<string, unknown>).level) || 0)
@@ -19,10 +20,10 @@ export function normalizeCharacterRulesInput(data: Record<string, unknown>): Cha
   const skills = Object.fromEntries(Object.entries(data).filter(([key]) => key.startsWith('habilidade-')).map(([key, value]) => [key.slice(11), Number(value ?? 0)]))
   const disciplines = (Array.isArray(data.disciplinas) ? data.disciplinas : []).map((entry): DisciplineInput => {
     const discipline = entry && typeof entry === 'object' ? entry as Record<string, unknown> : {}
-    return { name: String(discipline.name ?? ''), level: Number(discipline.level ?? 0), powers: Array.isArray(discipline.powers) ? discipline.powers as DisciplineInput['powers'] : [] }
+    return { name: characterText(discipline.name), level: Number(discipline.level ?? 0), powers: Array.isArray(discipline.powers) ? discipline.powers as DisciplineInput['powers'] : [] }
   })
-  const convictions = [1, 2, 3].map((index) => ({ text: String(data[`convicoes-crenca-${index}`] ?? ''), touchstone: String(data[`convicoes-pilar-${index}`] ?? '') }))
-  const clan = String(data.cla ?? '').trim() || null
+  const convictions = [1, 2, 3].map((index) => ({ text: characterText(data[`convicoes-crenca-${index}`]), touchstone: characterText(data[`convicoes-pilar-${index}`]) }))
+  const clan = characterText(data.cla).trim() || null
 
   return {
     characterType,
@@ -39,11 +40,11 @@ export function normalizeCharacterRulesInput(data: Record<string, unknown>): Cha
     convictions,
     disciplines,
     predatorDisciplineBonus: data.predatorDisciplineBonus === 1 ? 1 : 0,
-    predatorType: normalizePredatorType(data.predatorTypeCode ?? data.predador) ?? (String(data.predador ?? '').trim() || null),
+    predatorType: normalizePredatorType(data.predatorTypeCode ?? data.predador) ?? (characterText(data.predador).trim() || null),
     advantages: stringArray(data.advantages ?? (Array.isArray(data.vantagens) ? data.vantagens.map((item) => typeof item === 'object' && item ? (item as Record<string, unknown>).name : item) : [])),
     flaws: stringArray(data.flaws ?? (Array.isArray(data.defeitos) ? data.defeitos.map((item) => typeof item === 'object' && item ? (item as Record<string, unknown>).name : item) : [])),
-    advantageDots: Math.max(0, traitDots(data.vantagens) - (Number(data.creationAdvantageDots) || 0)),
-    flawDots: Math.max(0, traitDots(data.defeitos) - (Number(data.creationFlawDots) || 0)),
+    advantageDots: traitDots(data.vantagens),
+    flawDots: traitDots(data.defeitos),
     masterOverride: data.masterOverride === true,
     npc: data.npc && typeof data.npc === 'object' ? data.npc as CharacterRulesInput['npc'] : undefined,
     retainer: data.retainer && typeof data.retainer === 'object' ? data.retainer as CharacterRulesInput['retainer'] : undefined,

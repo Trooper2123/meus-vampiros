@@ -27,7 +27,14 @@ export function DateAvailabilityCalendar({ campaignId, master = false }: { campa
   const [current, setCurrent] = useState(() => new Date())
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
   const entries = data?.entries ?? []
-  const summary = useMemo(() => entries.reduce<Record<string, { available: number; maybe: number; suggested: boolean }>>((acc, entry) => { const item = acc[entry.date] ?? { available: 0, maybe: 0, suggested: false }; if (entry.status === 'disponível') item.available++; if (entry.status === 'talvez') item.maybe++; item.suggested ||= entry.suggested; acc[entry.date] = item; return acc }, {}), [entries])
+  const summary = useMemo(() => (data?.entries ?? []).reduce<Record<string, { available: number; maybe: number; suggested: boolean }>>((summaryByDate, entry) => {
+    const item = summaryByDate[entry.date] ?? { available: 0, maybe: 0, suggested: false }
+    if (entry.status === 'disponível') item.available++
+    if (entry.status === 'talvez') item.maybe++
+    item.suggested ||= entry.suggested
+    summaryByDate[entry.date] = item
+    return summaryByDate
+  }, {}), [data?.entries])
   const own = selectedDate ? entries.find((entry) => entry.date === selectedDate && entry.name !== 'Mestre') : null
   const year = current.getFullYear(); const month = current.getMonth(); const firstDay = new Date(year, month, 1).getDay(); const days = new Date(year, month + 1, 0).getDate()
   const monthLabel = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' }).format(current)

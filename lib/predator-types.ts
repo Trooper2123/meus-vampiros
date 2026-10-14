@@ -1,4 +1,5 @@
 import { sql } from 'drizzle-orm'
+import { characterText } from './vtm-v5/text'
 import { randomUUID } from 'node:crypto'
 import { CharacterCommandError, runCharacterCommand } from './character-commands'
 import { applyPredatorEffects } from './predator-effects'
@@ -10,7 +11,7 @@ import { applySecondaryAttributes } from '@/lib/vtm-v5/secondary-attributes'
 import { PREDATOR_TYPE_BY_CODE, PREDATOR_TYPE_CODES, PREDATOR_TYPE_SOURCES, validatePredatorType, type PredatorTypeCode, type PredatorTypeSettings, type PredatorTypeSource } from '@/lib/vtm-v5/predator-types'
 
 const isDev = process.env.NODE_ENV !== 'production' && !process.env.DATABASE_URL
-const defaultSettings = (): PredatorTypeSettings => ({ enabledSources: ['COREBOOK'], enabledCodes: null, disabledCodes: [] })
+const defaultSettings = (independent = false): PredatorTypeSettings => ({ enabledSources: independent ? [...PREDATOR_TYPE_SOURCES] : ['COREBOOK'], enabledCodes: null, disabledCodes: [] })
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 declare global {
@@ -42,7 +43,7 @@ export function sanitizePredatorTypeSettings(input: unknown): PredatorTypeSettin
 }
 
 export async function getPredatorTypeSettings(campaignId: string | null): Promise<PredatorTypeSettings> {
-  if (!campaignId) return defaultSettings()
+  if (!campaignId) return defaultSettings(true)
   if (!uuid.test(campaignId)) throw new CharacterCommandError(400, 'Mesa inválida.')
   if (isDev) return structuredClone(memorySettings().get(campaignId) ?? defaultSettings())
   const result = await db.execute<{ enabled_sources: PredatorTypeSource[]; enabled_codes: PredatorTypeCode[] | null; disabled_codes: PredatorTypeCode[] }>(sql`
@@ -106,9 +107,9 @@ export async function persistPredatorTypeData(characterId: string, data: Record<
     if (!options.masterOnly && character.characterType !== 'PLAYER_VAMPIRE') throw new CharacterCommandError(422, 'A escolha exige uma ficha de vampiro jogador.')
     if (!options.masterOnly && isDev && data.predatorTypeCode) {
       const definition = PREDATOR_TYPE_BY_CODE.get(data.predatorTypeCode as PredatorTypeCode)
-      const settings = character.campaignId ? memorySettings().get(character.campaignId) ?? defaultSettings() : defaultSettings()
+      const settings = character.campaignId ? memorySettings().get(character.campaignId) ?? defaultSettings() : defaultSettings(true)
       if (!definition || !isPredatorTypeEnabled(definition.code, settings)) throw new CharacterCommandError(422, 'Tipo de predação não permitido pela configuração atual.')
-      const report = validatePredatorType(definition, { clan: String(character.data.cla ?? '') || null, bloodPotency: Number(character.data['potencia-de-sangue'] ?? 0), isThinBlood: character.data.creationType === 'THIN_BLOOD' || character.data.isThinBlood === true, enabled: true, overrides: Array.isArray(character.data.predatorTypeOverrides) ? character.data.predatorTypeOverrides : [] })
+      const report = validatePredatorType(definition, { clan: characterText(character.data.cla) || null, bloodPotency: Number(character.data['potencia-de-sangue'] ?? 0), isThinBlood: character.data.creationType === 'THIN_BLOOD' || character.data.isThinBlood === true, enabled: true, overrides: Array.isArray(character.data.predatorTypeOverrides) ? character.data.predatorTypeOverrides : [] })
       if (!report.valid) throw new CharacterCommandError(422, 'A ficha possui restrições para este tipo de predação.')
     }
     const projected = structuredClone(character.data)

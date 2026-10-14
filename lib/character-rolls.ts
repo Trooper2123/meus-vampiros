@@ -16,8 +16,9 @@ export function executeCharacterRoll(actorId: string, id: string, input: RollInp
     if (state.humanity <= 0) throw new CharacterCommandError(422, 'Este personagem não é mais jogável.')
     if (['TORPOR', 'FINAL_DEATH', 'STAKED', 'DAY_SLEEP'].includes(state.condition)) throw new CharacterCommandError(409, 'A condição do personagem impede esta ação normal.')
     const isMaster = character.masterId === actorId
+    const canUseSpecialties = isMaster || (!character.campaignId && character.ownerId === actorId)
     if (input.visibility === 'SECRET' && !isMaster) throw new CharacterCommandError(403, 'Rolagens secretas exigem o Narrador.')
-    if (input.specialtyId && !isMaster) throw new CharacterCommandError(403, 'A aplicabilidade da especialidade nesta rolagem exige o Narrador.')
+    if (input.specialtyId && !canUseSpecialties) throw new CharacterCommandError(403, 'A aplicabilidade da especialidade nesta rolagem exige o Narrador.')
     const normalized = normalizeCharacterRulesInput(character.data)
     const attribute = normalized.attributes[input.attribute]
     const skills = Object.fromEntries(Object.entries(normalized.skills).map(([skill, dots]) => [normalizeSpecialtySkillId(skill), dots]))
@@ -25,7 +26,7 @@ export function executeCharacterRoll(actorId: string, id: string, input: RollInp
     const skillDots = skills[skill]
     if (!Number.isSafeInteger(attribute) || attribute < 1 || attribute > 5 || !Number.isSafeInteger(skillDots) || skillDots < 0 || skillDots > 5) throw new CharacterCommandError(422, 'Atributo ou habilidade inválido na ficha.')
     let bonus: number
-    try { bonus = specialtyRollBonus(input.specialtyId ? [input.specialtyId] : [], skill, characterSpecialties(character), isMaster) }
+    try { bonus = specialtyRollBonus(input.specialtyId ? [input.specialtyId] : [], skill, characterSpecialties(character), canUseSpecialties) }
     catch (error) { throw new CharacterCommandError(422, error instanceof Error ? error.message : 'Especialidade inválida.') }
     const pool = attribute + skillDots + bonus
     const hungerCount = Math.min(pool, state.hunger)

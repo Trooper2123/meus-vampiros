@@ -3,6 +3,7 @@ import { CharacterCommandError, getCommandCharacter, runCharacterCommand } from 
 import { applyCreationEffects, creationEffects } from './creation-effects'
 import { CLANS, normalizeDiscipline, validateClanSelection, type ClanSelection } from './vtm-v5/clans'
 import { PREDATOR_TYPE_BY_CODE, validatePredatorType, type PredatorTypeCode } from './vtm-v5/predator-types'
+import { campaignClanCodes } from './campaign-clans'
 
 export async function getClanView(characterId: string, actorId: string) {
   const character = await getCommandCharacter(characterId)
@@ -11,7 +12,8 @@ export async function getClanView(characterId: string, actorId: string) {
   return structuredClone({
     revision: character.revision,
     selection: character.data.clanSelection ?? null,
-    clans: CLANS.map(({ guidance, ...publicData }) => character.masterId === actorId ? { ...publicData, guidance } : publicData),
+    clans: CLANS.filter(clan => campaignClanCodes(character.campaignId).includes(clan.code) || clan.code === character.data.clanCode).map(({ guidance, ...publicData }) => character.masterId === actorId ? { ...publicData, guidance } : publicData),
+    enabledClanCodes: campaignClanCodes(character.campaignId),
   })
 }
 
@@ -21,6 +23,7 @@ export async function selectCharacterClan(characterId: string, actorId: string, 
   catch { throw new CharacterCommandError(422, 'Escolhas de clã inválidas. Revise disciplinas, preferência alimentar e categoria da Perdição.') }
   return runCharacterCommand(actorId, characterId, { key, expectedRevision, type: 'CLAN_SELECTED', payload: selection }, character => character.ownerId === actorId || character.masterId === actorId, character => {
     if (character.characterType !== 'PLAYER_VAMPIRE' || ['ARCHIVED', 'DISABLED'].includes(character.status) || (character.ownerId === actorId && character.masterId !== actorId && character.status !== 'DRAFT')) throw new CharacterCommandError(409, 'A ficha não permite esta escolha de clã.')
+    if (!campaignClanCodes(character.campaignId).includes(selection.code)) throw new CharacterCommandError(422, 'Este clã não está habilitado na mesa.')
     const rows = (Array.isArray(character.data.disciplinas) ? character.data.disciplinas : []) as Record<string, unknown>[]
     const hasClanOrigin = creationEffects(character).some(effect => effect.origin === 'CLAN')
     const baseRows: Record<string, unknown>[] = rows.map(row => ({ ...row, level: Number(row.level) - creationEffects(character).filter(effect => effect.origin === 'PREDATOR' && effect.kind === 'DISCIPLINE' && effect.id === row.id).reduce((sum, effect) => sum + effect.dots, 0) }))

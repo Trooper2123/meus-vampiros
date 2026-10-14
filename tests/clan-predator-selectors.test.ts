@@ -10,6 +10,17 @@ import { PREDATOR_TYPES, toPlayerPredatorTypeDto } from '@/lib/vtm-v5/predator-t
 const characterId = '11111111-1111-4111-8111-111111111111'
 
 describe('projeções renderizadas dos seletores', () => {
+  it('oferece clãs públicos antes de salvar o primeiro rascunho', () => {
+    const html = renderToStaticMarkup(createElement(CharacterClan, { characterId: null, onBeforeSubmit: async () => characterId, onChange: () => {} }))
+    expect(html).toContain('value="BRUJAH"')
+    expect(html).toContain('value="THIN_BLOOD"')
+    expect(html).not.toContain('Revise os gatilhos')
+  })
+  it('respeita clãs habilitados no seletor da ficha vinculada', () => {
+    const html = renderToStaticMarkup(createElement(SWRConfig, { value: { provider: () => new Map(), revalidateOnMount: false, fallback: { [`/api/characters/${characterId}/clan`]: { revision: 0, selection: null, clans: CLANS, enabledClanCodes: ['BRUJAH'] } } } }, createElement(CharacterClan, { characterId, onBeforeSubmit: async () => characterId, onChange: () => {} })))
+    expect(html).toContain('value="BRUJAH"')
+    expect(html).not.toContain('value="VENTRUE"')
+  })
   it('exibe catálogo público e disciplinas, sem orientações privadas', () => {
     const clans = CLANS.map(({ code, name, disciplines, bane, compulsion }) => ({ code, name, disciplines, bane, compulsion }))
     const html = renderToStaticMarkup(createElement(SWRConfig, { value: { provider: () => new Map(), revalidateOnMount: false, fallback: { [`/api/characters/${characterId}/clan`]: { revision: 0, selection: null, clans } } } }, createElement(CharacterClan, { characterId, onBeforeSubmit: async () => characterId, onChange: () => {} })))
@@ -24,6 +35,18 @@ describe('projeções renderizadas dos seletores', () => {
     const html = renderToStaticMarkup(createElement(SWRConfig, { value: { provider: () => new Map(), revalidateOnMount: false, fallback: { [`/api/predator-types?characterId=${characterId}`]: { predatorTypes, selectedCode: code } } } }, createElement(PlayerPredatorSelector, { characterId, selectedCode: code })))
     expect(html).toContain('Escolhas adicionais: distribua')
     expect(html).toContain('Não selecionar')
+    expect(html).toContain('aria-expanded="false"')
+    expect(html).toContain('hidden=""')
+    expect(html).toContain('Escolher outra predação')
+    expect(html).toContain('Confirmar escolha')
+    expect(html).toContain('A confirmação salva automaticamente')
+    expect(html.indexOf('Escolhas adicionais: distribua')).toBeLessThan(html.indexOf('Confirmar escolha'))
     expect(html).not.toContain('commonRisks')
+  })
+  it('mantém catálogo aberto antes da primeira seleção', () => {
+    const html = renderToStaticMarkup(createElement(PlayerPredatorSelector, { characterId: null }))
+    expect(html).toContain('aria-expanded="true"')
+    expect(html).not.toContain('hidden=""')
+    expect(html).not.toContain('Confirmar escolha')
   })
 })

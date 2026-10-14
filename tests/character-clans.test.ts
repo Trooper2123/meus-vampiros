@@ -92,6 +92,28 @@ describe('clã: comandos, origens e autorização em memória', () => {
     expect((await GET(new Request('http://localhost'), { params: Promise.resolve({ id: 'invalid' }) })).status).toBe(400)
   })
 
+  it('predação independente concede especialidade automaticamente, inclusive na cópia', async () => {
+    stored().campaignId = null
+    stored().data['habilidade-persuasao'] = 2
+    const definition = PREDATOR_TYPE_BY_CODE.get('SIREN')!
+    const applied = applyPredatorTypeSelection(stored().data, definition, { code: 'SIREN', specialty: 'Persuasão (Sedução)', discipline: 'Presença', optionCodes: [] })
+    await persistPredatorTypeData(id, applied.data, 'player', { expectedRevision: 0, eventType: 'PREDATOR_TYPE_APPLIED', payload: {} })
+    expect(stored().gameState!.specialties).toEqual([expect.objectContaining({ status: 'APPROVED', origin: 'PREDATOR' })])
+    const copy = await duplicateCharacter(id, 'player')
+    expect(global.__devDb!.characters.find(entry => entry.id === copy!.id)!.gameState!.specialties).toEqual([expect.objectContaining({ status: 'APPROVED' })])
+  })
+
+  it('predação independente concede especialidade automaticamente, inclusive na cópia', async () => {
+    stored().campaignId = null
+    stored().data['habilidade-persuasao'] = 2
+    const definition = PREDATOR_TYPE_BY_CODE.get('SIREN')!
+    const applied = applyPredatorTypeSelection(stored().data, definition, { code: 'SIREN', specialty: 'Persuasão (Sedução)', discipline: 'Presença', optionCodes: [] })
+    await persistPredatorTypeData(id, applied.data, 'player', { expectedRevision: 0, eventType: 'PREDATOR_TYPE_APPLIED', payload: {} })
+    expect(stored().gameState!.specialties).toEqual([expect.objectContaining({ status: 'APPROVED', origin: 'PREDATOR' })])
+    const copy = await duplicateCharacter(id, 'player')
+    expect(global.__devDb!.characters.find(entry => entry.id === copy!.id)!.gameState!.specialties).toEqual([expect.objectContaining({ status: 'APPROVED' })])
+  })
+
   it('materializa predação, não duplica concessões e reverte somente sua origem', async () => {
     stored().data['habilidade-persuasao'] = 2
     await selectCharacterClan(id, 'player', { code: 'TOREADOR', disciplineDots: { Auspícios: 2, Presença: 1 } }, 0, key)

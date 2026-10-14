@@ -21,7 +21,7 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
     if (!character) return NextResponse.json({ error: 'Ficha não encontrada.' }, { status: 404 })
     if (character.ownerId !== session.user.sub && character.masterId !== session.user.sub) return NextResponse.json({ error: 'Acesso negado.' }, { status: 403 })
     const normalized = normalizeCharacterRulesInput(character.data)
-    return NextResponse.json({ attributes: normalized.attributes, skills: Object.fromEntries(Object.entries(normalized.skills).map(([skill, dots]) => [normalizeSpecialtySkillId(skill), dots])), specialties: characterSpecialties(character).filter(specialty => specialty.status === 'APPROVED'), canUseSpecialties: character.masterId === session.user.sub, canRollSecret: character.masterId === session.user.sub, revision: character.revision, status: character.status })
+    return NextResponse.json({ attributes: normalized.attributes, skills: Object.fromEntries(Object.entries(normalized.skills).map(([skill, dots]) => [normalizeSpecialtySkillId(skill), dots])), specialties: characterSpecialties(character).filter(specialty => specialty.status === 'APPROVED'), canUseSpecialties: character.masterId === session.user.sub || (!character.campaignId && character.ownerId === session.user.sub), canRollSecret: character.masterId === session.user.sub, revision: character.revision, status: character.status })
   } catch { return NextResponse.json({ error: 'Não foi possível carregar opções de rolagem.' }, { status: 500 }) }
 }
 

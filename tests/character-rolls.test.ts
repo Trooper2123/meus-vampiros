@@ -37,6 +37,12 @@ describe('rolagens V5 autoritativas com provider injetável', () => {
     expect(provider.rollD10).toHaveBeenCalledExactlyOnceWith(6)
   })
 
+  it('dono sem mesa pode usar especialidade, mas não rolar secretamente', async () => {
+    global.__devDb!.characters[0].campaignId = null
+    await expect(executeCharacterRoll('player', id, { ...input, visibility: 'SECRET' }, provider)).rejects.toMatchObject({ status: 403 })
+    await expect(executeCharacterRoll('player', id, { ...input, specialtyId: 'briga-specialty' }, provider)).resolves.toMatchObject({ specialtyBonus: 1, pool: 6 })
+  })
+
   it.each([{ specialtyId: 'briga-specialty' }, { visibility: 'SECRET' as const }])('jogador não declara aplicação de bônus nem rolagem secreta %j', async override => {
     await expect(executeCharacterRoll('player', id, { ...input, ...override }, provider)).rejects.toMatchObject({ status: 403 })
     expect(provider.rollD10).not.toHaveBeenCalled()

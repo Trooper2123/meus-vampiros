@@ -38,7 +38,10 @@ export function applyAwakening(state: SessionState, roll: number, nightId: strin
   if (!Number.isInteger(roll) || roll < 1 || roll > 10 || state.hunger < 0 || state.hunger > 5) throw new Error('Despertar inválido.')
   if (state.condition === 'TORPOR' || state.condition === 'FINAL_DEATH') return { state, outcome: 'SKIPPED' as const }
   const next = structuredClone(state)
-  if (roll >= 6) { if (next.condition === 'DAY_SLEEP') next.condition = 'ACTIVE'; return { state: next, outcome: 'AWAKENED' as const } }
+  if (roll >= 6) {
+    if (next.condition === 'DAY_SLEEP') next.condition = 'ACTIVE'
+    return { state: next, outcome: 'AWAKENED' as const }
+  }
   if (state.hunger === 5) {
     next.condition = 'TORPOR'
     next.torpor = { cause: 'HUNGER', startedAtNightId: nightId, humanityAtEntry: state.humanity }

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { characterText } from '@/lib/vtm-v5/text'
 import { getSessionOrDev } from '@/lib/auth0'
 import { canManageCampaign } from '@/lib/auth/authorization'
 import { getCharacterAccessRecord } from '@/lib/characters'
@@ -24,7 +25,7 @@ export async function GET(request: Request) {
   }
   const settings = await getPredatorTypeSettings(campaignId)
   const data = character?.data ?? {}
-  const clan = String(data.cla ?? '').trim() || null
+  const clan = characterText(data.cla).trim() || null
   const bloodPotency = Number(data['potencia-de-sangue'] ?? 0)
   const isThinBlood = data.creationType === 'THIN_BLOOD' || data.isThinBlood === true
   const predatorTypes = PREDATOR_TYPES.filter((definition) => isPredatorTypeEnabled(definition.code, settings)).map((definition) => {

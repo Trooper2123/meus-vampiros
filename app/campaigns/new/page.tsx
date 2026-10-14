@@ -4,8 +4,6 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, ArrowRight, Check, Copy, Plus } from 'lucide-react'
-import { hasMasterAccess, getCampaignsForMaster } from '@/lib/campaigns'
-import { getSessionOrDev } from '@/lib/auth0'
 import { SchedulingCalendarIntroModal } from '@/components/campaign-calendar/scheduling-calendar-intro-modal'
 
 function CopyId({ id }: { id: string }) {
@@ -41,19 +39,26 @@ export default function NewCampaignPage() {
   const [hasCampaigns, setHasCampaigns] = useState(false)
   const [enableSchedulingCalendar, setEnableSchedulingCalendar] = useState(true)
   const [showSchedulingIntro, setShowSchedulingIntro] = useState(false)
+  const [clans, setClans] = useState<{ code: string; name: string }[]>([])
+  const [predatorTypes, setPredatorTypes] = useState<{ code: string; name: string; source: string }[]>([])
+  const [enabledClanCodes, setEnabledClanCodes] = useState<string[]>([])
+  const [enabledPredatorCodes, setEnabledPredatorCodes] = useState<string[]>([])
 
   useEffect(() => {
     let mounted = true
     const checkAccess = async () => {
-      const session = await getSessionOrDev()
-      if (!session?.user) return
-      const master = await hasMasterAccess(session.user)
-      if (!mounted) return
-      setUserIsMaster(master)
-      if (master) {
-        const campaigns = await getCampaignsForMaster(session.user.sub)
-        setHasCampaigns(campaigns.length > 0)
-      }
+      try {
+        const response = await fetch('/api/campaigns')
+        const data = await response.json()
+        if (!response.ok) throw new Error(data.error ?? 'Não foi possível consultar as regras da mesa.')
+        if (!mounted) return
+        setUserIsMaster(data.canCreate === true)
+        setHasCampaigns(data.campaigns.length > 0)
+        setClans(data.clans ?? [])
+        setPredatorTypes(data.predatorTypes ?? [])
+        setEnabledClanCodes((data.clans ?? []).map((entry: { code: string }) => entry.code))
+        setEnabledPredatorCodes((data.predatorTypes ?? []).filter((entry: { source: string }) => entry.source === 'COREBOOK').map((entry: { code: string }) => entry.code))
+      } catch (failure) { if (mounted) setError(failure instanceof Error ? failure.message : 'Não foi possível consultar as regras da mesa.') }
     }
     checkAccess()
     return () => { mounted = false }
@@ -80,7 +85,7 @@ export default function NewCampaignPage() {
     const response = await fetch('/api/campaigns', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, theme, principios, status, lastSessionAt: lastSessionAt || null, enableSchedulingCalendar }),
+      body: JSON.stringify({ name, theme, principios, status, lastSessionAt: lastSessionAt || null, enableSchedulingCalendar, enabledClanCodes, enabledPredatorCodes }),
     })
 
     setSubmitting(false)
@@ -201,6 +206,8 @@ export default function NewCampaignPage() {
                   onChange={(e) => setLastSessionAt(e.target.value)}
                 />
               </label>
+              <fieldset className="span-2 border border-border bg-card p-4"><legend>Quais clãs serão permitidos?</legend><div className="mt-3 grid gap-2 sm:grid-cols-2">{clans.map(clan => <label key={clan.code} className="flex items-center gap-2 text-sm"><input type="checkbox" disabled={submitting} checked={enabledClanCodes.includes(clan.code)} onChange={event => setEnabledClanCodes(values => event.target.checked ? [...values, clan.code] : values.filter(code => code !== clan.code))} />{clan.name}</label>)}</div></fieldset>
+              <fieldset className="span-2 border border-border bg-card p-4"><legend>Quais predações serão permitidas?</legend><p className="mt-2 text-sm text-muted-foreground">Após criar a campanha, os painéis mostram somente os tipos usados pelas fichas vinculadas.</p><div className="mt-3 grid gap-2 sm:grid-cols-2">{predatorTypes.map(predator => <label key={predator.code} className="flex items-center gap-2 text-sm"><input type="checkbox" disabled={submitting} checked={enabledPredatorCodes.includes(predator.code)} onChange={event => setEnabledPredatorCodes(values => event.target.checked ? [...values, predator.code] : values.filter(code => code !== predator.code))} />{predator.name}{predator.source === 'PLAYERS_GUIDE' ? ' (Players Guide)' : ''}</label>)}</div></fieldset>
               <label className="span-2 flex cursor-pointer items-start gap-3 border border-border bg-card p-4">
                 <input
                   type="checkbox"
@@ -218,7 +225,7 @@ export default function NewCampaignPage() {
               <button
                 type="submit"
                 id="btn-criar-mesa"
-                disabled={submitting}
+                disabled={submitting || userIsMaster !== true}
                 className="button-primary inline-flex items-center gap-2"
               >
                 <Plus className="size-4" /> {submitting ? 'Criando...' : 'Criar mesa'}

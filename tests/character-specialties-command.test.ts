@@ -27,6 +27,22 @@ function request(body: unknown): Request {
 function specialties(): Specialty[] { return global.__devDb!.characters[0].gameState!.specialties as Specialty[] }
 
 describe('comandos de especialidades e autorização real em memória', () => {
+  it('concede especialidade gratuita sem mesa automaticamente', async () => {
+    global.__devDb!.characters[0].campaignId = null
+    await changeSpecialty('player', id, grant)
+    expect(specialties()[0]).toMatchObject({ status: 'APPROVED', costXp: 0 })
+    expect(specialtyView((await getCommandCharacter(id))!, 'player').requiresApproval).toBe(false)
+  })
+
+  it('compra independente é aprovada, custa 3 XP e retry não cobra novamente', async () => {
+    global.__devDb!.characters[0].campaignId = null
+    await expect(changeSpecialty('other-player', id, purchase)).rejects.toMatchObject({ status: 403 })
+    const result = await changeSpecialty('player', id, purchase)
+    expect(specialties()[0]).toMatchObject({ status: 'APPROVED', costXp: 3 })
+    expect(await changeSpecialty('player', id, purchase)).toEqual(result)
+    expect(global.__devDb!.characters[0].spentXp).toBe(3)
+  })
+
   beforeEach(() => {
     const now = new Date()
     global.__devDb = {
@@ -48,10 +64,10 @@ describe('comandos de especialidades e autorização real em memória', () => {
     expect(global.__devDb!.characterLedgerEvents).toHaveLength(2)
   })
 
-  it('ficha independente mantém especialidade personalizada de concessão pendente', async () => {
+  it('ficha independente recebe especialidade personalizada automaticamente', async () => {
     global.__devDb!.characters[0].campaignId = null
     await changeSpecialty('player', id, { ...grant, grantId: 'creation:additional', skillId: 'briga', name: 'Luta de rua' })
-    expect(specialties()[0]).toMatchObject({ origin: 'CREATION', status: 'PENDING', costXp: 0 })
+    expect(specialties()[0]).toMatchObject({ origin: 'CREATION', status: 'APPROVED', costXp: 0 })
     const character = await getCommandCharacter(id)
     expect(specialtyView(character!, 'player').canApprove).toBe(false)
     await expect(changeSpecialty('player', id, { kind: 'APPROVE', specialtyId: specialties()[0].id, reason: 'Revisão', expectedRevision: 1, idempotencyKey: 'approval' })).rejects.toMatchObject({ status: 403 })

@@ -38,6 +38,16 @@ describe('API de rolagens com provider real e sessão mockada', () => {
     expect(await (await GET(new Request('http://localhost'), context)).json()).toMatchObject({ canUseSpecialties: true, canRollSecret: true })
   })
 
+  it('GET permite especialidade independente sem liberar rolagem secreta', async () => {
+    global.__devDb!.characters[0].campaignId = null
+    expect(await (await GET(new Request('http://localhost'), context)).json()).toMatchObject({ canUseSpecialties: true, canRollSecret: false })
+  })
+
+  it('GET permite especialidade independente sem liberar rolagem secreta', async () => {
+    global.__devDb!.characters[0].campaignId = null
+    expect(await (await GET(new Request('http://localhost'), context)).json()).toMatchObject({ canUseSpecialties: true, canRollSecret: false })
+  })
+
   it('POST calcula pool no servidor e retry conserva o resultado persistido', async () => {
     const first = await POST(request(input), context)
     expect(first.status).toBe(200)

@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { randomUUID } from 'crypto'
+import { devIsUserInCampaign } from './dev-db'
 
 export type AvailabilityStatus = 'disponível' | 'talvez' | 'indisponível'
 export type AvailabilityEntry = { id: string; campaignId: string; userId: string; name: string; date: string; status: AvailabilityStatus; suggested: boolean }
@@ -79,7 +80,9 @@ export function getAvailabilitySummary(entries: AvailabilityEntry[]) {
 export function isCampaignMember(entries: AvailabilityEntry[], userId: string) { return entries.some((entry) => entry.userId === userId) }
 
 export async function isUserInCampaign(campaignId: string, userId: string) {
-  if (isDev) return true
+  if (isDev) {
+    return devIsUserInCampaign(campaignId, userId)
+  }
   const result = await db.execute<{ exists: boolean }>(sql`SELECT EXISTS (SELECT 1 FROM campaigns WHERE id = ${campaignId}::uuid AND master_user_id = ${userId} UNION SELECT 1 FROM characters WHERE campaign_id = ${campaignId}::uuid AND user_id = ${userId}) AS exists`)
   return result.rows[0]?.exists === true
 }

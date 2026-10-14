@@ -1,6 +1,9 @@
 'use client'
 
 import { BookOpen } from 'lucide-react'
+import { GrantOriginLabel } from './grant-origin-label'
+import type { CreationGrant } from '@/lib/vtm-v5/creation-grants'
+import { hasSummaryName } from '@/lib/vtm-v5/summary'
 
 type Discipline = {
   id: string
@@ -21,11 +24,12 @@ type Discipline = {
 }
 
 type SummaryDisciplinesProps = {
+  grants?: CreationGrant[]
   disciplines: Discipline[]
 }
 
-export function SummaryDisciplines({ disciplines }: SummaryDisciplinesProps) {
-  const activeDisciplines = disciplines.filter((d) => d.level > 0)
+export function SummaryDisciplines({ disciplines, grants }: SummaryDisciplinesProps) {
+  const activeDisciplines = disciplines.filter((discipline) => discipline.level > 0 && hasSummaryName(discipline.name))
 
   if (activeDisciplines.length === 0) {
     return null
@@ -41,7 +45,7 @@ export function SummaryDisciplines({ disciplines }: SummaryDisciplinesProps) {
           const selectedPowers = discipline.powers
             .slice(0, discipline.level)
             .map((power, index) => ({ power, level: index + 1 }))
-            .filter(({ power }) => power.name?.trim())
+            .filter(({ power }) => hasSummaryName(power.name))
 
           return (
             <div key={discipline.id} className="border border-border bg-card p-4">
@@ -51,6 +55,7 @@ export function SummaryDisciplines({ disciplines }: SummaryDisciplinesProps) {
                   <h3 className="text-sm font-semibold">{discipline.name}</h3>
                 </div>
                 <span className="font-mono text-xs text-muted-foreground">Nível {discipline.level}</span>
+                <GrantOriginLabel grants={grants} kind="DISCIPLINE" id={discipline.id} level={discipline.level} />
               </div>
 
               {selectedPowers.length > 0 ? (
@@ -92,9 +97,7 @@ export function SummaryDisciplines({ disciplines }: SummaryDisciplinesProps) {
                     )
                   })}
                 </div>
-              ) : (
-                <p className="text-xs text-muted-foreground">Nenhum poder foi preenchido nesta disciplina.</p>
-              )}
+              ) : null}
             </div>
           )
         })}

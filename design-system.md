@@ -8,6 +8,8 @@ A interface deve parecer um **arquivo de comando restrito**, não uma tela gené
 
 ## 2. Princípios de produto
 
+Token adicional `--grant-origin`, definido em globals.css: azul para pontos/concessões automáticas de clã ou predação; usar `.grant-origin` e `.dot.is-granted`, sempre com identificação textual/aria, não somente cor.
+
 1. **Clareza antes da atmosfera** — cada ação deve ter rótulo e feedback compreensíveis.
 2. **Tensão controlada** — vermelho é reservado para perigo, ações destrutivas e elementos prioritários.
 3. **Densidade editorial** — usar divisórias, etiquetas técnicas e metadados para criar sensação de arquivo.

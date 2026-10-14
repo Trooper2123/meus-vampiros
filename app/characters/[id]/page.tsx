@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import { characterText } from '@/lib/vtm-v5/text'
 import { getSessionOrDev } from '@/lib/auth0'
 import { getCharacterForViewer } from '@/lib/characters'
 import { getCampaignById } from '@/lib/campaigns'
@@ -54,12 +55,12 @@ async function getCharacterData(id: string, userId: string) {
   }
 
   const parseIntSafe = (value: unknown): number => {
-    const num = Number.parseInt(String(value), 10)
+    const num = Number.parseInt(characterText(value), 10)
     return Number.isNaN(num) ? 0 : num
   }
 
   const getName = (): string => {
-    if (data['nome'] && String(data['nome']).trim() !== '') return String(data['nome'])
+    if (data['nome'] && characterText(data['nome']).trim() !== '') return characterText(data['nome'])
     if (character.name && character.name.trim() !== '') return character.name
     return 'Personagem sem nome'
   }
@@ -68,12 +69,13 @@ async function getCharacterData(id: string, userId: string) {
     id: character.id,
     characterType: character.characterType,
     name: getName(),
-    clan: data['cla'] ? String(data['cla']) : null,
-    predator: data['predador'] ? String(data['predador']) : null,
+    clan: data['cla'] ? characterText(data['cla']) : null,
+    predator: data['predador'] ? characterText(data['predador']) : null,
     predatorRoll: predatorDefinition?.predatorRoll ?? null,
     predatorSource: predatorDefinition?.source ?? null,
     predatorSelection: data.predatorTypeSelection && typeof data.predatorTypeSelection === 'object' ? data.predatorTypeSelection as Partial<PredatorTypeSelection> : null,
-    generation: data['geracao'] ? String(data['geracao']) : null,
+    generation: data['geracao'] ? characterText(data['geracao']) : null,
+    creationGrants: character.creationGrants,
     campaignName,
     campaignTheme,
     attributes: {

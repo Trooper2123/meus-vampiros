@@ -1,4 +1,5 @@
 import { PREDATOR_TYPES } from './catalog'
+import { characterText } from '../text'
 import type { PredatorTypeCode } from './types'
 
 const normalizeKey = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().replace(/[^a-zA-Z0-9]+/g, '_').replace(/^_|_$/g, '').toUpperCase()
@@ -19,5 +20,5 @@ export function normalizePredatorType(value: unknown): PredatorTypeCode | null {
 
 export function normalizePredatorTypeWithWarning(value: unknown) {
   const code = normalizePredatorType(value)
-  return { code, warning: value && !code ? { code: 'PREDATOR_TYPE_LEGACY_UNKNOWN', message: `Tipo de predação legado não reconhecido: ${String(value)}`, blocking: false as const } : null }
+  return { code, warning: value && !code ? { code: 'PREDATOR_TYPE_LEGACY_UNKNOWN', message: `Tipo de predação legado não reconhecido: ${characterText(value) || 'valor inválido'}`, blocking: false as const } : null }
 }

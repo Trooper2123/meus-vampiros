@@ -7,9 +7,11 @@ import { SummaryDisciplines } from './summary-disciplines'
 import { SummaryResources } from './summary-resources'
 import { SummaryMerits } from './summary-merits'
 import { calculateSecondaryAttributes } from '@/lib/vtm-v5/secondary-attributes'
+import type { CreationGrant } from '@/lib/vtm-v5/creation-grants'
 
 type CharacterData = {
   id: string
+  creationGrants?: CreationGrant[]
   characterType?: string
   name: string
   clan: string | null
@@ -71,8 +73,8 @@ export function CharacterSummary({ data, onChangeResources }: CharacterSummaryPr
       />
       <SummaryAttributes attributes={data.attributes} />
       <SummarySkills skills={data.skills} />
-      <SummaryMerits merits={data.merits} flaws={data.flaws} />
-      <SummaryDisciplines disciplines={data.disciplines} />
+      <SummaryMerits merits={data.merits} flaws={data.flaws} grants={data.creationGrants} />
+      <SummaryDisciplines disciplines={data.disciplines} grants={data.creationGrants} />
       {onChangeResources && (
         <SummaryResources resources={data.resources} maxima={maxima} onChange={handleResourcesChange} />
       )}

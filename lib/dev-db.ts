@@ -36,6 +36,7 @@ export type DevCharacter = {
 export type DevCampaign = {
   id: string
   masterUserId: string
+  enabledClanCodes?: string[]
   name: string
   theme: string | null
   principios: string | null
@@ -388,12 +389,21 @@ export function devUpdateCharacterStatus(id: string, userId: string, status: str
   return character
 }
 
+function removeNoteLinks(targetId: string, targetTypes: string[]) {
+  if (global.__notesMemory?.store !== global.__devDb) return
+  for (const note of global.__notesMemory?.notes.values() ?? []) {
+    const links = note.links.filter(link => link.targetId !== targetId || !targetTypes.includes(link.targetType))
+    if (links.length !== note.links.length) { note.links = links; note.revision += 1; note.updatedAt = new Date().toISOString() }
+  }
+}
+
 export function devDeleteCharacter(id: string, userId: string) {
   const store = getStore()
   const index = store.characters.findIndex((c) => c.id === id && c.userId === userId)
   if (index === -1) return null
   if (global.__chronicleNightMemory?.store === store && global.__chronicleNightMemory.nights.some(night => night.result.results.some(result => result.characterId === id))) throw new Error('A ficha possui registros de despertar.')
   store.characters.splice(index, 1)
+  removeNoteLinks(id, ['CHARACTER', 'NPC'])
   store.possessions = store.possessions.filter(possession => possession.characterId !== id)
   store.characterLedgerEvents = store.characterLedgerEvents.filter(event => event.characterId !== id)
   if (global.__characterCommandMemory?.store === store) {
@@ -445,13 +455,20 @@ export function devGetCampaignById(id: string) {
   }
 }
 
+export function devIsUserInCampaign(campaignId: string, userId: string): boolean {
+  const store = getStore()
+  const campaign = store.campaigns.find(entry => entry.id === campaignId)
+  return Boolean(campaign && (campaign.masterUserId === userId || store.characters.some(character => character.campaignId === campaignId && character.userId === userId)))
+}
+
 export function devCreateCampaign(
   masterUserId: string,
-  input: { name: string; theme: string | null; principios: string | null; averageXp: number | null; status: string; lastSessionAt: string | null }
+  input: { name: string; theme: string | null; principios: string | null; averageXp: number | null; status: string; lastSessionAt: string | null; enabledClanCodes?: string[] }
 ) {
   const store = getStore()
   const now = new Date()
   const campaign: DevCampaign = {
+    enabledClanCodes: input.enabledClanCodes ? [...input.enabledClanCodes] : undefined,
     id: randomUUID(),
     masterUserId,
     name: input.name,
@@ -495,15 +512,16 @@ export function devCreatePossession(
   const store = getStore()
   if (!store.characters.some(character => character.id === characterId)) throw new Error('Ficha inexistente.')
   if (input.campaignId && !store.campaigns.some(campaign => campaign.id === input.campaignId)) throw new Error('Campanha inexistente.')
+  const character = store.characters.find(entry => entry.id === characterId)!
   const now = new Date()
   const possession: DevPossession = {
     id: randomUUID(),
     characterId,
-    campaignId: input.campaignId ?? null,
+    campaignId: character.campaignId ?? null,
     label: input.label,
     description: input.description ?? null,
     origin: input.origin ?? 'player',
-    status: input.origin === 'master' ? 'aprovado' : 'pendente',
+    status: !character.campaignId || input.origin === 'master' ? 'aprovado' : 'pendente',
     masterComment: null,
     createdAt: now,
     updatedAt: now,
@@ -653,6 +671,7 @@ export function devDeleteCampaignEvent(eventId: string): void {
   const index = store.events.findIndex((e) => e.id === eventId)
   if (index === -1) return
   store.events.splice(index, 1)
+  removeNoteLinks(eventId, ['EVENT'])
 }
 
 export function devGetLiveKitRoom(campaignId: string) {

@@ -69,7 +69,7 @@ export async function GET(request: Request) {
     const campaign = character.campaignId && !character.campaign ? await getCampaignById(character.campaignId) : character.campaign ?? null
     const publicData = { ...normalizeDisciplines(character.data as Record<string, unknown>) }
     for (const field of ['masterOverride', 'predatorTypeOverrides', 'predatorTypeOverride', 'predatorTypeRelationshipRequirements', 'masterNotes', 'narratorNotes']) delete publicData[field]
-    return NextResponse.json({ character: { id: character.id, name: character.name, status: character.status, characterType: character.characterType, revision: character.revision, data: publicData, campaignId: character.campaignId }, campaign })
+    return NextResponse.json({ character: { id: character.id, name: character.name, status: character.status, characterType: character.characterType, revision: character.revision, data: publicData, campaignId: character.campaignId, creationGrants: character.creationGrants }, campaign })
   } catch (error) {
     return errorResponse(error, 'Não foi possível carregar a ficha.')
   }

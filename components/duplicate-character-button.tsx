@@ -24,5 +24,5 @@ export function DuplicateCharacterButton({ characterId }: { characterId: string 
     }
   }
 
-  return <div className="mt-4 border-t border-border pt-4"><button type="button" className="button-ghost" disabled={pending} onClick={() => void duplicate()}>{pending ? 'Duplicando...' : 'Duplicar sem campanha'}</button>{error && <p role="alert" className="mt-2 text-sm text-primary">{error}</p>}</div>
+  return <div className="mt-4 border-t border-border pt-4"><button type="button" className="button-ghost" disabled={pending} onClick={() => void duplicate()}>{pending ? 'Duplicando...' : 'Duplicar'}</button>{error && <p role="alert" className="mt-2 text-sm text-primary">{error}</p>}</div>
 }
