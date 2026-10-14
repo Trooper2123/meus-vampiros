@@ -11,6 +11,7 @@ type SpecialtyData = {
   skills: Record<string, number>
   availableXp: number
   revision: number
+  requiresApproval: boolean
   canApprove: boolean
   skillValidation: { valid: boolean; issues: SkillValidationIssue[] }
   eligibility: { purchase: ReturnType<typeof eligibleSpecialtySkills>; grants: Record<string, ReturnType<typeof eligibleSpecialtySkills>> }
@@ -52,6 +53,7 @@ function SpecialtyPanel({ characterId, onChange, draftSkills, characterRevision,
   const [name, setName] = useState('')
   const [reason, setReason] = useState('')
   const [message, setMessage] = useState('')
+  const [lastApplied, setLastApplied] = useState<Specialty | null>(null)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const [retryCommand, setRetryCommand] = useState<SpecialtyCommand | null>(null)
@@ -77,6 +79,7 @@ function SpecialtyPanel({ characterId, onChange, draftSkills, characterRevision,
     setBusy(true)
     setError('')
     setMessage('')
+    setLastApplied(null)
     setRetryCommand(command)
     try {
       const response = await fetch(endpoint, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(command) })
@@ -88,7 +91,11 @@ function SpecialtyPanel({ characterId, onChange, draftSkills, characterRevision,
       }
       if (body.ok !== true) throw new Error('Não foi possível confirmar a gravação. Tente novamente.')
       setRetryCommand(null)
-      setMessage(command.kind === 'REJECT' ? 'Especialidade rejeitada.' : command.kind === 'APPROVE' ? 'Especialidade aprovada.' : 'Especialidade encaminhada para aprovação.')
+      if (command.kind === 'GRANT' || command.kind === 'PURCHASE') {
+        const applied = (body.specialties as Specialty[]).find(specialty => command.kind === 'GRANT' ? specialty.grantId === command.grantId : specialty.skillId === command.skillId && specialty.name === command.name)
+        setLastApplied(applied ?? null)
+        if (!applied) setMessage('Especialidade salva. Consulte a lista atualizada para verificar a aprovação.')
+      } else setMessage(command.kind === 'REJECT' ? 'Especialidade rejeitada.' : 'Especialidade aprovada.')
       if (command.kind === 'GRANT' || command.kind === 'PURCHASE') setName('')
       if (data) await mutate({ ...data, specialties: body.specialties, revision: body.revision, availableXp: body.availableXp }, { revalidate: false })
       onChange?.()
@@ -107,6 +114,10 @@ function SpecialtyPanel({ characterId, onChange, draftSkills, characterRevision,
     preparing.current = true
     setBusy(true)
     setError('')
+    setMessage('')
+    setLastApplied(null)
+    setMessage('')
+    setLastApplied(null)
     try {
       let current = data
       if (kind === 'GRANT' || kind === 'PURCHASE') {
@@ -136,8 +147,8 @@ function SpecialtyPanel({ characterId, onChange, draftSkills, characterRevision,
       {loadError && <div role="alert" className="flex flex-col gap-3 text-sm"><p>Não foi possível atualizar as especialidades.</p><button type="button" className="button-ghost min-h-10" disabled={busy} onClick={() => void mutate().catch(() => undefined)}>Carregar novamente</button></div>}
       {data && <div className="flex flex-col gap-5">
         {data.specialties.length === 0 ? <p className="empty-state text-sm">Nenhuma especialidade cadastrada nesta ficha.</p> : <ul className="flex flex-col gap-3">
-          {data.specialties.map(specialty => <li key={specialty.id} className="flex flex-col gap-3 border-b border-border pb-3 sm:flex-row sm:items-start sm:justify-between">
-            <div className="min-w-0"><p className="break-words text-sm">{skillNames[specialty.skillId] ?? specialty.skillId}: {specialty.name}</p><p className="mt-1 text-xs text-muted-foreground">{originNames[specialty.origin]} · {specialty.costXp > 0 ? `${specialty.costXp} XP` : 'Gratuita'} · {specialty.status === 'APPROVED' ? 'Aprovada' : 'Aguardando aprovação'}</p></div>
+          {data.specialties.map(specialty => <li key={specialty.id} className={`flex flex-col gap-3 border-b border-border pb-3 sm:flex-row sm:items-start sm:justify-between ${lastApplied?.id === specialty.id ? 'ring-1 ring-(--grant-origin) p-3' : ''}`}>
+            <div className="min-w-0"><p className={`break-words text-sm ${specialty.origin === 'PREDATOR' ? 'grant-origin' : ''}`}>{skillNames[specialty.skillId] ?? specialty.skillId}: {specialty.name}</p><p className="mt-1 text-xs text-muted-foreground">{originNames[specialty.origin]} · {specialty.costXp > 0 ? `${specialty.costXp} XP` : 'Gratuita'} · {specialty.status === 'APPROVED' ? 'Aprovada' : 'Aguardando aprovação'}</p></div>
             {data.canApprove && specialty.status === 'PENDING' && <div className="flex flex-wrap gap-2"><button type="button" className="button-ghost min-h-10" disabled={disabled || !reason.trim()} onClick={() => submit('APPROVE', specialty.id)}>Aprovar</button><button type="button" className="button-ghost min-h-10" disabled={disabled || !reason.trim()} onClick={() => submit('REJECT', specialty.id)}>Rejeitar</button></div>}
           </li>)}
         </ul>}
@@ -149,15 +160,25 @@ function SpecialtyPanel({ characterId, onChange, draftSkills, characterRevision,
           {grant?.options && <p className="text-sm text-muted-foreground sm:col-span-2">Opções da predação: {grant.options.filter(option => option.skillId === selectedSkill).map(option => option.name).join(', ')}.</p>}
           <label className="flex flex-col gap-2 text-sm sm:col-span-2" htmlFor={`${fieldId}-reason`}>Motivo da solicitação ou decisão<textarea id={`${fieldId}-reason`} className="input w-full" rows={2} maxLength={500} disabled={disabled} value={reason} onChange={event => setReason(event.target.value)} placeholder="Informe o motivo para o histórico da ficha." /></label>
         </div>
-        <div className="flex flex-col gap-3 sm:flex-row"><button type="button" className="button-primary min-h-10" disabled={disabled || !grant || !selectedSkill || !name.trim() || !reason.trim()} onClick={() => submit('GRANT')}>Usar concessão gratuita</button><button type="button" className="button-ghost min-h-10" disabled={disabled || Boolean(grant) || data.availableXp < 3 || !selectedSkill || !name.trim() || !reason.trim()} onClick={() => submit('PURCHASE')}>Comprar por 3 XP</button></div>
-        <p className="text-xs text-muted-foreground">Escolhas personalizadas aguardam aprovação do Narrador. A compra reserva 3 XP até a decisão.</p>
+        {lastApplied && <SpecialtyAppliedFeedback specialty={lastApplied} />}
+        {message && <p role="status" aria-live="polite" className="text-sm">{message}</p>}
+        {error && <p role="alert" className="text-sm text-primary">{error}</p>}
+        <div className="flex flex-col gap-3 sm:flex-row"><button type="button" className="button-primary min-h-10" disabled={disabled || !grant || !selectedSkill || !name.trim() || !reason.trim()} onClick={() => submit('GRANT')}>{busy ? 'Processando concessão…' : 'Usar concessão gratuita'}</button><button type="button" className="button-ghost min-h-10" disabled={disabled || Boolean(grant) || data.availableXp < 3 || !selectedSkill || !name.trim() || !reason.trim()} onClick={() => submit('PURCHASE')}>Comprar por 3 XP</button></div>
+        <p className="text-xs text-muted-foreground">{data.requiresApproval ? 'Escolhas personalizadas aguardam aprovação do Narrador. A compra reserva 3 XP até a decisão.' : 'Ficha sem mesa: especialidades válidas são concedidas automaticamente. A compra custa 3 XP.'}</p>
         {hasUnsavedSkills && <p role="status" className="text-sm text-muted-foreground">A lista acompanha as habilidades em edição. Elas serão salvas e validadas antes de enviar a especialidade.</p>}
         {(!validation.valid || !data.skillValidation.valid) && <p role="alert" className="text-sm text-primary">Há habilidades desconhecidas, pontos inválidos ou aliases conflitantes. Revise e salve as habilidades da ficha.</p>}
       </div>}
-      {message && <p role="status" className="mt-4 text-sm">{message}</p>}
-      {error && <p role="alert" className="mt-4 text-sm text-primary">{error}</p>}
+      {!data && error && <p role="alert" className="mt-4 text-sm text-primary">{error}</p>}
       {retryCommand && !busy && <button type="button" className="button-ghost mt-3 min-h-10" onClick={() => void execute(retryCommand)}>Tentar novamente a mesma solicitação</button>}
       {busy && <p role="status" className="mt-4 text-sm text-muted-foreground">Salvando especialidade…</p>}
     </section>
   )
+}
+
+export function SpecialtyAppliedFeedback({ specialty }: { specialty: Specialty }) {
+  return <div role="status" aria-live="polite" className="border border-border bg-card p-3 text-sm">
+    <p className={specialty.costXp === 0 ? 'grant-origin' : ''}>{specialty.costXp === 0 ? 'Concessão gratuita aplicada' : 'Especialidade registrada'}: {skillNames[specialty.skillId] ?? specialty.skillId} — {specialty.name}.</p>
+    <p className="mt-1">{specialty.costXp === 0 ? 'Nenhum XP foi gasto.' : `${specialty.costXp} XP ${specialty.status === 'APPROVED' ? 'gastos' : 'reservados'}.`} {specialty.status === 'APPROVED' ? 'Aprovada: concede +1 dado quando aplicável.' : 'Aguardando aprovação do Narrador: o bônus ainda não está ativo.'}</p>
+    <p className="mt-1 text-xs text-muted-foreground">A especialidade não aumenta os pontos da habilidade.</p>
+  </div>
 }

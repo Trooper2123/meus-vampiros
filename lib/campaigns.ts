@@ -75,7 +75,7 @@ export async function getCampaignsForMaster(masterUserId: string): Promise<Campa
 
 export async function createCampaign(
   masterUserId: string,
-  input: { name: string; theme: string | null; principios: string | null; averageXp: number | null; status: string; lastSessionAt: string | null }
+  input: { name: string; theme: string | null; principios: string | null; averageXp: number | null; status: string; lastSessionAt: string | null; enabledClanCodes?: string[] }
 ): Promise<CampaignSummary> {
   if (isDev) return devCreateCampaign(masterUserId, input)
 

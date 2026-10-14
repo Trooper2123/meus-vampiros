@@ -20,7 +20,7 @@ export function CharacterClanSummary({ characterId }: { characterId: string }) {
   return <section className="border border-border bg-card p-5" aria-labelledby="clan-summary-title"><h3 id="clan-summary-title" className="font-serif text-xl">{clan.name}</h3><p className="mt-3 text-sm">Perdição: {clan.bane}</p><p className="mt-2 text-sm">Compulsão: {clan.compulsion}</p><p className="mt-3 text-sm text-muted-foreground">Consequências contextuais dependem da revisão do Narrador.</p></section>
 }
 
-export function CharacterClan({ characterId, onBeforeSubmit, onChange }: { characterId?: string | null; onBeforeSubmit: () => Promise<string | null>; onChange: () => void }) {
+export function CharacterClan({ characterId, onBeforeSubmit, onChange }: { characterId?: string | null; onBeforeSubmit: () => Promise<string | null>; onChange: (characterId: string) => void }) {
   const url = characterId ? `/api/characters/${characterId}/clan` : null
   const { data: savedData, error } = useSWR(url, fetcher)
   const data: ClanView | undefined = characterId ? savedData : { revision: 0, selection: null, clans: CLANS.map(({ code, name, disciplines, bane, compulsion }) => ({ code, name, disciplines, bane, compulsion })) }
@@ -52,7 +52,7 @@ export function CharacterClan({ characterId, onBeforeSubmit, onChange }: { chara
       const body = await response.json()
       if (!response.ok) throw new Error(body.error ?? 'Não foi possível aplicar o clã.')
       setMessage('Clã aplicado. A ficha permanece em rascunho para revisão.')
-      onChange()
+      onChange(savedId)
     } catch (failure) { setMessage(failure instanceof Error ? failure.message : 'Não foi possível aplicar o clã.') }
     finally { setBusy(false) }
   }

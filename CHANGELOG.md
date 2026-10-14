@@ -2,6 +2,150 @@
 
 Registro cronológico de todas as alterações relevantes implementadas no projeto.
 
+## 2026-10-14 00:17 BRT — feat — Configuração inicial de clãs e predações
+- Arquivos: API e formulário de criação de campanhas, `lib/campaigns.ts`, `lib/campaign-clans.ts`, `lib/character-clans.ts` e testes de criação.
+- Narrador escolhe clãs/predações ao criar mesa em memória; servidor valida catálogo, duplicatas e autorização. Seleção de clã respeita configuração persistida, sem expor orientações privadas ao jogador. SQL externo retorna indisponibilidade para configuração não implementada.
+- Revisão pré-commit inclui funcionalidades de ficha/convocação/layout registradas nas entradas anteriores. Mantidos fora `.env`, specs/backlogs, exclusões `.kiro`, arquivos gerados, label local de calendário e alteração textual de seed. Corrigido JSON inválido local do package.json restaurando formato anterior; sem alteração de dependências.
+- Candidato validado com 598 testes/48 arquivos, TypeScript e build aprovados, lint sem erros (4 avisos anteriores) e auditoria sem vulnerabilidades. Staging conferido sem arquivos locais proibidos, padrões de credenciais ou erros de whitespace. Autorização, isolamento, concessões/XP e emissão de tokens revisados conforme pre-commit-review; funcionalidades externas não validadas permanecem indisponíveis, sem alegação de prontidão SQL/LiveKit. QA manual posterior.
+- Candidato validado com 598 testes/48 arquivos, TypeScript e build aprovados, lint sem erros (4 avisos anteriores) e auditoria sem vulnerabilidades. Staging conferido sem arquivos locais proibidos, padrões de credenciais ou erros de whitespace. Autorização, isolamento, concessões/XP e emissão de tokens revisados conforme pre-commit-review; funcionalidades externas não validadas permanecem indisponíveis, sem alegação de prontidão SQL/LiveKit. QA manual posterior.
+
+## 2026-10-13 23:54 BRT — style — Ordem da gestão da mesa
+- Arquivos: `app/campaigns/[id]/page.tsx` e `tests/campaign-layout-order.test.ts`.
+- Conteúdo após o título: anotações, calendários, acesso à sessão, início da noite, revisões/gestão e depois clãs e predações. Reutilizados componentes existentes, sem novas dependências, endpoints ou alterações de dados/permissões.
+- Testes de ordem e presença única dos painéis adicionados; 593 testes/47 arquivos aprovados. Revisão focada preserva autorização no servidor e sequência DOM/teclado, sem novos segredos. QA visual/responsividade permanece posterior.
+- TypeScript/build aprovados, lint sem erros (4 avisos anteriores), audit sem vulnerabilidades; diff focado sem problemas de whitespace.
+
+## 2026-10-13 22:40 BRT — fix — Aprovação somente para fichas vinculadas
+- Arquivos: `lib/character-specialties.ts`, `lib/predator-effects.ts`, `lib/characters.ts`, `lib/dev-db.ts`, `lib/possessions.ts`, `lib/character-rolls.ts`, API de rolagens, formulário, painéis de especialidades/rolagens e testes correspondentes.
+- Pertences e especialidades gratuitas, de predação e compradas com XP recebem aprovação automática em fichas independentes. Cópias independentes recebem concessões próprias; compras continuam custando 3 XP, com retry idempotente.
+- Interface permite cadastrar pertence em ficha salva sem mesa e explica a dispensa. Proprietário independente pode aplicar especialidade aprovada em rolagem pública; rolagens secretas e revisão em mesa continuam restritas ao Narrador.
+- Segurança: vínculo derivado do servidor (inclusive no INSERT SQL), sem aceitar campanha/status enviados como autoridade; limites, habilidades, saldo e isolamento preservados. Testes reais cobrem dispensa, XP/retry, predação/cópia, autorização e rolagens; 591 testes/46 arquivos aprovados, auditoria sem vulnerabilidades. Revisão de segurança focada na alteração, sem aprovação do restante do WIP.
+- Sem migração de registros anteriores em memória. QA visual e integração PostgreSQL não executados. Entrada futura em mesa deve reavaliar aprovações no fluxo de vínculo ainda pendente.
+- TypeScript e build aprovados; lint sem erros (4 avisos anteriores), diff focado sem problemas de whitespace.
+
+## [2026-10-13] Resumo somente com itens preenchidos
+**Horário:** 22:01 BRT
+**Tipo:** fix | style
+**Arquivos principais:** components/character-summary/summary-merits.tsx, components/character-summary/summary-disciplines.tsx, components/character-summary/summary-header.tsx, lib/vtm-v5/summary.ts, tests/character-summary-filled.test.ts
+
+- Resumo oculta nomes vazios/whitespace/placeholders Sem nome, vantagens/defeitos e disciplinas vazias, poderes sem nome e textos de ausência. Colunas/seções sem conteúdo não aparecem; itens nomeados/notas continuam visíveis sem nível zero presumido.
+- Filtragem somente de apresentação: nenhum dado/ponto/poder é apagado, cálculos/recursos zero válidos e autorizações permanecem inalterados. Nome padrão do personagem passa a título neutro Resumo da ficha.
+- 584 testes/46 arquivos, TypeScript/lint/build aprovados (4 avisos anteriores), auditoria sem vulnerabilidades. QA manual posterior.
+
+## [2026-10-13] Chaves únicas no relatório de validação
+**Horário:** 21:45 BRT
+**Tipo:** fix
+**Arquivos principais:** app/characters/character-form-client.tsx, tests/vtm-v5-creation-guidance.test.ts
+
+- Confirmada colisão: múltiplas disciplinas sem poderes usam código/campo iguais em mensagens diferentes. Chaves dos erros/avisos passam a incluir a posição no snapshot, sem suprimir mensagens nem mudar contratos de validação.
+- 24 testes específicos, assert JSX, TypeScript e lint aprovados. QA manual/build não repetidos nesta correção de chave.
+
+## [2026-10-13] Poderes editáveis em disciplinas concedidas
+**Horário:** 21:39 BRT
+**Tipo:** fix
+**Arquivos principais:** app/characters/character-form-client.tsx, lib/vtm-v5/discipline-editor.ts, tests/discipline-editor.test.ts
+
+- Corrigida origem do bloqueio: concessões persistem nível com powers vazio; edição mapeava array vazio e descartava texto digitado. Carregamento inicializa uma entrada independente por ponto, sem escolher poderes automaticamente nem apagar existentes/notas adicionais.
+- 569 testes/45 arquivos, TypeScript/lint/build aprovados (4 avisos anteriores), auditoria sem vulnerabilidades. QA manual de navegador posterior.
+
+## [2026-10-13] Concessões contam no preenchimento de vantagens/defeitos
+**Horário:** 21:35 BRT
+**Tipo:** fix
+**Arquivos principais:** lib/vtm-v5/normalize.ts, app/characters/character-form-client.tsx, tests/vtm-v5-creation-guidance.test.ts
+
+- Conforme decisão do usuário, concessões de clã/predação entram no total de vantagens/defeitos exibido e validado. Removido desconto de creationAdvantageDots/creationFlawDots; origens e aplicação/reversão das concessões preservadas.
+- Limites do perfil mantidos: concessões de defeitos ajudam a atingir o mínimo e concessões de vantagens também podem atingir/exceder o limite. Metadados não podem mais mascarar a contagem real.
+- 563 testes/45 arquivos, TypeScript/lint/build aprovados (4 avisos anteriores), auditoria sem vulnerabilidades. QA manual posterior.
+
+## [2026-10-13] Legenda e feedback de concessão gratuita
+**Horário:** 21:29 BRT
+**Tipo:** fix | style
+**Arquivos principais:** app/characters/character-form-client.tsx, components/character-summary/character-specialties.tsx, tests/character-specialties-selector.test.ts
+
+- Legenda de pontos manuais em vermelho, mantendo concessões automáticas em azul.
+- Concessão gratuita mostra processamento, resultado junto ao botão (habilidade/nome, nenhum XP gasto e aprovação real) e destaca a especialidade adicionada. Não confundir concessão pendente com bônus ativo ou aumento de pontos da habilidade; regras/autorizações e retry idempotente preservados.
+- Suíte 561 testes/45 arquivos, TypeScript/lint/build aprovados (4 avisos anteriores), auditoria sem vulnerabilidades. QA manual de navegador posterior.
+
+## [2026-10-13] Aba Disciplinas contextual e mais limpa
+**Horário:** 21:23 BRT
+**Tipo:** fix | style
+**Arquivos principais:** app/characters/character-form-client.tsx, lib/vtm-v5/discipline-editor.ts, tests/discipline-editor.test.ts, tests/character-form-identity.test.ts
+
+- Ficha inicia com uma linha vazia; carregamento ordena concessões primeiro, disciplinas manuais depois e mantém um espaço vazio, respeitando limite vigente de sete. Botão existente permite adicionar outras; dados/poderes preenchidos não são descartados, mesmo com nome ainda vazio.
+- Instruções por tipo/perfil usam regras existentes: 3 pontos 2+1 para vampiros jogadores, ponto adicional de predação sem duplicação, poderes por ponto; sangue-fraco sem pacote comum, NPCs com definição do Narrador e carniçal com template nível 1/revisão acima dele. XP do perfil separado da distribuição inicial.
+- 19 testes específicos e suíte 559 testes/45 arquivos, tipos/lint/build aprovados (4 avisos anteriores). QA visual posterior; sem alterações de autorização ou regras mecânicas.
+- Auditoria de dependências sem vulnerabilidades conhecidas.
+
+## [2026-10-13] Concessões automáticas destacadas em azul
+**Horário:** 21:17 BRT
+**Tipo:** fix | style
+**Arquivos principais:** lib/vtm-v5/creation-grants.ts, lib/characters.ts, app/api/characters/route.ts, app/characters/character-form-client.tsx, components/character-summary/, app/globals.css, UI-GUIDE.md, design-system.md
+
+- Concessões existentes de clã/predação são projetadas por origem e ID, sem copiar estado privado ou confiar em metadata do cliente. Pontos de disciplinas/vantagens/defeitos ficam azuis na edição; resumo indica quantidade/origem em azul e especialidades de predação também são destacadas, mantendo status de aprovação.
+- Atualização após confirmar usa o ID retornado pelo salvamento, inclusive primeira criação; concessões aparecem automaticamente sem recarregar manualmente. Não cria pontos adicionais, não escolhe poderes de Disciplina nem substitui pontos manuais.
+- Token azul --grant-origin documentado no design system; rótulos/aria diferenciam clã/predação sem depender apenas da cor. Edição de disciplina não reduz abaixo dos pontos concedidos; validação do servidor continua autoritativa.
+- Validação: 548 testes/44 arquivos, TypeScript/build/lint aprovados (4 avisos anteriores), auditoria sem vulnerabilidades. QA visual posterior; sem commit solicitado.
+
+## [2026-10-13] Confirmação de predação sem salvamento manual prévio
+**Horário:** 21:04 BRT
+**Tipo:** fix
+**Arquivos principais:** components/predator-types/player-predator-selector.tsx, tests/clan-predator-selectors.test.ts
+
+- Removida mensagem de pré-requisito de rascunho; confirmação usa o salvamento automático existente e o ID retornado. Falha real informa os campos a corrigir, sem aplicar efeitos a ficha inexistente nem ignorar validações.
+- 9 testes e lint aprovados; build/QA manual não repetidos para este ajuste de comunicação.
+
+## [2026-10-13] Seleção recolhível de predação
+**Horário:** 20:56 BRT
+**Tipo:** fix | style
+**Arquivos principais:** components/predator-types/player-predator-selector.tsx, tests/clan-predator-selectors.test.ts
+
+- Catálogo recolhe ao selecionar e pode ser reaberto; revisão, especialidade, disciplina e alternativas ficam visíveis antes de Confirmar escolha. Selecionar não grava automaticamente.
+- Confirmação salva o rascunho e usa o ID retornado, inclusive na primeira criação; remoção reabre o catálogo. Autorizações/regras do servidor preservadas.
+- 14 testes específicos, TypeScript e lint aprovados. Foco direcionado à revisão e erros visíveis mesmo com catálogo recolhido; build/QA manual não repetidos.
+
+## [2026-10-13] Nome e Sire no início da Identidade
+**Horário:** 20:46 BRT
+**Tipo:** style
+**Arquivos principais:** app/characters/character-form-client.tsx, tests/character-form-identity.test.ts
+
+- Nome do personagem e Sire movidos para o primeiro bloco da aba Identidade, antes da classificação/clã/predação, sem duplicar entradas ou alterar salvamento.
+- 8 testes específicos e lint aprovados; build/QA visual não repetidos neste ajuste de ordem.
+
+## [2026-10-13] Cálculos da Potência do Sangue CORE_V5
+**Horário:** 20:43 BRT
+**Tipo:** feat | fix
+**Arquivos principais:** lib/vtm-v5/blood-potency.ts, lib/character-blood-potency.ts, lib/characters.ts, app/api/characters/[id]/blood-potency-effects/route.ts, components/character-summary/blood-potency-summary.tsx, app/characters/character-form-client.tsx, app/characters/[id]/character-summary-client.tsx, tests/blood-potency.test.ts
+
+- Catálogo/cálculo único dos seis campos para níveis 0–5 conforme tabela fornecida no backlog, alimentação estruturada e exceções Caitiff/sangue-fraco. Fonte local identificada; não alegar conferência independente dos livros. Níveis 6–10 e outros perfis exibem erro, sem números presumidos.
+- Criação/edição exibem prévia somente leitura e resumo consulta projeção autorizada; API calcula a partir da Potência real no servidor, não dos derivados do navegador. Campos legados não são migrados nem usados como autoridade; alterações forjadas recusadas na criação/edição geral.
+- Cálculo não grava estado, rola dados, executa cura/alimentação ou altera Fome/danos; atualização de Potência mantém comandos/revisão/ledger existentes.
+- Preparação PS em memória isolada concluída uma vez pelo script vigente, modelo/seeds e integridade OK (8 fichas/3 mesas), sem modificar banco externo/servidor corrente.
+- 23 testes específicos e suíte 544 testes/43 arquivos aprovados; build aprovado. Modificadores por vantagens, Companion, perfis de campanha e execução das ações mecânicas permanecem pendentes; QA manual/SQL não executados.
+- TypeScript e lint aprovados (0 erros/4 avisos anteriores), auditoria sem vulnerabilidades conhecidas; revisão de segurança/diff/scan sem achados críticos ou altos relacionados.
+- TypeScript e lint aprovados (0 erros/4 avisos anteriores), auditoria sem vulnerabilidades conhecidas; revisão de segurança/diff/scan sem achados críticos ou altos relacionados.
+
+## [2026-10-13] Planejamento de Potência do Sangue e convocação da mesa
+**Horário:** 20:28 BRT
+**Tipo:** feat | docs | fix
+**Arquivos principais:** lib/campaign-calls.ts, app/api/campaigns/[id]/call/route.ts, app/api/livekit/room/route.ts, components/livekit/livekit-room-link.tsx, app/characters/page.tsx, tests/campaign-calls.test.ts, tests/campaign-call-ui.test.ts
+
+- Workflow de autopreenchimento organizado em requirements/design/tasks/meta locais; fontes, preparação, cálculo, API/UI, ações mecânicas e validações dependentes. Nenhum valor de Potência calculado nesta entrega; fontes não conferidas não são inventadas.
+- Preparação da convocação: reset único em memória isolada, modelo vigente/seeds, 8 fichas/3 mesas e integridade OK; nenhum PostgreSQL ou servidor em execução modificado.
+- Narrador atual convoca/encerra; participantes recebem entrada em Suas criaturas, por mesa deduplicada/nomeada, atualizada por foco/polling de 5s. Entrada como host não convoca implicitamente; Narrador deve preparar a sala.
+- API valida sessão/participação atual/CSRF/JSON/UUID; status sem token. Entrada do jogador exige convocação no servidor e revalida acesso após geração; host é o Narrador atual. Erros internos protegidos e respostas no-store.
+- MVP somente em memória de dev, indisponível em SQL/produção; não representa GameSession P1. Encerrar bloqueia novas entradas, mas não revoga JWTs já emitidos ou desconecta usuários remotamente por SDK.
+- Validação: 9 testes específicos e suíte 521 testes/42 arquivos aprovados; TypeScript/build aprovados, lint sem erros (4 avisos anteriores), audit sem vulnerabilidades e scan/diff-check sem achados. Conexão LiveKit real e QA manual posteriores; sem commit solicitado.
+
+## [2026-10-13] Identidade e validação em todas as etapas
+**Horário:** 20:07 BRT
+**Tipo:** fix | style
+**Arquivos principais:** app/characters/character-form-client.tsx, tests/character-form-identity.test.ts
+
+- Removidas entradas redundantes de clã/predação para vampiro jogador, definidos pelos seletores; XP total/gasto/disponível apresentado como resumo, sem inputs.
+- Geração, Sire, Potência de Sangue e detalhes de sangue permanecem manuais: não há cálculo automático desses detalhes no código atual. Campos de clã/predação para NPCs/retentores preservados.
+- Validação disponível no rodapé de todas as abas; salva antes de validar e trata falha de conexão sem bloquear permanentemente o botão. Campos de sangue desmontados não são apagados ao salvar em outra aba.
+- Validações: 8 testes específicos de renderização (7 etapas + identidade), suíte 512 testes/40 arquivos, TypeScript, lint dos arquivos e build aprovados; auditoria sem vulnerabilidades. Rotas/autorização e autoridade dos campos derivados mantidas; QA manual posterior.
+
 ## [2026-10-13] Preparação de commit — anotações e gestão contextual
 **Horário:** 19:23 BRT
 **Tipo:** feat | fix | style

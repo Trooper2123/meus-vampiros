@@ -54,11 +54,11 @@ describe('itens com provider em memória e handlers reais', () => {
     expect((await afterUnlink.json()).possessions).toEqual([])
   })
 
-  it('independente permanece pendente e não pode ser aprovado por terceiros', async () => {
+  it('independente recebe item aprovado automaticamente e permanece protegido de terceiros', async () => {
     const character = devCreateCharacter('item-player', { name: 'Independente', data: {} })
     const response = await POST(request({ characterId: character.id, label: 'Item independente' }))
     const { possession } = await response.json()
-    expect(possession).toMatchObject({ campaignId: null, status: 'pendente' })
+    expect(possession).toMatchObject({ campaignId: null, status: 'aprovado' })
     mocks.session.mockResolvedValue({ user: { sub: 'item-master' } })
     expect((await PUT(request({ id: possession.id, status: 'aprovado' }, 'PUT'))).status).toBe(403)
   })

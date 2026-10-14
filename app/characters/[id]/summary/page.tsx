@@ -73,6 +73,7 @@ async function getCharacterData(id: string, userId: string) {
     predatorSource: predatorDefinition?.source ?? null,
     predatorSelection: data.predatorTypeSelection && typeof data.predatorTypeSelection === 'object' ? data.predatorTypeSelection as Partial<PredatorTypeSelection> : null,
     generation: data['geracao'] ? String(data['geracao']) : null,
+    creationGrants: character.creationGrants,
     campaignName,
     campaignTheme,
     attributes: {

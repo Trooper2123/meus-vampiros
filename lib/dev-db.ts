@@ -512,15 +512,16 @@ export function devCreatePossession(
   const store = getStore()
   if (!store.characters.some(character => character.id === characterId)) throw new Error('Ficha inexistente.')
   if (input.campaignId && !store.campaigns.some(campaign => campaign.id === input.campaignId)) throw new Error('Campanha inexistente.')
+  const character = store.characters.find(entry => entry.id === characterId)!
   const now = new Date()
   const possession: DevPossession = {
     id: randomUUID(),
     characterId,
-    campaignId: input.campaignId ?? null,
+    campaignId: character.campaignId ?? null,
     label: input.label,
     description: input.description ?? null,
     origin: input.origin ?? 'player',
-    status: input.origin === 'master' ? 'aprovado' : 'pendente',
+    status: !character.campaignId || input.origin === 'master' ? 'aprovado' : 'pendente',
     masterComment: null,
     createdAt: now,
     updatedAt: now,

@@ -119,7 +119,6 @@ export async function createPossession(
     }
   }
 
-  const status = input.origin === 'master' ? 'aprovado' : 'pendente'
   const origin = input.origin ?? 'player'
   const result = await db.execute<{
     id: string
@@ -134,7 +133,9 @@ export async function createPossession(
     updated_at: Date
   }>(sql`
     INSERT INTO character_possessions (character_id, campaign_id, label, description, origin, status)
-    VALUES (${characterId}::uuid, ${input.campaignId ?? null}::uuid, ${input.label}, ${input.description ?? null}, ${origin}, ${status})
+    SELECT id, campaign_id, ${input.label}, ${input.description ?? null}, ${origin},
+      CASE WHEN campaign_id IS NULL OR ${origin} = 'master' THEN 'aprovado' ELSE 'pendente' END
+    FROM characters WHERE id = ${characterId}::uuid
     RETURNING id, character_id, campaign_id, label, description, origin, status, master_comment, created_at, updated_at
   `)
 

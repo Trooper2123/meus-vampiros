@@ -94,7 +94,7 @@ function RollPanel({ characterId }: { characterId: string }) {
         {data.canRollSecret && <label className="flex flex-col gap-2 text-sm" htmlFor={`${fieldId}-visibility`}>Visibilidade<select id={`${fieldId}-visibility`} className="select min-h-10 w-full" disabled={disabled} value={visibility} onChange={event => setVisibility(event.target.value as 'PUBLIC' | 'SECRET')}><option value="PUBLIC">Pública</option><option value="SECRET">Secreta — somente Narrador</option></select></label>}
         <label className="flex flex-col gap-2 text-sm sm:col-span-2" htmlFor={`${fieldId}-reason`}>Motivo da rolagem<textarea id={`${fieldId}-reason`} className="input w-full" required rows={2} maxLength={500} value={reason} disabled={disabled} onChange={event => setReason(event.target.value)} placeholder="Descreva o objetivo deste teste." /></label>
       </div>
-      <p className="text-xs text-muted-foreground">A aplicação de uma especialidade exige confirmação do Narrador e concede no máximo +1 dado.</p>
+      <p className="text-xs text-muted-foreground">{data.canUseSpecialties ? 'Escolha uma especialidade aplicável: o bônus é de no máximo +1 dado.' : 'A aplicação de uma especialidade exige confirmação do Narrador e concede no máximo +1 dado.'}</p>
       <button type="submit" className="button-primary min-h-10 sm:self-start" disabled={disabled || Boolean(loadError) || data.status !== 'APPROVED' || !selectedAttribute || !selectedSkill || !validDifficulty || !reason.trim()}>{busy ? 'Rolando…' : 'Rolar dados'}</button>
     </form>}
     {error && <p role="alert" className="mt-4 text-sm text-primary">{error}</p>}

@@ -24,7 +24,9 @@ export function applyPredatorEffects(character: CommandCharacter) {
   const specialties = characterSpecialties(character).filter(entry => entry.origin !== 'PREDATOR')
   try {
     const specialty = selectSpecialtyGrant({ grantId: `predator:${selection.code}:specialty`, skillId: normalizeSpecialtySkillId(selection.specialty.split('(')[0]), name: selection.specialty }, specialties, specialtyRules(character))
-    specialties.push(previous ?? specialty)
+    const selected = previous ?? specialty
+    if (!character.campaignId) selected.status = 'APPROVED'
+    specialties.push(selected)
   } catch { throw new CharacterCommandError(422, 'A especialidade de predação exige habilidade com pontos e limite disponível.') }
   const traits = [...definition.bonusOptions, ...definition.flawsOrCosts, ...resolvePredatorChoices(selection.code, selection.optionCodes)].filter(option => ['MERIT', 'FLAW', 'BACKGROUND'].includes(option.kind)).map(option => ({ kind: option.kind === 'FLAW' ? 'FLAW' as const : 'MERIT' as const, name: option.label, dots: option.dots! }))
   applyCreationEffects(character, 'PREDATOR', { [normalizeDiscipline(selection.discipline)]: 1 }, traits)

@@ -7,6 +7,7 @@ import { getCampaignsForMaster, hasMasterAccess } from '@/lib/campaigns'
 import { MasterPanel } from '@/components/master-panel'
 import { DateAvailabilityCalendar } from '@/components/date-availability-calendar'
 import { DuplicateCharacterButton } from '@/components/duplicate-character-button'
+import { LiveKitRoomLink } from '@/components/livekit/livekit-room-link'
 
 export default async function PersonagensPage() {
   if (!process.env.AUTH0_DOMAIN || !process.env.AUTH0_CLIENT_ID || !process.env.AUTH0_SECRET || !process.env.AUTH0_CLIENT_SECRET) {
@@ -56,6 +57,7 @@ export default async function PersonagensPage() {
       </header>
 
       <div className="mx-auto w-full max-w-6xl px-5 py-10 sm:px-8 lg:py-14">
+        <div className="mb-8 flex flex-col gap-4">{[...new Map(characters.flatMap(character => character.campaignId ? [[character.campaignId, character.campaignName] as const] : []))].map(([campaignId, campaignName]) => <LiveKitRoomLink key={campaignId} campaignId={campaignId} campaignName={campaignName} master={false} />)}</div>
         {/* Cabeçalho da seção com os dois botões */}
         <div className="mb-10 flex flex-col justify-between gap-6 border-b border-border pb-8 sm:flex-row sm:items-end">
           <div>

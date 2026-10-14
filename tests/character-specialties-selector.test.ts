@@ -2,7 +2,7 @@ import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { SWRConfig } from 'swr'
 import { describe, expect, it } from 'vitest'
-import { CharacterSpecialties } from '../components/character-summary/character-specialties'
+import { CharacterSpecialties, SpecialtyAppliedFeedback } from '../components/character-summary/character-specialties'
 import { specialtyView } from '../lib/character-specialties'
 import type { CommandCharacter } from '../lib/character-commands'
 
@@ -14,6 +14,15 @@ function renderSelector(draftSkills?: Record<string, number>) {
 }
 
 describe('opções renderizadas do seletor de especialidades', () => {
+  it.each(['PENDING', 'APPROVED'] as const)('feedback de concessão informa nome, habilidade, XP e estado %s', status => {
+    const html = renderToStaticMarkup(createElement(SpecialtyAppliedFeedback, { specialty: { id: 'specialty', skillId: 'briga', name: 'Boxe', origin: 'CREATION', status, costXp: 0 } }))
+    expect(html).toContain('Concessão gratuita aplicada')
+    expect(html).toContain('Briga — Boxe')
+    expect(html).toContain('Nenhum XP foi gasto')
+    expect(html).toContain('aria-live="polite"')
+    expect(html).toContain(status === 'PENDING' ? 'bônus ainda não está ativo' : 'concede +1 dado quando aplicável')
+    expect(html).toContain('não aumenta os pontos da habilidade')
+  })
   it('usa somente habilidades elegíveis do estado salvo', () => {
     const html = renderSelector()
     expect(html).toContain('value="briga"')

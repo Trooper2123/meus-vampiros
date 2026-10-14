@@ -21,7 +21,7 @@ export function specialtyView(character: CommandCharacter, actorId: string) {
   const rules = specialtyRules(character, true)
   const skills = Object.fromEntries(Object.entries(rules.skills).map(([skill, dots]) => [normalizeSpecialtySkillId(skill), dots]))
   const grants = calculateSpecialtyGrants(rules).filter(grant => !specialties.some(specialty => specialty.grantId === grant.id))
-  return { specialties, skills, grants, skillValidation: validateCharacterSkills(character.data), eligibility: { purchase: eligibleSpecialtySkills(rules, specialties), grants: Object.fromEntries(grants.map(grant => [grant.id, eligibleSpecialtySkills(rules, specialties, grant)])) }, availableXp: character.totalXp - character.spentXp, revision: character.revision, canApprove: character.masterId === actorId }
+  return { specialties, skills, grants, skillValidation: validateCharacterSkills(character.data), eligibility: { purchase: eligibleSpecialtySkills(rules, specialties), grants: Object.fromEntries(grants.map(grant => [grant.id, eligibleSpecialtySkills(rules, specialties, grant)])) }, availableXp: character.totalXp - character.spentXp, revision: character.revision, requiresApproval: Boolean(character.campaignId), canApprove: character.masterId === actorId }
 }
 
 type SpecialtyInput = { kind: 'GRANT' | 'PURCHASE' | 'APPROVE' | 'REJECT'; grantId?: string; skillId?: string; name?: string; specialtyId?: string; reason: string; expectedRevision: number; idempotencyKey: string }
@@ -52,11 +52,12 @@ export function changeSpecialty(actorId: string, id: string, input: SpecialtyInp
       } else if (input.kind === 'GRANT') {
         if (character.status !== 'DRAFT') throw new CharacterCommandError(409, 'Escolhas iniciais exigem ficha em rascunho.')
         const specialty = selectSpecialtyGrant({ grantId: input.grantId!, skillId: input.skillId!, name: input.name! }, specialties, rules)
+        if (!character.campaignId) specialty.status = 'APPROVED'
         if (!specialties.some(entry => entry.id === specialty.id)) specialties.push(specialty)
       } else {
         if (!Number.isSafeInteger(character.totalXp) || !Number.isSafeInteger(character.spentXp) || character.totalXp < 0 || character.spentXp < 0 || character.spentXp > character.totalXp) throw new CharacterCommandError(422, 'Saldo de XP inconsistente.')
         calculateSpecialtyPurchase(character.totalXp - character.spentXp)
-        const specialty: Specialty = { id: randomUUID(), skillId: normalizeSpecialtySkillId(input.skillId!), name: normalizeSpecialtyName(input.name!), origin: 'XP', status: 'PENDING', costXp: 3 }
+        const specialty: Specialty = { id: randomUUID(), skillId: normalizeSpecialtySkillId(input.skillId!), name: normalizeSpecialtyName(input.name!), origin: 'XP', status: character.campaignId ? 'PENDING' : 'APPROVED', costXp: 3 }
         const errors = validateSpecialty(specialty, specialties, rules)
         if (errors.length) throw new CharacterCommandError(422, errors.join(' '))
         character.spentXp += 3

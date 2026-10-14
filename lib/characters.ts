@@ -21,6 +21,8 @@ import { readSessionState, type SessionState } from '@/lib/vtm-v5/session-state'
 import { mergeCharacterSkills } from '@/lib/vtm-v5/skills'
 import { creationEffects, validateCreationEffects, type CreationEffect } from '@/lib/creation-effects'
 import { characterSpecialties } from '@/lib/character-specialties'
+import { assertBloodPotencyInput } from './character-blood-potency'
+import { projectCreationGrants } from './vtm-v5/creation-grants'
 import type { Specialty } from '@/lib/vtm-v5/specialties'
 
 const isDev = process.env.NODE_ENV !== 'production' && !process.env.DATABASE_URL
@@ -165,7 +167,7 @@ export async function getCharacterById(id: string, userId: string) {
       const state = readSessionState(character.data, stored.gameState)
       character.data = { ...character.data, fome: state.hunger, humanidade: state.humanity, vitalidade: state.healthCurrent, vontade: state.willpowerCurrent, healthDamage: state.healthDamage, willpowerDamage: state.willpowerDamage }
     }
-    return character
+    return character ? { ...character, creationGrants: projectCreationGrants(stored?.gameState ?? {}) } : null
   }
 
   const result = await db.execute<{ id: string; name: string; status: string; character_type: string; data: unknown; campaign_id: string | null; total_xp: number; spent_xp: number; revision: number; game_state: Record<string, unknown> }>(sql`
@@ -177,7 +179,7 @@ export async function getCharacterById(id: string, userId: string) {
     (row.data && typeof row.data === 'object' ? row.data : {}) as Record<string, unknown>
   )
   const state: Partial<SessionState> = Object.keys(row.game_state ?? {}).length ? readSessionState(normalizedData, row.game_state) : {}
-  return { id: row.id, name: row.name ?? '', status: row.status, characterType: row.character_type, revision: row.revision, data: { ...normalizedData, 'experiencia-total': row.total_xp, 'experiencia-gasta': row.spent_xp, ...(state.hunger !== undefined ? { fome: state.hunger } : {}), ...(state.humanity !== undefined ? { humanidade: state.humanity } : {}), ...(state.healthCurrent !== undefined ? { vitalidade: state.healthCurrent } : {}), ...(state.willpowerCurrent !== undefined ? { vontade: state.willpowerCurrent } : {}), ...(state.healthDamage ? { healthDamage: state.healthDamage, willpowerDamage: state.willpowerDamage } : {}) }, campaignId: row.campaign_id, campaign: null }
+  return { creationGrants: projectCreationGrants(row.game_state ?? {}), id: row.id, name: row.name ?? '', status: row.status, characterType: row.character_type, revision: row.revision, data: { ...normalizedData, 'experiencia-total': row.total_xp, 'experiencia-gasta': row.spent_xp, ...(state.hunger !== undefined ? { fome: state.hunger } : {}), ...(state.humanity !== undefined ? { humanidade: state.humanity } : {}), ...(state.healthCurrent !== undefined ? { vitalidade: state.healthCurrent } : {}), ...(state.willpowerCurrent !== undefined ? { vontade: state.willpowerCurrent } : {}), ...(state.healthDamage ? { healthDamage: state.healthDamage, willpowerDamage: state.willpowerDamage } : {}) }, campaignId: row.campaign_id, campaign: null }
 }
 
 export async function getCharacterForViewer(id: string, viewerId: string) {
@@ -225,6 +227,7 @@ export async function createCharacter(
   resourceSource?: Record<string, unknown>,
   creationState?: { creationEffects: CreationEffect[]; specialties: Specialty[] }
 ) {
+  assertBloodPotencyInput(payload.data ?? {})
   payload = { ...payload, data: applySecondaryAttributes(payload.data ?? {}, resourceSource) }
   const initialXp = CREATION_ADJUSTMENTS[(payload.data?.creationType ?? 'FLEDGLING') as CreationType]?.initialXp ?? 0
   const initialState = { ...readSessionState(payload.data ?? {}, resourceSource ? { healthDamage: resourceSource.healthDamage, willpowerDamage: resourceSource.willpowerDamage } : {}), ...(creationState ? structuredClone(creationState) : {}) }
@@ -294,6 +297,7 @@ export async function updateCharacter(
     if (['ARCHIVED', 'DISABLED'].includes(character.status)) throw new CharacterCommandError(409, 'Esta ficha precisa ser reativada pelo Narrador antes da edição.')
     if (payload.campaignId !== undefined && payload.campaignId !== character.campaignId) throw new CharacterCommandError(409, 'A alteração do vínculo exige aprovação da mesa.')
       if (payload.data) {
+        assertBloodPotencyInput(payload.data, character.data)
         if (character.data.clanRulesVersion || character.data.predatorEffectsVersion) {
           for (const field of ['cla', 'clanCode', 'clanSelection', 'clanRulesVersion', 'isCaitiff', 'isThinBlood', 'creationType', 'creationAdvantageDots', 'creationFlawDots']) {
             if (Object.hasOwn(payload.data, field) && JSON.stringify(payload.data[field]) !== JSON.stringify(character.data[field])) throw new CharacterCommandError(422, 'Altere o clã pelo seletor específico, não pela edição geral.')
@@ -329,6 +333,6 @@ export async function duplicateCharacter(id: string, userId: string) {
     }
     for (const field of ['clanCode', 'clanRulesVersion', 'predatorDisciplineBonus', 'predatorEffectsVersion', 'creationAdvantageDots', 'creationFlawDots']) if (source.data[field] !== undefined) data[field] = structuredClone(source.data[field])
     if (source.data.clanSelection) data.clanSelection = structuredClone(source.data.clanSelection)
-    const specialties = characterSpecialties(source).filter(entry => entry.origin === 'PREDATOR').map(({ id: specialtyId, skillId, name, origin, grantId }) => ({ id: specialtyId, skillId, name, origin, grantId, status: 'PENDING' as const, costXp: 0 }))
+    const specialties = characterSpecialties(source).filter(entry => entry.origin === 'PREDATOR').map(({ id: specialtyId, skillId, name, origin, grantId }) => ({ id: specialtyId, skillId, name, origin, grantId, status: 'APPROVED' as const, costXp: 0 }))
     return createCharacter(userId, { name: `${original.name} — Cópia`, campaignId: null, data }, data, { creationEffects: effects, specialties })
 }

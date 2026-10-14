@@ -33,6 +33,7 @@ Nunca usar hexadecimais ou cores diretas no markup. Usar sempre os tokens:
 **Vermelho derivado usado no CSS:** `#c74343` (hover/borda ativa), `#d47776` (texto sobre escuro).
 
 ### Regras de cor
+- Azul (`--grant-origin`) identifica exclusivamente concessões automáticas de clã/predação, acompanhado de indicação textual de origem.
 - ✅ Vermelho em: botões primários, status de risco, bordas de foco, ações de atenção
 - ❌ Vermelho como: fundo de seção, decoração, estado positivo
 - ✅ Verde discreto apenas em: etiquetas de status `Ativo`
