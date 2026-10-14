@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { characterText } from '@/lib/vtm-v5/text'
 import { getSessionOrDev } from '@/lib/auth0'
 import { getCharacterAccessRecord } from '@/lib/characters'
 import { CharacterCommandError, getCommandCharacter } from '@/lib/character-commands'
@@ -42,7 +43,7 @@ export async function POST(request: Request, context: RouteContext<'/api/charact
   const settings = await getPredatorTypeSettings(character.campaignId)
   const enabled = isPredatorTypeEnabled(definition.code, settings)
   const data = character.data
-  const report = validatePredatorType(definition, { clan: String(data.cla ?? '').trim() || null, bloodPotency: Number(data['potencia-de-sangue'] ?? 0), isThinBlood: data.creationType === 'THIN_BLOOD' || data.isThinBlood === true, enabled, overrides: Array.isArray(data.predatorTypeOverrides) ? data.predatorTypeOverrides : [] })
+  const report = validatePredatorType(definition, { clan: characterText(data.cla).trim() || null, bloodPotency: Number(data['potencia-de-sangue'] ?? 0), isThinBlood: data.creationType === 'THIN_BLOOD' || data.isThinBlood === true, enabled, overrides: Array.isArray(data.predatorTypeOverrides) ? data.predatorTypeOverrides : [] })
   const choiceIssues = validatePredatorChoices(definition, body.specialty, body.discipline, body.optionCodes)
   const issues = [...report.issues, ...choiceIssues]
   if (issues.some((issue) => issue.blocking)) return NextResponse.json({ error: 'A escolha possui restrições.', publicReport: { valid: false, issues } }, { status: 422 })

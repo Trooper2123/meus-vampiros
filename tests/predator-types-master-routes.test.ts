@@ -72,6 +72,18 @@ describe('rotas do Mestre para tipos de predação', () => {
     expect(mocks.persistPredatorTypeData).toHaveBeenCalledTimes(2)
   })
 
+  it.each([null, [], { ruleCode: {}, action: 'CREATE', justification: 'Teste' }, { ruleCode: 'PREDATOR_BAGGER_VENTRUE', action: 'FORGED', justification: 'Teste' }, { ruleCode: 'PREDATOR_TYPE_DISABLED_FOR_CAMPAIGN', action: 'CREATE', justification: 'Teste' }])('recusa override malformado ou regra não autorizada: %j', async body => {
+    const response = await POST(new Request('http://localhost', { method: 'POST', body: JSON.stringify(body) }), characterContext)
+    expect(response.status).toBe(400)
+    expect(mocks.persistPredatorTypeData).not.toHaveBeenCalled()
+  })
+
+  it('não revoga override inexistente', async () => {
+    const response = await POST(new Request('http://localhost', { method: 'POST', body: JSON.stringify({ ruleCode: 'PREDATOR_BAGGER_VENTRUE', action: 'REVOKE', justification: 'Revogar' }) }), characterContext)
+    expect(response.status).toBe(404)
+    expect(mocks.persistPredatorTypeData).not.toHaveBeenCalled()
+  })
+
   it('recusa override sem justificativa', async () => {
     const response = await POST(new Request('http://localhost', { method: 'POST', body: JSON.stringify({ ruleCode: 'X', action: 'CREATE', justification: '' }) }), characterContext)
     expect(response.status).toBe(400)

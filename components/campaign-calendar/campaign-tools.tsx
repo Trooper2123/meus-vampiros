@@ -17,8 +17,8 @@ export function CampaignTools({ campaignId, master }: { campaignId: string; mast
   useEffect(() => {
     let active = true
     Promise.all([
-      fetch(`/api/campaign-event-calendar/status?campaignId=${encodeURIComponent(campaignId)}`).then((response) => response.ok ? response.json() : Promise.reject()),
-      fetch(`/api/campaign-scheduling-calendar/status?campaignId=${encodeURIComponent(campaignId)}`).then((response) => response.ok ? response.json() : Promise.reject()),
+      fetch(`/api/campaign-event-calendar/status?campaignId=${encodeURIComponent(campaignId)}`).then((response) => response.ok ? response.json() : Promise.reject(new Error('Falha ao carregar calendário de eventos.'))),
+      fetch(`/api/campaign-scheduling-calendar/status?campaignId=${encodeURIComponent(campaignId)}`).then((response) => response.ok ? response.json() : Promise.reject(new Error('Falha ao carregar calendário de marcação.'))),
     ]).then(([eventStatus, schedulingStatus]) => {
       if (active) setStatus({ event: eventStatus.enabled, scheduling: schedulingStatus.enabled, eventConfig: { mode: eventStatus.mode ?? 'real', weekdays: eventStatus.weekdays ?? [], months: eventStatus.months ?? [] } })
     }).catch(() => { if (active) setError('Não foi possível carregar as configurações dos calendários.') })

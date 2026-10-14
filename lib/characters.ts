@@ -296,24 +296,27 @@ export async function updateCharacter(
   return runCharacterCommand(userId, id, { key: randomUUID(), type: 'CHARACTER_EDITED', expectedRevision: payload.expectedRevision ?? previous.revision, payload }, character => character.ownerId === userId, character => {
     if (['ARCHIVED', 'DISABLED'].includes(character.status)) throw new CharacterCommandError(409, 'Esta ficha precisa ser reativada pelo Narrador antes da edição.')
     if (payload.campaignId !== undefined && payload.campaignId !== character.campaignId) throw new CharacterCommandError(409, 'A alteração do vínculo exige aprovação da mesa.')
-      if (payload.data) {
-        assertBloodPotencyInput(payload.data, character.data)
-        if (character.data.clanRulesVersion || character.data.predatorEffectsVersion) {
-          for (const field of ['cla', 'clanCode', 'clanSelection', 'clanRulesVersion', 'isCaitiff', 'isThinBlood', 'creationType', 'creationAdvantageDots', 'creationFlawDots']) {
-            if (Object.hasOwn(payload.data, field) && JSON.stringify(payload.data[field]) !== JSON.stringify(character.data[field])) throw new CharacterCommandError(422, 'Altere o clã pelo seletor específico, não pela edição geral.')
-          }
+    if (payload.data) {
+      assertBloodPotencyInput(payload.data, character.data)
+      if (character.data.clanRulesVersion || character.data.predatorEffectsVersion) {
+        for (const field of ['cla', 'clanCode', 'clanSelection', 'clanRulesVersion', 'isCaitiff', 'isThinBlood', 'creationType', 'creationAdvantageDots', 'creationFlawDots']) {
+          if (Object.hasOwn(payload.data, field) && JSON.stringify(payload.data[field]) !== JSON.stringify(character.data[field])) throw new CharacterCommandError(422, 'Altere o clã pelo seletor específico, não pela edição geral.')
         }
+      }
       const changedMechanics = Object.entries(payload.data).some(([field, value]) => (mechanicalFields.has(field) || /^habilidade-/iu.test(field) || field.startsWith('convicoes-')) && JSON.stringify(value) !== JSON.stringify(character.data[field]))
       if (changedMechanics && character.status !== 'DRAFT') character.status = 'DRAFT'
       let mergedData: Record<string, unknown>
       try { mergedData = mergeCharacterSkills(character.data, payload.data) }
       catch { throw new CharacterCommandError(422, 'Habilidades ou pontos inválidos.') }
-        character.data = applySecondaryAttributes(mergedData, character.data)
-        validateCreationEffects(character)
+      character.data = applySecondaryAttributes(mergedData, character.data)
+      validateCreationEffects(character)
       delete character.data['experiencia-total']
       delete character.data['experiencia-gasta']
     }
-    if (payload.name !== undefined) { character.name = payload.name; if ('nome' in character.data) character.data.nome = payload.name }
+    if (payload.name !== undefined) {
+      character.name = payload.name
+      if ('nome' in character.data) character.data.nome = payload.name
+    }
     character.characterType = String(character.data.characterType ?? character.characterType)
     return { ok: true, status: character.status }
   })

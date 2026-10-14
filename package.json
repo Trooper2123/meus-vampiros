@@ -8,7 +8,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "test": "vitest run"
+    "test": "vitest run",
+    "sonar:export": "powershell -NoProfile -File ./sonar-export.ps1"
   },
   "dependencies": {
     "@auth0/nextjs-auth0": "^4.31.1",

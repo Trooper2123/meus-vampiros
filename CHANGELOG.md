@@ -2,6 +2,26 @@
 
 Registro cronológico de todas as alterações relevantes implementadas no projeto.
 
+## 2026-10-14 01:00 BRT — chore — Exportação Sonar e revisão pré-commit
+- Arquivos: `package.json`, `sonar-export.ps1`, `tests/sonar-export.test.ps1`; candidato inclui correções das duas rodadas Sonar descritas abaixo.
+- Comando `pnpm sonar:export` pagina issues abertas do SonarCloud usando token/projeto do ambiente, sem credenciais embutidas. Página vazia antes do total interrompe execução sem substituir export, evitando loop infinito.
+- Self-check PowerShell valida paginação, token ausente e página vazia sem rede/escrita; package JSON validado. Correções de aplicação previamente validadas com 614 testes/49 arquivos, tsc/build aprovados, lint sem erros/3 avisos prévios e audit sem vulnerabilidades. Revisão conforme pre-commit-review preserva permissões, validação e ledger; nenhum segredo novo identificado.
+- Fora do commit: env, specs/backlogs locais, export JSON, exclusões `.kiro`, arquivos gerados e alterações não relacionadas de label/seed. Não executado scan/export real ou QA manual; achados restantes continuam pendentes.
+
+## 2026-10-14 00:48 BRT — refactor — Segunda rodada Sonar
+- Arquivos: rota de override de predação, páginas de ficha/resumo, normalização de avisos de predação e calendário de disponibilidade; testes de rotas de Narrador e normalização textual.
+- Separadas validação do pedido e criação/revogação de overrides para reduzir complexidade; mesma autorização, revisão, códigos de erro e registro em ledger. Cobertas entradas malformadas, regras não permitidas e revogação inexistente.
+- Helper textual da rodada anterior reutilizado nos resumos e avisos de dados legados para impedir stringificação de objetos. Reducer do calendário com escopos claros e dependência estável no useMemo.
+- 614 testes/49 arquivos aprovados. Export ainda contém 227 achados e trechos anteriores às correções; nenhum novo scan executado, sem alegação de relatório zerado. Revisão focada preserva autenticação/isolamento, regras e dados, sem novas dependências/segredos. Pendências na triagem local; QA manual/SQL/LiveKit posteriores.
+- TypeScript/build aprovados, lint sem erros/3 avisos anteriores (aviso do calendário corrigido), audit sem vulnerabilidades; diff focado sem erros de whitespace. Nenhum commit nesta rodada.
+
+## 2026-10-14 00:34 BRT — fix — Triagem dos achados Sonar
+- Arquivos: `lib/vtm-v5/text.ts`, normalização de ficha, serviços/APIs de predação, `lib/characters.ts`, especialidades, estado de sessão, clãs e painéis de calendários/override; testes em `tests/sonar-input-normalization.test.ts`.
+- Evitada conversão implícita de objetos em texto para nomes, convicções, clã, predação e listas; strings/números finitos preservados. Ordenação numérica explícita, escopos/indentação claros sem alterar condições, rejeições Promise com Error e type submit no botão de override.
+- 227 achados avaliados por categoria; triagem e pendências registradas localmente em `codex/backlog/sonar-triagem.md`. Sem substituições indiscriminadas de roles acessíveis nem paralelização de transações; contrato assíncrono do token mantido. Complexidade, chaves e demais ajustes cosméticos permanecem em backlog, sem declarar resolução completa.
+- 607 testes/49 arquivos aprovados, incluindo entradas malformadas e objetos com toString malicioso. Revisão de segurança focada preserva autenticação/autorização, transações e validações; sem novos segredos/dependências. Export original preservado; nenhum novo scan Sonar ou QA manual/SQL/LiveKit realizado.
+- TypeScript/build aprovados, lint sem erros (4 avisos anteriores), audit sem vulnerabilidades; diff focado sem erros de whitespace. Nenhum commit solicitado nesta rodada.
+
 ## 2026-10-14 00:17 BRT — feat — Configuração inicial de clãs e predações
 - Arquivos: API e formulário de criação de campanhas, `lib/campaigns.ts`, `lib/campaign-clans.ts`, `lib/character-clans.ts` e testes de criação.
 - Narrador escolhe clãs/predações ao criar mesa em memória; servidor valida catálogo, duplicatas e autorização. Seleção de clã respeita configuração persistida, sem expor orientações privadas ao jogador. SQL externo retorna indisponibilidade para configuração não implementada.

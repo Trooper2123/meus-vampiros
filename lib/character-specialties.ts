@@ -63,7 +63,10 @@ export function changeSpecialty(actorId: string, id: string, input: SpecialtyInp
         character.spentXp += 3
         specialties.push(specialty)
       }
-    } catch (error) { if (error instanceof CharacterCommandError) throw error; throw new CharacterCommandError(422, error instanceof Error ? error.message : 'Especialidade inválida.') }
+    } catch (error) {
+      if (error instanceof CharacterCommandError) throw error
+      throw new CharacterCommandError(422, error instanceof Error ? error.message : 'Especialidade inválida.')
+    }
     character.gameState = { ...character.gameState, specialties }
     return { ok: true, specialties, availableXp: character.totalXp - character.spentXp }
   })
