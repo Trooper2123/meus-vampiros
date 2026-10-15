@@ -2,6 +2,46 @@
 
 Registro cronológico de todas as alterações relevantes implementadas no projeto.
 
+## 2026-10-15 00:33 BRT — chore — Validação pré-commit de NPCs e refatoração
+- Candidato com 23 arquivos: NPCs da mesa, extração visual do formulário, testes/snapshot, README e CHANGELOG. Revisão pre-commit-review focada sem bloqueios críticos/altos conhecidos relacionados; documentação local, env, relatórios, gerados, exclusões .kiro e alterações alheias fora do staging.
+- Reexecução aprovada: 691 testes/59 arquivos, TypeScript sem emissão, lint zero erros/três avisos anteriores, Next build com tipos e pnpm audit sem vulnerabilidades. Diff staged sem erros de whitespace e sem padrões de credenciais identificados.
+- QA visual/integrações externas continuam não executados; documentação local mantém evidências e limites de cada recorte.
+
+## 2026-10-15 00:33 BRT — chore — Validação pré-commit de NPCs e refatoração
+- Candidato com 23 arquivos: NPCs da mesa, extração visual do formulário, testes/snapshot, README e CHANGELOG. Revisão pre-commit-review focada sem bloqueios críticos/altos conhecidos relacionados; documentação local, env, relatórios, gerados, exclusões .kiro e alterações alheias fora do staging.
+- Reexecução aprovada: 691 testes/59 arquivos, TypeScript sem emissão, lint zero erros/três avisos anteriores, Next build com tipos e pnpm audit sem vulnerabilidades. Diff staged sem erros de whitespace e sem padrões de credenciais identificados.
+- QA visual/integrações externas continuam não executados; documentação local mantém evidências e limites de cada recorte.
+
+## 2026-10-15 00:19 BRT — docs — Organização de SPECs, concluídas, backlog e README
+- Arquivos: `README.md`, `codex/README.md`, índices de specs/backlog/concluídas e tasks selecionadas de personagens, regras V5, clãs e Potência do Sangue.
+- README da aplicação em português com execução/validação, ambiente em memória e limites; removida afirmação não verificada de deploy automático. Central local e visão das 15 frentes separam entregas, recortes parciais e propostas.
+- Tarefas comprovadas reconciliadas: criação/edição/cópia independentes, atributos secundários, preparação PS-003 e configuração inicial de clãs/predação. Operações de vínculo posterior/desvínculo/exclusão e regras avançadas continuam pendentes; nenhum fechamento em lote de tarefas compostas.
+- Relatórios antigos preservados com aviso histórico; SQL/QA fora do gate da memória, override individual substituído e backfill em memória descartado explicitados. Backlog mestre mantém prioridades P1–P4 e aponta execução nas SPECs, sem duplicar tarefas.
+- Checagem de links Markdown relativos em README e codex: zero destinos locais inexistentes; diff sem erros de whitespace. Evidência anterior de 691 testes/59 arquivos mantida como histórica, sem reexecutar testes/tipos/lint/build/audit nesta alteração exclusivamente documental. Sem reset, mudança de código, staging, commit ou push nesta rodada.
+
+## 2026-10-15 00:07 BRT — refactor — Primeira fatia visual do formulário de personagem
+- Arquivos: `app/characters/character-form-client.tsx`, `components/character-form/`, `tests/character-form-refactor.test.ts`, `tests/character-form-steps.test.ts` e snapshot de caracterização.
+- Atributos, habilidades, disciplinas, recursos/convicções e histórico extraídos como componentes controlados. Controles/opções/tipos atuais compartilhados; estado, cálculos, concessões, carregamento, salvamento, names, campos ocultos e contratos permanecem existentes.
+- 20 fingerprints do HTML SSR completo capturados antes da extração e preservados sem atualizar a baseline; cinco testes adicionais de callbacks/campos/bloqueios/origens. Regressão: 691 testes/59 arquivos, tipos/build aprovados, lint sem erros/três avisos anteriores, audit sem vulnerabilidades.
+- Revisão focada pre-commit-review/segurança: nenhum novo acesso a API/segredo/autorização ou persistência; diff e arquivos novos sem padrões de credenciais. Achados/estimativas, SPEC local e backlog QA atualizados. Sem commit/push.
+- Limites: identidade, vantagens/pertences e estado/carregamento ainda não refatorados. QA visual/integrações externas não executados; estilos/textos legados preservados. Sem novas dependências, schema ou alegação de ganho de performance.
+
+## 2026-10-14 23:59 BRT — chore — Preparação da refatoração incremental do formulário
+- Achados/estimativas registrados no backlog local e SPEC da primeira fatia: separar cinco etapas visuais, preservando estado/regras/contratos e editor atual.
+- Preparação única por `tests/notes-preparation.test.ts`, test-memory sem DATABASE_URL: modelo existente sem mudança de schema, seeds 8 fichas/3 mesas, relações íntegras. Nenhum servidor corrente ou banco externo reinicializado.
+
+## 2026-10-14 23:25 BRT — feat — NPCs vinculados à mesa no gerenciamento
+- Arquivos: `app/campaigns/[id]/page.tsx`, `components/campaign-npc-creator.tsx`, `app/api/campaigns/[id]/npcs/route.ts`, `lib/characters.ts`, `lib/dev-db.ts`, testes de NPC/interface/ordem da gestão.
+- Narrador cria NPC humano/vampiro com nome e abre o editor existente. Rascunho sempre vinculado à mesa da rota; edição geral não permite desvínculo.
+- Segurança: dono da mesa validado no servidor; origem/JSON/UUID/nome/tipo/campos estritos, sem aceitar campanha do payload ou papel global como permissão. ST_ONLY evita descoberta também nas anotações dos jogadores. Demais criações preservam visibilidade padrão anterior.
+- Falhas de rede/HTTP/JSON preservam campos, liberam tentativa e exibem alerta; controles bloqueados durante criação. Novo fluxo retorna 503 em produção/provider externo; SQL apenas mantém referência parametrizada à coluna existente, sem validação externa ou alteração de schema.
+- 666 testes/57 arquivos, tipos e build aprovados; lint sem erros/três avisos anteriores, audit sem vulnerabilidades. Revisão focada pre-commit-review/segurança, diff e segredos sem bloqueios relacionados; SPEC local e backlog QA atualizados.
+- QA visual/responsivo e integrações reais não executados. Rascunho permanece salvo ao abandonar editor; sem novas dependências, commit ou push nesta entrega.
+
+## 2026-10-14 23:18 BRT — chore — Preparação da SPEC NPCs da mesa
+- SPEC local de NPCs planejada com vínculo obrigatório à mesa atual e autorização por dono; reutilização do editor e modelo existentes.
+- Preparação única via teste isolado `tests/notes-preparation.test.ts`: test-memory sem DATABASE_URL, modelo atual sem alteração de schema, seeds 8 fichas/3 mesas e integridade aprovada. Sem reset de servidor corrente, autenticação ou banco externo.
+
 ## 2026-10-14 23:05 BRT — fix — Continuidade da auditoria da aplicação
 - Arquivos: `lib/auth0.ts`, `lib/availability.ts`, `lib/dev-db.ts`, API/component de disponibilidade, `next.config.mjs`, `lib/character-summary.ts`, páginas de ficha/resumo e testes correspondentes.
 - Produção ignora DEV_AUTH_BYPASS e exige sessão Auth0; testes com SDK simulado, sem alegação de login real.

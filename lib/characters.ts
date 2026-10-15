@@ -12,7 +12,7 @@ import {
   devAppendCharacterLedgerEvent,
 } from '@/lib/dev-db'
 import { CREATION_ADJUSTMENTS } from '@/lib/vtm-v5/presets'
-import type { CreationType } from '@/lib/vtm-v5/types'
+import type { CharacterVisibility, CreationType } from '@/lib/vtm-v5/types'
 import { applySecondaryAttributes } from '@/lib/vtm-v5/secondary-attributes'
 import { projectIndependentCharacter } from '@/lib/character-duplicate'
 import { getCommandCharacter, runCharacterCommand, CharacterCommandError } from '@/lib/character-commands'
@@ -224,7 +224,7 @@ export async function setCharacterStatus(id: string, status: string) {
 
 export async function createCharacter(
   userId: string,
-  payload: { name?: string; data?: Record<string, unknown>; campaignId?: string | null },
+  payload: { name?: string; data?: Record<string, unknown>; campaignId?: string | null; visibility?: CharacterVisibility },
   resourceSource?: Record<string, unknown>,
   creationState?: { creationEffects: CreationEffect[]; specialties: Specialty[] },
   policyConsent?: { campaignId: string; acceptedAt: string; acceptedBy: string }
@@ -245,8 +245,8 @@ export async function createCharacter(
 
   const { name, data, campaignId } = payload
   const result = await db.execute<{ id: string }>(sql`
-    INSERT INTO characters (user_id, created_by_user_id, character_type, name, concept, clan, generation, data, game_state, total_xp, campaign_id, status)
-    VALUES (${userId}, ${userId}, ${data?.characterType ?? 'PLAYER_VAMPIRE'}, ${name}, ${data?.conceito ?? null}, ${data?.cla ?? null}, ${data?.geracao ?? null}, ${JSON.stringify(data ?? {})}::jsonb, ${JSON.stringify((data?.characterType ?? 'PLAYER_VAMPIRE') === 'PLAYER_VAMPIRE' ? initialState : {})}::jsonb, ${(data?.characterType ?? 'PLAYER_VAMPIRE') === 'PLAYER_VAMPIRE' ? initialXp : 0}, ${campaignId ?? null}::uuid, 'DRAFT')
+    INSERT INTO characters (user_id, created_by_user_id, character_type, name, concept, clan, generation, data, game_state, total_xp, campaign_id, status, visibility)
+    VALUES (${userId}, ${userId}, ${data?.characterType ?? 'PLAYER_VAMPIRE'}, ${name}, ${data?.conceito ?? null}, ${data?.cla ?? null}, ${data?.geracao ?? null}, ${JSON.stringify(data ?? {})}::jsonb, ${JSON.stringify((data?.characterType ?? 'PLAYER_VAMPIRE') === 'PLAYER_VAMPIRE' ? initialState : {})}::jsonb, ${(data?.characterType ?? 'PLAYER_VAMPIRE') === 'PLAYER_VAMPIRE' ? initialXp : 0}, ${campaignId ?? null}::uuid, 'DRAFT', ${payload.visibility ?? 'PLAYER_VISIBLE'})
     RETURNING id
   `)
   const id = result.rows[0]?.id

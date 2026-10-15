@@ -9,6 +9,7 @@ import { MasterPredatorCatalog } from '@/components/predator-types/master-catalo
 import { AwakePanel } from '@/components/awake-panel'
 import { CampaignClans } from '@/components/character-summary/campaign-clans'
 import { CampaignNotesDialog } from '@/components/notes/campaign-notes-dialog'
+import { CampaignNpcCreator } from '@/components/campaign-npc-creator'
 
 export default async function CampaignDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await getSessionOrDev()
@@ -31,6 +32,7 @@ export default async function CampaignDetailPage({ params }: { params: Promise<{
           <CampaignTools campaignId={campaign.id} master />
           <AwakePanel campaignId={campaign.id} />
           <CampaignPossessionsManager campaignId={campaign.id} />
+          <CampaignNpcCreator campaignId={campaign.id} />
           <CampaignClans campaignId={campaign.id} />
           <MasterPredatorCatalog campaignId={campaign.id} />
         </div>
