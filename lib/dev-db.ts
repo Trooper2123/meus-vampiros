@@ -34,9 +34,12 @@ export type DevCharacter = {
 }
 
 export type DevCampaign = {
+  sessionStartTime?: string | null
+  sessionEndTime?: string | null
   id: string
   masterUserId: string
   enabledClanCodes?: string[]
+  creationPolicy?: { exceptionCodes: string[]; inviteHash: string }
   name: string
   theme: string | null
   principios: string | null

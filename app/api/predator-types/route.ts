@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { campaignPredatorOverrides } from '@/lib/campaign-invitations'
 import { characterText } from '@/lib/vtm-v5/text'
 import { getSessionOrDev } from '@/lib/auth0'
 import { canManageCampaign } from '@/lib/auth/authorization'
@@ -29,7 +30,7 @@ export async function GET(request: Request) {
   const bloodPotency = Number(data['potencia-de-sangue'] ?? 0)
   const isThinBlood = data.creationType === 'THIN_BLOOD' || data.isThinBlood === true
   const predatorTypes = PREDATOR_TYPES.filter((definition) => isPredatorTypeEnabled(definition.code, settings)).map((definition) => {
-    const report = validatePredatorType(definition, { clan, bloodPotency, isThinBlood, enabled: true, overrides: Array.isArray(data.predatorTypeOverrides) ? data.predatorTypeOverrides : [] })
+    const report = validatePredatorType(definition, { clan, bloodPotency, isThinBlood, enabled: true, overrides: campaignPredatorOverrides(campaignId) })
     return toPlayerPredatorTypeDto(definition, report.issues, report.valid)
   })
   return NextResponse.json({ predatorTypes, selectedCode: data.predatorTypeCode ?? null })

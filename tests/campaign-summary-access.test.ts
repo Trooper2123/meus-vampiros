@@ -1,11 +1,21 @@
 import { beforeEach, expect, it, vi } from 'vitest'
 import { devCreateCampaign, devCreateCharacter } from '@/lib/dev-db'
 import { getCharacterForViewer } from '@/lib/characters'
+import { getCharacterSummaryData } from '@/lib/character-summary'
 
 beforeEach(() => {
   vi.stubEnv('NODE_ENV', 'test')
   vi.stubEnv('DATABASE_URL', '')
   global.__devDb = undefined
+})
+
+it('projeção compartilhada mantém habilidades, concessões e autorização', async () => {
+  const character = devCreateCharacter('owner', { name: 'Ficha', data: { 'habilidade-briga': '3', forca: 'inválido', anotacaoPrivada: 'segredo' } })
+  const summary = await getCharacterSummaryData(character.id, 'owner')
+  expect(summary?.skills.Briga).toBe(3)
+  expect(summary?.attributes.forca).toBe(0)
+  expect(JSON.stringify(summary)).not.toContain('segredo')
+  expect(await getCharacterSummaryData(character.id, 'other')).toBeNull()
 })
 
 it('permite resumo ao dono/Narrador atual e revoga após desvínculo ou troca', async () => {

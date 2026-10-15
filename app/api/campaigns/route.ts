@@ -4,6 +4,7 @@ import { createCampaign, getCampaignsForMaster, hasMasterAccess } from '@/lib/ca
 import { db, ensureAllTables } from '@/lib/db'
 import { sql } from 'drizzle-orm'
 import { CharacterCommandError } from '@/lib/character-commands'
+import { createCampaignInvitation, validateCampaignExceptions } from '@/lib/campaign-invitations'
 import { CLANS } from '@/lib/vtm-v5/clans'
 import { PREDATOR_TYPE_CODES, PREDATOR_TYPES, type PredatorTypeCode } from '@/lib/vtm-v5/predator-types'
 import { savePredatorTypeSettings } from '@/lib/predator-types'
@@ -38,6 +39,8 @@ export async function POST(request: Request) {
     if (!body || typeof body !== 'object' || Array.isArray(body)) return NextResponse.json({ error: 'Dados da mesa inválidos.' }, { status: 400 })
     const enabledClanCodes = body.enabledClanCodes ?? CLANS.map(clan => clan.code)
     const enabledPredatorCodes = body.enabledPredatorCodes ?? PREDATOR_TYPE_CODES.slice(0, 10)
+    const exceptionCodes = validateCampaignExceptions(body.exceptionCodes ?? [])
+    if (!isDev && exceptionCodes.length) return NextResponse.json({ error: 'Exceções com banco externo ainda não disponíveis.' }, { status: 503 })
     if (!Array.isArray(enabledClanCodes) || enabledClanCodes.length > CLANS.length || new Set(enabledClanCodes).size !== enabledClanCodes.length || enabledClanCodes.some(code => !CLANS.some(clan => clan.code === code)) || !Array.isArray(enabledPredatorCodes) || enabledPredatorCodes.length > PREDATOR_TYPE_CODES.length || new Set(enabledPredatorCodes).size !== enabledPredatorCodes.length || enabledPredatorCodes.some(code => !PREDATOR_TYPE_CODES.includes(code))) return NextResponse.json({ error: 'Clãs ou predações inválidos.' }, { status: 400 })
     if (!isDev && (body.enabledClanCodes !== undefined || body.enabledPredatorCodes !== undefined)) return NextResponse.json({ error: 'Configuração inicial de clãs e predações no banco externo ainda não disponível.' }, { status: 503 })
     const name = typeof body.name === 'string' && body.name.trim() ? body.name.trim() : null
@@ -61,7 +64,8 @@ export async function POST(request: Request) {
       VALUES (${campaign.id}, ${enableSchedulingCalendar})
     `)
 
-    return NextResponse.json({ campaign }, { status: 201 })
+    const inviteToken = isDev ? createCampaignInvitation(user.sub, campaign.id, exceptionCodes) : undefined
+    return NextResponse.json({ campaign, inviteToken }, { status: 201, headers: { 'Cache-Control': 'private, no-store', Vary: 'Cookie' } })
   } catch (error) {
     return NextResponse.json({ error: error instanceof CharacterCommandError ? error.message : 'Não foi possível criar a mesa.' }, { status: error instanceof CharacterCommandError ? error.status : 500 })
   }

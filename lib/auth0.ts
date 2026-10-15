@@ -3,7 +3,7 @@ import { Auth0Client } from '@auth0/nextjs-auth0/server'
 export const auth0 = new Auth0Client()
 
 export async function getSessionOrDev() {
-	const isDev = process.env.NODE_ENV !== 'production' || process.env.DEV_AUTH_BYPASS === '1'
+	const isDev = process.env.NODE_ENV !== 'production'
 	if (isDev) {
 		const devUser = {
 			sub: 'dev|local',

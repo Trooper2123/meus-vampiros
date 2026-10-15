@@ -9,7 +9,7 @@ export function validatePredatorType(definition: PredatorTypeDefinition, input: 
   if (definition.code === 'FARMER' && (clan === 'ventrue' || (input.bloodPotency ?? 0) >= 3)) issues.push({ code: 'PREDATOR_FARMER_RESTRICTED', message: 'Farmer não é permitido para Ventrue ou Potência de Sangue 3 ou maior.', blocking: true })
   if (input.isThinBlood) issues.push({ code: 'THIN_BLOOD_PREDATOR_REVIEW', message: 'Sangue-fraco recém-criado exige exceção explícita do Narrador para escolher predação.', blocking: true })
   const activeOverrides = new Set((input.overrides ?? []).filter((entry) => !entry.revokedAt).map((entry) => entry.ruleCode))
-  const visibleIssues = issues.map((issue) => activeOverrides.has(issue.code) ? { ...issue, blocking: false, message: `${issue.message} Override do Mestre registrado.` } : issue)
+  const visibleIssues = issues.map((issue) => activeOverrides.has(issue.code) ? { ...issue, blocking: false, message: `${issue.message} Exceção predefinida da mesa aplicada.` } : issue)
   return { valid: !visibleIssues.some((issue) => issue.blocking), issues: visibleIssues, relationshipRequirements: [...definition.relationshipRequirements] }
 }
 

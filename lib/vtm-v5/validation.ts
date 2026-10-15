@@ -5,7 +5,8 @@ const issue = (code: string, field: string, message: string): ValidationIssue =>
 const sortedValues = (values: number[]) => values.filter((value) => value > 0).sort((first, second) => second - first)
 const sameDistribution = (actual: number[], expected: readonly number[]) => actual.length === expected.length && actual.every((value, index) => value === expected[index])
 
-export function validateCharacter(input: CharacterRulesInput): ValidationReport {
+export function validateCharacter(input: CharacterRulesInput, exceptionCodes: readonly string[] = []): ValidationReport {
+  const exceptions = new Set(exceptionCodes)
   const errors: ValidationIssue[] = []
   const warnings: ValidationIssue[] = []
   const adjustment = CREATION_ADJUSTMENTS[input.creationType]
@@ -42,9 +43,9 @@ export function validateCharacter(input: CharacterRulesInput): ValidationReport 
 
     const clan = input.clan?.trim().toLocaleLowerCase('pt-BR')
     const predator = input.predatorType?.trim().toLocaleLowerCase('pt-BR')
-    if (predator === 'bagger' && clan === 'ventrue') errors.push(issue('PREDATOR_BAGGER_VENTRUE', 'predatorType', 'Bagger não é permitido para Ventrue.'))
-    if (predator === 'farmer' && (clan === 'ventrue' || (input.bloodPotency ?? 0) >= 3)) errors.push(issue('PREDATOR_FARMER_RESTRICTED', 'predatorType', 'Farmer não é permitido para Ventrue ou Potência de Sangue 3+.'))
-    if (input.isThinBlood && input.predatorType) warnings.push(issue('THIN_BLOOD_PREDATOR_REVIEW', 'predatorType', 'Thin-blood recém-criado normalmente não seleciona tipo de predador.'))
+    if (predator === 'bagger' && clan === 'ventrue' && !exceptions.has('PREDATOR_BAGGER_VENTRUE')) errors.push(issue('PREDATOR_BAGGER_VENTRUE', 'predatorType', 'Bagger não é permitido para Ventrue.'))
+    if (predator === 'farmer' && (clan === 'ventrue' || (input.bloodPotency ?? 0) >= 3) && !exceptions.has('PREDATOR_FARMER_RESTRICTED')) errors.push(issue('PREDATOR_FARMER_RESTRICTED', 'predatorType', 'Farmer não é permitido para Ventrue ou Potência de Sangue 3+.'))
+    if (input.isThinBlood && input.predatorType && !exceptions.has('THIN_BLOOD_PREDATOR_REVIEW')) warnings.push(issue('THIN_BLOOD_PREDATOR_REVIEW', 'predatorType', 'Thin-blood recém-criado normalmente não seleciona tipo de predador.'))
     const restrictedAdvantages = ['bonding', 'mawla', 'retainers', 'retentor', 'status']
     if (input.isThinBlood && input.advantages.some((name) => restrictedAdvantages.includes(name.trim().toLocaleLowerCase('en-US')))) errors.push(issue('THIN_BLOOD_ADVANTAGE_RESTRICTED', 'advantages', 'Thin-blood não pode adquirir esta vantagem diretamente sem override do Mestre.'))
     const advantageDots = input.advantageDots ?? input.advantages.length

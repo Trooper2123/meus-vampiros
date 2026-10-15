@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { CampaignCreationGate, type AcceptedCampaignInvitation } from '@/components/campaign-creation-gate'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { AlertTriangle, ArrowLeft, Check, FileText, Link2, Plus, Save, Send, ShieldCheck, Skull, Unlink } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
@@ -198,6 +199,7 @@ export default function CharacterFormClient({
   allowedCharacterTypes?: readonly CharacterType[]
 }) {
   const searchParams = useSearchParams()
+  const [campaignInvitation, setCampaignInvitation] = useState<null | 'UNDECIDED'>('UNDECIDED')
   const idFromUrl = initialCharacterId ?? (searchParams?.get('id') ?? null)
   const [activeTab, setActiveTab] = useState<TabId>('identidade')
   const [attributes, setAttributes] = useState({ forca: 1, destreza: 1, vigor: 1, carisma: 1, manipulacao: 1, compostura: 1, inteligencia: 1, raciocinio: 1, determinacao: 1 })
@@ -453,8 +455,9 @@ export default function CharacterFormClient({
     }))
   }
 
-  async function saveDraft(message = 'Alterações salvas automaticamente.', redirectUrl?: string) {
+  async function saveDraft(message = 'Alterações salvas automaticamente.', redirectUrl?: string, acceptedInvitation?: AcceptedCampaignInvitation) {
     void message
+    if (!characterId && campaignInvitation === 'UNDECIDED' && !acceptedInvitation) return null
     if (mode === 'edit' && (!characterId || !characterData?.character)) return null
     setSaving(true)
     const formData = formRef.current ? Object.fromEntries(new FormData(formRef.current).entries()) : {}
@@ -541,6 +544,7 @@ export default function CharacterFormClient({
         expectedRevision: characterData?.character?.revision ?? 0,
         name: nome.trim() || characterData?.character?.name || 'Personagem sem nome',
         data: canonicalData,
+        ...(!characterId && acceptedInvitation ? { invitation: acceptedInvitation } : {}),
       }),
     })
     if (!response.ok) {
@@ -640,6 +644,11 @@ export default function CharacterFormClient({
     const didSave = await saveDraft()
     if (didSave) setActiveTab(tab)
   }
+
+  if (mode === 'create' && !characterId && campaignInvitation === 'UNDECIDED') return <CampaignCreationGate onReady={async invitation => {
+    if (invitation && !(await saveDraft('Convite aceito: rascunho vinculado à mesa.', undefined, invitation))) throw new Error('Não foi possível aceitar o convite e criar a ficha. Consulte novamente o convite e tente outra vez.')
+    setCampaignInvitation(null)
+  }} />
 
   return <main className="relative min-h-screen overflow-hidden bg-background text-foreground">
     <div className="noise" aria-hidden="true" />

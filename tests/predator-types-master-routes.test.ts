@@ -61,32 +61,10 @@ describe('rotas do Mestre para tipos de predação', () => {
     expect(mocks.savePredatorTypeSettings).toHaveBeenCalledOnce()
   })
 
-  it('cria e revoga override com justificativa e ledger', async () => {
-    const create = await POST(new Request('http://localhost', { method: 'POST', body: JSON.stringify({ ruleCode: 'PREDATOR_BAGGER_VENTRUE', action: 'CREATE', justification: 'Exceção aprovada para a crônica.' }) }), characterContext)
-    expect(create.status).toBe(200)
-    const created = await create.json()
-    mocks.getCharacterAccessRecord.mockResolvedValue({ id: '11111111-1111-4111-8111-111111111111', campaignId: '22222222-2222-4222-8222-222222222222', data: { predatorTypeOverrides: created.overrides } })
-    const revoke = await POST(new Request('http://localhost', { method: 'POST', body: JSON.stringify({ ruleCode: 'PREDATOR_BAGGER_VENTRUE', action: 'REVOKE', justification: 'A exceção não é mais necessária.' }) }), characterContext)
-    expect(revoke.status).toBe(200)
-    expect(mocks.appendCharacterLedgerEvent).not.toHaveBeenCalled()
-    expect(mocks.persistPredatorTypeData).toHaveBeenCalledTimes(2)
-  })
-
-  it.each([null, [], { ruleCode: {}, action: 'CREATE', justification: 'Teste' }, { ruleCode: 'PREDATOR_BAGGER_VENTRUE', action: 'FORGED', justification: 'Teste' }, { ruleCode: 'PREDATOR_TYPE_DISABLED_FOR_CAMPAIGN', action: 'CREATE', justification: 'Teste' }])('recusa override malformado ou regra não autorizada: %j', async body => {
-    const response = await POST(new Request('http://localhost', { method: 'POST', body: JSON.stringify(body) }), characterContext)
-    expect(response.status).toBe(400)
+  it.each(['CREATE', 'REVOKE'])('override individual retirado não persiste %s', async action => {
+    const response = await POST(new Request('http://localhost', { method: 'POST', body: JSON.stringify({ ruleCode: 'PREDATOR_BAGGER_VENTRUE', action, justification: 'Tentativa de exceção individual.' }) }), characterContext)
+    expect(response.status).toBe(410)
     expect(mocks.persistPredatorTypeData).not.toHaveBeenCalled()
-  })
-
-  it('não revoga override inexistente', async () => {
-    const response = await POST(new Request('http://localhost', { method: 'POST', body: JSON.stringify({ ruleCode: 'PREDATOR_BAGGER_VENTRUE', action: 'REVOKE', justification: 'Revogar' }) }), characterContext)
-    expect(response.status).toBe(404)
-    expect(mocks.persistPredatorTypeData).not.toHaveBeenCalled()
-  })
-
-  it('recusa override sem justificativa', async () => {
-    const response = await POST(new Request('http://localhost', { method: 'POST', body: JSON.stringify({ ruleCode: 'X', action: 'CREATE', justification: '' }) }), characterContext)
-    expect(response.status).toBe(400)
   })
 
   it('exige autenticação para configuração e override', async () => {
@@ -99,19 +77,6 @@ describe('rotas do Mestre para tipos de predação', () => {
   it('nega override a outro Narrador e preserva a ficha', async () => {
     mocks.canManageCampaign.mockResolvedValue(false)
     expect((await POST(new Request('http://localhost', { method: 'POST' }), characterContext)).status).toBe(403)
-    expect(mocks.persistPredatorTypeData).not.toHaveBeenCalled()
-  })
-
-  it('rejeita regra desconhecida com justificativa válida', async () => {
-    const response = await POST(new Request('http://localhost', { method: 'POST', body: JSON.stringify({ ruleCode: 'PREDATOR_TYPE_DISABLED_FOR_CAMPAIGN', action: 'CREATE', justification: 'Tentativa de ignorar política.' }) }), characterContext)
-    expect(response.status).toBe(400)
-    expect(mocks.persistPredatorTypeData).not.toHaveBeenCalled()
-  })
-
-  it('rejeita duplicação de override ativo', async () => {
-    mocks.getCharacterAccessRecord.mockResolvedValue({ campaignId: '22222222-2222-4222-8222-222222222222', data: { predatorTypeOverrides: [{ ruleCode: 'PREDATOR_BAGGER_VENTRUE' }] } })
-    const response = await POST(new Request('http://localhost', { method: 'POST', body: JSON.stringify({ ruleCode: 'PREDATOR_BAGGER_VENTRUE', action: 'CREATE', justification: 'Duplicação.' }) }), characterContext)
-    expect(response.status).toBe(409)
     expect(mocks.persistPredatorTypeData).not.toHaveBeenCalled()
   })
 
