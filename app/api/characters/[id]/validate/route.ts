@@ -5,6 +5,7 @@ import { ensureAllTables } from '@/lib/db'
 import { appendCharacterLedgerEvent, getCharacterAccessRecord, saveCharacterValidation } from '@/lib/characters'
 import { normalizeCharacterRulesInput } from '@/lib/vtm-v5/normalize'
 import { validateCharacter } from '@/lib/vtm-v5/validation'
+import { campaignPredatorOverrides } from '@/lib/campaign-invitations'
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -15,7 +16,7 @@ async function validatePersistedCharacter(id: string, userId: string) {
   const isOwner = character.userId === userId
   const isMaster = Boolean(character.campaignId && await canManageCampaign(userId, character.campaignId))
   if (!isOwner && !isMaster) return { response: NextResponse.json({ error: 'Acesso negado.' }, { status: 403 }) }
-  const report = validateCharacter(normalizeCharacterRulesInput({ ...character.data, characterType: character.characterType }))
+  const report = validateCharacter(normalizeCharacterRulesInput({ ...character.data, characterType: character.characterType }), campaignPredatorOverrides(character.campaignId).map(rule => rule.ruleCode))
   await saveCharacterValidation(id, report)
   await appendCharacterLedgerEvent(id, 'VALIDATION', 'RULE_ENGINE', { valid: report.valid, errors: report.errors.map((entry) => entry.code), warnings: report.warnings.map((entry) => entry.code), derived: report.derived }, userId)
   return { report }

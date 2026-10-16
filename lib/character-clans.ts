@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto'
+import { campaignPredatorOverrides } from './campaign-invitations'
 import { CharacterCommandError, getCommandCharacter, runCharacterCommand } from './character-commands'
 import { applyCreationEffects, creationEffects } from './creation-effects'
 import { CLANS, normalizeDiscipline, validateClanSelection, type ClanSelection } from './vtm-v5/clans'
@@ -36,7 +37,7 @@ export async function selectCharacterClan(characterId: string, actorId: string, 
     const predator = PREDATOR_TYPE_BY_CODE.get(character.data.predatorTypeCode as PredatorTypeCode)
     const predatorSelection = character.data.predatorTypeSelection as { discipline?: string } | undefined
     if (predator && ['BAGGER', 'OSIRIS'].includes(predator.code) && predatorSelection?.discipline === 'Feitiçaria de Sangue' && selection.code !== 'TREMERE') throw new CharacterCommandError(422, 'A disciplina de predação atual exige Tremere.')
-    if (predator && !validatePredatorType(predator, { clan: definition.name, bloodPotency: Number(character.data['potencia-de-sangue'] ?? 0), isThinBlood: selection.code === 'THIN_BLOOD', enabled: true, overrides: Array.isArray(character.data.predatorTypeOverrides) ? character.data.predatorTypeOverrides : [] }).valid) throw new CharacterCommandError(422, 'O clã é incompatível com a predação atual.')
+    if (predator && !validatePredatorType(predator, { clan: definition.name, bloodPotency: Number(character.data['potencia-de-sangue'] ?? 0), isThinBlood: selection.code === 'THIN_BLOOD', enabled: true, overrides: campaignPredatorOverrides(character.campaignId) }).valid) throw new CharacterCommandError(422, 'O clã é incompatível com a predação atual.')
     applyCreationEffects(character, 'CLAN', selection.disciplineDots, selection.code === 'NOSFERATU' ? [{ kind: 'FLAW', name: 'Repulsivo', dots: 2 }] : selection.code === 'CAITIFF' ? [{ kind: 'FLAW', name: 'Suspeito', dots: 1 }] : [], adopt)
     character.data.clanSelection = structuredClone(selection)
     character.data.clanCode = definition.code

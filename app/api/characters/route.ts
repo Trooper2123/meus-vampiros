@@ -8,6 +8,8 @@ import { isUserInCampaign } from '@/lib/availability'
 import { canCreateCharacterType, CHARACTER_TYPES, CREATION_TYPES, type CharacterType, type CreationType } from '@/lib/vtm-v5/types'
 import { grantCharacterXp } from '@/lib/character-xp'
 import { CharacterCommandError } from '@/lib/character-commands'
+import { invitedCampaign, validateInvitedClan } from '@/lib/campaign-invitations'
+import { notesActor } from '@/lib/notes-http'
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const PROTECTED_FIELDS = ['masterOverride', 'predatorDisciplineBonus', 'predatorEffectsVersion', 'clanCode', 'clanSelection', 'clanRulesVersion', 'creationAdvantageDots', 'creationFlawDots', 'predatorTypeCode', 'predador', 'predatorTypeOverrides', 'predatorTypeOverride', 'predatorTypeSelection', 'predatorTypeRelationshipRequirements', 'predatorTypeBaseHumanity', 'predatorTypeBaseBloodPotency']
@@ -30,6 +32,7 @@ async function readPayload(request: Request) {
     data: rawData,
     campaignId: body.campaignId as string | null | undefined,
     expectedRevision: body.expectedRevision,
+    invitation: body.invitation,
   }
 }
 
@@ -79,12 +82,25 @@ export async function POST(request: Request) {
   try {
     const session = await getSessionOrDev()
     if (!session?.user?.sub) return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
-    const { name, data, campaignId } = await readPayload(request)
+    const { name, data, campaignId: requestedCampaignId, invitation } = await readPayload(request)
+    let campaignId = requestedCampaignId
+    let policyConsent: { campaignId: string; acceptedAt: string; acceptedBy: string } | undefined
+    if (invitation !== undefined) {
+      if (await notesActor(request, true) !== session.user.sub) throw new CharacterCommandError(403, 'Sessão alterada. Tente novamente.')
+      if (!invitation || typeof invitation !== 'object' || Array.isArray(invitation) || invitation.accepted !== true || Object.keys(invitation).some(key => !['campaignId', 'token', 'accepted'].includes(key))) throw new InvalidPayload()
+      const campaign = invitedCampaign(invitation.campaignId, invitation.token)
+      if (requestedCampaignId && requestedCampaignId !== campaign.id) throw new InvalidPayload()
+      if (data?.characterType && data.characterType !== 'PLAYER_VAMPIRE') throw new InvalidPayload()
+      campaignId = campaign.id
+      validateInvitedClan(campaign.id, data ?? {})
+      policyConsent = { campaignId, acceptedAt: new Date().toISOString(), acceptedBy: session.user.sub }
+    }
     if (data?.characterType && !canCreateCharacterType(data.characterType as CharacterType, await hasMasterAccess(session.user))) return NextResponse.json({ error: 'Este tipo de ficha é exclusivo do Mestre.' }, { status: 403 })
     await ensureAllTables()
-    if (campaignId && !(await isUserInCampaign(campaignId, session.user.sub))) return NextResponse.json({ error: 'Você não pertence a esta mesa.' }, { status: 403 })
+    if (campaignId && !policyConsent && !(await isUserInCampaign(campaignId, session.user.sub))) return NextResponse.json({ error: 'Você não pertence a esta mesa.' }, { status: 403 })
+    if (campaignId && !policyConsent && (data?.characterType ?? 'PLAYER_VAMPIRE') === 'PLAYER_VAMPIRE' && global.__devDb?.campaigns.find(campaign => campaign.id === campaignId)?.creationPolicy) throw new CharacterCommandError(409, 'Consulte o convite e aceite as regras antes de criar a ficha.')
     if (campaignId && !(await getCampaignById(campaignId))) return NextResponse.json({ error: 'Mesa não encontrada.' }, { status: 400 })
-    const result = await createCharacter(session.user.sub, { name: name ?? 'Personagem sem nome', data: safeCharacterData(data), campaignId: campaignId ?? null })
+    const result = await createCharacter(session.user.sub, { name: name ?? 'Personagem sem nome', data: safeCharacterData(data), campaignId: campaignId ?? null }, undefined, undefined, policyConsent)
     return NextResponse.json({ id: result.id }, { status: 201 })
   } catch (error) {
     return errorResponse(error, 'Não foi possível salvar a ficha.')

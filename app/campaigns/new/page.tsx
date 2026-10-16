@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, ArrowRight, Check, Copy, Plus } from 'lucide-react'
 import { SchedulingCalendarIntroModal } from '@/components/campaign-calendar/scheduling-calendar-intro-modal'
+import { CAMPAIGN_EXCEPTIONS } from '@/lib/campaign-exception-options'
 
 function CopyId({ id }: { id: string }) {
   const [copied, setCopied] = useState(false)
@@ -35,6 +36,9 @@ export default function NewCampaignPage() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [createdId, setCreatedId] = useState<string | null>(null)
+  const [inviteToken, setInviteToken] = useState<string | null>(null)
+  const [allowExceptions, setAllowExceptions] = useState(false)
+  const [exceptionCodes, setExceptionCodes] = useState<string[]>([])
   const [userIsMaster, setUserIsMaster] = useState<boolean | null>(null)
   const [hasCampaigns, setHasCampaigns] = useState(false)
   const [enableSchedulingCalendar, setEnableSchedulingCalendar] = useState(true)
@@ -85,7 +89,7 @@ export default function NewCampaignPage() {
     const response = await fetch('/api/campaigns', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, theme, principios, status, lastSessionAt: lastSessionAt || null, enableSchedulingCalendar, enabledClanCodes, enabledPredatorCodes }),
+      body: JSON.stringify({ name, theme, principios, status, lastSessionAt: lastSessionAt || null, enableSchedulingCalendar, enabledClanCodes, enabledPredatorCodes, exceptionCodes: allowExceptions ? exceptionCodes : [] }),
     })
 
     setSubmitting(false)
@@ -96,7 +100,8 @@ export default function NewCampaignPage() {
       return
     }
 
-    const { campaign } = await response.json()
+    const { campaign, inviteToken: token } = await response.json()
+    setInviteToken(token ?? null)
     setCreatedId(campaign.id)
     if (enableSchedulingCalendar && localStorage.getItem('scheduling-calendar-intro-seen') !== 'true') {
       setShowSchedulingIntro(true)
@@ -138,6 +143,7 @@ export default function NewCampaignPage() {
             </p>
             <div className="mt-6 flex justify-center">
               <CopyId id={createdId} />
+              {inviteToken && <div className="mt-5"><p className="mb-3 text-sm text-muted-foreground">Convite do Narrador: quem receber este link pode ler as regras e ingressar ao aceitar. Compartilhe somente com seus jogadores; copie agora, pois o token não será exibido novamente.</p><CopyId id={`${window.location.origin}/create-characters?campaignId=${createdId}#invite=${inviteToken}`} /></div>}
             </div>
             <div className="mt-8 flex flex-wrap justify-center gap-3">
               <Link href="/campaigns" className="button-primary inline-flex items-center gap-2">
@@ -145,7 +151,7 @@ export default function NewCampaignPage() {
               </Link>
               <button
                 type="button"
-                onClick={() => { setCreatedId(null); setName(''); setTheme(''); setPrincipios(''); setLastSessionAt(''); setStatus('Ativa') }}
+                onClick={() => { setCreatedId(null); setInviteToken(null); setAllowExceptions(false); setExceptionCodes([]); setName(''); setTheme(''); setPrincipios(''); setLastSessionAt(''); setStatus('Ativa') }}
                 className="button-ghost inline-flex items-center gap-2"
               >
                 <Plus className="size-4" /> Criar outra
@@ -208,6 +214,7 @@ export default function NewCampaignPage() {
               </label>
               <fieldset className="span-2 border border-border bg-card p-4"><legend>Quais clãs serão permitidos?</legend><div className="mt-3 grid gap-2 sm:grid-cols-2">{clans.map(clan => <label key={clan.code} className="flex items-center gap-2 text-sm"><input type="checkbox" disabled={submitting} checked={enabledClanCodes.includes(clan.code)} onChange={event => setEnabledClanCodes(values => event.target.checked ? [...values, clan.code] : values.filter(code => code !== clan.code))} />{clan.name}</label>)}</div></fieldset>
               <fieldset className="span-2 border border-border bg-card p-4"><legend>Quais predações serão permitidas?</legend><p className="mt-2 text-sm text-muted-foreground">Após criar a campanha, os painéis mostram somente os tipos usados pelas fichas vinculadas.</p><div className="mt-3 grid gap-2 sm:grid-cols-2">{predatorTypes.map(predator => <label key={predator.code} className="flex items-center gap-2 text-sm"><input type="checkbox" disabled={submitting} checked={enabledPredatorCodes.includes(predator.code)} onChange={event => setEnabledPredatorCodes(values => event.target.checked ? [...values, predator.code] : values.filter(code => code !== predator.code))} />{predator.name}{predator.source === 'PLAYERS_GUIDE' ? ' (Players Guide)' : ''}</label>)}</div></fieldset>
+              <fieldset className="span-2 border border-border bg-card p-4"><legend>Exceções predefinidas de predação</legend><label className="mt-3 flex items-center gap-2 text-sm"><input type="checkbox" checked={allowExceptions} disabled={submitting} onChange={event => { setAllowExceptions(event.target.checked); setExceptionCodes([]) }} />Permitir exceções de predação nesta mesa</label>{allowExceptions && <div className="mt-3 flex flex-col gap-3">{CAMPAIGN_EXCEPTIONS.map(rule => <label key={rule.code} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={exceptionCodes.includes(rule.code)} disabled={submitting} onChange={event => setExceptionCodes(values => event.target.checked ? [...values, rule.code] : values.filter(code => code !== rule.code))} />{rule.name}</label>)}</div>}<p className="mt-3 text-xs text-muted-foreground">Definidas somente ao criar a mesa. Não habilitam predações bloqueadas, não concedem pontos e não dispensam as demais regras.</p></fieldset>
               <label className="span-2 flex cursor-pointer items-start gap-3 border border-border bg-card p-4">
                 <input
                   type="checkbox"

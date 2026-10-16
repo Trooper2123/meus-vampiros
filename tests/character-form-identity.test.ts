@@ -7,7 +7,7 @@ const state = vi.hoisted(() => ({ tab: 'identidade', characterType: 'PLAYER_VAMP
 vi.mock('next/navigation', () => ({ useSearchParams: () => new URLSearchParams(), useRouter: () => ({ push: vi.fn() }) }))
 vi.mock('react', async importOriginal => {
   const original = await importOriginal<typeof import('react')>()
-  return { ...original, useState: (initial: unknown) => original.useState(initial === 'identidade' ? state.tab : initial === 'PLAYER_VAMPIRE' ? state.characterType : initial === 'FLEDGLING' ? state.creationType : initial) }
+  return { ...original, useState: (initial: unknown) => original.useState(initial === 'UNDECIDED' ? null : initial === 'identidade' ? state.tab : initial === 'PLAYER_VAMPIRE' ? state.characterType : initial === 'FLEDGLING' ? state.creationType : initial) }
 })
 
 beforeEach(() => { state.tab = 'identidade'; state.characterType = 'PLAYER_VAMPIRE'; state.creationType = 'FLEDGLING' })

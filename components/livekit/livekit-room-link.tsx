@@ -60,6 +60,8 @@ function RoomPanel({ campaignId, master, campaignName }: { campaignId: string; m
     finally { setLoading(false) }
   }
 
+  if (!master && !status?.canSummon && !canEnter) return null
+
   return <section aria-labelledby={`virtual-room-${campaignId}`} className="border border-border bg-card p-6">
     <p className="eyebrow">Comunicação</p><h2 id={`virtual-room-${campaignId}`} className="mt-2 font-serif text-2xl">Mesa virtual{campaignName ? ` · ${campaignName}` : ''}</h2>
     <p className="mt-2 text-sm text-muted-foreground">{status?.active ? 'O Narrador convocou os participantes para a sessão da mesa.' : 'Aguardando convocação do Narrador.'}</p>

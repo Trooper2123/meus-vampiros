@@ -12,7 +12,7 @@ import {
   devAppendCharacterLedgerEvent,
 } from '@/lib/dev-db'
 import { CREATION_ADJUSTMENTS } from '@/lib/vtm-v5/presets'
-import type { CreationType } from '@/lib/vtm-v5/types'
+import type { CharacterVisibility, CreationType } from '@/lib/vtm-v5/types'
 import { applySecondaryAttributes } from '@/lib/vtm-v5/secondary-attributes'
 import { projectIndependentCharacter } from '@/lib/character-duplicate'
 import { getCommandCharacter, runCharacterCommand, CharacterCommandError } from '@/lib/character-commands'
@@ -22,6 +22,7 @@ import { mergeCharacterSkills } from '@/lib/vtm-v5/skills'
 import { creationEffects, validateCreationEffects, type CreationEffect } from '@/lib/creation-effects'
 import { characterSpecialties } from '@/lib/character-specialties'
 import { assertBloodPotencyInput } from './character-blood-potency'
+import { validateInvitedClan } from './campaign-invitations'
 import { projectCreationGrants } from './vtm-v5/creation-grants'
 import type { Specialty } from '@/lib/vtm-v5/specialties'
 
@@ -223,14 +224,15 @@ export async function setCharacterStatus(id: string, status: string) {
 
 export async function createCharacter(
   userId: string,
-  payload: { name?: string; data?: Record<string, unknown>; campaignId?: string | null },
+  payload: { name?: string; data?: Record<string, unknown>; campaignId?: string | null; visibility?: CharacterVisibility },
   resourceSource?: Record<string, unknown>,
-  creationState?: { creationEffects: CreationEffect[]; specialties: Specialty[] }
+  creationState?: { creationEffects: CreationEffect[]; specialties: Specialty[] },
+  policyConsent?: { campaignId: string; acceptedAt: string; acceptedBy: string }
 ) {
   assertBloodPotencyInput(payload.data ?? {})
   payload = { ...payload, data: applySecondaryAttributes(payload.data ?? {}, resourceSource) }
   const initialXp = CREATION_ADJUSTMENTS[(payload.data?.creationType ?? 'FLEDGLING') as CreationType]?.initialXp ?? 0
-  const initialState = { ...readSessionState(payload.data ?? {}, resourceSource ? { healthDamage: resourceSource.healthDamage, willpowerDamage: resourceSource.willpowerDamage } : {}), ...(creationState ? structuredClone(creationState) : {}) }
+  const initialState = { ...readSessionState(payload.data ?? {}, resourceSource ? { healthDamage: resourceSource.healthDamage, willpowerDamage: resourceSource.willpowerDamage } : {}), ...(creationState ? structuredClone(creationState) : {}), ...(policyConsent ? { policyConsent } : {}) }
   if (isDev) {
     const character = devCreateCharacter(userId, payload)
     character.totalXp = character.characterType === 'PLAYER_VAMPIRE' ? initialXp : 0
@@ -243,8 +245,8 @@ export async function createCharacter(
 
   const { name, data, campaignId } = payload
   const result = await db.execute<{ id: string }>(sql`
-    INSERT INTO characters (user_id, created_by_user_id, character_type, name, concept, clan, generation, data, game_state, total_xp, campaign_id, status)
-    VALUES (${userId}, ${userId}, ${data?.characterType ?? 'PLAYER_VAMPIRE'}, ${name}, ${data?.conceito ?? null}, ${data?.cla ?? null}, ${data?.geracao ?? null}, ${JSON.stringify(data ?? {})}::jsonb, ${JSON.stringify((data?.characterType ?? 'PLAYER_VAMPIRE') === 'PLAYER_VAMPIRE' ? initialState : {})}::jsonb, ${(data?.characterType ?? 'PLAYER_VAMPIRE') === 'PLAYER_VAMPIRE' ? initialXp : 0}, ${campaignId ?? null}::uuid, 'DRAFT')
+    INSERT INTO characters (user_id, created_by_user_id, character_type, name, concept, clan, generation, data, game_state, total_xp, campaign_id, status, visibility)
+    VALUES (${userId}, ${userId}, ${data?.characterType ?? 'PLAYER_VAMPIRE'}, ${name}, ${data?.conceito ?? null}, ${data?.cla ?? null}, ${data?.geracao ?? null}, ${JSON.stringify(data ?? {})}::jsonb, ${JSON.stringify((data?.characterType ?? 'PLAYER_VAMPIRE') === 'PLAYER_VAMPIRE' ? initialState : {})}::jsonb, ${(data?.characterType ?? 'PLAYER_VAMPIRE') === 'PLAYER_VAMPIRE' ? initialXp : 0}, ${campaignId ?? null}::uuid, 'DRAFT', ${payload.visibility ?? 'PLAYER_VISIBLE'})
     RETURNING id
   `)
   const id = result.rows[0]?.id
@@ -298,6 +300,7 @@ export async function updateCharacter(
     if (payload.campaignId !== undefined && payload.campaignId !== character.campaignId) throw new CharacterCommandError(409, 'A alteração do vínculo exige aprovação da mesa.')
     if (payload.data) {
       assertBloodPotencyInput(payload.data, character.data)
+      if (character.campaignId && global.__devDb?.campaigns.find(campaign => campaign.id === character.campaignId)?.creationPolicy) validateInvitedClan(character.campaignId, payload.data)
       if (character.data.clanRulesVersion || character.data.predatorEffectsVersion) {
         for (const field of ['cla', 'clanCode', 'clanSelection', 'clanRulesVersion', 'isCaitiff', 'isThinBlood', 'creationType', 'creationAdvantageDots', 'creationFlawDots']) {
           if (Object.hasOwn(payload.data, field) && JSON.stringify(payload.data[field]) !== JSON.stringify(character.data[field])) throw new CharacterCommandError(422, 'Altere o clã pelo seletor específico, não pela edição geral.')

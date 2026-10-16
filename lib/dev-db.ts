@@ -7,6 +7,7 @@
 
 import { randomUUID } from 'crypto'
 import { readSessionState } from './vtm-v5/session-state'
+import type { CharacterVisibility } from './vtm-v5/types'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -34,9 +35,12 @@ export type DevCharacter = {
 }
 
 export type DevCampaign = {
+  sessionStartTime?: string | null
+  sessionEndTime?: string | null
   id: string
   masterUserId: string
   enabledClanCodes?: string[]
+  creationPolicy?: { exceptionCodes: string[]; inviteHash: string }
   name: string
   theme: string | null
   principios: string | null
@@ -329,7 +333,7 @@ export function devGetCharacterById(id: string, userId: string) {
 
 export function devCreateCharacter(
   userId: string,
-  payload: { name?: string; data?: Record<string, unknown>; campaignId?: string | null }
+  payload: { name?: string; data?: Record<string, unknown>; campaignId?: string | null; visibility?: CharacterVisibility }
 ) {
   const store = getStore()
   if (payload.campaignId && !store.campaigns.some(campaign => campaign.id === payload.campaignId)) throw new Error('Campanha inexistente.')
@@ -344,7 +348,7 @@ export function devCreateCharacter(
     generation: (payload.data?.geracao as string) ?? null,
     status: 'DRAFT',
     characterType: String(payload.data?.characterType ?? 'PLAYER_VAMPIRE'),
-    visibility: 'PLAYER_VISIBLE',
+    visibility: payload.visibility ?? 'PLAYER_VISIBLE',
     campaignId: payload.campaignId ?? null,
     data: structuredClone(payload.data ?? {}),
     spentXp: 0,

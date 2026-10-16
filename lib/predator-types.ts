@@ -1,4 +1,5 @@
 import { sql } from 'drizzle-orm'
+import { campaignPredatorOverrides } from './campaign-invitations'
 import { characterText } from './vtm-v5/text'
 import { randomUUID } from 'node:crypto'
 import { CharacterCommandError, runCharacterCommand } from './character-commands'
@@ -62,6 +63,7 @@ export async function savePredatorTypeSettings(campaignId: string, settings: Pre
     devGetCampaignsForMaster(userId)
     if (!global.__devDb?.campaigns.some(campaign => campaign.id === campaignId && campaign.masterUserId === userId)) throw new CharacterCommandError(403, 'Acesso negado.')
     const store = global.__devDb
+    if (store.campaigns.find(campaign => campaign.id === campaignId)?.creationPolicy) throw new CharacterCommandError(409, 'As regras são definidas apenas na criação da mesa.')
     const affected = store.characters.filter(character => character.campaignId === campaignId && character.data.predatorTypeCode && ['DRAFT', 'APPROVED', 'PENDING_REVIEW'].includes(character.status))
     const events = affected.map(character => ({ id: randomUUID(), characterId: character.id, eventType: 'PREDATOR_TYPE_SETTINGS_CHANGED', origin: 'MASTER_ACTION', payload: { campaignId, settings: structuredClone(settings) }, createdByUserId: userId, createdAt: new Date() }))
     memorySettings().set(campaignId, structuredClone(settings))
@@ -109,7 +111,7 @@ export async function persistPredatorTypeData(characterId: string, data: Record<
       const definition = PREDATOR_TYPE_BY_CODE.get(data.predatorTypeCode as PredatorTypeCode)
       const settings = character.campaignId ? memorySettings().get(character.campaignId) ?? defaultSettings() : defaultSettings(true)
       if (!definition || !isPredatorTypeEnabled(definition.code, settings)) throw new CharacterCommandError(422, 'Tipo de predação não permitido pela configuração atual.')
-      const report = validatePredatorType(definition, { clan: characterText(character.data.cla) || null, bloodPotency: Number(character.data['potencia-de-sangue'] ?? 0), isThinBlood: character.data.creationType === 'THIN_BLOOD' || character.data.isThinBlood === true, enabled: true, overrides: Array.isArray(character.data.predatorTypeOverrides) ? character.data.predatorTypeOverrides : [] })
+      const report = validatePredatorType(definition, { clan: characterText(character.data.cla) || null, bloodPotency: Number(character.data['potencia-de-sangue'] ?? 0), isThinBlood: character.data.creationType === 'THIN_BLOOD' || character.data.isThinBlood === true, enabled: true, overrides: campaignPredatorOverrides(character.campaignId) })
       if (!report.valid) throw new CharacterCommandError(422, 'A ficha possui restrições para este tipo de predação.')
     }
     const projected = structuredClone(character.data)

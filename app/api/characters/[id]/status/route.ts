@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto'
+import { campaignPredatorOverrides } from '@/lib/campaign-invitations'
 import { NextResponse } from 'next/server'
 import { getSessionOrDev } from '@/lib/auth0'
 import { ensureAllTables } from '@/lib/db'
@@ -24,7 +25,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
       const nextStatus = body.status as CharacterStatus
       if (!character.campaignId && nextStatus === 'PENDING_REVIEW') throw new CharacterCommandError(409, 'Uma ficha independente não precisa de revisão do narrador.')
       const state = readSessionState(character.data, character.gameState)
-      const report = validateCharacter(normalizeCharacterRulesInput({ ...character.data, humanidade: state.humanity, characterType: character.characterType }))
+      const report = validateCharacter(normalizeCharacterRulesInput({ ...character.data, humanidade: state.humanity, characterType: character.characterType }), campaignPredatorOverrides(character.campaignId).map(rule => rule.ruleCode))
       const independentApproval = !character.campaignId && isOwner && character.status === 'DRAFT' && nextStatus === 'APPROVED' && report.valid
       if (!independentApproval && !canTransitionCharacterStatus(character.status as CharacterStatus, nextStatus, isMaster, report.valid)) throw new CharacterCommandError(report.valid ? 409 : 422, report.valid ? 'Transição de status não permitida.' : 'Corrija os erros da ficha antes de enviá-la.')
       character.status = nextStatus
