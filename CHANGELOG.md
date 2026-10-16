@@ -2,6 +2,12 @@
 
 Registro cronológico de todas as alterações relevantes implementadas no projeto.
 
+## 2026-10-15 23:32 BRT — docs — Prévia navegável da criação de personagem
+- Adicionado `docs/ui/criacao-personagem.html`: seis etapas visuais de atributos, habilidades/especialidades, disciplinas, recursos, vantagens/pertences e histórico, com navegação nativa e dados fictícios.
+- Artefato independente, sem scripts, persistência, APIs ou mudança nas regras/autorização da aplicação. Ações de salvar/validar ficam desabilitadas; não representa validação funcional da ficha.
+- Ajuste visual da prévia: contadores permanecem em uma única linha, sem comprimir as bolinhas; rolagem horizontal local quando necessário em telas estreitas.
+- Revisão pré-commit: 691 testes aprovados, TypeScript sem erros, lint sem erros e três avisos preexistentes, auditoria sem vulnerabilidades conhecidas. Verificação estática da prévia e whitespace aprovadas; QA visual ainda pendente.
+
 ## 2026-10-15 00:33 BRT — chore — Validação pré-commit de NPCs e refatoração
 - Candidato com 23 arquivos: NPCs da mesa, extração visual do formulário, testes/snapshot, README e CHANGELOG. Revisão pre-commit-review focada sem bloqueios críticos/altos conhecidos relacionados; documentação local, env, relatórios, gerados, exclusões .kiro e alterações alheias fora do staging.
 - Reexecução aprovada: 691 testes/59 arquivos, TypeScript sem emissão, lint zero erros/três avisos anteriores, Next build com tipos e pnpm audit sem vulnerabilidades. Diff staged sem erros de whitespace e sem padrões de credenciais identificados.
