@@ -2,6 +2,47 @@
 
 Registro cronológico de todas as alterações relevantes implementadas no projeto.
 
+## 2026-10-16 01:34 BRT — chore — Revisão pré-commit da interface e recursos
+- Candidato: 39 arquivos de interface, resumos/notas/gestão de mesas, recursos com autosave, testes e guias; inclui a página dedicada de criação de NPC e `campaignId` no resumo autorizado.
+- Revisão pela skill pre-commit-review sem bloqueios críticos/altos conhecidos no candidato. Ajustada a posição do legend de vínculos para primeiro filho do fieldset; comentários da página de mesas corrigidos. Sem alteração de APIs, autenticação ou schema.
+- Validação reexecutada: 716 testes/60 arquivos aprovados, TypeScript e build aprovados; lint sem erros/três avisos anteriores; npm audit sem vulnerabilidades. Alterações locais de ambiente, relatórios, gerados, codex/.codex, exclusões .kiro, script de preparação e rótulo avulso do calendário ficam fora do candidato.
+- QA manual visual/acessibilidade/responsividade e integração PostgreSQL continuam pendentes; sem alegação de produção. Preparação em memória não repetida nesta revisão.
+
+
+## 2026-10-16 01:24 BRT — feat — Contadores compactos com salvamento automático
+- Arquivos: `components/character-summary/session-resources.tsx`, `app/globals.css`, `UI-GUIDE.md`, `tests/session-resources-ui.test.ts` e `tests/archive-visual.test.ts`.
+- Botões visíveis somente − / + com rótulos acessíveis; Humanidade tem apenas +, exclusivo do Narrador. Vitalidade/Vontade mostram linhas separadas por dano superficial/agravado com contador e botões ao lado: − remove dano e + adiciona dano, respeitando o máximo compartilhado. Manchas mantêm controle exclusivo do Narrador.
+- Cada clique válido salva automaticamente pelo comando existente com motivo contextual, revisão e idempotência; removida etapa manual de motivo/salvar e inputs numéricos de rascunho. Contadores/bolinhas mudam após resposta confirmada. Falhas preservam o último valor confirmado; envios em voo são bloqueados e retry reaproveita comando/chave.
+- Fome 1→0 mantém confirmação de ação tabu com Cancelar como padrão; confirmar salva imediatamente com motivo específico no histórico, sem XP ou penalidades automáticas. Grade 1/2/4 colunas para acomodar os controles em celular/tablet/desktop.
+- Retomada da SPEC existente: sem repetir preparação/reset e sem alteração de APIs, autorização ou banco. Regressão 716 testes/60 arquivos aprovada; tipos/build aprovados; lint sem erros/três avisos anteriores; audit sem vulnerabilidades. Revisão pela skill pre-commit-review e verificação de segredos/whitespace do recorte sem bloqueios.
+- QA manual visual/teclado/leitor de tela e integração PostgreSQL não executados nesta rodada, com pendência no backlog local. Sem novas dependências, staging, commit ou push.
+
+
+## 2026-10-16 01:11 BRT — feat — Controles dos recursos da sessão e confirmação de Fome zero
+- Arquivos principais: `components/character-summary/session-resources.tsx`, `app/globals.css`, `UI-GUIDE.md`, `tests/session-resources-ui.test.ts`, `tests/character-resources-command.test.ts` e `tests/archive-visual.test.ts`.
+- Botões − Reduzir / + Aumentar abaixo dos recursos; Humanidade/manchas continuam exclusivas do Narrador. Vitalidade/Vontade usam tipo de dano superficial/agravado explicitamente selecionado, mantendo campos independentes e máximos calculados no servidor.
+- Fome em cinco bolinhas horizontais entre 0–5, sem XP. Reduzir 1→0 abre confirmação de ação tabu com Cancelar em foco inicial; cancelar mantém 1 e confirmar prepara 0. Motivo e salvamento explícitos registram a alteração pelo comando/histórico existente, sem penalidades automáticas.
+- Resumo, campos e botões compartilham o rascunho e indicam alterações não salvas. Bloqueio síncrono contra duplo envio; retry conserva comando/chave; resposta inválida, falha ou conflito não exibem sucesso. Cache atualizado com estado/revisão retornados pelo servidor; ação de recarregar disponível em erros.
+- Preparação única de início da SPEC em processo test-memory sem DATABASE_URL: reset descartável, modelo atual sem alteração de schema, seeds 8 fichas/3 mesas e integridade aprovados. PostgreSQL e servidor corrente intocados.
+- Validação: preparação 1/1 separada; regressão 716 testes/60 arquivos aprovada, incluindo limites, permissões, danos distintos, confirmação/cancelamento, motivo, erros, conflitos e duplicidade. Testes reais do provider em memória e rotas cobrem 401/403/IDOR, escalada narrativa, entradas inválidas, histórico e omissão de dados privados. Tipos/build aprovados; lint sem erros/três avisos anteriores; npm audit sem vulnerabilidades.
+- Revisão focada pela skill pre-commit-review: sem novos endpoints, mudanças na autorização ou segredos detectados no recorte; nenhuma vulnerabilidade crítica/alta conhecida relacionada. QA visual/teclado/leitor de tela em navegador permanece pendente no backlog local. Integração SQL externa não validada nesta entrega; sem nova dependência, staging, commit ou push.
+
+
+## 2026-10-16 00:42 BRT — style — Anotações ao lado do nome no resumo
+- Arquivos: página de resumo, cliente/resumo/cabeçalho da ficha e `components/notes/campaign-notes-dialog.tsx`. Botão compacto de anotações junto ao nome, com quebra de linha em telas estreitas.
+- Condição de mesa vinculada/ficha de jogador e modal/permissões preservados; painel do Narrador mantém apresentação anterior.
+- Validação: 40 testes pertinentes aprovados (notas, autorização, cabeçalho e resumo), TypeScript e lint dos arquivos alterados sem erros. Revisão focada sem alteração de APIs/autorização/segredos; QA visual em navegador e novo build não executados nesta alteração pontual.
+
+
+
+## 2026-10-16 00:21 BRT — style — Páginas alinhadas às referências Arquivos da Noite
+- Arquivos principais: `app/page.tsx`, `app/layout.tsx`, `app/globals.css`, páginas de personagens/criação/ficha, mesas/criação/gestão/NPC e anotações; `components/archive-header.tsx`, resumos/recursos, notas, criação de NPC, ferramentas da mesa e `components/master-panel.tsx`.
+- PDF local com 16 páginas renderizado e inspecionado. Cabeçalho compartilhado com navegação mobile nativa, largura e hierarquia editorial, cards com conceito/status em português, ações separadas, formulários verticais e notas em duas colunas. Removido controle de autenticação duplicado no layout; Auth0 preservado. Recursos reais/autorizados no topo da ficha, com editor recolhido, motivo e revisão preservados.
+- `UI-GUIDE.md` e `design-system.md` revisados: marca Arquivos da Noite, referência por tela, tokens complementares, classes reais, dimensões responsivas e limites do protótipo. Nenhuma mecânica de bônus ou informação demonstrativa foi adicionada ao domínio.
+- Preparação inicial única por `tests/notes-preparation.test.ts`: processo test-memory sem DATABASE_URL; reset, modelo atual sem alteração de schema, seeds 8 fichas/3 mesas e relações íntegros. Nenhum PostgreSQL ou servidor corrente reinicializado.
+- Validação: preparação aprovada separadamente; regressão de 693 testes/59 arquivos aprovada, incluindo três testes novos de navegação, recursos autorizados e ordem da ficha. Snapshots visuais do formulário atualizados intencionalmente; testes de seletores/convite alinhados aos cards e textos vigentes. TypeScript e build aprovados; lint sem erros/três avisos anteriores; npm audit sem vulnerabilidades.
+- Revisão pela skill local pre-commit-review: autorização/isolamento, APIs, recursos e dados privados preservados, sem novo endpoint ou segredo no recorte. QA manual visual/acessibilidade/responsividade em navegador permanece pendente no backlog local; fontes usam fallbacks disponíveis e não há alegação de equivalência pixel a pixel. Alterações locais anteriores preservadas; sem staging, commit ou push.
+
 ## 2026-10-15 23:32 BRT — docs — Prévia navegável da criação de personagem
 - Adicionado `docs/ui/criacao-personagem.html`: seis etapas visuais de atributos, habilidades/especialidades, disciplinas, recursos, vantagens/pertences e histórico, com navegação nativa e dados fictícios.
 - Artefato independente, sem scripts, persistência, APIs ou mudança nas regras/autorização da aplicação. Ações de salvar/validar ficam desabilitadas; não representa validação funcional da ficha.

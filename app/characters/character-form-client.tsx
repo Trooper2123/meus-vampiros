@@ -1,5 +1,6 @@
 'use client'
 
+import { ArchiveHeader } from '@/components/archive-header'
 import { AttributesStep } from '@/components/character-form/attributes-step'
 import { SkillsStep } from '@/components/character-form/skills-step'
 import { DisciplinesStep } from '@/components/character-form/disciplines-step'
@@ -597,8 +598,8 @@ export default function CharacterFormClient({
 
   return <main className="relative min-h-screen overflow-hidden bg-background text-foreground">
     <div className="noise" aria-hidden="true" />
-    <header className="sheet-header"><div className="flex items-center gap-4"><Link href="/characters" className="button-ghost inline-flex items-center gap-2" aria-label="Voltar para o arquivo"><ArrowLeft className="size-4" /> Arquivo</Link><div className="hidden border-l border-border pl-4 sm:block"><p className="eyebrow">Arquivos da Noite</p><p className="mt-1 text-xs text-muted-foreground">{mode === 'edit' ? 'Editar personagem' : 'Novo registro de criatura'}</p></div></div><div className="sigil" aria-hidden="true">AN</div></header>
-    <div className="mx-auto w-full max-w-6xl px-5 py-10 sm:px-8 lg:py-14">
+    <ArchiveHeader title={mode === 'edit' ? 'Editar personagem' : 'Novo registro'} />
+    <div className="archive-content">
       <div className="mb-8 flex flex-col justify-between gap-6 border-b border-border pb-8 sm:flex-row sm:items-end"><div><p className="eyebrow">Ficha nº 000 / em elaboração</p><h1 className="mt-3 font-serif text-4xl uppercase tracking-[0.08em] sm:text-6xl">{mode === 'edit' ? 'Editar personagem' : 'Criar personagem'}</h1><p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">Registre a identidade, os dons e as fraquezas da criatura que será confiada aos arquivos.</p></div><div className="flex items-center gap-3 text-xs text-muted-foreground"><span className="status active"><span className="status-dot" /> {characterStatusLabels[characterStatus]}</span><span>{saving ? 'Salvando...' : 'Pronto para editar'}</span></div></div>
       <form ref={formRef} onSubmit={(event) => { event.preventDefault(); void saveDraft('Ficha salva como rascunho.') }}>
         <div className="mb-6 border-b border-border" role="tablist" aria-label="Seções da ficha de personagem"><div className="flex gap-1 overflow-x-auto pb-px">{tabs.map((tab) => <button key={tab.id} type="button" role="tab" aria-selected={activeTab === tab.id} aria-controls={`panel-${tab.id}`} id={`tab-${tab.id}`} onClick={() => void changeTab(tab.id)} className={`whitespace-nowrap border-b-2 px-3 py-3 text-left font-mono text-[10px] uppercase tracking-[0.12em] transition-colors sm:px-4 ${activeTab === tab.id ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:border-border hover:text-foreground'}`}>{tab.label}</button>)}</div></div>

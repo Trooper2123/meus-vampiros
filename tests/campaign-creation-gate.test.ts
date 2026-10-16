@@ -7,7 +7,7 @@ import { CampaignCreationGate } from '@/components/campaign-creation-gate'
 vi.mock('next/navigation', () => ({ useSearchParams: () => new URLSearchParams(), useRouter: () => ({ push: vi.fn() }) }))
 it('pergunta sobre mesa antes dos campos e ações de ficha', () => {
   const html = renderToStaticMarkup(createElement(CharacterFormClient, {}))
-  expect(html).toContain('Você já tem uma mesa planejada?')
+  expect(html).toContain('Você já tem uma mesa para se juntar?')
   expect(html).toContain('Não, criar ficha independente')
   expect(html).toContain('Sim, tenho convite do Narrador')
   expect(html).not.toContain('name="nome"')

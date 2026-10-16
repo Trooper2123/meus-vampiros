@@ -1,13 +1,13 @@
 ﻿# UI-GUIDE — Direcionamento de Layout e Tema
 
-> Este arquivo é a referência de consulta obrigatória do agente ao construir novas páginas ou implementar atualizações visuais no projeto **Ledger Command**.
+> Este arquivo é a referência de consulta obrigatória do agente ao construir novas páginas ou implementar atualizações visuais no projeto **Arquivos da Noite**.
 > O arquivo `design-system.md` contém o detalhamento completo; este documento é o resumo operacional de acesso rápido.
 
 ---
 
 ## 1. Identidade visual
 
-**Ledger Command** é uma interface de horror gótico: escura, austera, editorial e funcional.
+**Arquivos da Noite** é uma interface de horror gótico: escura, austera, editorial e funcional.
 A atmosfera é de um **arquivo de comando restrito**. Tensão sem ruído; funcionalidade sem frivolidade.
 
 ### Princípio-chave
@@ -36,17 +36,29 @@ Nunca usar hexadecimais ou cores diretas no markup. Usar sempre os tokens:
 - Azul (`--grant-origin`) identifica exclusivamente concessões automáticas de clã/predação, acompanhado de indicação textual de origem.
 - ✅ Vermelho em: botões primários, status de risco, bordas de foco, ações de atenção
 - ❌ Vermelho como: fundo de seção, decoração, estado positivo
-- ✅ Verde discreto apenas em: etiquetas de status `Ativo`
+- ✅ Verde discreto em etiquetas de status positivo, como `Ativo` e `Aprovada`
 - ❌ Não criar novas cores sem atualizar `design-system.md`
 
 ---
+
+### Tokens complementares
+
+| Token | Uso |
+|---|---|
+| `--surface-input` / `--surface-hover` | Campo e superfície em hover |
+| `--accent` / `--accent-text` | Eyebrow/borda e texto de atenção |
+| `--primary-hover` | Hover da ação principal |
+| `--border-accent` | Contorno de trilhas e retratos |
+| `--positive` / `--border-positive` | Status positivo |
+
+Valores são centralizados em `globals.css`; não repetir literais nos componentes. O legado ainda contém cores diretas e deve ser corrigido ao ser alterado.
 
 ## 3. Tipografia
 
 | Papel | Família | Classe Tailwind |
 |-------|---------|-----------------|
-| Títulos editoriais | Cormorant Garamond / Georgia | `font-serif` |
-| Interface e corpo | Geist | `font-sans` (padrão) |
+| Títulos editoriais | Cormorant Garamond / Georgia (fallback disponível) | `font-serif` |
+| Interface e corpo | Geist | `font-sans` (padrão; fallback sans-serif) |
 | Dados técnicos, labels | Geist Mono | `font-mono` |
 
 ### Escala
@@ -63,25 +75,31 @@ Nunca usar hexadecimais ou cores diretas no markup. Usar sempre os tokens:
 
 ## 4. Estrutura de página
 
-Toda página autenticada segue esta hierarquia:
+Referência visual vigente: `codex/Meus Vampiros — Arquivos da Noite.pdf` (16 páginas). A primeira página é biblioteca de componentes; as demais mostram acesso, criação de ficha, anotações, convite, personagens desktop/mobile, ficha, gestão de mesa desktop/mobile, listagem e criação de mesas, modal de notas e NPC.
+
+- Usar `ArchiveHeader` nas páginas internas: marca fixa, contexto da tela e navegação. O título principal fica no conteúdo. Não duplicar o controle de autenticação no layout raiz.
+- Em celular, navegação em `<details>` com rótulo “Menu”; funciona por clique e teclado. “Mesas” só aparece para quem tem mesas próprias; isso não substitui autorização no servidor. Anotações permanece acessível pelo menu.
+- `.archive-content`: largura máxima de 1440px, padding desktop 64px, tablet 32px e mobile 20px. Em 1440px, área útil de 1312px.
+- `.archive-page-heading`: eyebrow, título editorial, descrição e divisória. Ações da listagem ficam abaixo da divisória; em celular ocupam a largura disponível.
+- Cards de personagem: nome e status textual, conceito, clã/geração, mesa, XP, ações com divisória. Preservar agrupamentos e ações já existentes.
+- Ficha: identidade, recursos autorizados do servidor, atributos, habilidades, especialidades e demais seções. Recursos têm botões compactos − / + com nomes acessíveis; Humanidade oferece somente + ao Narrador. Vitalidade/Vontade apresentam contadores separados por dano superficial e agravado, com os botões ao lado. Cada clique salva automaticamente com motivo contextual, revisão e idempotência, respeitando permissões. O resumo só muda após confirmação do servidor; falhas preservam os valores confirmados e permitem reenvio seguro. Fome 1→0 usa dialog com Cancelar como foco inicial, sem penalidades automáticas. Manchas ficam em disclosure. Recursos usam 1/2/4 colunas em celular/tablet/desktop para acomodar os controles.
+- Gestão: notas → ferramentas/calendários → início da noite → revisões → NPC/participantes. Não esconder informação privada apenas com CSS.
+- Formulários usam dados reais, labels e estados existentes; exemplos e observações do PDF não são conteúdo do produto.
+- O PDF não autoriza criar mecânicas novas de bônus, ignorar permissões ou reduzir os catálogos aos exemplos demonstrativos.
+
+### Esqueleto atualizado
 
 ```tsx
 <main className="min-h-screen bg-background text-foreground">
-  <div className="noise" aria-hidden="true" />          {/* textura fixa */}
-  <header className="border-b border-border bg-card/80">  {/* marca + sessão */}
-    ...
-  </header>
-  <div className="mx-auto max-w-7xl px-5 py-8 sm:px-8 lg:px-10 lg:py-12">
-    {/* Cabeçalho da página */}
-    <section className="border-b border-border pb-8">
-      <p className="eyebrow">SEÇÃO / CONTEXTO</p>
-      <h1 className="font-serif text-4xl">Título da Página</h1>
-      <p className="text-muted-foreground text-sm">Descrição curta.</p>
+  <div className="noise" aria-hidden="true" />
+  <ArchiveHeader title="Contexto da tela" showCampaigns={temMesasProprias} />
+  <div className="archive-content">
+    <section className="archive-page-heading">
+      <p className="eyebrow">Seção / contexto</p>
+      <h1 className="font-serif text-4xl uppercase sm:text-6xl">Título</h1>
+      <p className="text-sm text-muted-foreground">Descrição curta.</p>
     </section>
-    {/* Conteúdo principal */}
-    <section className="mt-8">
-      ...
-    </section>
+    <section>...</section>
   </div>
 </main>
 ```
@@ -119,7 +137,7 @@ Sempre verificar se uma classe existente resolve antes de criar uma nova:
 |------------|---------------|
 | `< 640px` (mobile) | 1 coluna, botões full-width, filtros empilhados |
 | `640px–1023px` (tablet) | Até 2 colunas quando o conteúdo comportar |
-| `≥ 1024px` (desktop) | `max-w-7xl`, flex para cabeçalhos, grid para coleções |
+| `≥ 1024px` (desktop) | `.archive-content`, flex para cabeçalhos, grid para coleções |
 
 - ✅ Usar `gap-*` para espaçamento
 - ❌ Nunca usar `space-*`
@@ -130,7 +148,7 @@ Sempre verificar se uma classe existente resolve antes de criar uma nova:
 ## 7. Componentes — regras rápidas
 
 ### Botões
-- Texto sempre no infinitivo: `Criar`, `Editar`, `Salvar`, `Excluir`
+- Ações no infinitivo: `Criar`, `Editar`, `Salvar`, `Excluir`. CTAs editoriais já presentes na referência, como “Conte sua história” e “Verifique seus contratos”, mantêm sua redação.
 - `min-height: 40px` (34px só em ações compactas de card)
 - Estados obrigatórios: normal, hover, focus-visible, disabled
 
@@ -168,7 +186,7 @@ Sempre verificar se uma classe existente resolve antes de criar uma nova:
 ## 9. Conteúdo e idioma
 
 - Todo texto da interface em **português do Brasil**
-- Nome da marca: **Ledger Command** (invariável)
+- Nome da marca: **Arquivos da Noite** na interface; **Meus Vampiros** é o nome do projeto
 - Frases curtas e operacionais
 - Não misturar PT-BR e EN em labels da mesma tela
 
@@ -180,7 +198,7 @@ Antes de considerar uma página pronta, verificar:
 
 - [ ] Usa tokens de cor — sem hexadecimais avulsos
 - [ ] Hierarquia: eyebrow → título → descrição → ação
-- [ ] Layout testado em 390px, 768px e 1280px
+- [ ] Layout verificado em 390px, 768px e 1440px; registrar pendência quando QA manual não for executado
 - [ ] Todos os campos têm label e estados de foco
 - [ ] Ações destrutivas diferenciadas e com confirmação
 - [ ] Estados de loading, erro e vazio implementados

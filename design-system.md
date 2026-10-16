@@ -1,8 +1,8 @@
-# Ledger Command — Guia de padronização visual
+# Arquivos da Noite — Guia de padronização visual
 
 ## 1. Objetivo
 
-Este documento define as regras para implementar novas páginas, componentes e fluxos do Ledger Command com uma identidade consistente de horror gótico: escura, austera, legível e funcional.
+Este documento define as regras para implementar novas páginas, componentes e fluxos do Arquivos da Noite com uma identidade consistente de horror gótico: escura, austera, legível e funcional.
 
 A interface deve parecer um **arquivo de comando restrito**, não uma tela genérica de dashboard. O terror aparece na atmosfera, nos contrastes e nos detalhes editoriais; nunca deve prejudicar a compreensão ou a operação.
 
@@ -169,7 +169,7 @@ Não usar `space-*`; preferir `gap-*`. Evitar valores arbitrários quando houver
 ## 10. Conteúdo e nomenclatura
 
 - Todo texto da interface deve estar em português do Brasil.
-- Manter `Ledger Command` como nome da marca.
+- Manter `Arquivos da Noite` como nome da marca.
 - Usar frases curtas e operacionais.
 - Preferir `Última atualização`, `Estado`, `Registro`, `Operador` e `Acesso restrito` para metadados.
 - Evitar misturar português e inglês em labels da mesma tela.
@@ -188,7 +188,7 @@ Não usar `space-*`; preferir `gap-*`. Evitar valores arbitrários quando houver
 
 ## 12. Critério de pronto
 
-Uma nova página está alinhada ao Ledger Command quando parece pertencer ao mesmo arquivo visual: fundo carvão, tipografia editorial, metadados técnicos, vermelho usado com intenção, componentes previsíveis e comportamento responsivo. A estética deve reforçar o contexto de horror sem competir com a tarefa principal do usuário.
+Uma nova página está alinhada ao Arquivos da Noite quando parece pertencer ao mesmo arquivo visual: fundo carvão, tipografia editorial, metadados técnicos, vermelho usado com intenção, componentes previsíveis e comportamento responsivo. A estética deve reforçar o contexto de horror sem competir com a tarefa principal do usuário.
 
 ## 13. Referência de classes existentes
 
@@ -213,3 +213,23 @@ As classes reutilizáveis atualmente definidas em `app/globals.css` são:
 - `.toast`
 
 Antes de criar uma nova classe, verificar se uma dessas classes, um token semântico ou uma composição Tailwind resolve o caso.
+
+
+## Referência visual de outubro de 2026
+
+O resumo operacional atualizado está em `UI-GUIDE.md`, baseado no PDF local `codex/Meus Vampiros — Arquivos da Noite.pdf`. Preferir `ArchiveHeader`, `.archive-content`, `.archive-page-heading`, `.archive-character-card`, `.archive-card-actions` e `.archive-resource-strip` nas telas atualizadas. Marca: Arquivos da Noite; nome do projeto: Meus Vampiros. Não copiar dados fictícios ou notas de implementação do PDF para a interface.
+
+| Token complementar | Valor | Uso |
+|---|---|---|
+| `--surface-input` | `#111114` | Campos |
+| `--surface-hover` | `#19191d` | Hover de superfície |
+| `--primary-hover` | `#be2b2f` | Hover primário |
+| `--accent` | `#c74343` | Eyebrow e bordas |
+| `--accent-text` | `#e17b78` | Texto de atenção |
+| `--border-accent` | `#6b3436` | Bordas temáticas |
+| `--positive` | `#9ac59b` | Status positivo, com texto |
+| `--border-positive` | `#456649` | Borda positiva |
+
+Cabeçalhos mobile usam disclosure nativo, sem depender de hover. Conteúdo: máximo 1440px com margens internas de 64px no desktop, 32px no tablet e 20px no celular. Cards: 1/2/3 colunas conforme espaço. Títulos de cards em caixa natural; títulos de página em caixa alta com rastreio discreto. Tipografia usa as famílias declaradas e fallbacks locais (Georgia/sans-serif/monospace); não assumir download de fontes ausentes.
+
+QA manual deve registrar resultados reais; quando adiado, listar no backlog local. Regras de autorização e recursos prevalecem sobre exemplos visuais. Toda cor nova é definida em `:root`; cores diretas legadas não são padrão para novos componentes.

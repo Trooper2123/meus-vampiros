@@ -1,5 +1,7 @@
 'use client'
 
+import type { ReactNode } from 'react'
+
 import { CharacterSummary } from '@/components/character-summary/character-summary'
 import { SessionResources } from '@/components/character-summary/session-resources'
 import { CharacterSpecialties } from '@/components/character-summary/character-specialties'
@@ -47,9 +49,10 @@ type CharacterData = {
 }
 
 type CharacterSummaryClientProps = {
+  headerActions?: ReactNode
   data: CharacterData
 }
 
-export function CharacterSummaryClient({ data }: CharacterSummaryClientProps) {
-  return <div className="flex flex-col gap-6"><CharacterSummary data={data} />{['PLAYER_VAMPIRE', 'VAMPIRE_NPC'].includes(data.characterType ?? '') && <BloodPotencySummary characterId={data.id} />}<NotesBacklinks targetType={['HUMAN_NPC', 'VAMPIRE_NPC'].includes(data.characterType ?? '') ? 'NPC' : 'CHARACTER'} targetId={data.id} />{data.characterType === 'PLAYER_VAMPIRE' && <><CharacterClanSummary characterId={data.id} /><SessionResources characterId={data.id} /><CharacterSpecialties characterId={data.id} /><CharacterRolls characterId={data.id} /></>}{hasSummaryName(data.predator) && data.predator && <PlayerPredatorSummary name={data.predator} roll={data.predatorRoll} source={data.predatorSource} selection={data.predatorSelection} />}</div>
+export function CharacterSummaryClient({ data, headerActions }: CharacterSummaryClientProps) {
+  return <div className="flex flex-col gap-6"><CharacterSummary data={data} headerActions={headerActions} resources={data.characterType === 'PLAYER_VAMPIRE' ? <SessionResources characterId={data.id} /> : undefined} specialties={data.characterType === 'PLAYER_VAMPIRE' ? <CharacterSpecialties characterId={data.id} /> : undefined} />{['PLAYER_VAMPIRE', 'VAMPIRE_NPC'].includes(data.characterType ?? '') && <BloodPotencySummary characterId={data.id} />}<NotesBacklinks targetType={['HUMAN_NPC', 'VAMPIRE_NPC'].includes(data.characterType ?? '') ? 'NPC' : 'CHARACTER'} targetId={data.id} />{data.characterType === 'PLAYER_VAMPIRE' && <><CharacterClanSummary characterId={data.id} /><CharacterRolls characterId={data.id} /></>}{hasSummaryName(data.predator) && data.predator && <PlayerPredatorSummary name={data.predator} roll={data.predatorRoll} source={data.predatorSource} selection={data.predatorSelection} />}</div>
 }

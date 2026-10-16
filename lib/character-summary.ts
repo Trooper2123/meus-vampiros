@@ -62,6 +62,7 @@ export async function getCharacterSummaryData(id: string, userId: string) {
 
   return {
     id: character.id,
+    campaignId: character.campaignId,
     characterType: character.characterType,
     name: getName(),
     clan: data['cla'] ? characterText(data['cla']) : null,
