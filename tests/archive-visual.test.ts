@@ -14,7 +14,7 @@ it('agrupa anotações com o nome e preserva a apresentação padrão do painel'
   const props = { campaignId: 'authorized-campaign', actorId: 'player', player: true }
   const action = createElement(CampaignNotesDialog, { ...props, compact: true })
   const html = renderToStaticMarkup(createElement(SummaryHeader, { name: 'Helena', clan: null, predator: null, generation: null, campaignName: null, campaignTheme: null, actions: action }))
-  expect(html).toContain('flex flex-wrap items-center justify-between gap-4')
+  expect(html).toContain('mt-5 flex flex-wrap items-center gap-4')
   expect(html.indexOf('Helena')).toBeLessThan(html.indexOf('aria-haspopup="dialog"'))
   expect(html).toContain('class="sr-only"')
   expect(html).toContain('Minhas anotações da mesa')
@@ -52,7 +52,9 @@ it('mantém recursos antes dos atributos e preserva o conteúdo informado', () =
   const html = renderToStaticMarkup(createElement(CharacterSummary, {
     data: { id: 'authorized', name: 'Helena', clan: 'Toreador', predator: null, generation: '12ª', campaignName: null, campaignTheme: null, attributes: { forca: 2 }, skills: {}, merits: [], flaws: [], disciplines: [], resources: { humanidade: 7, vontade: 5, vitalidade: 5, fome: 1 } },
     resources: createElement('p', {}, 'Recursos autorizados'),
+    clanDetails: createElement('p', {}, 'Detalhes do clã'),
   }))
-  expect(html.indexOf('Helena')).toBeLessThan(html.indexOf('Recursos autorizados'))
+  expect(html.indexOf('Helena')).toBeLessThan(html.indexOf('Detalhes do clã'))
+  expect(html.indexOf('Detalhes do clã')).toBeLessThan(html.indexOf('Recursos autorizados'))
   expect(html.indexOf('Recursos autorizados')).toBeLessThan(html.indexOf('Atributos'))
 })

@@ -145,3 +145,8 @@ main > .archive-header { z-index: 5; }
 .archive-resource-strip .archive-hunger { flex-wrap: nowrap; }
 
 @media (min-width: 1024px) { .archive-resource-strip { grid-template-columns: repeat(4,minmax(0,1fr)); } }
+
+.archive-session-resources { text-align: center; }
+.archive-session-resources dd { display: flex; flex-direction: column; align-items: center; }
+.archive-session-resources .archive-hunger { justify-content: center; }
+@media (min-width: 1280px) { .archive-session-resources { grid-template-columns: repeat(5,minmax(0,1fr)); } }

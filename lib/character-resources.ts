@@ -7,7 +7,6 @@ export function changeCharacterResources(actorId: string, id: string, changes: R
   if (!reason.trim() || reason.length > 500 || !Number.isSafeInteger(expectedRevision) || expectedRevision < 0 || !Object.keys(changes).length || Object.keys(changes).some(field => !allowed.includes(field))) throw new CharacterCommandError(400, 'Alteração de recursos inválida.')
   return runCharacterCommand(actorId, id, { key, expectedRevision, type: 'RESOURCES_CHANGED', payload: { changes, reason: reason.trim() } }, character => character.ownerId === actorId || character.masterId === actorId, character => {
     if (character.characterType !== 'PLAYER_VAMPIRE') throw new CharacterCommandError(422, 'Este fluxo exige uma ficha de vampiro jogável.')
-    if (('humanity' in changes || 'stains' in changes) && character.masterId !== actorId) throw new CharacterCommandError(403, 'Somente o Narrador pode alterar Humanidade e manchas.')
     const state = readSessionState(character.data, character.gameState)
     const maxima = calculateSecondaryAttributes(character.data)
     for (const [field, maximum] of Object.entries({ hunger: 5, humanity: 10, stains: 10 })) {

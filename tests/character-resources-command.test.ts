@@ -33,10 +33,10 @@ describe('recursos de sessão com provider real em memória', () => {
     expect(global.__devDb!.characterLedgerEvents).toHaveLength(0)
   })
 
-  it.each([{ humanity: 6 }, { stains: 2 }, { hunger: 3, humanity: 6 }])('jogador não altera campos narrativos %j nem aplica parcialmente', async changes => {
-    await expect(changeCharacterResources('player', id, changes, 'Sessão', 0, 'restricted')).rejects.toMatchObject({ status: 403 })
-    expect(global.__devDb!.characters[0].gameState!.hunger).toBe(1)
-    expect(global.__devDb!.characterLedgerEvents).toHaveLength(0)
+  it.each([{ humanity: 6 }, { stains: 2 }, { hunger: 3, humanity: 6 }])('proprietário altera campos narrativos %j com histórico', async changes => {
+    const result = await changeCharacterResources('player', id, changes, 'Sessão', 0, 'narrative-player')
+    expect(result).toMatchObject({ ok: true, revision: 1, state: changes })
+    expect(global.__devDb!.characterLedgerEvents[0]).toMatchObject({ createdByUserId: 'player', payload: { input: { changes } } })
   })
 
   it('Narrador altera Humanidade e manchas sem remover torpor ou sua causa', async () => {
@@ -109,19 +109,19 @@ describe('recursos de sessão com provider real em memória', () => {
   it.each(['other-player', 'other-narrator'])('rota impede IDOR de %s', async actor => {
     session.mockResolvedValue({ user: { sub: actor } })
     expect((await GET(request(), context)).status).toBe(403)
-    expect((await PATCH(request(), context)).status).toBe(403)
+    expect((await PATCH(request({ humanity: 6, stains: 2 }), context)).status).toBe(403)
     expect(global.__devDb!.characters[0].gameState!.hunger).toBe(1)
   })
 
-  it('rota recusa escalada narrativa mesmo junto de alteração válida', async () => {
-    expect((await PATCH(request({ hunger: 0, humanity: 1 }), context)).status).toBe(403)
-    expect(global.__devDb!.characters[0].gameState!.hunger).toBe(1)
-    expect(global.__devDb!.characterLedgerEvents).toHaveLength(0)
+  it('rota permite ao proprietário alterar Humanidade e Manchas', async () => {
+    const response = await PATCH(request({ humanity: 8, stains: 2 }), context)
+    expect(response.status).toBe(200)
+    expect(await response.json()).toMatchObject({ ok: true, state: { humanity: 8, stains: 2 } })
   })
 
   it('respostas do jogador omitem informação privada de torpor', async () => {
     const read = await (await GET(request(), context)).json()
-    expect(read.canEditNarrative).toBe(false)
+    expect(read.canEditNarrative).toBe(true)
     expect(read.state).not.toHaveProperty('torpor')
     const changed = await (await PATCH(request(), context)).json()
     expect(changed.state).not.toHaveProperty('torpor')

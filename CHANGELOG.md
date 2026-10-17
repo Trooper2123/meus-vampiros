@@ -1,6 +1,22 @@
-﻿# CHANGELOG — Ledger Command
+# CHANGELOG — Ledger Command
 
 Registro cronológico de todas as alterações relevantes implementadas no projeto.
+
+## 2026-10-17 15:23 BRT - style - Simplificar o resumo da ficha
+- Arquivos: página de resumo, character-summary-client, CharacterSummary, SummaryHeader, CharacterRolls, CampaignNotesDialog, UI-GUIDE e testes archive-visual/character-rolls-ui.
+- Retirado campo de motivo da rolagem; comando registra automaticamente atributo e habilidade, preservando validação e cálculo no servidor. Clã após cabeçalho; botão compacto Anotações junto ao nome; removido título redundante Visão Geral.
+- 147/147 testes pertinentes aprovados, tipos aprovados, lint sem erros/3 avisos anteriores, audit sem vulnerabilidades. Revisão pela skill pre-commit-review sem bloqueios no recorte. Build aprovado. QA manual e PostgreSQL pendentes; sem novo reset/schema/seeds.
+
+
+## 2026-10-17 15:17 BRT - fix - Permitir recursos narrativos ao proprietário
+- Arquivos: `lib/character-resources.ts`, `app/api/characters/[id]/resources/route.ts`, `components/character-summary/session-resources.tsx`, testes de comandos/interface e `UI-GUIDE.md`.
+- Proprietário e Narrador podem alterar Humanidade e Manchas; removidos avisos de exclusividade do Narrador. Humanidade conserva somente + na interface e Manchas conserva −/+. Autorização no servidor, limites, histórico, revisão/idempotência e sigilo da causa de torpor preservados.
+- 56/56 testes pertinentes aprovados, TypeScript aprovado, lint sem erros (3 avisos anteriores), npm audit sem vulnerabilidades. Revisão focada pela skill local pre-commit-review sem bloqueios ou padrões de segredos no diff. Build aprovado; QA manual e PostgreSQL não executados. Retomada da SPEC sem repetir reset e sem alteração de schema/seeds. Alterações locais de outras tarefas preservadas.
+
+## 2026-10-17 14:39 BRT - style - Centralizar marcadores de recursos
+- Arquivos: `components/character-summary/session-resources.tsx`, `app/globals.css` e `UI-GUIDE.md`.
+- Centralizados os nomes, valores e controles; Manchas integrado na mesma grade, com cinco colunas a partir de 1280px. Preservados limites, permissoes e salvamento automatico. Sem mudancas em APIs ou banco, sem novo reset.
+- Testes pertinentes: 55/55 aprovados; tipos e build aprovados; lint sem erros (3 avisos anteriores); auditoria sem vulnerabilidades. QA visual em navegador pendente. Skill pre-commit-review nao localizada; revisao formal bloqueada, sem recomendacao de commit.
 
 ## 2026-10-16 01:34 BRT — chore — Revisão pré-commit da interface e recursos
 - Candidato: 39 arquivos de interface, resumos/notas/gestão de mesas, recursos com autosave, testes e guias; inclui a página dedicada de criação de NPC e `campaignId` no resumo autorizado.

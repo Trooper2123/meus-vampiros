@@ -24,13 +24,7 @@ export default async function CharacterSummaryPage({
       <ArchiveHeader title="Resumo da ficha" />
 
       <div className="archive-content">
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <p className="eyebrow">Visualização inicial da ficha</p>
-            <h2 className="mt-3 font-serif text-3xl uppercase tracking-[0.08em]">
-              Visão Geral
-            </h2>
-          </div>
+        <div className="mb-4 flex flex-wrap justify-end gap-3">
           <Link href={`/characters/${id}/edit`} className="button-primary inline-flex items-center gap-2">
             <span className="text-xs">Editar ficha completa</span>
           </Link>

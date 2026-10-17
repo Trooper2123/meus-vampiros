@@ -52,6 +52,7 @@ type CharacterData = {
 }
 
 type CharacterSummaryProps = {
+  clanDetails?: ReactNode
   headerActions?: ReactNode
   resources?: ReactNode
   specialties?: ReactNode
@@ -59,7 +60,7 @@ type CharacterSummaryProps = {
   onChangeResources?: (resources: CharacterData['resources']) => void
 }
 
-export function CharacterSummary({ data, onChangeResources, specialties, resources, headerActions }: CharacterSummaryProps) {
+export function CharacterSummary({ data, onChangeResources, specialties, resources, headerActions, clanDetails }: CharacterSummaryProps) {
   const maxima = data.characterType === 'PLAYER_VAMPIRE' ? calculateSecondaryAttributes(data.attributes) : undefined
   const handleResourcesChange = (newResources: CharacterData['resources']) => {
     onChangeResources?.(newResources)
@@ -76,6 +77,7 @@ export function CharacterSummary({ data, onChangeResources, specialties, resourc
         campaignName={data.campaignName}
         campaignTheme={data.campaignTheme}
       />
+      {clanDetails}
       {resources}
       <SummaryAttributes attributes={data.attributes} />
       <SummarySkills skills={data.skills} />

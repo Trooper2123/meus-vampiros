@@ -122,7 +122,7 @@ it('cada clique de Fome salva, usa nova revisão e mantém cinco pontos nos limi
   expect(fetch).toHaveBeenCalledTimes(4)
 })
 
-it('Humanidade/manchas do jogador permanecem bloqueadas até no callback', async () => {
+it('Humanidade/manchas sem permissão permanecem bloqueadas até no callback', async () => {
   expect(button('Aumentar Humanidade').props.disabled).toBe(true)
   expect(button('Aumentar Manchas').props.disabled).toBe(true)
   await button('Aumentar Humanidade').props.onClick()
@@ -130,7 +130,7 @@ it('Humanidade/manchas do jogador permanecem bloqueadas até no callback', async
   expect(fetch).not.toHaveBeenCalled()
 })
 
-it('Narrador aumenta Humanidade até 10 sem opção de reduzir', async () => {
+it('proprietário autorizado aumenta Humanidade até 10 sem opção de reduzir', async () => {
   harness.data.canEditNarrative = true
   harness.data.state.humanity = 9
   await button('Aumentar Humanidade').props.onClick()
@@ -139,6 +139,16 @@ it('Narrador aumenta Humanidade até 10 sem opção de reduzir', async () => {
   await button('Aumentar Humanidade').props.onClick()
   expect(fetch).toHaveBeenCalledTimes(1)
   expect(button('Reduzir Humanidade')).toBeUndefined()
+})
+
+it('proprietário autorizado aumenta e reduz Manchas com salvamento automático', async () => {
+  harness.data.canEditNarrative = true
+  await button('Aumentar Manchas').props.onClick()
+  expect(command().changes).toEqual({ stains: 1 })
+  await button('Reduzir Manchas').props.onClick()
+  expect(command(1).changes).toEqual({ stains: 0 })
+  expect(button('Reduzir Manchas').props.disabled).toBe(true)
+  expect(html()).not.toContain('Somente o Narrador pode alterar.')
 })
 
 it.each([['Vitalidade', 'health'], ['Força de vontade', 'willpower']] as const)('cada tipo de dano de %s tem contador próprio e salva preservando o outro', async (label, track) => {

@@ -116,7 +116,7 @@ function ResourceForm({ data, url, refresh, notify }: { data: ResourceResponse; 
     const total = current.superficial + current.aggravated
     return <div><dt>{label}</dt><dd>
       <span className="block font-serif text-4xl" aria-label={`${label} atual`}>{Math.max(0, maximum - total)} / {maximum}</span>
-      <div className="mt-4 flex flex-col gap-3">{(['superficial', 'aggravated'] as const).map(type => <div key={type} role="group" aria-label={`Dano ${type === 'superficial' ? 'superficial' : 'agravado'} de ${label}`} className="flex flex-wrap items-center justify-between gap-2">
+      <div className="mt-4 flex flex-col gap-3">{(['superficial', 'aggravated'] as const).map(type => <div key={type} role="group" aria-label={`Dano ${type === 'superficial' ? 'superficial' : 'agravado'} de ${label}`} className="flex flex-wrap items-center justify-center gap-2">
         <span className="font-sans text-xs text-muted-foreground">{type === 'superficial' ? 'Superficial' : 'Agravado'} <span className="font-mono text-sm text-foreground">{current[type]}</span></span>
         <ResourceButtons label={`dano ${type === 'superficial' ? 'superficial' : 'agravado'} de ${label}`} onReduce={() => changeDamage(track, type, -1)} onIncrease={() => changeDamage(track, type, 1)} disabled={locked} cannotReduce={current[type] <= 0} cannotIncrease={total >= maximum} />
       </div>)}</div>
@@ -125,13 +125,14 @@ function ResourceForm({ data, url, refresh, notify }: { data: ResourceResponse; 
 
   return <div aria-busy={saving} className="flex flex-col gap-5">
     <p role="status" className="text-sm text-muted-foreground">{saving ? 'Salvando alteração…' : retrying ? 'Salvamento não confirmado. Reenvie ou recarregue os recursos.' : 'Cada alteração é salva automaticamente. Contadores mostram os valores confirmados.'}</p>
-    <dl className="archive-resource-strip">
-      <div><dt>Humanidade</dt><dd><span className="block font-serif text-4xl">{data.state.humanity}</span><div className="mt-4"><ResourceButtons label="Humanidade" onIncrease={() => changeScalar('humanity', 1)} disabled={locked || !data.canEditNarrative} cannotIncrease={data.state.humanity >= 10} /></div>{!data.canEditNarrative && <p className="mt-2 font-sans text-xs text-muted-foreground">Somente o Narrador pode alterar.</p>}</dd></div>
+    <dl className="archive-resource-strip archive-session-resources">
+      <div><dt>Humanidade</dt><dd><span className="block font-serif text-4xl">{data.state.humanity}</span><div className="mt-4"><ResourceButtons label="Humanidade" onIncrease={() => changeScalar('humanity', 1)} disabled={locked || !data.canEditNarrative} cannotIncrease={data.state.humanity >= 10} /></div></dd></div>
       {damageResource('willpower', 'Força de vontade', data.maxima.willpowerMax)}
       {damageResource('health', 'Vitalidade', data.maxima.healthMax)}
       <div><dt>Fome</dt><dd><span className="archive-hunger" aria-label={`${data.state.hunger} de 5`}>{Array.from({ length: 5 }, (_, index) => <span key={index} aria-hidden="true" className={`dot ${index < data.state.hunger ? 'is-filled' : ''}`} />)}</span><span className="mt-2 block font-sans text-xs text-muted-foreground">{data.state.hunger} de 5</span><div className="mt-4"><ResourceButtons label="Fome" onReduce={() => changeScalar('hunger', -1)} onIncrease={() => changeScalar('hunger', 1)} disabled={locked} cannotReduce={data.state.hunger <= 0} cannotIncrease={data.state.hunger >= 5} /></div><p className="mt-2 font-sans text-xs text-muted-foreground">Sem custo de XP.</p></dd></div>
+      <div><dt>Manchas</dt><dd><span className="block font-serif text-4xl">{data.state.stains} <span className="font-sans text-xs text-muted-foreground">de 10</span></span><div className="mt-4"><ResourceButtons label="Manchas" onReduce={() => changeScalar('stains', -1)} onIncrease={() => changeScalar('stains', 1)} disabled={locked || !data.canEditNarrative} cannotReduce={data.state.stains <= 0} cannotIncrease={data.state.stains >= 10} /></div></dd></div>
     </dl>
-    <details className="border-t border-border pt-4"><summary className="cursor-pointer text-sm">Manchas</summary><div className="mt-4 flex flex-wrap items-center gap-4"><span className="font-mono text-sm">{data.state.stains} de 10</span><ResourceButtons label="Manchas" onReduce={() => changeScalar('stains', -1)} onIncrease={() => changeScalar('stains', 1)} disabled={locked || !data.canEditNarrative} cannotReduce={data.state.stains <= 0} cannotIncrease={data.state.stains >= 10} />{!data.canEditNarrative && <p className="text-xs text-muted-foreground">Somente o Narrador pode alterar.</p>}</div></details>
+
     <p className="text-sm text-muted-foreground">Condição: {({ ACTIVE: 'Ativo', DAY_SLEEP: 'Sono diurno', STAKED: 'Empalado', TORPOR: 'Torpor', FINAL_DEATH: 'Morte definitiva' } as Record<string, string>)[data.state.condition] ?? 'Condição não reconhecida'}</p>
     {retrying && <button type="button" className="button-primary self-start" disabled={saving} onClick={() => save()}>Reenviar alteração</button>}
     <dialog ref={zeroDialog} aria-labelledby="hunger-zero-title" aria-describedby="hunger-zero-description" className="m-auto w-[min(32rem,95vw)] border border-border bg-card p-6 text-foreground backdrop:bg-background/80">
