@@ -4,7 +4,6 @@ import { redirect } from 'next/navigation'
 import { getSessionOrDev } from '@/lib/auth0'
 import { CharacterSummaryClient } from '../character-summary-client'
 import Link from 'next/link'
-import { CampaignNotesDialog } from '@/components/notes/campaign-notes-dialog'
 
 export default async function CharacterSummaryPage({
   params,
@@ -30,7 +29,7 @@ export default async function CharacterSummaryPage({
           </Link>
         </div>
 
-        <CharacterSummaryClient data={characterData} headerActions={characterData.campaignId && characterData.characterType === 'PLAYER_VAMPIRE' ? <CampaignNotesDialog campaignId={characterData.campaignId} actorId={session.user.sub} player compact /> : undefined} />
+        <CharacterSummaryClient data={characterData} />
       </div>
     </main>
   )

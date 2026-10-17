@@ -2,6 +2,12 @@
 
 Registro cronológico de todas as alterações relevantes implementadas no projeto.
 
+## 2026-10-17 15:53 BRT - style - Anotações da ficha em nova guia
+- Arquivos: `app/characters/[id]/character-summary-client.tsx`, `app/characters/[id]/summary/page.tsx`, `tests/character-summary-notes.test.ts` e `UI-GUIDE.md`.
+- Removido card Anotações relacionadas do resumo compartilhado. Botão Anotações junto ao nome abre /notes em nova guia, com filtro CHARACTER/NPC e identificador da ficha, rel noopener noreferrer e aviso acessível. Removido modal da página de resumo; destino e autorização existentes reutilizados.
+- Validado o candidato em worktree isolado: 28/28 testes, tipos e build --webpack aprovados; lint 0 erros/3 avisos anteriores; audit 0 vulnerabilidades. Build com avisos de dependência Auth0 e configuração Auth0 ausente no worktree sem .env. Revisão pre-commit sem bloqueios no candidato; erro de tipos local de outra tarefa excluído deste commit. QA manual pendente; sem novo reset/banco.
+
+
 ## 2026-10-17 15:23 BRT - style - Simplificar o resumo da ficha
 - Arquivos: página de resumo, character-summary-client, CharacterSummary, SummaryHeader, CharacterRolls, CampaignNotesDialog, UI-GUIDE e testes archive-visual/character-rolls-ui.
 - Retirado campo de motivo da rolagem; comando registra automaticamente atributo e habilidade, preservando validação e cálculo no servidor. Clã após cabeçalho; botão compacto Anotações junto ao nome; removido título redundante Visão Geral.
