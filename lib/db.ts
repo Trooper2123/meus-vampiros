@@ -1,6 +1,8 @@
 import { drizzle } from 'drizzle-orm/neon-serverless'
 import { Pool } from '@neondatabase/serverless'
 import { sql } from 'drizzle-orm'
+import { DISCIPLINE_RESEARCH, SKILL_CATALOG } from './vtm-v5/research-catalog'
+import { CLAN_DISCIPLINES, DISCIPLINES } from './vtm-v5/disciplines'
 import { sortCampaignEventsChronologically, type CampaignCalendarConfig, type CampaignCalendarMode, type CampaignEvent, type CampaignEventVisibility } from './types/campaign-event'
 
 declare global {
