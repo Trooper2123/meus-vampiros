@@ -9,14 +9,7 @@ declare global {
 }
 
 const connectionString = process.env.DATABASE_URL
-
 const isDev = process.env.NODE_ENV !== 'production' && !connectionString
-
-if (!connectionString) {
-  // Do not throw here to keep serverless builds from failing during static analysis.
-  // API routes that need the DB will log an error if missing.
-  // throw new Error('DATABASE_URL is not set')
-}
 
 const pool = (() => {
   if (!connectionString) return undefined
@@ -247,6 +240,29 @@ export async function ensureAllTables() {
     created_at TIMESTAMPTZ DEFAULT now(),
     updated_at TIMESTAMPTZ DEFAULT now()
   );
+
+  CREATE TABLE IF NOT EXISTS discipline_catalog (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    aliases JSONB NOT NULL DEFAULT '[]'::jsonb
+  );
+  CREATE TABLE IF NOT EXISTS clan_disciplines (
+    clan_code TEXT NOT NULL,
+    discipline_id TEXT NOT NULL REFERENCES discipline_catalog(id),
+    PRIMARY KEY (clan_code, discipline_id)
+  );
+  CREATE TABLE IF NOT EXISTS skill_catalog (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL
+    );
+  CREATE TABLE IF NOT EXISTS discipline_research_catalog (
+      id TEXT PRIMARY KEY,
+      discipline_id TEXT NOT NULL,
+      entry_type TEXT NOT NULL,
+      level INTEGER NOT NULL,
+      skill_ids JSONB NOT NULL DEFAULT '[]'::jsonb,
+      payload JSONB NOT NULL
+    );
   `)
 }
 
@@ -301,6 +317,53 @@ export async function upsertUserFromAuth0(user: { sub: string; email?: string | 
 // When DATABASE_URL is absent (local dev without a real DB), `pool` is undefined.
 // The dev-db layer intercepts calls before they reach `db`, so this cast is safe.
 export const db = pool ? drizzle(pool) : (null as unknown as ReturnType<typeof drizzle>)
+
+export async function getMasterResearchCatalog() {
+  if (!pool) throw new Error('DATABASE_URL não configurada.')
+  await ensureAllTables()
+  const client = await pool.connect()
+  try {
+    await client.query('BEGIN')
+    await client.query(
+      `INSERT INTO discipline_catalog (id, name, aliases)
+       SELECT id, name, aliases FROM jsonb_to_recordset($1::jsonb) AS item(id text, name text, aliases jsonb)
+       ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, aliases = EXCLUDED.aliases`,
+      [JSON.stringify(DISCIPLINES)],
+    )
+    await client.query('DELETE FROM clan_disciplines WHERE clan_code = ANY($1::text[])', [Object.keys(CLAN_DISCIPLINES)])
+    await client.query(
+      `INSERT INTO clan_disciplines (clan_code, discipline_id)
+       SELECT clan_code, discipline_id FROM jsonb_to_recordset($1::jsonb) AS item(clan_code text, discipline_id text)`,
+      [JSON.stringify(Object.entries(CLAN_DISCIPLINES).flatMap(([clan_code, disciplineIds]) => disciplineIds.map(discipline_id => ({ clan_code, discipline_id }))))],
+    )
+    await client.query(
+      `INSERT INTO skill_catalog (id, name)
+       SELECT id, name FROM jsonb_to_recordset($1::jsonb) AS row(id text, name text)
+       ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name`,
+      [JSON.stringify(SKILL_CATALOG)],
+    )
+    await client.query(
+      `INSERT INTO discipline_research_catalog (id, discipline_id, entry_type, level, skill_ids, payload)
+       SELECT row->>'id', row->>'disciplineId', row->>'type', (row->>'level')::integer,
+         coalesce(row->'skillIds', '[]'::jsonb), row - 'skillIds'
+       FROM jsonb_array_elements($1::jsonb) AS item(row)
+       ON CONFLICT (id) DO UPDATE SET discipline_id = EXCLUDED.discipline_id,
+         entry_type = EXCLUDED.entry_type, level = EXCLUDED.level,
+         skill_ids = EXCLUDED.skill_ids, payload = EXCLUDED.payload`,
+      [JSON.stringify(DISCIPLINE_RESEARCH)],
+    )
+    const entries = await client.query('SELECT payload, skill_ids AS "skillIds" FROM discipline_research_catalog ORDER BY discipline_id, level, id')
+    const skills = await client.query('SELECT id, name FROM skill_catalog ORDER BY name')
+    const disciplines = await client.query('SELECT id, name FROM discipline_catalog ORDER BY id')
+    await client.query('COMMIT')
+    return { entries: entries.rows.map(row => ({ ...row.payload, skillIds: row.skillIds })), skills: skills.rows, disciplines: disciplines.rows }
+  } catch (error) {
+    await client.query('ROLLBACK')
+    throw error
+  } finally {
+    client.release()
+  }
+}
 
 // ─── Helper Functions for New Tables ─────────────────────────────────────────
 

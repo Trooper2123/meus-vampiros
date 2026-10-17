@@ -8,7 +8,7 @@ export function VisibilityBadge({ visibility }: { visibility: CampaignEventVisib
   return (
     <span className={`status ${privateEvent ? 'risk' : 'active'}`}>
       <Icon className="size-3" aria-hidden="true" />
-      {privateEvent ? 'Apenas mestre' : 'Todos os participantes'}
+      {privateEvent ? 'Apenas modelo.md' : 'Todos os participantes'}
     </span>
   )
 }

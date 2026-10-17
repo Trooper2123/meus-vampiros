@@ -1,6 +1,8 @@
+import type { DisciplineAcquisition } from './discipline-access'
 import { CHARACTER_TYPES, CREATION_TYPES, type CharacterRulesInput, type CharacterType, type CreationType, type DisciplineInput } from './types'
 import { normalizePredatorType } from './predator-types'
 import { characterText } from './text'
+import { manualSkillValues, type CreationGrant } from './creation-grants'
 
 const numberOrNull = (value: unknown) => {
   const parsed = Number(value)
@@ -12,7 +14,7 @@ const traitDots = (value: unknown) => Array.isArray(value) ? value.reduce((total
   return total + Math.max(0, Number((item as Record<string, unknown>).level) || 0)
 }, 0) : 0
 
-export function normalizeCharacterRulesInput(data: Record<string, unknown>): CharacterRulesInput {
+export function normalizeCharacterRulesInput(data: Record<string, unknown>, creationGrants: readonly CreationGrant[] = [], acquisitions: readonly DisciplineAcquisition[] = []): CharacterRulesInput {
   const characterType = CHARACTER_TYPES.includes(data.characterType as CharacterType) ? data.characterType as CharacterType : 'PLAYER_VAMPIRE'
   const creationType = CREATION_TYPES.includes(data.creationType as CreationType) ? data.creationType as CreationType : 'FLEDGLING'
   const attributeKeys = ['forca', 'destreza', 'vigor', 'carisma', 'manipulacao', 'compostura', 'inteligencia', 'raciocinio', 'determinacao']
@@ -35,10 +37,11 @@ export function normalizeCharacterRulesInput(data: Record<string, unknown>): Cha
     bloodPotency: numberOrNull(data['potencia-de-sangue']),
     humanity: numberOrNull(data.humanidade),
     attributes,
-    skills,
+    skills: manualSkillValues(skills, creationGrants),
     skillMode: typeof data.skillMode === 'string' ? data.skillMode as CharacterRulesInput['skillMode'] : undefined,
     convictions,
     disciplines,
+    disciplineXpDots: acquisitions.filter(entry => entry.source === 'XP').length,
     predatorDisciplineBonus: data.predatorDisciplineBonus === 1 ? 1 : 0,
     predatorType: normalizePredatorType(data.predatorTypeCode ?? data.predador) ?? (characterText(data.predador).trim() || null),
     advantages: stringArray(data.advantages ?? (Array.isArray(data.vantagens) ? data.vantagens.map((item) => typeof item === 'object' && item ? (item as Record<string, unknown>).name : item) : [])),

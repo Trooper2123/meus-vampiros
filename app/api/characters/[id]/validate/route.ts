@@ -1,9 +1,12 @@
+import { validateDisciplineAllocation, xpAcquisitions } from '@/lib/discipline-allocation'
+import { CharacterCommandError } from '@/lib/character-commands'
 import { NextResponse } from 'next/server'
 import { getSessionOrDev } from '@/lib/auth0'
 import { canManageCampaign } from '@/lib/auth/authorization'
 import { ensureAllTables } from '@/lib/db'
 import { appendCharacterLedgerEvent, getCharacterAccessRecord, saveCharacterValidation } from '@/lib/characters'
 import { normalizeCharacterRulesInput } from '@/lib/vtm-v5/normalize'
+import { projectCreationGrants } from '@/lib/vtm-v5/creation-grants'
 import { validateCharacter } from '@/lib/vtm-v5/validation'
 import { campaignPredatorOverrides } from '@/lib/campaign-invitations'
 
@@ -16,7 +19,9 @@ async function validatePersistedCharacter(id: string, userId: string) {
   const isOwner = character.userId === userId
   const isMaster = Boolean(character.campaignId && await canManageCampaign(userId, character.campaignId))
   if (!isOwner && !isMaster) return { response: NextResponse.json({ error: 'Acesso negado.' }, { status: 403 }) }
-  const report = validateCharacter(normalizeCharacterRulesInput({ ...character.data, characterType: character.characterType }), campaignPredatorOverrides(character.campaignId).map(rule => rule.ruleCode))
+  const report = validateCharacter(normalizeCharacterRulesInput({ ...character.data, characterType: character.characterType }, projectCreationGrants(character.gameState), xpAcquisitions(character)), campaignPredatorOverrides(character.campaignId).map(rule => rule.ruleCode))
+  try { validateDisciplineAllocation(character, true) }
+  catch (error) { report.valid = false; report.errors.push({ code: 'DISCIPLINE_ACCESS', field: 'disciplines', message: error instanceof CharacterCommandError ? error.message : 'Revise as origens das Disciplinas.' }) }
   await saveCharacterValidation(id, report)
   await appendCharacterLedgerEvent(id, 'VALIDATION', 'RULE_ENGINE', { valid: report.valid, errors: report.errors.map((entry) => entry.code), warnings: report.warnings.map((entry) => entry.code), derived: report.derived }, userId)
   return { report }

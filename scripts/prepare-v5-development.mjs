@@ -16,7 +16,7 @@ for (const fixture of [
   { name: 'Jogador B', owner: 'test|player-b', campaignId: campaignB.id, condition: 'ACTIVE', hunger: 1 },
   { name: 'Independente', owner: 'test|player-a', campaignId: null, condition: 'ACTIVE', hunger: 1 },
   { name: 'Fome máxima', owner: 'test|player-a', campaignId: campaignA.id, condition: 'ACTIVE', hunger: 5 },
-  { name: 'Estaqueado', owner: 'test|player-a', campaignId: campaignA.id, condition: 'STAKED', hunger: 3 },
+  { name: 'Estacado', owner: 'test|player-a', campaignId: campaignA.id, condition: 'STAKED', hunger: 3 },
   { name: 'Torpor', owner: 'test|player-a', campaignId: campaignA.id, condition: 'TORPOR', hunger: 5 },
 ]) {
   const character = devCreateCharacter(fixture.owner, { name: fixture.name, campaignId: fixture.campaignId, data: { characterType: 'PLAYER_VAMPIRE', vigor: 3, determinacao: 2, compostura: 2, fome: fixture.hunger } })

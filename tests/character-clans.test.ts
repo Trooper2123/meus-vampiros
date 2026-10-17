@@ -148,7 +148,7 @@ describe('clã: comandos, origens e autorização em memória', () => {
     expect(character.data.disciplinas).toHaveLength(2)
   })
 
-  it('rejeita especialidade sem habilidade e Feitiçaria de Sangue fora de Tremere', async () => {
+  it('bloqueia Feitiçaria fora de Tremere e mantém conversão da especialidade sem habilidade', async () => {
     const definition = PREDATOR_TYPE_BY_CODE.get('BAGGER')!
     stored().data.cla = 'Toreador'
     stored().data['habilidade-ladroagem'] = 1
@@ -157,6 +157,8 @@ describe('clã: comandos, origens e autorização em memória', () => {
     expect(stored().revision).toBe(0)
     delete stored().data['habilidade-ladroagem']
     applied.data.predatorTypeSelection = { ...applied.data.predatorTypeSelection, discipline: 'Ofuscação' }
-    await expect(persistPredatorTypeData(id, applied.data, 'player', { expectedRevision: 0, eventType: 'PREDATOR_TYPE_APPLIED', payload: {} })).rejects.toMatchObject({ status: 422 })
+    await persistPredatorTypeData(id, applied.data, 'player', { expectedRevision: 0, eventType: 'PREDATOR_TYPE_APPLIED', payload: {} })
+    expect(stored().data['habilidade-ladroagem']).toBe(1)
+    expect(stored().gameState!.creationEffects).toEqual(expect.arrayContaining([expect.objectContaining({ origin: 'PREDATOR', kind: 'SKILL', id: 'ladroagem' })]))
   })
 })

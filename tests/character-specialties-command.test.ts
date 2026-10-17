@@ -27,6 +27,20 @@ function request(body: unknown): Request {
 function specialties(): Specialty[] { return global.__devDb!.characters[0].gameState!.specialties as Specialty[] }
 
 describe('comandos de especialidades e autorização real em memória', () => {
+  it('compra duas especialidades distintas de Ofícios com um ponto e cobra cada operação uma vez', async () => {
+    const record = global.__devDb!.characters[0]
+    record.campaignId = null
+    record.data['habilidade-oficios'] = 1
+    const first = { ...purchase, skillId: 'oficios', name: 'Pintura' }
+    await changeSpecialty('player', id, first)
+    const second = { ...first, name: 'Escultura', expectedRevision: record.revision ?? 0, idempotencyKey: '44444444-4444-4444-8444-444444444444' }
+    const result = await changeSpecialty('player', id, second)
+    expect(await changeSpecialty('player', id, second)).toEqual(result)
+    expect(specialties()).toHaveLength(2)
+    expect(record.spentXp).toBe(6)
+    expect(specialtyView((await getCommandCharacter(id))!, 'player').eligibility.purchase.map(option => option.skillId)).toContain('oficios')
+  })
+
   it('concede especialidade gratuita sem mesa automaticamente', async () => {
     global.__devDb!.characters[0].campaignId = null
     await changeSpecialty('player', id, grant)

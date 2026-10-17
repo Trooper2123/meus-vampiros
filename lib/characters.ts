@@ -1,3 +1,5 @@
+import type { DisciplineAcquisition } from './vtm-v5/discipline-access'
+import { xpAcquisitions, validateDisciplineAllocation } from './discipline-allocation'
 import { sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import {
@@ -190,15 +192,8 @@ export async function getCharacterForViewer(id: string, viewerId: string) {
 }
 
 export async function getCharacterAccessRecord(id: string) {
-  if (isDev) {
-    const character = devGetCharacterAccessRecord(id)
-    return character ? { id: character.id, userId: character.userId, campaignId: character.campaignId, status: character.status, revision: character.revision ?? 0, characterType: character.characterType ?? 'PLAYER_VAMPIRE', data: normalizeDisciplines(character.data) } : null
-  }
-  const result = await db.execute<{ id: string; user_id: string; campaign_id: string | null; status: string; revision: number; character_type: string; data: unknown }>(sql`
-    SELECT id, user_id, campaign_id, status, revision, character_type, data FROM characters WHERE id = ${id}::uuid
-  `)
-  const row = result.rows[0]
-  return row ? { id: row.id, userId: row.user_id, campaignId: row.campaign_id, status: row.status, revision: row.revision, characterType: row.character_type, data: normalizeDisciplines((row.data ?? {}) as Record<string, unknown>) } : null
+  const character = await getCommandCharacter(id)
+  return character ? { id: character.id, userId: character.ownerId, campaignId: character.campaignId, status: character.status, revision: character.revision, characterType: character.characterType, data: normalizeDisciplines(character.data), gameState: character.gameState, masterId: character.masterId } : null
 }
 
 export async function saveCharacterValidation(id: string, report: unknown) {
@@ -226,13 +221,17 @@ export async function createCharacter(
   userId: string,
   payload: { name?: string; data?: Record<string, unknown>; campaignId?: string | null; visibility?: CharacterVisibility },
   resourceSource?: Record<string, unknown>,
-  creationState?: { creationEffects: CreationEffect[]; specialties: Specialty[] },
+  creationState?: { creationEffects: CreationEffect[]; specialties: Specialty[]; disciplineAcquisitions?: DisciplineAcquisition[] },
   policyConsent?: { campaignId: string; acceptedAt: string; acceptedBy: string }
 ) {
+  const candidateData = normalizeDisciplines(payload.data ?? {})
+  const allocationState: Record<string, unknown> = creationState ? structuredClone(creationState) : {}
+  validateDisciplineAllocation({ data: candidateData, gameState: allocationState, campaignId: payload.campaignId ?? null, masterId: null, characterType: String(candidateData.characterType ?? 'PLAYER_VAMPIRE') })
+  payload = { ...payload, data: candidateData }
   assertBloodPotencyInput(payload.data ?? {})
   payload = { ...payload, data: applySecondaryAttributes(payload.data ?? {}, resourceSource) }
   const initialXp = CREATION_ADJUSTMENTS[(payload.data?.creationType ?? 'FLEDGLING') as CreationType]?.initialXp ?? 0
-  const initialState = { ...readSessionState(payload.data ?? {}, resourceSource ? { healthDamage: resourceSource.healthDamage, willpowerDamage: resourceSource.willpowerDamage } : {}), ...(creationState ? structuredClone(creationState) : {}), ...(policyConsent ? { policyConsent } : {}) }
+  const initialState = { ...readSessionState(payload.data ?? {}, resourceSource ? { healthDamage: resourceSource.healthDamage, willpowerDamage: resourceSource.willpowerDamage } : {}), ...allocationState, ...(policyConsent ? { policyConsent } : {}) }
   if (isDev) {
     const character = devCreateCharacter(userId, payload)
     character.totalXp = character.characterType === 'PLAYER_VAMPIRE' ? initialXp : 0
@@ -299,6 +298,7 @@ export async function updateCharacter(
     if (['ARCHIVED', 'DISABLED'].includes(character.status)) throw new CharacterCommandError(409, 'Esta ficha precisa ser reativada pelo Narrador antes da edição.')
     if (payload.campaignId !== undefined && payload.campaignId !== character.campaignId) throw new CharacterCommandError(409, 'A alteração do vínculo exige aprovação da mesa.')
     if (payload.data) {
+      for (const field of ['gameState', 'disciplineAccessGrants', 'disciplineAcquisitions']) if (Object.hasOwn(payload.data, field)) throw new CharacterCommandError(422, 'Autorizações e aquisições exigem o comando específico.')
       assertBloodPotencyInput(payload.data, character.data)
       if (character.campaignId && global.__devDb?.campaigns.find(campaign => campaign.id === character.campaignId)?.creationPolicy) validateInvitedClan(character.campaignId, payload.data)
       if (character.data.clanRulesVersion || character.data.predatorEffectsVersion) {
@@ -313,6 +313,7 @@ export async function updateCharacter(
       catch { throw new CharacterCommandError(422, 'Habilidades ou pontos inválidos.') }
       character.data = applySecondaryAttributes(mergedData, character.data)
       validateCreationEffects(character)
+      validateDisciplineAllocation(character)
       delete character.data['experiencia-total']
       delete character.data['experiencia-gasta']
     }
@@ -331,7 +332,7 @@ export async function duplicateCharacter(id: string, userId: string) {
     const data = projectIndependentCharacter(original.data as Record<string, unknown>)
     const source = await getCommandCharacter(id)
     if (!source || source.ownerId !== userId) return null
-    const effects = creationEffects(source).map(({ origin, kind, id: effectId, name, dots, baseDots }) => ({ origin, kind, id: effectId, name, dots, baseDots }))
+    const effects = creationEffects(source).map(({ origin, kind, id: effectId, disciplineId, name, dots, baseDots }) => ({ origin, kind, id: effectId, disciplineId, name, dots, baseDots }))
     for (const field of ['disciplinas', 'vantagens', 'defeitos']) {
       const originals = Array.isArray(source.data[field]) ? source.data[field] as Record<string, unknown>[] : []
       const copies = Array.isArray(data[field]) ? data[field] as Record<string, unknown>[] : []
@@ -340,5 +341,5 @@ export async function duplicateCharacter(id: string, userId: string) {
     for (const field of ['clanCode', 'clanRulesVersion', 'predatorDisciplineBonus', 'predatorEffectsVersion', 'creationAdvantageDots', 'creationFlawDots']) if (source.data[field] !== undefined) data[field] = structuredClone(source.data[field])
     if (source.data.clanSelection) data.clanSelection = structuredClone(source.data.clanSelection)
     const specialties = characterSpecialties(source).filter(entry => entry.origin === 'PREDATOR').map(({ id: specialtyId, skillId, name, origin, grantId }) => ({ id: specialtyId, skillId, name, origin, grantId, status: 'APPROVED' as const, costXp: 0 }))
-    return createCharacter(userId, { name: `${original.name} — Cópia`, campaignId: null, data }, data, { creationEffects: effects, specialties })
+    return createCharacter(userId, { name: `${original.name} — Cópia`, campaignId: null, data }, data, { creationEffects: effects, specialties, disciplineAcquisitions: xpAcquisitions(source).map(({ id: acquisitionId, disciplineId, source: acquisitionSource, fromLevel, targetLevel, xpCost }) => ({ id: acquisitionId, disciplineId, source: acquisitionSource, fromLevel, targetLevel, xpCost })) })
 }

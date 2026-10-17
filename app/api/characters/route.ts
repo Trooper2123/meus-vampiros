@@ -12,7 +12,7 @@ import { invitedCampaign, validateInvitedClan } from '@/lib/campaign-invitations
 import { notesActor } from '@/lib/notes-http'
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-const PROTECTED_FIELDS = ['masterOverride', 'predatorDisciplineBonus', 'predatorEffectsVersion', 'clanCode', 'clanSelection', 'clanRulesVersion', 'creationAdvantageDots', 'creationFlawDots', 'predatorTypeCode', 'predador', 'predatorTypeOverrides', 'predatorTypeOverride', 'predatorTypeSelection', 'predatorTypeRelationshipRequirements', 'predatorTypeBaseHumanity', 'predatorTypeBaseBloodPotency']
+const PROTECTED_FIELDS = ['disciplineAcquisitions', 'disciplineAccessGrants', 'gameState', 'masterOverride', 'predatorDisciplineBonus', 'predatorEffectsVersion', 'clanCode', 'clanSelection', 'clanRulesVersion', 'creationAdvantageDots', 'creationFlawDots', 'predatorTypeCode', 'predador', 'predatorTypeOverrides', 'predatorTypeOverride', 'predatorTypeSelection', 'predatorTypeRelationshipRequirements', 'predatorTypeBaseHumanity', 'predatorTypeBaseBloodPotency']
 
 class InvalidPayload extends Error {}
 

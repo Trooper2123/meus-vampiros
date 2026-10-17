@@ -38,6 +38,7 @@ export type CharacterRulesInput = {
   skillMode?: 'DETAILED' | 'JACK_OF_ALL_TRADES' | 'BALANCED' | 'SPECIALIST'
   convictions: ConvictionInput[]
   disciplines: DisciplineInput[]
+  disciplineXpDots?: number
   predatorDisciplineBonus?: number
   predatorType: string | null
   advantages: string[]

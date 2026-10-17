@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto'
+import { creationEffects } from './creation-effects'
 import { CharacterCommandError, runCharacterCommand, type CommandCharacter } from './character-commands'
 import { validateCharacterSkills } from './vtm-v5/skills'
 import { PREDATOR_TYPE_BY_CODE, type PredatorTypeCode } from './vtm-v5/predator-types'
@@ -8,7 +9,8 @@ export function specialtyRules(character: CommandCharacter, preview = false): Sp
   const validation = validateCharacterSkills(character.data)
   if (!preview && !validation.valid) throw new CharacterCommandError(422, 'Revise as habilidades inválidas antes de escolher uma especialidade.')
   const selection = character.data.predatorTypeSelection as { code?: PredatorTypeCode } | undefined
-  const predator = selection?.code ? PREDATOR_TYPE_BY_CODE.get(selection.code) : undefined
+  const convertedToSkill = creationEffects(character).some(effect => effect.origin === 'PREDATOR' && effect.kind === 'SKILL')
+  const predator = selection?.code && !convertedToSkill ? PREDATOR_TYPE_BY_CODE.get(selection.code) : undefined
   return { skills: validation.skills, creation: true, ...(predator ? { predator: { code: predator.code, options: predator.specialtyOptions.map(name => ({ skillId: normalizeSpecialtySkillId(name.split('(')[0]), name })) } } : {}) }
 }
 

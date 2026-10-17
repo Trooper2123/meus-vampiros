@@ -38,7 +38,7 @@ export default async function CampaignsPage() {
               Um resumo das campanhas que você narra. Gerencie os participantes, pertences e acontecimentos de cada crônica.
             </p>
           </div>
-          <div className="archive-page-actions"><Link href="/campaigns/new" id="btn-nova-campanha" className="button-primary inline-flex items-center justify-center gap-2">
+          <div className="archive-page-actions"><Link href="/master/catalogo" className="button-ghost inline-flex items-center justify-center gap-2">Fonte de pesquisa</Link><Link href="/campaigns/new" id="btn-nova-campanha" className="button-primary inline-flex items-center justify-center gap-2">
             <Plus className="size-4" /> Nova campanha
           </Link></div>
         </div>

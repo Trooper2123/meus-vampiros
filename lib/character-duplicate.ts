@@ -38,6 +38,7 @@ function projectPower(power: unknown) {
 function projectDiscipline(entry: unknown) {
   const discipline = asRecord(entry)
   return {
+    ...(typeof discipline.disciplineId === 'string' ? { disciplineId: discipline.disciplineId } : {}),
     name: stringOrEmpty(discipline.name),
     level: typeof discipline.level === 'number' ? discipline.level : 0,
     powers: Array.isArray(discipline.powers) ? discipline.powers.map(projectPower) : [],

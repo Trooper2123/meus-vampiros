@@ -8,13 +8,13 @@ exports[`preserva HTML completo em atributos para RETAINER 1`] = `"ef94d3ef18186
 
 exports[`preserva HTML completo em atributos para VAMPIRE_NPC 1`] = `"ef94d3ef18186fbbaad06903819524a5d00719bec2554205603f234bd3007d2d"`;
 
-exports[`preserva HTML completo em disciplinas para HUMAN_NPC 1`] = `"a3f9e8709f34ac71ced580551894bed258d303ef721e9c1525cfaf6f9a01103c"`;
+exports[`preserva HTML completo em disciplinas para HUMAN_NPC 1`] = `"120e165728b6721aa3f23d81245e86b83a7993944d3a712a8a4c177bd8357cb3"`;
 
-exports[`preserva HTML completo em disciplinas para PLAYER_VAMPIRE 1`] = `"40338226f6b0cd355ecda1418f20bd4fc0825cdf7582ed5602314ebd184d5d2e"`;
+exports[`preserva HTML completo em disciplinas para PLAYER_VAMPIRE 1`] = `"19a4a49f9b6fed0f145b23a41358c417b21d65903617dfbce87c7016d4bb7fd8"`;
 
-exports[`preserva HTML completo em disciplinas para RETAINER 1`] = `"750dedf65abba8920b195fe7d87d418c6dbd356197f5def7c091d5b38d7147c5"`;
+exports[`preserva HTML completo em disciplinas para RETAINER 1`] = `"c827a89c4f2dd67df1d30d00d336e2a9bf276f7b31306fbe36dbaf153e7387b4"`;
 
-exports[`preserva HTML completo em disciplinas para VAMPIRE_NPC 1`] = `"a3f9e8709f34ac71ced580551894bed258d303ef721e9c1525cfaf6f9a01103c"`;
+exports[`preserva HTML completo em disciplinas para VAMPIRE_NPC 1`] = `"120e165728b6721aa3f23d81245e86b83a7993944d3a712a8a4c177bd8357cb3"`;
 
 exports[`preserva HTML completo em habilidades para HUMAN_NPC 1`] = `"6b63d0740575abded1abae9d548cad6f38cafe9b05fa5ad2b4ef76fd5bc35e8e"`;
 
