@@ -38,7 +38,7 @@ describe('fichas independentes e atributos secundários', () => {
   })
 
   it('duplica com UUID novo, recursos atuais e original intacto', async () => {
-    const created = await createCharacter('owner', { name: 'Helena', data: { vigor: 3, determinacao: 2, compostura: 4, notas: 'Notas pessoais', disciplinas: [{ name: 'Presença', level: 2, powers: [{ name: 'Fascínio', effect: 'Efeito', privateNotes: 'Segredo' }] }] } })
+    const created = await createCharacter('owner', { name: 'Helena', data: { vigor: 3, determinacao: 2, compostura: 4, notas: 'Notas pessoais', cla: 'Toreador', disciplinas: [{ name: 'Presença', level: 2, powers: [{ name: 'Fascínio', effect: 'Efeito', privateNotes: 'Segredo' }] }] } })
     const original = global.__devDb!.characters.find((entry) => entry.id === created.id)!
     original.campaignId = global.__devDb!.campaigns[0].id
     original.data = { ...original.data, vontade: 0, vitalidade: 2, fome: 4, masterOverride: true, predatorTypeOverrides: ['Segredo'], narratorNotes: 'Privado', sessionId: 'sessão', pertences: [{ masterComment: 'Privado' }] }

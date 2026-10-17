@@ -41,13 +41,18 @@ function normalizeSkills(skills: Record<string, number>): Record<string, number>
   return validation.skills
 }
 
+function specialtyLimit(rules: SpecialtyRules, skillId: string, dots: number): number {
+  const limit = rules.limits?.[skillId]
+  if (limit !== undefined && (!Number.isSafeInteger(limit) || limit < 0)) throw new Error('Limite de especialidades inválido.')
+  return limit ?? (skillId === 'oficios' ? Number.POSITIVE_INFINITY : dots)
+}
+
 export function eligibleSpecialtySkills(rules: SpecialtyRules, existing: readonly Specialty[], grant?: SpecialtyGrant) {
   const skills = normalizeSkills(rules.skills)
   return Object.entries(skills).filter(([skillId, dots]) => {
     if (dots < 1 || (grant?.skillId && normalizeSkillId(grant.skillId) !== skillId)) return false
     const count = existing.filter(specialty => normalizeSkillId(specialty.skillId) === skillId).length
-    const limit = rules.limits?.[skillId] ?? dots
-    if (!Number.isSafeInteger(limit) || limit < 0) throw new Error('Limite de especialidades inválido.')
+    const limit = specialtyLimit(rules, skillId, dots)
     if (count >= limit) return false
     return !grant?.options || grant.options.some(option => normalizeSkillId(option.skillId) === skillId && !existing.some(specialty => normalizeSkillId(specialty.skillId) === skillId && normalizeSpecialtyName(specialty.name).toLocaleLowerCase('pt-BR') === normalizeSpecialtyName(option.name).toLocaleLowerCase('pt-BR')))
   }).map(([skillId, dots]) => ({ skillId, dots, name: SPECIALTY_SKILL_NAMES[skillId] }))
@@ -81,9 +86,7 @@ export function validateSpecialty(specialty: Specialty, existing: readonly Speci
   if (specialty.costXp !== (specialty.origin === 'XP' ? 3 : 0)) errors.push('Custo de especialidade inválido.')
   const others = existing.filter(entry => entry.id !== specialty.id)
   if (others.some(entry => normalizeSpecialtySkillId(entry.skillId) === skillId && normalizeSpecialtyName(entry.name).toLocaleLowerCase('pt-BR') === name.toLocaleLowerCase('pt-BR'))) errors.push('Especialidade duplicada.')
-  const configuredLimit = rules.limits?.[skillId]
-  if (configuredLimit !== undefined && (!Number.isSafeInteger(configuredLimit) || configuredLimit < 0)) throw new Error('Limite de especialidades inválido.')
-  if (others.filter(entry => normalizeSpecialtySkillId(entry.skillId) === skillId).length + 1 > (configuredLimit ?? skills[skillId] ?? 0)) errors.push('Limite de especialidades excedido.')
+  if (others.filter(entry => normalizeSpecialtySkillId(entry.skillId) === skillId).length + 1 > specialtyLimit(rules, skillId, skills[skillId] ?? 0)) errors.push('Limite de especialidades excedido.')
   if (['SKILL', 'CREATION', 'PREDATOR'].includes(specialty.origin)) {
     const grant = calculateSpecialtyGrants(rules).find(entry => entry.id === specialty.grantId)
     if (!grant || grant.origin !== specialty.origin || (grant.skillId && grant.skillId !== skillId) || (grant.options && !grant.options.some(option => option.skillId === skillId && option.name.toLocaleLowerCase('pt-BR') === name.toLocaleLowerCase('pt-BR')))) errors.push('Concessão incompatível.')

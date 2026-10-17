@@ -52,8 +52,8 @@ function DotTrack({ total, value }: { total: number; value: number }) {
       {Array.from({ length: total }, (_, index) => (
         <div
           key={index}
-          className={`h-2 w-2 rounded-full ${
-            index + 1 <= value ? 'bg-primary' : 'bg-muted'
+          className={`${
+            index + 1 <= value ? 'dot is-filled' : 'dot'
           }`}
         />
       ))}
@@ -71,8 +71,8 @@ export function SummaryAttributes({ attributes }: SummaryAttributesProps) {
   }
 
   return (
-    <div className="border border-border bg-[#101013] p-6">
-      <h2 className="font-serif text-lg uppercase tracking-[0.08em] mb-4">
+    <div className="border border-border bg-card p-6">
+      <h2 className="font-serif text-2xl mb-5">
         Atributos
       </h2>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -85,13 +85,13 @@ export function SummaryAttributes({ attributes }: SummaryAttributesProps) {
           return (
             <div key={group.title} className="flex flex-col gap-3">
               <div className="flex items-center gap-2 border-b border-border pb-2">
-                <group.icon className="size-4 text-muted-foreground" />
-                <h3 className="font-mono text-xs uppercase tracking-wider">
+
+                <h3 className="eyebrow">
                   {group.title}
                 </h3>
               </div>
               {groupAttributes.map((attr) => (
-                <div key={attr.key} className="flex items-center justify-between">
+                <div key={attr.key} className="summary-rating">
                   <span className="text-sm">{attr.label}</span>
                   <DotTrack
                     total={5}

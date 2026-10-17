@@ -2,7 +2,6 @@ import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import '@livekit/components-styles'
-import AuthButton from '@/components/ui/auth'
 import AuthProvider from '@/components/ui/auth-provider'
 
 export const metadata: Metadata = {
@@ -45,11 +44,6 @@ export default function RootLayout({
     <html lang="pt-BR" className="bg-background">
       <body className="antialiased">
         <AuthProvider>
-          <header className="site-header">
-            <div style={{ position: 'absolute', right: 16, top: 16 }}>
-              <AuthButton />
-            </div>
-          </header>
           {children}
         </AuthProvider>
         {process.env.NODE_ENV === 'production' && <Analytics />}

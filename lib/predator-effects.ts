@@ -1,6 +1,9 @@
+import { disciplineContext } from './discipline-allocation'
+import { disciplineDefinition } from './vtm-v5/disciplines'
+import { evaluateDisciplineAccess } from './vtm-v5/discipline-access'
 import { CharacterCommandError, type CommandCharacter } from './character-commands'
 import { characterText } from './vtm-v5/text'
-import { applyCreationEffects, removeCreationEffects } from './creation-effects'
+import { applyCreationEffects, creationEffects, removeCreationEffects } from './creation-effects'
 import { characterSpecialties, specialtyRules } from './character-specialties'
 import { normalizeDiscipline } from './vtm-v5/clans'
 import { PREDATOR_TYPE_BY_CODE, validatePredatorChoices, type PredatorTypeSelection } from './vtm-v5/predator-types'
@@ -21,16 +24,23 @@ export function applyPredatorEffects(character: CommandCharacter) {
   const clan = characterText(character.data.cla).trim().toLowerCase()
   if (definition.code === 'SIREN' && clan === 'nosferatu') throw new CharacterCommandError(422, 'Nosferatu não pode receber Aparência positiva de Siren.')
   if (['BAGGER', 'OSIRIS'].includes(definition.code) && selection.discipline === 'Feitiçaria de Sangue' && clan !== 'tremere') throw new CharacterCommandError(422, 'Esta escolha de Feitiçaria de Sangue exige Tremere.')
+  const access = evaluateDisciplineAccess({ character: { ...disciplineContext(character), currentLevel: 0 }, disciplineId: disciplineDefinition(selection.discipline)?.id ?? selection.discipline, acquisitionSource: 'PREDATOR', targetLevel: 1 })
+  if (!access.eligible) throw new CharacterCommandError(422, access.blockers[0].message)
   const previous = characterSpecialties(character).find(entry => entry.origin === 'PREDATOR' && entry.grantId === `predator:${selection.code}:specialty` && entry.name === selection.specialty)
   const specialties = characterSpecialties(character).filter(entry => entry.origin !== 'PREDATOR')
+  const skillId = normalizeSpecialtySkillId(selection.specialty.split('(')[0])
+  const previousSkillGrant = creationEffects(character).some(entry => entry.origin === 'PREDATOR' && entry.kind === 'SKILL' && entry.id === skillId)
+  const convertToSkill = previousSkillGrant || specialtyRules(character).skills[skillId] === 0
   try {
+    if (!convertToSkill) {
     const specialty = selectSpecialtyGrant({ grantId: `predator:${selection.code}:specialty`, skillId: normalizeSpecialtySkillId(selection.specialty.split('(')[0]), name: selection.specialty }, specialties, specialtyRules(character))
     const selected = previous ?? specialty
     if (!character.campaignId) selected.status = 'APPROVED'
     specialties.push(selected)
+    }
   } catch { throw new CharacterCommandError(422, 'A especialidade de predação exige habilidade com pontos e limite disponível.') }
   const traits = [...definition.bonusOptions, ...definition.flawsOrCosts, ...resolvePredatorChoices(selection.code, selection.optionCodes)].filter(option => ['MERIT', 'FLAW', 'BACKGROUND'].includes(option.kind)).map(option => ({ kind: option.kind === 'FLAW' ? 'FLAW' as const : 'MERIT' as const, name: option.label, dots: option.dots! }))
-  applyCreationEffects(character, 'PREDATOR', { [normalizeDiscipline(selection.discipline)]: 1 }, traits)
+  applyCreationEffects(character, 'PREDATOR', { [normalizeDiscipline(selection.discipline)]: 1 }, traits, false, convertToSkill ? [skillId] : [])
   character.gameState.specialties = specialties
   character.data.predatorDisciplineBonus = 1
   character.data.predatorEffectsVersion = 1

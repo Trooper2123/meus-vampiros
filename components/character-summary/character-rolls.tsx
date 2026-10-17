@@ -31,7 +31,6 @@ function RollPanel({ characterId }: { characterId: string }) {
   const [specialtyId, setSpecialtyId] = useState('')
   const [difficulty, setDifficulty] = useState('1')
   const [visibility, setVisibility] = useState<'PUBLIC' | 'SECRET'>('PUBLIC')
-  const [reason, setReason] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const [retryCommand, setRetryCommand] = useState<RollCommand | null>(null)
@@ -74,8 +73,8 @@ function RollPanel({ characterId }: { characterId: string }) {
 
   function submit(event: React.FormEvent) {
     event.preventDefault()
-    if (!data || disabled || data.status !== 'APPROVED' || !selectedAttribute || !selectedSkill || !validDifficulty || !reason.trim()) return
-    void execute({ attribute: selectedAttribute, skillId: selectedSkill, difficulty: Number(difficulty), ...(selectedSpecialty ? { specialtyId: selectedSpecialty.id } : {}), visibility: data.canRollSecret ? visibility : 'PUBLIC', reason: reason.trim(), expectedRevision: data.revision, idempotencyKey: crypto.randomUUID() })
+    if (!data || disabled || data.status !== 'APPROVED' || !selectedAttribute || !selectedSkill || !validDifficulty) return
+    void execute({ attribute: selectedAttribute, skillId: selectedSkill, difficulty: Number(difficulty), ...(selectedSpecialty ? { specialtyId: selectedSpecialty.id } : {}), visibility: data.canRollSecret ? visibility : 'PUBLIC', reason: `Teste de ${attributeNames[selectedAttribute] ?? selectedAttribute} + ${skillNames[selectedSkill] ?? selectedSkill}.`, expectedRevision: data.revision, idempotencyKey: crypto.randomUUID() })
   }
 
   return <section className="border border-border bg-card p-5 sm:p-6" aria-labelledby={`${fieldId}-title`} aria-busy={busy || isLoading}>
@@ -92,10 +91,9 @@ function RollPanel({ characterId }: { characterId: string }) {
         <label className="flex flex-col gap-2 text-sm" htmlFor={`${fieldId}-difficulty`}>Dificuldade<input id={`${fieldId}-difficulty`} className="input min-h-10 w-full" type="number" min={1} max={50} step={1} required value={difficulty} disabled={disabled} onChange={event => setDifficulty(event.target.value)} /></label>
         {data.canUseSpecialties && <label className="flex flex-col gap-2 text-sm" htmlFor={`${fieldId}-specialty`}>Especialidade aplicável<select id={`${fieldId}-specialty`} className="select min-h-10 w-full" disabled={disabled} value={selectedSpecialty?.id ?? ''} onChange={event => setSpecialtyId(event.target.value)}><option value="">Não aplicar especialidade</option>{specialties.map(entry => <option key={entry.id} value={entry.id}>{entry.name} (+1 dado)</option>)}</select></label>}
         {data.canRollSecret && <label className="flex flex-col gap-2 text-sm" htmlFor={`${fieldId}-visibility`}>Visibilidade<select id={`${fieldId}-visibility`} className="select min-h-10 w-full" disabled={disabled} value={visibility} onChange={event => setVisibility(event.target.value as 'PUBLIC' | 'SECRET')}><option value="PUBLIC">Pública</option><option value="SECRET">Secreta — somente Narrador</option></select></label>}
-        <label className="flex flex-col gap-2 text-sm sm:col-span-2" htmlFor={`${fieldId}-reason`}>Motivo da rolagem<textarea id={`${fieldId}-reason`} className="input w-full" required rows={2} maxLength={500} value={reason} disabled={disabled} onChange={event => setReason(event.target.value)} placeholder="Descreva o objetivo deste teste." /></label>
       </div>
       <p className="text-xs text-muted-foreground">{data.canUseSpecialties ? 'Escolha uma especialidade aplicável: o bônus é de no máximo +1 dado.' : 'A aplicação de uma especialidade exige confirmação do Narrador e concede no máximo +1 dado.'}</p>
-      <button type="submit" className="button-primary min-h-10 sm:self-start" disabled={disabled || Boolean(loadError) || data.status !== 'APPROVED' || !selectedAttribute || !selectedSkill || !validDifficulty || !reason.trim()}>{busy ? 'Rolando…' : 'Rolar dados'}</button>
+      <button type="submit" className="button-primary min-h-10 sm:self-start" disabled={disabled || Boolean(loadError) || data.status !== 'APPROVED' || !selectedAttribute || !selectedSkill || !validDifficulty}>{busy ? 'Rolando…' : 'Rolar dados'}</button>
     </form>}
     {error && <p role="alert" className="mt-4 text-sm text-primary">{error}</p>}
     {retryCommand && !busy && <button type="button" className="button-ghost mt-3 min-h-10" onClick={() => void execute(retryCommand)}>Tentar novamente a mesma rolagem</button>}

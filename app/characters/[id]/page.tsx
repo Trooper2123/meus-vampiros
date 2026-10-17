@@ -1,3 +1,4 @@
+import { ArchiveHeader } from '@/components/archive-header'
 import { getCharacterSummaryData } from '@/lib/character-summary'
 import { redirect } from 'next/navigation'
 import { getSessionOrDev } from '@/lib/auth0'
@@ -20,27 +21,9 @@ export default async function CharacterPage({
   return (
     <main className="relative min-h-screen overflow-hidden bg-background text-foreground">
       <div className="noise" aria-hidden="true" />
-      <header className="sheet-header">
-        <div>
-          <p className="eyebrow">Arquivos da Noite</p>
-          <h1 className="mt-2 font-serif text-2xl uppercase tracking-[0.12em]">
-            {characterData.name}
-          </h1>
-        </div>
-        <div className="flex items-center gap-4">
-          <span className="hidden text-sm text-muted-foreground sm:inline">
-            {session.user.name ?? session.user.email ?? 'Guardião'}
-          </span>
-          <Link href="/characters" className="button-ghost inline-flex items-center gap-2">
-            <FileText className="size-4" /> Arquivo
-          </Link>
-          <a href="/auth/logout" className="button-ghost inline-flex items-center gap-2">
-            <span className="text-xs">Sair</span>
-          </a>
-        </div>
-      </header>
+      <ArchiveHeader title="Ficha completa" />
 
-      <div className="mx-auto w-full max-w-6xl px-5 py-10 sm:px-8 lg:py-14">
+      <div className="archive-content">
         {/* Navegação entre Resumo e Ficha Completa */}
         <div className="mb-8 flex items-center gap-2 border-b border-border pb-4">
           <Link

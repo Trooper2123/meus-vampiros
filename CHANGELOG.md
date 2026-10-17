@@ -1,6 +1,111 @@
-﻿# CHANGELOG — Ledger Command
+# CHANGELOG — Ledger Command
 
 Registro cronológico de todas as alterações relevantes implementadas no projeto.
+
+## 2026-10-17 17:26 BRT - feat - Persistir catálogo de habilidades e Disciplinas no PostgreSQL
+- Arquivos principais: `lib/db.ts`, `app/master/catalogo/page.tsx`, SPEC local `persistencia-postgresql`.
+- Driver atualizado para `pg`/Drizzle Node PostgreSQL, necessário para conectar via TCP ao PostgreSQL local. Schema aditivo inclui `discipline_catalog`, `clan_disciplines`, `skill_catalog` e `discipline_research_catalog`, usando IDs estáveis.
+- Página de pesquisa do Narrador carrega dados do PostgreSQL. Seed transacional e repetível gravou 12 Disciplinas, 43 relações, 27 habilidades e 372 conteúdos no banco local `localhost:5432/postgres`; destino inspecionado antes da gravação, com 14 tabelas e 0 linhas de aplicação. Nenhuma tabela ou dado foi apagado.
+- Validação de integração com banco local: 1 teste aprovado; TypeScript aprovado. Remoção global do provider em memória permanece incompleta: notas, convocações, convites, clãs e outras rotas ainda dependem dele e estão registradas como trabalho pendente na SPEC. Não afirmar migração integral nem prontidão de produção.
+
+## 2026-10-17 17:12 BRT - feat - Catálogo de pesquisa do Narrador
+- Arquivos principais: `codex/catalogo-disciplinas-vtm-v5.html`, `lib/vtm-v5/research-catalog.json`, `lib/vtm-v5/research-catalog.ts`, `lib/dev-db.ts`, `app/master/catalogo/page.tsx`, `components/master-research-catalog.tsx`, `app/campaigns/page.tsx`, teste `master-research-catalog` e `UI-GUIDE.md`.
+- Importados 372 registros do catálogo com IDs estáveis por Disciplina, tipo, nível, fonte, página e nome; os 27 registros de habilidades existentes também são semeados no provider em memória. As paradas de dados ligam os conteúdos às habilidades canônicas encontradas.
+- Criada página pesquisável por nome, efeito, requisito e fonte, com filtros por Disciplina, tipo e situação, paginação e exibição de referências. Link disponível no painel de Narradores.
+- A página exige sessão e autorização de Narrador no servidor. Sem migração, reset ou comandos contra PostgreSQL; uso do seed descartável em memória. Texto e situação de publicação mantêm as classificações do catálogo de origem e precisam ser confirmados pelo Narrador.
+- Validação: 33 testes pertinentes aprovados; TypeScript/build aprovados; lint sem erros (3 avisos preexistentes); `npm audit --audit-level=high` encontrou 0 vulnerabilidades. Vitest relatou timeout ao encerrar 2 servidores Vite, mas retornou código 0 com os testes aprovados. QA visual manual pendente no backlog.
+
+## 2026-10-17 17:00 BRT - style - Página dedicada de evolução do personagem
+- Arquivos: `app/characters/[id]/evolution/page.tsx`, cliente de resumo, gestão da mesa, testes `character-evolution-page`/`character-summary-notes`, `UI-GUIDE.md` e guia de Disciplinas por origem.
+- Disciplinas e especialidades movidas para página própria. Botão Evolução junto ao nome abre nova guia, como Anotações, com aviso acessível e noopener/noreferrer. Removidos painéis equivalentes do resumo; gestão da mesa usa acesso à mesma página. Editor de criação continua com seus controles de concessão.
+- Página valida sessão, UUID, tipo jogável e propriedade/Narrador atual no servidor antes de renderizar; terceiros e identificadores inválidos não acessam o conteúdo. APIs, custos, autorização, idempotência e regras de aquisição reutilizados.
+- Validação: rodada de 47 testes funcionais/segurança/interface e rodada de 34 testes de navegação/resumo (com sobreposição) aprovadas. TypeScript/build aprovados, lint sem erros/3 avisos anteriores, npm audit sem vulnerabilidades. Revisão focada pela skill pre-commit-review sem bloqueios conhecidos; diff/segredos conferidos.
+- Retomada da SPEC existente, sem novo reset, schema ou seeds. QA manual visual/teclado/responsividade pendente no backlog; sem validação PostgreSQL. Sem staging, commit ou push.
+
+## 2026-10-17 16:45 BRT - feat - Acesso a Disciplinas por origem
+- Arquivos principais: catálogos `lib/vtm-v5/disciplines.ts`, `discipline-access.ts` e `discipline-contents.ts`; `lib/discipline-allocation.ts`, `character-disciplines.ts`, clãs/criação/predação/personagens/duplicação; API `characters/[id]/disciplines`, criação/edição/status/validação; editor, seletores, painel de evolução e gestão da mesa; `lib/dev-db.ts`, testes e `docs/regras/disciplinas-por-origem.md`/`UI-GUIDE.md`.
+- Matriz integral: 12 Disciplinas e 43 relações, com IDs estáveis; inclusão dos clãs ausentes, seleção inicial 2+1 validada no servidor, políticas próprias Caitiff/sangue-fraco e Metamorfose como apresentação de PROTEAN. Escolhas de clã persistem IDs; nomes/aliases não duplicam uma mesma Disciplina.
+- Origem por aquisição em `gameState`, níveis atuais em `data.disciplinas`, grants específicos por requisito/origem/nível/clã/mesa. Reaproveitado schema JSON existente; sem tabelas SQL redundantes ou migração/backfill de memória. Cópia conserva origens públicas sem transportar autorização privada da mesa.
+- Evolução cobra próximo nível ×5/×7/×6 conforme catálogo local, exige aprovação específica de aprendizado pelo Narrador atual e grava nível, XP, origem e histórico no comando atômico/idempotente existente. Autorizar/revogar não cria pontos ou XP; revogar exceção inicial reabre revisão. Interface mostra custos/bloqueios e disponibiliza controles do Narrador na gestão.
+- Editor filtra opções iniciais, explica origem da predação, permite corrigir escolhas manuais e bloqueia conclusão incompatível; poderes existentes preservados. Rituais/cerimônias cadastrados como metadados vinculados com requisitos próprios (catálogo inicial de dois conteúdos); compra/execução desses conteúdos e catálogo completo não implementados. Alquimia permanente continua bloqueada até definição de suas regras.
+- Segurança: 401/403/IDOR, CSRF/JSON/corpo limitado, saldo/custo/permissões obtidos no servidor, resposta privada sem cache e justificativas privadas filtradas. Fechadas reutilização de ID de linha para duplicar origem e duplicação por aliases; grants de outra mesa/Narrador/revogados não autorizam compras.
+- Preparação única: processo isolado NODE_ENV=test, DATABASE_URL removida e load de .env desabilitado; reset só da memória, modelo atual, seeds 8 fichas/3 mesas e integridade aprovados (1/1). Primeira tentativa abortou antes do reset ao detectar conexão configurada; PostgreSQL e servidor corrente intocados. Catálogo/seeds atualizados e integridade das 43 relações verificada nos testes.
+- Validação final: 789/789 testes em 64 arquivos, TypeScript/build aprovados, lint 0 erros/3 avisos anteriores, npm audit 0 vulnerabilidades. Preparação P2 excluída da regressão para não repetir reset; preparação desta SPEC validada separadamente. Quatro snapshots de Disciplinas atualizados pela mudança intencional de controles/rótulos. Teste antigo de predação sincronizado com conversão de especialidade para habilidade já presente localmente.
+- Revisão pela skill pre-commit-review concluída no recorte; nenhum bloqueio crítico/alto conhecido ou segredo novo detectado. QA manual visual/teclado/responsividade e SQL externo não executados, com backlog. Demais alterações locais preservadas; sem staging, commit ou push.
+
+## 2026-10-17 15:53 BRT - style - Anotações da ficha em nova guia
+- Arquivos: `app/characters/[id]/character-summary-client.tsx`, `app/characters/[id]/summary/page.tsx`, `tests/character-summary-notes.test.ts` e `UI-GUIDE.md`.
+- Removido card Anotações relacionadas do resumo compartilhado. Botão Anotações junto ao nome abre /notes em nova guia, com filtro CHARACTER/NPC e identificador da ficha, rel noopener noreferrer e aviso acessível. Removido modal da página de resumo; destino e autorização existentes reutilizados.
+- Validado o candidato em worktree isolado: 28/28 testes, tipos e build --webpack aprovados; lint 0 erros/3 avisos anteriores; audit 0 vulnerabilidades. Build com avisos de dependência Auth0 e configuração Auth0 ausente no worktree sem .env. Revisão pre-commit sem bloqueios no candidato; erro de tipos local de outra tarefa excluído deste commit. QA manual pendente; sem novo reset/banco.
+
+## 2026-10-17 15:23 BRT - style - Simplificar o resumo da ficha
+- Arquivos: página de resumo, character-summary-client, CharacterSummary, SummaryHeader, CharacterRolls, CampaignNotesDialog, UI-GUIDE e testes archive-visual/character-rolls-ui.
+- Retirado campo de motivo da rolagem; comando registra automaticamente atributo e habilidade, preservando validação e cálculo no servidor. Clã após cabeçalho; botão compacto Anotações junto ao nome; removido título redundante Visão Geral.
+- 147/147 testes pertinentes aprovados, tipos aprovados, lint sem erros/3 avisos anteriores, audit sem vulnerabilidades. Revisão pela skill pre-commit-review sem bloqueios no recorte. Build aprovado. QA manual e PostgreSQL pendentes; sem novo reset/schema/seeds.
+
+## 2026-10-17 15:17 BRT — fix — Especialidades de Ofícios conforme o livro básico
+- Arquivos: `lib/vtm-v5/specialties.ts`, testes de domínio/habilidades/seletor/comandos e `docs/regras/especialidades-v5.md`.
+- Corrigida exceção explícita de Craft/Ofícios (Corebook p.159–160): permite mais especialidades que pontos, preservando habilidade positiva, duplicatas, concessões, custos de XP, autorização e limites internos explícitos. Critério compartilhado pelo seletor e validador.
+- 85 testes pertinentes aprovados, incluindo cobertura das 27 habilidades, estado salvo/em edição e compra idempotente. Tipos e lint dos arquivos alterados aprovados; auditoria sem vulnerabilidades. Comparação de fontes distingue suplemento comunitário do Players Guide oficial. Sem migração/reset ou mudança em APIs.
+- Pendências documentadas: conversão de predação para habilidade zerada e regras opcionais de vantagens comunitárias; não foram habilitadas implicitamente. QA manual visual não executado.
+
+
+## 2026-10-17 15:17 BRT - fix - Permitir recursos narrativos ao proprietário
+- Arquivos: `lib/character-resources.ts`, `app/api/characters/[id]/resources/route.ts`, `components/character-summary/session-resources.tsx`, testes de comandos/interface e `UI-GUIDE.md`.
+- Proprietário e Narrador podem alterar Humanidade e Manchas; removidos avisos de exclusividade do Narrador. Humanidade conserva somente + na interface e Manchas conserva −/+. Autorização no servidor, limites, histórico, revisão/idempotência e sigilo da causa de torpor preservados.
+- 56/56 testes pertinentes aprovados, TypeScript aprovado, lint sem erros (3 avisos anteriores), npm audit sem vulnerabilidades. Revisão focada pela skill local pre-commit-review sem bloqueios ou padrões de segredos no diff. Build aprovado; QA manual e PostgreSQL não executados. Retomada da SPEC sem repetir reset e sem alteração de schema/seeds. Alterações locais de outras tarefas preservadas.
+
+## 2026-10-17 14:39 BRT - style - Centralizar marcadores de recursos
+- Arquivos: `components/character-summary/session-resources.tsx`, `app/globals.css` e `UI-GUIDE.md`.
+- Centralizados os nomes, valores e controles; Manchas integrado na mesma grade, com cinco colunas a partir de 1280px. Preservados limites, permissoes e salvamento automatico. Sem mudancas em APIs ou banco, sem novo reset.
+- Testes pertinentes: 55/55 aprovados; tipos e build aprovados; lint sem erros (3 avisos anteriores); auditoria sem vulnerabilidades. QA visual em navegador pendente. Skill pre-commit-review nao localizada; revisao formal bloqueada, sem recomendacao de commit.
+
+## 2026-10-16 01:34 BRT — chore — Revisão pré-commit da interface e recursos
+- Candidato: 39 arquivos de interface, resumos/notas/gestão de mesas, recursos com autosave, testes e guias; inclui a página dedicada de criação de NPC e `campaignId` no resumo autorizado.
+- Revisão pela skill pre-commit-review sem bloqueios críticos/altos conhecidos no candidato. Ajustada a posição do legend de vínculos para primeiro filho do fieldset; comentários da página de mesas corrigidos. Sem alteração de APIs, autenticação ou schema.
+- Validação reexecutada: 716 testes/60 arquivos aprovados, TypeScript e build aprovados; lint sem erros/três avisos anteriores; npm audit sem vulnerabilidades. Alterações locais de ambiente, relatórios, gerados, codex/.codex, exclusões .kiro, script de preparação e rótulo avulso do calendário ficam fora do candidato.
+- QA manual visual/acessibilidade/responsividade e integração PostgreSQL continuam pendentes; sem alegação de produção. Preparação em memória não repetida nesta revisão.
+
+
+## 2026-10-16 01:24 BRT — feat — Contadores compactos com salvamento automático
+- Arquivos: `components/character-summary/session-resources.tsx`, `app/globals.css`, `UI-GUIDE.md`, `tests/session-resources-ui.test.ts` e `tests/archive-visual.test.ts`.
+- Botões visíveis somente − / + com rótulos acessíveis; Humanidade tem apenas +, exclusivo do Narrador. Vitalidade/Vontade mostram linhas separadas por dano superficial/agravado com contador e botões ao lado: − remove dano e + adiciona dano, respeitando o máximo compartilhado. Manchas mantêm controle exclusivo do Narrador.
+- Cada clique válido salva automaticamente pelo comando existente com motivo contextual, revisão e idempotência; removida etapa manual de motivo/salvar e inputs numéricos de rascunho. Contadores/bolinhas mudam após resposta confirmada. Falhas preservam o último valor confirmado; envios em voo são bloqueados e retry reaproveita comando/chave.
+- Fome 1→0 mantém confirmação de ação tabu com Cancelar como padrão; confirmar salva imediatamente com motivo específico no histórico, sem XP ou penalidades automáticas. Grade 1/2/4 colunas para acomodar os controles em celular/tablet/desktop.
+- Retomada da SPEC existente: sem repetir preparação/reset e sem alteração de APIs, autorização ou banco. Regressão 716 testes/60 arquivos aprovada; tipos/build aprovados; lint sem erros/três avisos anteriores; audit sem vulnerabilidades. Revisão pela skill pre-commit-review e verificação de segredos/whitespace do recorte sem bloqueios.
+- QA manual visual/teclado/leitor de tela e integração PostgreSQL não executados nesta rodada, com pendência no backlog local. Sem novas dependências, staging, commit ou push.
+
+
+## 2026-10-16 01:11 BRT — feat — Controles dos recursos da sessão e confirmação de Fome zero
+- Arquivos principais: `components/character-summary/session-resources.tsx`, `app/globals.css`, `UI-GUIDE.md`, `tests/session-resources-ui.test.ts`, `tests/character-resources-command.test.ts` e `tests/archive-visual.test.ts`.
+- Botões − Reduzir / + Aumentar abaixo dos recursos; Humanidade/manchas continuam exclusivas do Narrador. Vitalidade/Vontade usam tipo de dano superficial/agravado explicitamente selecionado, mantendo campos independentes e máximos calculados no servidor.
+- Fome em cinco bolinhas horizontais entre 0–5, sem XP. Reduzir 1→0 abre confirmação de ação tabu com Cancelar em foco inicial; cancelar mantém 1 e confirmar prepara 0. Motivo e salvamento explícitos registram a alteração pelo comando/histórico existente, sem penalidades automáticas.
+- Resumo, campos e botões compartilham o rascunho e indicam alterações não salvas. Bloqueio síncrono contra duplo envio; retry conserva comando/chave; resposta inválida, falha ou conflito não exibem sucesso. Cache atualizado com estado/revisão retornados pelo servidor; ação de recarregar disponível em erros.
+- Preparação única de início da SPEC em processo test-memory sem DATABASE_URL: reset descartável, modelo atual sem alteração de schema, seeds 8 fichas/3 mesas e integridade aprovados. PostgreSQL e servidor corrente intocados.
+- Validação: preparação 1/1 separada; regressão 716 testes/60 arquivos aprovada, incluindo limites, permissões, danos distintos, confirmação/cancelamento, motivo, erros, conflitos e duplicidade. Testes reais do provider em memória e rotas cobrem 401/403/IDOR, escalada narrativa, entradas inválidas, histórico e omissão de dados privados. Tipos/build aprovados; lint sem erros/três avisos anteriores; npm audit sem vulnerabilidades.
+- Revisão focada pela skill pre-commit-review: sem novos endpoints, mudanças na autorização ou segredos detectados no recorte; nenhuma vulnerabilidade crítica/alta conhecida relacionada. QA visual/teclado/leitor de tela em navegador permanece pendente no backlog local. Integração SQL externa não validada nesta entrega; sem nova dependência, staging, commit ou push.
+
+
+## 2026-10-16 00:42 BRT — style — Anotações ao lado do nome no resumo
+- Arquivos: página de resumo, cliente/resumo/cabeçalho da ficha e `components/notes/campaign-notes-dialog.tsx`. Botão compacto de anotações junto ao nome, com quebra de linha em telas estreitas.
+- Condição de mesa vinculada/ficha de jogador e modal/permissões preservados; painel do Narrador mantém apresentação anterior.
+- Validação: 40 testes pertinentes aprovados (notas, autorização, cabeçalho e resumo), TypeScript e lint dos arquivos alterados sem erros. Revisão focada sem alteração de APIs/autorização/segredos; QA visual em navegador e novo build não executados nesta alteração pontual.
+
+
+
+## 2026-10-16 00:21 BRT — style — Páginas alinhadas às referências Arquivos da Noite
+- Arquivos principais: `app/page.tsx`, `app/layout.tsx`, `app/globals.css`, páginas de personagens/criação/ficha, mesas/criação/gestão/NPC e anotações; `components/archive-header.tsx`, resumos/recursos, notas, criação de NPC, ferramentas da mesa e `components/master-panel.tsx`.
+- PDF local com 16 páginas renderizado e inspecionado. Cabeçalho compartilhado com navegação mobile nativa, largura e hierarquia editorial, cards com conceito/status em português, ações separadas, formulários verticais e notas em duas colunas. Removido controle de autenticação duplicado no layout; Auth0 preservado. Recursos reais/autorizados no topo da ficha, com editor recolhido, motivo e revisão preservados.
+- `UI-GUIDE.md` e `design-system.md` revisados: marca Arquivos da Noite, referência por tela, tokens complementares, classes reais, dimensões responsivas e limites do protótipo. Nenhuma mecânica de bônus ou informação demonstrativa foi adicionada ao domínio.
+- Preparação inicial única por `tests/notes-preparation.test.ts`: processo test-memory sem DATABASE_URL; reset, modelo atual sem alteração de schema, seeds 8 fichas/3 mesas e relações íntegros. Nenhum PostgreSQL ou servidor corrente reinicializado.
+- Validação: preparação aprovada separadamente; regressão de 693 testes/59 arquivos aprovada, incluindo três testes novos de navegação, recursos autorizados e ordem da ficha. Snapshots visuais do formulário atualizados intencionalmente; testes de seletores/convite alinhados aos cards e textos vigentes. TypeScript e build aprovados; lint sem erros/três avisos anteriores; npm audit sem vulnerabilidades.
+- Revisão pela skill local pre-commit-review: autorização/isolamento, APIs, recursos e dados privados preservados, sem novo endpoint ou segredo no recorte. QA manual visual/acessibilidade/responsividade em navegador permanece pendente no backlog local; fontes usam fallbacks disponíveis e não há alegação de equivalência pixel a pixel. Alterações locais anteriores preservadas; sem staging, commit ou push.
+
+## 2026-10-15 23:32 BRT — docs — Prévia navegável da criação de personagem
+- Adicionado `docs/ui/criacao-personagem.html`: seis etapas visuais de atributos, habilidades/especialidades, disciplinas, recursos, vantagens/pertences e histórico, com navegação nativa e dados fictícios.
+- Artefato independente, sem scripts, persistência, APIs ou mudança nas regras/autorização da aplicação. Ações de salvar/validar ficam desabilitadas; não representa validação funcional da ficha.
+- Ajuste visual da prévia: contadores permanecem em uma única linha, sem comprimir as bolinhas; rolagem horizontal local quando necessário em telas estreitas.
+- Revisão pré-commit: 691 testes aprovados, TypeScript sem erros, lint sem erros e três avisos preexistentes, auditoria sem vulnerabilidades conhecidas. Verificação estática da prévia e whitespace aprovadas; QA visual ainda pendente.
 
 ## 2026-10-15 00:33 BRT — chore — Validação pré-commit de NPCs e refatoração
 - Candidato com 23 arquivos: NPCs da mesa, extração visual do formulário, testes/snapshot, README e CHANGELOG. Revisão pre-commit-review focada sem bloqueios críticos/altos conhecidos relacionados; documentação local, env, relatórios, gerados, exclusões .kiro e alterações alheias fora do staging.

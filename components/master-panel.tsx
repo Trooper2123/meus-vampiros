@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import useSWR from 'swr'
-import { Check, Copy, Plus, CalendarDays, Users } from 'lucide-react'
+import { Check, Copy, Plus, Users } from 'lucide-react'
 import Link from 'next/link'
 
 export type CampaignSummary = {
@@ -22,18 +22,15 @@ const fetcher = (url: string) => fetch(url).then((response) => response.json())
 function MasterReminderItem({ campaign }: { campaign: CampaignSummary }) {
   const { data } = useSWR<ReminderData>(`/api/campaign-availability?campaignId=${campaign.id}`, fetcher)
   const suggested = (data?.entries ?? []).filter((entry) => entry.suggested).sort((a, b) => a.date.localeCompare(b.date))[0]
-  if (!suggested) return null
+  if (!suggested) return <p className="mt-2 text-sm text-muted-foreground">Aguardando sugestão de data.</p>
   const confirmed = (data?.entries ?? []).filter((entry) => entry.date === suggested.date && entry.status === 'disponível').length
-  return <Link href={`/campaigns/${campaign.id}`} className="border border-border p-4 transition-colors hover:border-primary"><p className="font-semibold">{campaign.name}</p><p className="mt-2 font-mono text-xs uppercase text-primary">{new Intl.DateTimeFormat('pt-BR', { dateStyle: 'medium' }).format(new Date(`${suggested.date}T12:00:00`))}</p><p className="mt-2 inline-flex items-center gap-1.5 text-xs text-muted-foreground"><Users className="size-3.5" aria-hidden="true" /> {confirmed} confirmação{confirmed === 1 ? '' : 'ões'}</p></Link>
+  return <Link href={`/campaigns/${campaign.id}`} className="block text-sm hover:text-primary"><p className="mt-2 font-mono text-xs uppercase text-primary">{new Intl.DateTimeFormat('pt-BR', { dateStyle: 'medium' }).format(new Date(`${suggested.date}T12:00:00`))}</p><p className="mt-2 inline-flex items-center gap-1.5 text-xs text-muted-foreground"><Users className="size-3.5" aria-hidden="true" /> {confirmed} confirmação{confirmed === 1 ? '' : 'ões'}</p></Link>
 }
 
-function MasterReminders({ campaigns }: { campaigns: CampaignSummary[] }) {
-  return <section className="border border-border bg-card p-5" aria-labelledby="master-reminders-title"><div className="flex items-center justify-between gap-4 border-b border-border pb-3"><div><p className="eyebrow">Visão rápida</p><h3 id="master-reminders-title" className="mt-1 font-serif text-2xl uppercase tracking-[0.06em]">Próximas mesas</h3></div><CalendarDays className="size-5 text-primary" aria-hidden="true" /></div><div className="grid gap-3 pt-4 sm:grid-cols-2 lg:grid-cols-3">{campaigns.map((campaign) => <MasterReminderItem key={campaign.id} campaign={campaign} />)}</div><p className="pt-4 text-sm text-muted-foreground">As datas sugeridas e confirmações aparecem aqui conforme os jogadores respondem.</p></section>
-}
 
 function formatDate(value: string | null) {
   if (!value) return 'Sem registro'
-  return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date(value))
+  return new Intl.DateTimeFormat('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(value))
 }
 
 function CopyId({ id }: { id: string }) {
@@ -49,7 +46,7 @@ function CopyId({ id }: { id: string }) {
       }}
       aria-label="Copiar identificador da mesa"
     >
-      <span className="font-mono">{id}</span>
+      <span>{copied ? 'Copiado' : 'Copiar ID'}</span><span className="sr-only">{id}</span>
       {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
     </button>
   )
@@ -105,7 +102,7 @@ export function NewCampaignForm({ onCreated }: { onCreated: (campaign: CampaignS
         </label>
         <label className="sheet-field"><span>Último encontro</span><input type="date" value={lastSessionAt} onChange={(event) => setLastSessionAt(event.target.value)} /></label>
       </div>
-      {error && <p className="mt-3 text-sm" style={{ color: '#e17b78' }}>{error}</p>}
+      {error && <p className="mt-3 text-sm text-primary">{error}</p>}
       {createdId && <p className="mt-3 text-sm text-muted-foreground">Mesa criada. Compartilhe o identificador com os jogadores: <CopyId id={createdId} /></p>}
       <button type="submit" disabled={submitting} className="button-primary mt-4 inline-flex items-center gap-2">
         <Plus className="size-4" /> {submitting ? 'Criando...' : 'Criar mesa'}
@@ -119,34 +116,16 @@ export function MasterPanel({ initialCampaigns }: { initialCampaigns: CampaignSu
   const campaigns: CampaignSummary[] = data?.campaigns ?? initialCampaigns
   if (campaigns.length === 0) return null
 
-  return (
-    <div className="flex flex-col gap-6 mt-6 w-full">
-      <MasterReminders campaigns={campaigns} />
-      <div className="campaign-table">
-        <div className="campaign-table-row campaign-table-head">
-          <span>Status</span><span>Campanha</span><span>Tema principal</span><span>Jogadores</span><span>Último encontro</span><span>ID / Ações</span>
-        </div>
-        {campaigns.map((campaign) => (
-          <div key={campaign.id} className="flex flex-col border-b border-border last:border-b-0">
-            <div className="campaign-table-row border-b-0">
-              <span><span className={`status ${campaign.status === 'Ativa' ? 'active' : 'risk'}`}><span className="status-dot" /> {campaign.status}</span></span>
-              <span className="font-semibold">{campaign.name}</span>
-              <span>{campaign.theme ?? 'Não definido'}</span>
-              <span>{campaign.playerCount}</span>
-              <span>{formatDate(campaign.lastSessionAt)}</span>
-              <div className="flex items-center gap-2">
-                <CopyId id={campaign.id} />
-                <Link href={`/campaigns/${campaign.id}`} className="button-ghost text-[10px] px-3 py-1.5 h-auto">
-                  Gerenciar mesa
-                </Link>
-              </div>
-            </div>
-
-          </div>
-        ))}
-      </div>
+  return <div className="mt-6 flex w-full flex-col gap-6">{campaigns.map(campaign => <section key={campaign.id} className="border border-border bg-card p-6">
+    <div className="flex flex-wrap items-start justify-between gap-4"><h3 className="font-serif text-2xl">{campaign.name}</h3><span className={`status ${campaign.status === 'Ativa' ? 'active' : ''}`}><span className="status-dot" />{campaign.status}</span></div>
+    {campaign.theme && <p className="mt-3 text-sm text-muted-foreground">{campaign.theme}</p>}
+    <div className="mt-5 grid gap-5 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,2fr)]">
+      <div><p className="eyebrow">Participantes</p><p className="mt-2 text-sm">{campaign.playerCount} jogadores</p></div>
+      <div><p className="eyebrow">Última sessão</p><p className="mt-2 text-sm">{formatDate(campaign.lastSessionAt)}</p></div>
+      <div><p className="eyebrow">Próxima sessão</p><MasterReminderItem campaign={campaign} /></div>
     </div>
-  )
+    <div className="mt-5 flex flex-wrap items-center gap-3"><Link href={`/campaigns/${campaign.id}`} className="button-primary">Gerenciar mesa</Link><CopyId id={campaign.id} /></div>
+  </section>)}</div>
 }
 
 type Possession = {

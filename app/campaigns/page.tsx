@@ -1,7 +1,8 @@
+import { ArchiveHeader } from '@/components/archive-header'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getSessionOrDev } from '@/lib/auth0'
-import { ArrowLeft, BookOpen, LogOut, Plus } from 'lucide-react'
+import { BookOpen, Plus } from 'lucide-react'
 import { getCampaignsForMaster, hasMasterAccess } from '@/lib/campaigns'
 import { MasterPanel } from '@/components/master-panel'
 
@@ -16,45 +17,30 @@ export default async function CampaignsPage() {
 
   const userIsMaster = await hasMasterAccess(session.user)
 
-  // Quem não é modelo.md não tem o que ver aqui
+  // Somente narradores acessam esta página.
   if (!userIsMaster) redirect('/master')
 
   const campaigns = await getCampaignsForMaster(session.user.sub)
-  const displayName = session.user.name ?? session.user.email ?? 'Guardião'
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-background text-foreground">
       <div className="noise" aria-hidden="true" />
 
-      <header className="sheet-header">
-        <div>
-          <p className="eyebrow">Crônicas / acesso restrito</p>
-          <h1 className="mt-2 font-serif text-2xl uppercase tracking-[0.12em]">Suas mesas</h1>
-        </div>
-        <div className="flex items-center gap-4">
-          <span className="hidden text-sm text-muted-foreground sm:inline">{displayName}</span>
-          <Link href="/characters" className="button-ghost inline-flex items-center gap-2">
-            <ArrowLeft className="size-4" /> Personagens
-          </Link>
-          <a href="/auth/logout" className="button-ghost inline-flex items-center gap-2">
-            <LogOut className="size-4" /> Sair
-          </a>
-        </div>
-      </header>
+      <ArchiveHeader title="Suas mesas" showCampaigns={campaigns.length > 0} />
 
-      <div className="mx-auto w-full max-w-6xl px-5 py-10 sm:px-8 lg:py-14">
+      <div className="archive-content">
         {/* Cabeçalho */}
-        <div className="mb-10 flex flex-col justify-between gap-6 border-b border-border pb-8 sm:flex-row sm:items-end">
+        <div className="archive-page-heading">
           <div>
             <p className="eyebrow">Painel do Narrador</p>
-            <h2 className="mt-3 font-serif text-4xl uppercase tracking-[0.08em] sm:text-6xl">Suas histórias</h2>
+            <h1 className="mt-3 font-serif text-4xl uppercase tracking-[0.08em] sm:text-6xl">Suas histórias</h1>
             <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
-              Um resumo das campanhas que você narra. Clique em "Gerenciar mesa" para expandir os personagens e pertences da crônica.
+              Um resumo das campanhas que você narra. Gerencie os participantes, pertences e acontecimentos de cada crônica.
             </p>
           </div>
-          <Link href="/campaigns/new" id="btn-nova-campanha" className="button-primary inline-flex items-center justify-center gap-2">
+          <div className="archive-page-actions"><Link href="/master/catalogo" className="button-ghost inline-flex items-center justify-center gap-2">Fonte de pesquisa</Link><Link href="/campaigns/new" id="btn-nova-campanha" className="button-primary inline-flex items-center justify-center gap-2">
             <Plus className="size-4" /> Nova campanha
-          </Link>
+          </Link></div>
         </div>
 
         {campaigns.length === 0 ? (
@@ -65,9 +51,9 @@ export default async function CampaignsPage() {
             <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-muted-foreground">
               Crie sua primeira campanha e comece a tecer sua história. Os jogadores poderão se vincular a ela.
             </p>
-            <Link href="/campaigns/new" className="button-primary mt-7 inline-flex items-center gap-2">
+            <div className="archive-page-actions"><Link href="/campaigns/new" className="button-primary mt-7 inline-flex items-center gap-2">
               Criar primeira mesa <Plus className="size-4" />
-            </Link>
+            </Link></div>
           </section>
         ) : (
           <MasterPanel initialCampaigns={campaigns} />

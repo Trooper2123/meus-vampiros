@@ -22,7 +22,7 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
     const isMaster = character.masterId === session.user.sub
     const publicState = { ...state }
     if (!isMaster) delete publicState.torpor
-    return NextResponse.json({ state: publicState, maxima: calculateSecondaryAttributes(character.data), revision: character.revision, canEditNarrative: isMaster })
+    return NextResponse.json({ state: publicState, maxima: calculateSecondaryAttributes(character.data), revision: character.revision, canEditNarrative: isMaster || character.ownerId === session.user.sub })
   } catch { return NextResponse.json({ error: 'Não foi possível carregar os recursos.' }, { status: 500 }) }
 }
 

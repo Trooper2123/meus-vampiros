@@ -37,7 +37,7 @@ export function SummaryDisciplines({ disciplines, grants }: SummaryDisciplinesPr
 
   return (
     <div className="border border-border bg-card p-6">
-      <h2 className="font-serif text-lg uppercase tracking-[0.08em] mb-4">
+      <h2 className="font-serif text-2xl mb-5">
         Disciplinas
       </h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -52,7 +52,7 @@ export function SummaryDisciplines({ disciplines, grants }: SummaryDisciplinesPr
               <div className="mb-4 flex items-center justify-between border-b border-border pb-3">
                 <div className="flex items-center gap-2">
                   <BookOpen className="size-4 text-primary" />
-                  <h3 className="text-sm font-semibold">{discipline.name}</h3>
+                  <h3 className="font-serif text-2xl">{discipline.name}</h3>
                 </div>
                 <span className="font-mono text-xs text-muted-foreground">Nível {discipline.level}</span>
                 <GrantOriginLabel grants={grants} kind="DISCIPLINE" id={discipline.id} level={discipline.level} />

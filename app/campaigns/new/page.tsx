@@ -1,9 +1,10 @@
 'use client'
 
+import { ArchiveHeader } from '@/components/archive-header'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, ArrowRight, Check, Copy, Plus } from 'lucide-react'
+import { ArrowRight, Check, Copy, Plus } from 'lucide-react'
 import { SchedulingCalendarIntroModal } from '@/components/campaign-calendar/scheduling-calendar-intro-modal'
 import { CAMPAIGN_EXCEPTIONS } from '@/lib/campaign-exception-options'
 
@@ -112,24 +113,14 @@ export default function NewCampaignPage() {
     <main className="relative min-h-screen overflow-hidden bg-background text-foreground">
       <div className="noise" aria-hidden="true" />
 
-      <header className="sheet-header">
-        <div>
-          <p className="eyebrow">Crônicas / nova entrada</p>
-          <h1 className="mt-2 font-serif text-2xl uppercase tracking-[0.12em]">Nova campanha</h1>
-        </div>
-        <div className="flex items-center gap-4">
-          <Link href="/campaigns" className="button-ghost inline-flex items-center gap-2">
-            <ArrowLeft className="size-4" /> Suas mesas
-          </Link>
-        </div>
-      </header>
+      <ArchiveHeader title="Nova campanha" showCampaigns={hasCampaigns} />
 
-      <div className="mx-auto w-full max-w-3xl px-5 py-10 sm:px-8 lg:py-14">
-        <div className="mb-10 border-b border-border pb-8">
+      <div className="archive-content">
+        <div className="archive-page-heading">
           <p className="eyebrow">Painel do Narrador</p>
-          <h2 className="mt-3 font-serif text-4xl uppercase tracking-[0.08em] sm:text-5xl">Criar mesa</h2>
+          <h1 className="mt-3 font-serif text-4xl uppercase tracking-[0.08em] sm:text-5xl">Criar mesa</h1>
           <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
-            Preencha os dados da sua nova campanha. Após criar, compartilhe o ID da mesa com seus jogadores para que eles possam se vincular.
+            Defina sua crônica, os recursos disponíveis e as restrições antes de convidar os participantes.
           </p>
         </div>
 
@@ -159,7 +150,7 @@ export default function NewCampaignPage() {
             </div>
           </section>
         ) : (
-          <form onSubmit={handleSubmit} className="new-campaign-form">
+          <form onSubmit={handleSubmit} className="new-campaign-form archive-campaign-form">
             <div className="sheet-grid sheet-grid-2">
               <label className="sheet-field">
                 <span>Nome da campanha</span>
@@ -213,7 +204,7 @@ export default function NewCampaignPage() {
                 />
               </label>
               <fieldset className="span-2 border border-border bg-card p-4"><legend>Quais clãs serão permitidos?</legend><div className="mt-3 grid gap-2 sm:grid-cols-2">{clans.map(clan => <label key={clan.code} className="flex items-center gap-2 text-sm"><input type="checkbox" disabled={submitting} checked={enabledClanCodes.includes(clan.code)} onChange={event => setEnabledClanCodes(values => event.target.checked ? [...values, clan.code] : values.filter(code => code !== clan.code))} />{clan.name}</label>)}</div></fieldset>
-              <fieldset className="span-2 border border-border bg-card p-4"><legend>Quais predações serão permitidas?</legend><p className="mt-2 text-sm text-muted-foreground">Após criar a campanha, os painéis mostram somente os tipos usados pelas fichas vinculadas.</p><div className="mt-3 grid gap-2 sm:grid-cols-2">{predatorTypes.map(predator => <label key={predator.code} className="flex items-center gap-2 text-sm"><input type="checkbox" disabled={submitting} checked={enabledPredatorCodes.includes(predator.code)} onChange={event => setEnabledPredatorCodes(values => event.target.checked ? [...values, predator.code] : values.filter(code => code !== predator.code))} />{predator.name}{predator.source === 'PLAYERS_GUIDE' ? ' (Players Guide)' : ''}</label>)}</div></fieldset>
+              <fieldset className="span-2 border border-border bg-card p-4"><legend>Quais predações serão permitidas?</legend><p className="mt-2 text-sm text-muted-foreground">Após criar a campanha, os painéis mostram somente os tipos usados pelas fichas vinculadas.</p><div className="mt-3 grid gap-2 sm:grid-cols-2">{predatorTypes.map(predator => <label key={predator.code} className="flex items-center gap-2 text-sm"><input type="checkbox" disabled={submitting} checked={enabledPredatorCodes.includes(predator.code)} onChange={event => setEnabledPredatorCodes(values => event.target.checked ? [...values, predator.code] : values.filter(code => code !== predator.code))} />{predator.name}{predator.source === 'PLAYERS_GUIDE' ? ' (Livro do Jogador)' : ''}</label>)}</div></fieldset>
               <fieldset className="span-2 border border-border bg-card p-4"><legend>Exceções predefinidas de predação</legend><label className="mt-3 flex items-center gap-2 text-sm"><input type="checkbox" checked={allowExceptions} disabled={submitting} onChange={event => { setAllowExceptions(event.target.checked); setExceptionCodes([]) }} />Permitir exceções de predação nesta mesa</label>{allowExceptions && <div className="mt-3 flex flex-col gap-3">{CAMPAIGN_EXCEPTIONS.map(rule => <label key={rule.code} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={exceptionCodes.includes(rule.code)} disabled={submitting} onChange={event => setExceptionCodes(values => event.target.checked ? [...values, rule.code] : values.filter(code => code !== rule.code))} />{rule.name}</label>)}</div>}<p className="mt-3 text-xs text-muted-foreground">Definidas somente ao criar a mesa. Não habilitam predações bloqueadas, não concedem pontos e não dispensam as demais regras.</p></fieldset>
               <label className="span-2 flex cursor-pointer items-start gap-3 border border-border bg-card p-4">
                 <input

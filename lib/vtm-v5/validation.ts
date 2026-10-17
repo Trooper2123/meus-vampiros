@@ -35,7 +35,7 @@ export function validateCharacter(input: CharacterRulesInput, exceptionCodes: re
     if (expectedBloodPotency !== null && input.bloodPotency !== null && input.bloodPotency !== expectedBloodPotency + adjustment.bloodPotencyModifier) warnings.push(issue('BLOOD_POTENCY_GENERATION_MISMATCH', 'bloodPotency', 'A Potência de Sangue difere da geração e idade selecionadas; requer aprovação do Mestre.'))
 
     const disciplineDots = input.disciplines.reduce((total, discipline) => total + discipline.level, 0)
-    if (!input.isThinBlood && disciplineDots !== 3 + (input.predatorDisciplineBonus === 1 ? 1 : 0)) errors.push(issue('DISCIPLINE_DOTS_INVALID', 'disciplines', 'Distribua três pontos iniciais e, quando aplicado, um ponto de predação.'))
+    if (!input.isThinBlood && disciplineDots !== 3 + (input.predatorDisciplineBonus === 1 ? 1 : 0) + (input.disciplineXpDots ?? 0)) errors.push(issue('DISCIPLINE_DOTS_INVALID', 'disciplines', 'Distribua três pontos iniciais e, quando aplicado, um ponto de predação.'))
     for (const discipline of input.disciplines.filter((entry) => entry.level > 0)) {
       const selectedPowers = discipline.powers.slice(0, discipline.level).filter((power) => typeof power === 'string' ? power.trim() : power.name?.trim()).length
       if (selectedPowers !== discipline.level) errors.push(issue('DISCIPLINE_POWER_REQUIRED', 'disciplines', `Escolha um poder para cada ponto de ${discipline.name || 'disciplina'}.`))

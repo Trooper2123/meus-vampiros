@@ -6,6 +6,7 @@ import { SummarySkills } from './summary-skills'
 import { SummaryDisciplines } from './summary-disciplines'
 import { SummaryResources } from './summary-resources'
 import { SummaryMerits } from './summary-merits'
+import type { ReactNode } from 'react'
 import { calculateSecondaryAttributes } from '@/lib/vtm-v5/secondary-attributes'
 import type { CreationGrant } from '@/lib/vtm-v5/creation-grants'
 
@@ -51,19 +52,24 @@ type CharacterData = {
 }
 
 type CharacterSummaryProps = {
+  clanDetails?: ReactNode
+  headerActions?: ReactNode
+  resources?: ReactNode
+  specialties?: ReactNode
   data: CharacterData
   onChangeResources?: (resources: CharacterData['resources']) => void
 }
 
-export function CharacterSummary({ data, onChangeResources }: CharacterSummaryProps) {
+export function CharacterSummary({ data, onChangeResources, specialties, resources, headerActions, clanDetails }: CharacterSummaryProps) {
   const maxima = data.characterType === 'PLAYER_VAMPIRE' ? calculateSecondaryAttributes(data.attributes) : undefined
   const handleResourcesChange = (newResources: CharacterData['resources']) => {
     onChangeResources?.(newResources)
   }
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col gap-6">
       <SummaryHeader
+        actions={headerActions}
         name={data.name}
         clan={data.clan}
         predator={data.predator}
@@ -71,8 +77,11 @@ export function CharacterSummary({ data, onChangeResources }: CharacterSummaryPr
         campaignName={data.campaignName}
         campaignTheme={data.campaignTheme}
       />
+      {clanDetails}
+      {resources}
       <SummaryAttributes attributes={data.attributes} />
       <SummarySkills skills={data.skills} />
+      {specialties}
       <SummaryMerits merits={data.merits} flaws={data.flaws} grants={data.creationGrants} />
       <SummaryDisciplines disciplines={data.disciplines} grants={data.creationGrants} />
       {onChangeResources && (

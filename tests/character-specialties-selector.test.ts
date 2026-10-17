@@ -9,11 +9,16 @@ import type { CommandCharacter } from '../lib/character-commands'
 const id = '11111111-1111-4111-8111-111111111111'
 const character: CommandCharacter = { id, name: 'Helena', ownerId: 'owner', campaignId: null, masterId: null, characterType: 'PLAYER_VAMPIRE', status: 'DRAFT', data: { 'habilidade-briga': 1, 'habilidade-ciencia': 0 }, gameState: {}, totalXp: 3, spentXp: 0, revision: 0 }
 
-function renderSelector(draftSkills?: Record<string, number>) {
-  return renderToStaticMarkup(createElement(SWRConfig, { value: { provider: () => new Map(), fallback: { [`/api/characters/${id}/specialties`]: specialtyView(character, 'owner') }, revalidateOnMount: false } }, createElement(CharacterSpecialties, { characterId: id, draftSkills })))
+function renderSelector(draftSkills?: Record<string, number>, savedCharacter = character) {
+  return renderToStaticMarkup(createElement(SWRConfig, { value: { provider: () => new Map(), fallback: { [`/api/characters/${id}/specialties`]: specialtyView(savedCharacter, 'owner') }, revalidateOnMount: false } }, createElement(CharacterSpecialties, { characterId: id, draftSkills })))
 }
 
 describe('opções renderizadas do seletor de especialidades', () => {
+  it('oferece Ofícios mesmo quando já existe uma especialidade e apenas um ponto', () => {
+    const savedCharacter: CommandCharacter = { ...character, data: { 'habilidade-oficios': 1 }, gameState: { specialties: [{ id: 'craft', skillId: 'oficios', name: 'Pintura', origin: 'XP', status: 'APPROVED', costXp: 3 }] } }
+    expect(renderSelector(undefined, savedCharacter)).toContain('value="oficios"')
+    expect(renderSelector({ Ofícios: 1 }, savedCharacter)).toContain('value="oficios"')
+  })
   it.each(['PENDING', 'APPROVED'] as const)('feedback de concessão informa nome, habilidade, XP e estado %s', status => {
     const html = renderToStaticMarkup(createElement(SpecialtyAppliedFeedback, { specialty: { id: 'specialty', skillId: 'briga', name: 'Boxe', origin: 'CREATION', status, costXp: 0 } }))
     expect(html).toContain('Concessão gratuita aplicada')
