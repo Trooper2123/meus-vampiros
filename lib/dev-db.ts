@@ -1,3 +1,4 @@
+import { characterText } from '@/lib/vtm-v5/text'
 /**
  * In-memory database for local development (no DATABASE_URL required).
  * State is stored on globalThis so it survives Next.js hot-reloads.
@@ -5,7 +6,10 @@
  * Activated automatically when DATABASE_URL is absent in non-production env.
  */
 
-import { randomUUID } from 'crypto'
+import { DISCIPLINE_CONTENTS } from './vtm-v5/discipline-contents'
+import { CLAN_DISCIPLINES, DISCIPLINES } from './vtm-v5/disciplines'
+import { DISCIPLINE_RESEARCH, SKILL_CATALOG } from './vtm-v5/research-catalog'
+import { randomUUID } from 'node:crypto'
 import { readSessionState } from './vtm-v5/session-state'
 import type { CharacterVisibility } from './vtm-v5/types'
 
@@ -35,6 +39,7 @@ export type DevCharacter = {
 }
 
 export type DevCampaign = {
+  bloodPolicy?: import('./vtm-v5/blood-potency').BloodPolicy
   sessionStartTime?: string | null
   sessionEndTime?: string | null
   id: string
@@ -77,6 +82,11 @@ export type DevCharacterLedgerEvent = {
 // ─── Singleton store ───────────────────────────────────────────────────────────
 
 type DevStore = {
+  disciplineResearchCatalog?: typeof DISCIPLINE_RESEARCH
+  skillCatalog?: typeof SKILL_CATALOG
+  disciplineContents?: typeof DISCIPLINE_CONTENTS
+  disciplineCatalog?: typeof DISCIPLINES
+  clanDisciplines?: typeof CLAN_DISCIPLINES
   characters: DevCharacter[]
   campaigns: DevCampaign[]
   possessions: DevPossession[]
@@ -248,7 +258,12 @@ function seed(): DevStore {
     character.revision = 0
     character.gameState = character.characterType === 'PLAYER_VAMPIRE' ? readSessionState(character.data, {}) : {}
   }
-  return { characters, campaigns, possessions, characterLedgerEvents: [] }
+  return { characters, campaigns, possessions, characterLedgerEvents: [], disciplineContents: DISCIPLINE_CONTENTS, disciplineCatalog: DISCIPLINES, clanDisciplines: CLAN_DISCIPLINES, disciplineResearchCatalog: DISCIPLINE_RESEARCH, skillCatalog: SKILL_CATALOG }
+}
+
+export function devGetMasterResearchCatalog() {
+  const store = process.env.NODE_ENV !== 'production' && !process.env.DATABASE_URL ? getStore() : global.__devDb
+  return { skills: store?.skillCatalog ?? SKILL_CATALOG, disciplines: store?.disciplineCatalog ?? DISCIPLINES, entries: store?.disciplineResearchCatalog ?? DISCIPLINE_RESEARCH }
 }
 
 function getStore(): DevStore {
@@ -305,8 +320,8 @@ export function devGetCharactersForUser(userId: string) {
         campaignName: campaign?.name ?? null,
         campaignTheme: campaign?.theme ?? null,
         campaignPrincipios: campaign?.principios ?? null,
-        spentXp: String(c.spentXp),
-        totalXp: String(c.totalXp),
+        spentXp: characterText(c.spentXp),
+        totalXp: characterText(c.totalXp),
       }
     })
 }
@@ -347,7 +362,7 @@ export function devCreateCharacter(
     clan: (payload.data?.cla as string) ?? null,
     generation: (payload.data?.geracao as string) ?? null,
     status: 'DRAFT',
-    characterType: String(payload.data?.characterType ?? 'PLAYER_VAMPIRE'),
+    characterType: characterText(payload.data?.characterType ?? 'PLAYER_VAMPIRE'),
     visibility: payload.visibility ?? 'PLAYER_VISIBLE',
     campaignId: payload.campaignId ?? null,
     data: structuredClone(payload.data ?? {}),
@@ -374,7 +389,7 @@ export function devUpdateCharacter(
   if (payload.name !== undefined) character.name = payload.name
   if (payload.data !== undefined) {
     character.data = payload.data
-    character.characterType = String(payload.data.characterType ?? character.characterType ?? 'PLAYER_VAMPIRE')
+    character.characterType = characterText(payload.data.characterType ?? character.characterType ?? 'PLAYER_VAMPIRE')
     character.concept = (payload.data.conceito as string) ?? null
     character.clan = (payload.data.cla as string) ?? null
     character.generation = (payload.data.geracao as string) ?? null
