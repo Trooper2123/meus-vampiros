@@ -20,7 +20,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const session = await auth0.getSession(req)
 
-    if (!session || !session.user) {
+    if (!session?.user) {
       return res.status(401).json({ user: null })
     }
 

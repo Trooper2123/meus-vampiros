@@ -29,7 +29,7 @@ async function getAuthenticatedUser() {
 export async function GET(request: Request) {
   try {
     const user = await getAuthenticatedUser()
-    if (!user || !user.sub) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+    if (!user?.sub) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
     await ensureAllTables()
 
     const { searchParams } = new URL(request.url)
@@ -65,7 +65,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const user = await getAuthenticatedUser()
-    if (!user || !user.sub) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+    if (!user?.sub) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
     const body = await readBody(request)
     if (!body) return NextResponse.json({ error: 'JSON inválido.' }, { status: 400 })
@@ -100,7 +100,7 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
   try {
     const user = await getAuthenticatedUser()
-    if (!user || !user.sub) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+    if (!user?.sub) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
 
     const body = await readBody(request)
     if (!body) return NextResponse.json({ error: 'JSON inválido.' }, { status: 400 })

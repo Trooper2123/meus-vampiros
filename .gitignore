@@ -19,5 +19,6 @@ next-env.d.ts
 # Common ignores
 node_modules
 .next/
+.next-backup-*/
 .DS_Store
 tsconfig.tsbuildinfo

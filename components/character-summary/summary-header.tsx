@@ -11,7 +11,7 @@ type SummaryHeaderProps = {
   campaignTheme: string | null
 }
 
-export function SummaryHeader({ name, clan, predator, generation, campaignName, campaignTheme, actions }: SummaryHeaderProps) {
+export function SummaryHeader({ name, clan, predator, generation, campaignName, campaignTheme, actions }: Readonly<SummaryHeaderProps>) {
   return <section className="archive-page-heading">
     <p className="eyebrow">{[clan, predator, generation].filter(hasSummaryName).join(' · ') || 'Ficha de personagem'}</p>
     <div className="mt-5 flex flex-wrap items-center gap-4">

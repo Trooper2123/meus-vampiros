@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
-export function CampaignNpcCreator({ campaignId }: { campaignId: string }) {
+export function CampaignNpcCreator({ campaignId }: Readonly<{ campaignId: string }>) {
   const router = useRouter()
   const [name, setName] = useState('')
   const [characterType, setCharacterType] = useState('HUMAN_NPC')

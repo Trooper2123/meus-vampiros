@@ -3992,7 +3992,7 @@
   {
     "id": "PROTEAN:poder:1:22-vtm-v5-vampire-the-masquerade-v5-sabbat-the-black-hand-pdf:107:blindsight",
     "disciplineId": "PROTEAN",
-    "discipline": "Metamorfose",
+    "discipline": "Proteanismo",
     "level": 1,
     "name": "Blindsight",
     "type": "Poder",
@@ -4013,7 +4013,7 @@
   {
     "id": "PROTEAN:poder:1:20-vtm-v5-vampire-the-masquerade-pdf:269:eyes-of-the-beast",
     "disciplineId": "PROTEAN",
-    "discipline": "Metamorfose",
+    "discipline": "Proteanismo",
     "level": 1,
     "name": "Eyes Of The Beast",
     "type": "Poder",
@@ -4034,7 +4034,7 @@
   {
     "id": "PROTEAN:poder:1:04-vtm-vampire-players-guide-pdf:39:shed-skin",
     "disciplineId": "PROTEAN",
-    "discipline": "Metamorfose",
+    "discipline": "Proteanismo",
     "level": 1,
     "name": "Shed Skin",
     "type": "Poder",
@@ -4055,7 +4055,7 @@
   {
     "id": "PROTEAN:poder:1:22-vtm-v5-vampire-the-masquerade-v5-sabbat-the-black-hand-pdf:107:trophy-hunter",
     "disciplineId": "PROTEAN",
-    "discipline": "Metamorfose",
+    "discipline": "Proteanismo",
     "level": 1,
     "name": "Trophy Hunter",
     "type": "Poder",
@@ -4076,7 +4076,7 @@
   {
     "id": "PROTEAN:poder:1:20-vtm-v5-vampire-the-masquerade-pdf:269:weight-of-the-feather",
     "disciplineId": "PROTEAN",
-    "discipline": "Metamorfose",
+    "discipline": "Proteanismo",
     "level": 1,
     "name": "Weight Of The Feather",
     "type": "Poder",
@@ -4097,7 +4097,7 @@
   {
     "id": "PROTEAN:poder:2:20-vtm-v5-vampire-the-masquerade-pdf:270:feral-weapons",
     "disciplineId": "PROTEAN",
-    "discipline": "Metamorfose",
+    "discipline": "Proteanismo",
     "level": 2,
     "name": "Feral Weapons",
     "type": "Poder",
@@ -4118,7 +4118,7 @@
   {
     "id": "PROTEAN:poder:2:22-vtm-v5-vampire-the-masquerade-v5-sabbat-the-black-hand-pdf:107:flense",
     "disciplineId": "PROTEAN",
-    "discipline": "Metamorfose",
+    "discipline": "Proteanismo",
     "level": 2,
     "name": "Flense",
     "type": "Poder",
@@ -4139,7 +4139,7 @@
   {
     "id": "PROTEAN:poder:2:03-v5stlove-pdf:153:serpent-s-kiss",
     "disciplineId": "PROTEAN",
-    "discipline": "Metamorfose",
+    "discipline": "Proteanismo",
     "level": 2,
     "name": "Serpent’s Kiss",
     "type": "Poder",
@@ -4160,7 +4160,7 @@
   {
     "id": "PROTEAN:poder:2:03-v5stlove-pdf:153:the-false-sip",
     "disciplineId": "PROTEAN",
-    "discipline": "Metamorfose",
+    "discipline": "Proteanismo",
     "level": 2,
     "name": "The False Sip",
     "type": "Poder",
@@ -4181,7 +4181,7 @@
   {
     "id": "PROTEAN:poder:2:07-vtm-v5-companion-pdf:27:vicissitude",
     "disciplineId": "PROTEAN",
-    "discipline": "Metamorfose",
+    "discipline": "Proteanismo",
     "level": 2,
     "name": "Vicissitude",
     "type": "Poder",
@@ -4191,7 +4191,7 @@
     "prerequisite": "Não indicado em campo próprio",
     "amalgam": "Dominação 2",
     "duration": "Permanente",
-    "pool": "Determinação + Metamorfose",
+    "pool": "Determinação + Proteanismo",
     "opposing_pool": "Não indicado em campo próprio",
     "notes": "Sistema (original, trecho): Roll Resolve + Protean. Every success on the roll allows a single Vicissitude change to be made to the user, though the total number of changes cannot exceed the user’s Protean rating, no matter the number of applications or successes.",
     "source": "V5 Companion",
@@ -4202,7 +4202,7 @@
   {
     "id": "PROTEAN:poder:3:20-vtm-v5-vampire-the-masquerade-pdf:270:earth-meld",
     "disciplineId": "PROTEAN",
-    "discipline": "Metamorfose",
+    "discipline": "Proteanismo",
     "level": 3,
     "name": "Earth Meld",
     "type": "Poder",
@@ -4223,7 +4223,7 @@
   {
     "id": "PROTEAN:poder:3:07-vtm-v5-companion-pdf:27:fleshcrafting",
     "disciplineId": "PROTEAN",
-    "discipline": "Metamorfose",
+    "discipline": "Proteanismo",
     "level": 3,
     "name": "Fleshcrafting",
     "type": "Poder",
@@ -4233,7 +4233,7 @@
     "prerequisite": "vicissitude",
     "amalgam": "Dominação 2",
     "duration": "Permanente",
-    "pool": "Determinação + Metamorfose",
+    "pool": "Determinação + Proteanismo",
     "opposing_pool": "Vigor + Determinação",
     "notes": "Sistema (original, trecho): In order to use this power, the user must be able to work undisturbed on the subject, who thus either needs to be willing or restrained. For a willing subject, follow the same system as Vicissitude (above).",
     "source": "V5 Companion",
@@ -4244,7 +4244,7 @@
   {
     "id": "PROTEAN:poder:3:12-vtm-v5-live-from-the-succubus-club-document-pdf:28:masque-of-death",
     "disciplineId": "PROTEAN",
-    "discipline": "Metamorfose",
+    "discipline": "Proteanismo",
     "level": 3,
     "name": "Masque Of Death",
     "type": "Poder",
@@ -4265,7 +4265,7 @@
   {
     "id": "PROTEAN:poder:3:20-vtm-v5-vampire-the-masquerade-pdf:270:shapechange",
     "disciplineId": "PROTEAN",
-    "discipline": "Metamorfose",
+    "discipline": "Proteanismo",
     "level": 3,
     "name": "Shapechange",
     "type": "Poder",
@@ -4286,7 +4286,7 @@
   {
     "id": "PROTEAN:poder:3:04-vtm-vampire-players-guide-pdf:39:tools-of-nature",
     "disciplineId": "PROTEAN",
-    "discipline": "Metamorfose",
+    "discipline": "Proteanismo",
     "level": 3,
     "name": "Tools Of Nature",
     "type": "Poder",
@@ -4307,7 +4307,7 @@
   {
     "id": "PROTEAN:poder:3:22-vtm-v5-vampire-the-masquerade-v5-sabbat-the-black-hand-pdf:108:whispers-to-the-flesh",
     "disciplineId": "PROTEAN",
-    "discipline": "Metamorfose",
+    "discipline": "Proteanismo",
     "level": 3,
     "name": "Whispers To The Flesh",
     "type": "Poder",
@@ -4317,7 +4317,7 @@
     "prerequisite": "flense",
     "amalgam": "Não indicado em campo próprio",
     "duration": "One Attack",
-    "pool": "Inteligência + Metamorfose",
+    "pool": "Inteligência + Proteanismo",
     "opposing_pool": "Vigor + Autocontrole or Fortitude",
     "notes": "Sistema (original, trecho): The vampire rolls a contest of Intelligence + Protean vs Stamina + Composure. (Vampires with Fortitude may resist with Stamina + Fortitude.).",
     "source": "Sabbat — Definitive Edition (arquivo alternativo)",
@@ -4328,7 +4328,7 @@
   {
     "id": "PROTEAN:poder:4:07-vtm-v5-companion-pdf:28:horrid-form",
     "disciplineId": "PROTEAN",
-    "discipline": "Metamorfose",
+    "discipline": "Proteanismo",
     "level": 4,
     "name": "Horrid Form",
     "type": "Poder",
@@ -4349,7 +4349,7 @@
   {
     "id": "PROTEAN:poder:4:20-vtm-v5-vampire-the-masquerade-pdf:271:metamorphosis",
     "disciplineId": "PROTEAN",
-    "discipline": "Metamorfose",
+    "discipline": "Proteanismo",
     "level": 4,
     "name": "Metamorphosis",
     "type": "Poder",
@@ -4370,7 +4370,7 @@
   {
     "id": "PROTEAN:poder:4:04-vtm-vampire-players-guide-pdf:39:swarm-form",
     "disciplineId": "PROTEAN",
-    "discipline": "Metamorfose",
+    "discipline": "Proteanismo",
     "level": 4,
     "name": "Swarm Form",
     "type": "Poder",
@@ -4391,7 +4391,7 @@
   {
     "id": "PROTEAN:poder:4:04-vtm-vampire-players-guide-pdf:40:traverse-the-earth",
     "disciplineId": "PROTEAN",
-    "discipline": "Metamorfose",
+    "discipline": "Proteanismo",
     "level": 4,
     "name": "Traverse The Earth",
     "type": "Poder",
@@ -4412,7 +4412,7 @@
   {
     "id": "PROTEAN:poder:5:10-vtm-v5-gehenna-war-pdf:47:bloodform",
     "disciplineId": "PROTEAN",
-    "discipline": "Metamorfose",
+    "discipline": "Proteanismo",
     "level": 5,
     "name": "Bloodform",
     "type": "Poder",
@@ -4433,7 +4433,7 @@
   {
     "id": "PROTEAN:poder:5:12-vtm-v5-live-from-the-succubus-club-document-pdf:28:face-of-the-victim",
     "disciplineId": "PROTEAN",
-    "discipline": "Metamorfose",
+    "discipline": "Proteanismo",
     "level": 5,
     "name": "Face Of The Victim",
     "type": "Poder",
@@ -4454,7 +4454,7 @@
   {
     "id": "PROTEAN:poder:5:10-vtm-v5-gehenna-war-pdf:48:master-of-forms",
     "disciplineId": "PROTEAN",
-    "discipline": "Metamorfose",
+    "discipline": "Proteanismo",
     "level": 5,
     "name": "Master Of Forms",
     "type": "Poder",
@@ -4475,7 +4475,7 @@
   {
     "id": "PROTEAN:poder:5:20-vtm-v5-vampire-the-masquerade-pdf:271:mist-form",
     "disciplineId": "PROTEAN",
-    "discipline": "Metamorfose",
+    "discipline": "Proteanismo",
     "level": 5,
     "name": "Mist Form",
     "type": "Poder",
@@ -4496,7 +4496,7 @@
   {
     "id": "PROTEAN:poder:5:07-vtm-v5-companion-pdf:28:one-with-the-land",
     "disciplineId": "PROTEAN",
-    "discipline": "Metamorfose",
+    "discipline": "Proteanismo",
     "level": 5,
     "name": "One With The Land",
     "type": "Poder",
@@ -4517,7 +4517,7 @@
   {
     "id": "PROTEAN:poder:5:08-vtm-v5-cults-of-the-blood-gods-backer-s-copy-pdf:85:the-heart-of-darkness",
     "disciplineId": "PROTEAN",
-    "discipline": "Metamorfose",
+    "discipline": "Proteanismo",
     "level": 5,
     "name": "The Heart of Darkness",
     "type": "Poder",
@@ -4538,7 +4538,7 @@
   {
     "id": "PROTEAN:poder:5:20-vtm-v5-vampire-the-masquerade-pdf:271:the-unfettered-heart",
     "disciplineId": "PROTEAN",
-    "discipline": "Metamorfose",
+    "discipline": "Proteanismo",
     "level": 5,
     "name": "The Unfettered Heart",
     "type": "Poder",
@@ -7121,7 +7121,7 @@
   {
     "id": "THIN_BLOOD_ALCHEMY:formula:1:05-vtm-v5-blood-sigils-5-pdf-free-pdf:73:body-paint",
     "disciplineId": "THIN_BLOOD_ALCHEMY",
-    "discipline": "Alquimia de Sangue-Fraco",
+    "discipline": "Alquimia de Sangue-Ralo",
     "level": 1,
     "name": "Body Paint",
     "type": "Fórmula",
@@ -7142,7 +7142,7 @@
   {
     "id": "THIN_BLOOD_ALCHEMY:formula:1:05-vtm-v5-blood-sigils-5-pdf-free-pdf:74:checkout-time",
     "disciplineId": "THIN_BLOOD_ALCHEMY",
-    "discipline": "Alquimia de Sangue-Fraco",
+    "discipline": "Alquimia de Sangue-Ralo",
     "level": 1,
     "name": "Checkout Time",
     "type": "Fórmula",
@@ -7163,7 +7163,7 @@
   {
     "id": "THIN_BLOOD_ALCHEMY:formula:1:05-vtm-v5-blood-sigils-5-pdf-free-pdf:74:elevate",
     "disciplineId": "THIN_BLOOD_ALCHEMY",
-    "discipline": "Alquimia de Sangue-Fraco",
+    "discipline": "Alquimia de Sangue-Ralo",
     "level": 1,
     "name": "Elevate",
     "type": "Fórmula",
@@ -7184,7 +7184,7 @@
   {
     "id": "THIN_BLOOD_ALCHEMY:formula:1:20-vtm-v5-vampire-the-masquerade-pdf:284:far-reach",
     "disciplineId": "THIN_BLOOD_ALCHEMY",
-    "discipline": "Alquimia de Sangue-Fraco",
+    "discipline": "Alquimia de Sangue-Ralo",
     "level": 1,
     "name": "Far Reach",
     "type": "Fórmula",
@@ -7205,7 +7205,7 @@
   {
     "id": "THIN_BLOOD_ALCHEMY:formula:1:05-vtm-v5-blood-sigils-5-pdf-free-pdf:74:food-stain",
     "disciplineId": "THIN_BLOOD_ALCHEMY",
-    "discipline": "Alquimia de Sangue-Fraco",
+    "discipline": "Alquimia de Sangue-Ralo",
     "level": 1,
     "name": "Food Stain",
     "type": "Fórmula",
@@ -7226,7 +7226,7 @@
   {
     "id": "THIN_BLOOD_ALCHEMY:formula:1:20-vtm-v5-vampire-the-masquerade-pdf:285:haze",
     "disciplineId": "THIN_BLOOD_ALCHEMY",
-    "discipline": "Alquimia de Sangue-Fraco",
+    "discipline": "Alquimia de Sangue-Ralo",
     "level": 1,
     "name": "Haze",
     "type": "Fórmula",
@@ -7247,7 +7247,7 @@
   {
     "id": "THIN_BLOOD_ALCHEMY:formula:1:20-vtm-v5-vampire-the-masquerade-pdf:285:profane-hieros-gamos",
     "disciplineId": "THIN_BLOOD_ALCHEMY",
-    "discipline": "Alquimia de Sangue-Fraco",
+    "discipline": "Alquimia de Sangue-Ralo",
     "level": 1,
     "name": "Profane Hieros Gamos",
     "type": "Fórmula",
@@ -7268,7 +7268,7 @@
   {
     "id": "THIN_BLOOD_ALCHEMY:formula:1:05-vtm-v5-blood-sigils-5-pdf-free-pdf:75:speak-from-the-heart",
     "disciplineId": "THIN_BLOOD_ALCHEMY",
-    "discipline": "Alquimia de Sangue-Fraco",
+    "discipline": "Alquimia de Sangue-Ralo",
     "level": 1,
     "name": "Speak From the Heart",
     "type": "Fórmula",
@@ -7289,12 +7289,12 @@
   {
     "id": "THIN_BLOOD_ALCHEMY:formula:2:05-vtm-v5-blood-sigils-5-pdf-free-pdf:75:advanced-torpor",
     "disciplineId": "THIN_BLOOD_ALCHEMY",
-    "discipline": "Alquimia de Sangue-Fraco",
+    "discipline": "Alquimia de Sangue-Ralo",
     "level": 2,
     "name": "Advanced Torpor",
     "type": "Fórmula",
     "status": "Publicação",
-    "effect": "Induz torpor, incluindo uso como coma regenerativo para Sangue-Fracos.",
+    "effect": "Induz torpor, incluindo uso como coma regenerativo para Sangue-Ralos.",
     "cost": "1 Teste de Despertar",
     "prerequisite": "Não indicado em campo próprio",
     "amalgam": "Não indicado em campo próprio",
@@ -7310,7 +7310,7 @@
   {
     "id": "THIN_BLOOD_ALCHEMY:formula:2:05-vtm-v5-blood-sigils-5-pdf-free-pdf:75:blacklight-surprise",
     "disciplineId": "THIN_BLOOD_ALCHEMY",
-    "discipline": "Alquimia de Sangue-Fraco",
+    "discipline": "Alquimia de Sangue-Ralo",
     "level": 2,
     "name": "Blacklight Surprise",
     "type": "Fórmula",
@@ -7331,7 +7331,7 @@
   {
     "id": "THIN_BLOOD_ALCHEMY:formula:2:05-vtm-v5-blood-sigils-5-pdf-free-pdf:76:blue-state",
     "disciplineId": "THIN_BLOOD_ALCHEMY",
-    "discipline": "Alquimia de Sangue-Fraco",
+    "discipline": "Alquimia de Sangue-Ralo",
     "level": 2,
     "name": "Blue State",
     "type": "Fórmula",
@@ -7352,7 +7352,7 @@
   {
     "id": "THIN_BLOOD_ALCHEMY:formula:2:20-vtm-v5-vampire-the-masquerade-pdf:285:envelop",
     "disciplineId": "THIN_BLOOD_ALCHEMY",
-    "discipline": "Alquimia de Sangue-Fraco",
+    "discipline": "Alquimia de Sangue-Ralo",
     "level": 2,
     "name": "Envelop",
     "type": "Fórmula",
@@ -7373,7 +7373,7 @@
   {
     "id": "THIN_BLOOD_ALCHEMY:formula:2:10-vtm-v5-gehenna-war-pdf:50:whiff-its",
     "disciplineId": "THIN_BLOOD_ALCHEMY",
-    "discipline": "Alquimia de Sangue-Fraco",
+    "discipline": "Alquimia de Sangue-Ralo",
     "level": 2,
     "name": "Whiff-Its",
     "type": "Fórmula",
@@ -7394,7 +7394,7 @@
   {
     "id": "THIN_BLOOD_ALCHEMY:formula:3:08-vtm-v5-cults-of-the-blood-gods-backer-s-copy-pdf:45:chemically-induced-flashback",
     "disciplineId": "THIN_BLOOD_ALCHEMY",
-    "discipline": "Alquimia de Sangue-Fraco",
+    "discipline": "Alquimia de Sangue-Ralo",
     "level": 3,
     "name": "Chemically-Induced Flashback",
     "type": "Fórmula",
@@ -7415,7 +7415,7 @@
   {
     "id": "THIN_BLOOD_ALCHEMY:formula:3:08-vtm-v5-cults-of-the-blood-gods-backer-s-copy-pdf:45:concoct-ashe",
     "disciplineId": "THIN_BLOOD_ALCHEMY",
-    "discipline": "Alquimia de Sangue-Fraco",
+    "discipline": "Alquimia de Sangue-Ralo",
     "level": 3,
     "name": "Concoct Ashe",
     "type": "Fórmula",
@@ -7436,7 +7436,7 @@
   {
     "id": "THIN_BLOOD_ALCHEMY:formula:3:20-vtm-v5-vampire-the-masquerade-pdf:286:defractionate",
     "disciplineId": "THIN_BLOOD_ALCHEMY",
-    "discipline": "Alquimia de Sangue-Fraco",
+    "discipline": "Alquimia de Sangue-Ralo",
     "level": 3,
     "name": "Defractionate",
     "type": "Fórmula",
@@ -7457,7 +7457,7 @@
   {
     "id": "THIN_BLOOD_ALCHEMY:formula:3:05-vtm-v5-blood-sigils-5-pdf-free-pdf:76:diamond-skin",
     "disciplineId": "THIN_BLOOD_ALCHEMY",
-    "discipline": "Alquimia de Sangue-Fraco",
+    "discipline": "Alquimia de Sangue-Ralo",
     "level": 3,
     "name": "Diamond Skin",
     "type": "Fórmula",
@@ -7478,7 +7478,7 @@
   {
     "id": "THIN_BLOOD_ALCHEMY:formula:3:05-vtm-v5-blood-sigils-5-pdf-free-pdf:76:fireskin",
     "disciplineId": "THIN_BLOOD_ALCHEMY",
-    "discipline": "Alquimia de Sangue-Fraco",
+    "discipline": "Alquimia de Sangue-Ralo",
     "level": 3,
     "name": "Fireskin",
     "type": "Fórmula",
@@ -7499,7 +7499,7 @@
   {
     "id": "THIN_BLOOD_ALCHEMY:formula:3:05-vtm-v5-blood-sigils-5-pdf-free-pdf:76:hospital-chains",
     "disciplineId": "THIN_BLOOD_ALCHEMY",
-    "discipline": "Alquimia de Sangue-Fraco",
+    "discipline": "Alquimia de Sangue-Ralo",
     "level": 3,
     "name": "Hospital Chains",
     "type": "Fórmula",
@@ -7520,7 +7520,7 @@
   {
     "id": "THIN_BLOOD_ALCHEMY:formula:3:05-vtm-v5-blood-sigils-5-pdf-free-pdf:77:martian-purity",
     "disciplineId": "THIN_BLOOD_ALCHEMY",
-    "discipline": "Alquimia de Sangue-Fraco",
+    "discipline": "Alquimia de Sangue-Ralo",
     "level": 3,
     "name": "Martian Purity",
     "type": "Fórmula",
@@ -7541,7 +7541,7 @@
   {
     "id": "THIN_BLOOD_ALCHEMY:formula:3:05-vtm-v5-blood-sigils-5-pdf-free-pdf:77:mask-off",
     "disciplineId": "THIN_BLOOD_ALCHEMY",
-    "discipline": "Alquimia de Sangue-Fraco",
+    "discipline": "Alquimia de Sangue-Ralo",
     "level": 3,
     "name": "Mask Off",
     "type": "Fórmula",
@@ -7562,7 +7562,7 @@
   {
     "id": "THIN_BLOOD_ALCHEMY:formula:3:05-vtm-v5-blood-sigils-5-pdf-free-pdf:77:tlc",
     "disciplineId": "THIN_BLOOD_ALCHEMY",
-    "discipline": "Alquimia de Sangue-Fraco",
+    "discipline": "Alquimia de Sangue-Ralo",
     "level": 3,
     "name": "Tlc",
     "type": "Fórmula",
@@ -7583,7 +7583,7 @@
   {
     "id": "THIN_BLOOD_ALCHEMY:formula:3:05-vtm-v5-blood-sigils-5-pdf-free-pdf:78:troll-the-pious",
     "disciplineId": "THIN_BLOOD_ALCHEMY",
-    "discipline": "Alquimia de Sangue-Fraco",
+    "discipline": "Alquimia de Sangue-Ralo",
     "level": 3,
     "name": "Troll the Pious",
     "type": "Fórmula",
@@ -7604,7 +7604,7 @@
   {
     "id": "THIN_BLOOD_ALCHEMY:formula:4:20-vtm-v5-vampire-the-masquerade-pdf:287:airborne-momentum",
     "disciplineId": "THIN_BLOOD_ALCHEMY",
-    "discipline": "Alquimia de Sangue-Fraco",
+    "discipline": "Alquimia de Sangue-Ralo",
     "level": 4,
     "name": "Airborne Momentum",
     "type": "Fórmula",
@@ -7625,7 +7625,7 @@
   {
     "id": "THIN_BLOOD_ALCHEMY:formula:4:05-vtm-v5-blood-sigils-5-pdf-free-pdf:78:copycat",
     "disciplineId": "THIN_BLOOD_ALCHEMY",
-    "discipline": "Alquimia de Sangue-Fraco",
+    "discipline": "Alquimia de Sangue-Ralo",
     "level": 4,
     "name": "Copycat",
     "type": "Fórmula",
@@ -7646,7 +7646,7 @@
   {
     "id": "THIN_BLOOD_ALCHEMY:formula:4:08-vtm-v5-cults-of-the-blood-gods-backer-s-copy-pdf:46:discipline-channeling",
     "disciplineId": "THIN_BLOOD_ALCHEMY",
-    "discipline": "Alquimia de Sangue-Fraco",
+    "discipline": "Alquimia de Sangue-Ralo",
     "level": 4,
     "name": "Discipline Channeling",
     "type": "Fórmula",
@@ -7667,7 +7667,7 @@
   {
     "id": "THIN_BLOOD_ALCHEMY:formula:4:05-vtm-v5-blood-sigils-5-pdf-free-pdf:79:half-living-conductor",
     "disciplineId": "THIN_BLOOD_ALCHEMY",
-    "discipline": "Alquimia de Sangue-Fraco",
+    "discipline": "Alquimia de Sangue-Ralo",
     "level": 4,
     "name": "Half-Living Conductor",
     "type": "Fórmula",
@@ -7688,7 +7688,7 @@
   {
     "id": "THIN_BLOOD_ALCHEMY:formula:4:10-vtm-v5-gehenna-war-pdf:51:juice-box",
     "disciplineId": "THIN_BLOOD_ALCHEMY",
-    "discipline": "Alquimia de Sangue-Fraco",
+    "discipline": "Alquimia de Sangue-Ralo",
     "level": 4,
     "name": "Juice Box",
     "type": "Fórmula",
@@ -7709,7 +7709,7 @@
   {
     "id": "THIN_BLOOD_ALCHEMY:formula:4:05-vtm-v5-blood-sigils-5-pdf-free-pdf:79:red-state",
     "disciplineId": "THIN_BLOOD_ALCHEMY",
-    "discipline": "Alquimia de Sangue-Fraco",
+    "discipline": "Alquimia de Sangue-Ralo",
     "level": 4,
     "name": "Red State",
     "type": "Fórmula",
@@ -7730,7 +7730,7 @@
   {
     "id": "THIN_BLOOD_ALCHEMY:formula:4:05-vtm-v5-blood-sigils-5-pdf-free-pdf:79:vitae-msg",
     "disciplineId": "THIN_BLOOD_ALCHEMY",
-    "discipline": "Alquimia de Sangue-Fraco",
+    "discipline": "Alquimia de Sangue-Ralo",
     "level": 4,
     "name": "Vitae MSG",
     "type": "Fórmula",
@@ -7751,7 +7751,7 @@
   {
     "id": "THIN_BLOOD_ALCHEMY:formula:5:20-vtm-v5-vampire-the-masquerade-pdf:287:awaken-the-sleeper",
     "disciplineId": "THIN_BLOOD_ALCHEMY",
-    "discipline": "Alquimia de Sangue-Fraco",
+    "discipline": "Alquimia de Sangue-Ralo",
     "level": 5,
     "name": "Awaken The Sleeper",
     "type": "Fórmula",
@@ -7772,12 +7772,12 @@
   {
     "id": "THIN_BLOOD_ALCHEMY:formula:5:10-vtm-v5-gehenna-war-pdf:51:beast-mode",
     "disciplineId": "THIN_BLOOD_ALCHEMY",
-    "discipline": "Alquimia de Sangue-Fraco",
+    "discipline": "Alquimia de Sangue-Ralo",
     "level": 5,
     "name": "Beast Mode",
     "type": "Fórmula",
     "status": "Publicação",
-    "effect": "Amplia temporariamente as capacidades físicas de um Sangue-Fraco.",
+    "effect": "Amplia temporariamente as capacidades físicas de um Sangue-Ralo.",
     "cost": "1 Teste de Despertar",
     "prerequisite": "Não indicado em campo próprio",
     "amalgam": "Não indicado em campo próprio",
@@ -7793,7 +7793,7 @@
   {
     "id": "THIN_BLOOD_ALCHEMY:formula:5:05-vtm-v5-blood-sigils-5-pdf-free-pdf:80:saturn-s-flux",
     "disciplineId": "THIN_BLOOD_ALCHEMY",
-    "discipline": "Alquimia de Sangue-Fraco",
+    "discipline": "Alquimia de Sangue-Ralo",
     "level": 5,
     "name": "Saturn’s Flux",
     "type": "Fórmula",

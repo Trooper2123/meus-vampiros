@@ -7,7 +7,7 @@ function currentYearInSaoPaulo() {
   }).format(new Date()))
 }
 
-export function CalendarYearSelector({ year, onChange }: { year: number; onChange: (year: number) => void }) {
+export function CalendarYearSelector({ year, onChange }: Readonly<{ year: number; onChange: (year: number) => void }>) {
   const currentYear = currentYearInSaoPaulo()
   const years = Array.from({ length: 11 }, (_, index) => currentYear - 5 + index)
 

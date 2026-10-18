@@ -21,7 +21,7 @@ function dateKey(year: number, month: number, day: number) { return `${year}-${S
 
 type Schedule = { startTime: string | null; endTime: string | null }
 
-export function DateAvailabilityCalendar({ campaignId, master = false }: { campaignId: string; master?: boolean }) {
+export function DateAvailabilityCalendar({ campaignId, master = false }: Readonly<{ campaignId: string; master?: boolean }>) {
   const { data, error: loadError, mutate } = useSWR<{ currentUserId: string; entries: AvailabilityEntry[]; schedule: Schedule }>(`/api/campaign-availability?campaignId=${campaignId}`, fetcher)
   const [draft, setDraft] = useState<{ startTime: string; endTime: string } | null>(null)
   const [savingSchedule, setSavingSchedule] = useState(false)
@@ -63,7 +63,15 @@ export function DateAvailabilityCalendar({ campaignId, master = false }: { campa
       const response = await fetch('/api/campaign-availability', { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
       if (!response.ok) throw new Error('Não foi possível salvar. Tente novamente.')
       const result = await response.json()
-      if (!result || typeof result !== 'object' || (payload.action === 'schedule' ? !result.schedule : method === 'POST' ? !result.entry : result.ok !== true)) throw new Error('Resposta inválida. Tente novamente.')
+      let invalidResult
+      if (payload.action === 'schedule') {
+        invalidResult = !result.schedule
+      } else if (method === 'POST') {
+        invalidResult = !result.entry
+      } else {
+        invalidResult = result.ok !== true
+      }
+      if (!result || typeof result !== 'object' || (invalidResult)) throw new Error('Resposta inválida. Tente novamente.')
       await mutate()
       return true
     } catch {

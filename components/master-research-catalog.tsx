@@ -6,7 +6,7 @@ import type { DisciplineResearchEntry } from '@/lib/vtm-v5/research-catalog'
 const PAGE_SIZE = 30
 const normalize = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR')
 
-export function MasterResearchCatalog({ entries, skills }: { entries: readonly DisciplineResearchEntry[]; skills: readonly { id: string; name: string }[] }) {
+export function MasterResearchCatalog({ entries, skills }: Readonly<{ entries: readonly DisciplineResearchEntry[]; skills: readonly { id: string; name: string }[] }>) {
   const [query, setQuery] = useState('')
   const [discipline, setDiscipline] = useState('')
   const [type, setType] = useState('')
@@ -23,19 +23,19 @@ export function MasterResearchCatalog({ entries, skills }: { entries: readonly D
 
   return <section aria-label="Catálogo de pesquisa de Disciplinas" className="flex flex-col gap-6">
     <div className="grid gap-4 rounded-lg border border-border bg-card p-4 sm:grid-cols-2 lg:grid-cols-4">
-      <label className="text-sm text-muted-foreground sm:col-span-2 lg:col-span-4">Pesquisar no catálogo
+      <label className="text-sm text-muted-foreground sm:col-span-2 lg:col-span-4"><span>Pesquisar no catálogo</span>
         <input className="input mt-2 w-full" value={query} onChange={update(setQuery)} placeholder="Nome, efeito, requisito ou fonte" />
       </label>
-      <label className="text-sm text-muted-foreground">Disciplina
+      <label className="text-sm text-muted-foreground"><span>Disciplina</span>
         <select className="select mt-2 w-full" value={discipline} onChange={update(setDiscipline)}><option value="">Todas</option>{[...new Map(entries.map(entry => [entry.disciplineId, entry.discipline])).entries()].map(([id, name]) => <option key={id} value={id}>{name}</option>)}</select>
       </label>
-      <label className="text-sm text-muted-foreground">Tipo
+      <label className="text-sm text-muted-foreground"><span>Tipo</span>
         <select className="select mt-2 w-full" value={type} onChange={update(setType)}><option value="">Todos</option>{[...new Set(entries.map(entry => entry.type))].map(value => <option key={value}>{value}</option>)}</select>
       </label>
-      <label className="text-sm text-muted-foreground">Situação da fonte
+      <label className="text-sm text-muted-foreground"><span>Situação da fonte</span>
         <select className="select mt-2 w-full" value={status} onChange={update(setStatus)}><option value="">Todas</option>{[...new Set(entries.map(entry => entry.status))].map(value => <option key={value}>{value}</option>)}</select>
       </label>
-      <p className="self-end text-sm text-muted-foreground" role="status">{filtered.length} de {entries.length} registros</p>
+      <output className="block self-end text-sm text-muted-foreground">{filtered.length} de {entries.length} registros</output>
     </div>
 
     <details className="rounded-lg border border-border bg-card p-4">

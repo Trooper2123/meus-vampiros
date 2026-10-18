@@ -50,6 +50,6 @@ type CharacterSummaryClientProps = {
   data: CharacterData
 }
 
-export function CharacterSummaryClient({ data }: CharacterSummaryClientProps) {
+export function CharacterSummaryClient({ data }: Readonly<CharacterSummaryClientProps>) {
   return <div className="flex flex-col gap-6"><CharacterSummary clanDetails={data.characterType === 'PLAYER_VAMPIRE' ? <CharacterClanSummary characterId={data.id} /> : undefined} data={data} headerActions={<><Link href={`/notes?targetType=${['HUMAN_NPC', 'VAMPIRE_NPC'].includes(data.characterType ?? '') ? 'NPC' : 'CHARACTER'}&targetId=${data.id}`} target="_blank" rel="noopener noreferrer" className="button-primary" aria-label="Anotações (abre em nova guia)">Anotações</Link>{data.characterType === 'PLAYER_VAMPIRE' && <Link href={`/characters/${data.id}/evolution`} target="_blank" rel="noopener noreferrer" className="button-ghost" aria-label="Evolução (abre em nova guia)">Evolução</Link>}</>} resources={data.characterType === 'PLAYER_VAMPIRE' ? <SessionResources characterId={data.id} /> : undefined} />{['PLAYER_VAMPIRE', 'VAMPIRE_NPC'].includes(data.characterType ?? '') && <BloodPotencySummary characterId={data.id} />}{data.characterType === 'PLAYER_VAMPIRE' && <CharacterRolls characterId={data.id} />}{hasSummaryName(data.predator) && data.predator && <PlayerPredatorSummary name={data.predator} roll={data.predatorRoll} source={data.predatorSource} selection={data.predatorSelection} />}</div>
 }

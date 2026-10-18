@@ -2,10 +2,13 @@ import { describe, expect, it } from 'vitest'
 import { applyPredatorTypeSelection, normalizePredatorType, PREDATOR_TYPE_BY_CODE, PREDATOR_TYPES, toPlayerPredatorTypeDto, validatePredatorChoices, validatePredatorType } from '@/lib/vtm-v5/predator-types'
 
 describe('catálogo de tipos de predação', () => {
-  it('possui 10 tipos básicos e 18 expandidos com códigos únicos', () => {
+  it('possui 40 tipos e uma variante com códigos únicos', () => {
     expect(PREDATOR_TYPES.filter((entry) => entry.source === 'COREBOOK')).toHaveLength(10)
     expect(PREDATOR_TYPES.filter((entry) => entry.source === 'PLAYERS_GUIDE')).toHaveLength(18)
-    expect(new Set(PREDATOR_TYPES.map((entry) => entry.code)).size).toBe(28)
+    expect(new Set(PREDATOR_TYPES.map((entry) => entry.code)).size).toBe(41)
+    expect(PREDATOR_TYPES.filter(entry => entry.source === 'PUBLICATIONS')).toHaveLength(2)
+    expect(PREDATOR_TYPES.filter(entry => entry.source === 'COTBG_BACKER')).toHaveLength(3)
+    expect(PREDATOR_TYPES.filter(entry => entry.source === 'SABBAT_ALTERNATIVE')).toHaveLength(8)
     expect(PREDATOR_TYPES.filter((entry) => entry.source === 'PLAYERS_GUIDE').every((entry) => entry.optional && !entry.enabledByDefault)).toBe(true)
   })
 

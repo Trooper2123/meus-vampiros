@@ -19,7 +19,7 @@ type ReminderData = { entries?: { date: string; status: string; suggested: boole
 
 const fetcher = (url: string) => fetch(url).then((response) => response.json())
 
-function MasterReminderItem({ campaign }: { campaign: CampaignSummary }) {
+function MasterReminderItem({ campaign }: Readonly<{ campaign: CampaignSummary }>) {
   const { data } = useSWR<ReminderData>(`/api/campaign-availability?campaignId=${campaign.id}`, fetcher)
   const suggested = (data?.entries ?? []).filter((entry) => entry.suggested).sort((a, b) => a.date.localeCompare(b.date))[0]
   if (!suggested) return <p className="mt-2 text-sm text-muted-foreground">Aguardando sugestão de data.</p>
@@ -33,7 +33,7 @@ function formatDate(value: string | null) {
   return new Intl.DateTimeFormat('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(value))
 }
 
-function CopyId({ id }: { id: string }) {
+function CopyId({ id }: Readonly<{ id: string }>) {
   const [copied, setCopied] = useState(false)
   return (
     <button
@@ -52,7 +52,7 @@ function CopyId({ id }: { id: string }) {
   )
 }
 
-export function NewCampaignForm({ onCreated }: { onCreated: (campaign: CampaignSummary) => void }) {
+export function NewCampaignForm({ onCreated }: Readonly<{ onCreated: (campaign: CampaignSummary) => void }>) {
   const [name, setName] = useState('')
   const [theme, setTheme] = useState('')
   const [principios, setPrincipios] = useState('')
@@ -111,7 +111,7 @@ export function NewCampaignForm({ onCreated }: { onCreated: (campaign: CampaignS
   )
 }
 
-export function MasterPanel({ initialCampaigns }: { initialCampaigns: CampaignSummary[] }) {
+export function MasterPanel({ initialCampaigns }: Readonly<{ initialCampaigns: CampaignSummary[] }>) {
   const { data } = useSWR('/api/campaigns', fetcher)
   const campaigns: CampaignSummary[] = data?.campaigns ?? initialCampaigns
   if (campaigns.length === 0) return null
@@ -149,7 +149,7 @@ type CampaignCharacter = {
   totalXp?: number | string
 }
 
-export function CampaignPossessionsManager({ campaignId }: { campaignId: string }) {
+export function CampaignPossessionsManager({ campaignId }: Readonly<{ campaignId: string }>) {
   const { data: charData, mutate: mutateCharacters } = useSWR<{ characters: CampaignCharacter[] }>(`/api/characters?campaignId=${campaignId}`, fetcher)
   const { data: possData, error: possessionsError, mutate: mutatePossessions } = useSWR<{ possessions: Possession[] }>(`/api/possessions?campaignId=${campaignId}`, async url => {
     const response = await fetch(url)
@@ -276,7 +276,7 @@ export function CampaignPossessionsManager({ campaignId }: { campaignId: string 
         <span className="eyebrow text-xs">Painel do Narrador</span>
       </div>
 
-      {feedback && <p role="status" className="text-sm text-muted-foreground">{feedback}</p>}
+      {feedback && <output className="block text-sm text-muted-foreground">{feedback}</output>}
       {possessionsError && <p role="alert">{possessionsError.message}</p>}
       <label className="flex flex-col gap-2 text-sm">Motivo da concessão de XP<input className="input" value={xpReason} maxLength={500} onChange={(event) => setXpReason(event.target.value)} required /></label>
       {xpRetry && <p className="text-xs text-muted-foreground">Há uma concessão incompleta. Reenviar usa a mesma operação, sem duplicar XP.</p>}

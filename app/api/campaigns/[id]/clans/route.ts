@@ -12,7 +12,17 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
     if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) return NextResponse.json({ error: 'Mesa inválida.' }, { status: 400 })
     if (!await canManageCampaign(session.user.sub, id)) return NextResponse.json({ error: 'Acesso negado.' }, { status: 403 })
     const records = await Promise.all((await getCharactersForCampaign(id)).map(character => getCharacterAccessRecord(character.id)))
-    const used = new Set(records.filter(record => record?.campaignId === id).map(record => record?.data.clanCode ?? (record?.data.isThinBlood || record?.data.creationType === 'THIN_BLOOD' ? 'THIN_BLOOD' : record?.data.isCaitiff ? 'CAITIFF' : CLANS.find(clan => clan.name.toLocaleLowerCase('pt-BR') === String(record?.data.cla ?? '').trim().toLocaleLowerCase('pt-BR'))?.code)))
+    const used = new Set(records.filter(record => record?.campaignId === id).map(record => {
+      let selectedClanCode
+      if (record?.data.isThinBlood || record?.data.creationType === 'THIN_BLOOD') {
+        selectedClanCode = 'THIN_BLOOD'
+      } else if (record?.data.isCaitiff) {
+        selectedClanCode = 'CAITIFF'
+      } else {
+        selectedClanCode = CLANS.find(clan => clan.name.toLocaleLowerCase('pt-BR') === String(record?.data.cla ?? '').trim().toLocaleLowerCase('pt-BR'))?.code
+      }
+      return record?.data.clanCode ?? (selectedClanCode)
+    }))
     return NextResponse.json({ clans: CLANS.filter(clan => used.has(clan.code)) })
   } catch { return NextResponse.json({ error: 'Não foi possível carregar os clãs da mesa.' }, { status: 500 }) }
 }

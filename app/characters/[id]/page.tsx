@@ -8,9 +8,9 @@ import { BookOpen, Edit, FileText } from 'lucide-react'
 
 export default async function CharacterPage({
   params,
-}: {
+}: Readonly<{
   params: Promise<{ id: string }>
-}) {
+}>) {
   const session = await getSessionOrDev()
   if (!session?.user) redirect('/auth/login')
 

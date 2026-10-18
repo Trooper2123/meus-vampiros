@@ -19,16 +19,20 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     if (!(await canManageCampaign(session.user.sub, id))) return NextResponse.json({ error: 'Acesso negado.' }, { status: 403 })
     for (const characterId of body.characterIds as string[]) {
       const character = await getCharacterAccessRecord(characterId)
-      if (!character || character.campaignId !== id) return NextResponse.json({ error: 'A seleção contém ficha não autorizada.' }, { status: 403 })
+      if (character?.campaignId !== id) return NextResponse.json({ error: 'A seleção contém ficha não autorizada.' }, { status: 403 })
     }
     const results: Record<string, unknown>[] = []
-    for (const characterId of body.characterIds as string[]) {
-      try { results.push({ characterId, ...await grantCharacterXp(session.user.sub, characterId, body.amount, body.reason, body.idempotencyKey, id) }) }
-      catch (error) { results.push({ characterId, ok: false, status: error instanceof CharacterCommandError ? error.status : 500, error: error instanceof CharacterCommandError ? error.message : 'Não foi possível conceder XP.' }) }
-    }
+    for (const characterId of body.characterIds as string[]) results.push(await grantCampaignCharacterXp(session.user.sub, id, characterId, body))
     const complete = results.every(result => result.ok === true)
     return NextResponse.json({ complete, results }, { status: complete ? 200 : 207 })
   } catch {
     return NextResponse.json({ error: 'Não foi possível conceder XP.' }, { status: 500 })
   }
+}
+
+async function grantCampaignCharacterXp(actorId: string, campaignId: string, characterId: string, input: { amount: number; reason: string; idempotencyKey: string }) {
+  const character = await getCharacterAccessRecord(characterId)
+  if (character?.campaignId !== campaignId) return { characterId, ok: false, status: 403, error: 'Ficha fora desta mesa.' }
+  try { return { characterId, ok: true, ...await grantCharacterXp(actorId, characterId, input.amount, input.reason, input.idempotencyKey, campaignId) } }
+  catch (error) { return { characterId, ok: false, status: error instanceof CharacterCommandError ? error.status : 500, error: error instanceof CharacterCommandError ? error.message : 'Não foi possível conceder XP.' } }
 }

@@ -30,14 +30,7 @@ function canRead(note: Note, actorId: string) {
 function canEdit(note: Note, actorId: string) { return note.visibility === 'NARRATOR_ONLY' ? narrator(actorId, note.campaignId) : note.authorUserId === actorId }
 
 function target(actorId: string, link: NoteLink): { campaignId: string | null; label: string } | null {
-  if (link.targetType === 'CHARACTER' || link.targetType === 'NPC') {
-    const character = global.__devDb?.characters.find(entry => entry.id === link.targetId)
-    if (!character) return null
-    const npc = ['HUMAN_NPC', 'VAMPIRE_NPC'].includes(character.characterType ?? '')
-    if (npc !== (link.targetType === 'NPC')) return null
-    const authorized = character.userId === actorId || narrator(actorId, character.campaignId) || (npc && character.visibility === 'PLAYER_VISIBLE' && character.campaignId && devIsUserInCampaign(character.campaignId, actorId))
-    return authorized ? { campaignId: character.campaignId, label: character.name } : null
-  }
+  if (link.targetType === 'CHARACTER' || link.targetType === 'NPC') return characterNoteTarget(actorId, link)
   if (link.targetType === 'EVENT') {
     const event = global.__devDbCampaignCalendar?.events.find(entry => entry.id === link.targetId)
     return event && (narrator(actorId, event.campaignId) || (event.visibility === 'everyone' && devIsUserInCampaign(event.campaignId, actorId))) ? { campaignId: event.campaignId, label: event.title } : null
@@ -58,8 +51,8 @@ function project(note: Note, actorId: string, detail: boolean) {
 function payload(input: unknown, update: boolean): Record<string, unknown> {
   if (!input || typeof input !== 'object' || Array.isArray(input) || Buffer.byteLength(JSON.stringify(input), 'utf8') > 100000) fail(400, 'Dados da anotação inválidos.')
   const value = input as Record<string, unknown>
-  const fields = ['title', 'body', 'campaignId', 'visibility', 'recipientUserIds', 'links', update ? 'expectedRevision' : 'idempotencyKey']
-  if (Object.keys(value).some(key => !fields.includes(key))) fail(400, 'Campos de anotação não permitidos.')
+  const fields = new Set(['title', 'body', 'campaignId', 'visibility', 'recipientUserIds', 'links', update ? 'expectedRevision' : 'idempotencyKey'])
+  if (Object.keys(value).some(key => !fields.has(key))) fail(400, 'Campos de anotação não permitidos.')
   if (update ? !Number.isSafeInteger(value.expectedRevision) || Number(value.expectedRevision) < 0 : !noteUuid(value.idempotencyKey)) fail(400, 'Revisão ou chave inválida.')
   return value
 }
@@ -71,25 +64,8 @@ function validate(note: Note, actorId: string, previous?: Note) {
   if (previous?.campaignId && previous.campaignId !== note.campaignId) fail(422, 'A mesa de uma anotação já contextualizada não pode ser alterada.')
   if (note.campaignId && (!previous || previous.campaignId !== note.campaignId) && !devIsUserInCampaign(note.campaignId, actorId)) fail(403, 'Você não pertence a esta mesa.')
   if ((previous?.visibility === 'NARRATOR_ONLY') !== (note.visibility === 'NARRATOR_ONLY') && previous) fail(422, 'Anotações exclusivas não podem mudar de categoria.')
-  if (!Array.isArray(note.recipientUserIds) || note.recipientUserIds.length > 20 || note.recipientUserIds.some(user => typeof user !== 'string' || !user.trim() || user.length > 200) || new Set(note.recipientUserIds).size !== note.recipientUserIds.length) fail(422, 'Destinatários inválidos.')
-  if (note.visibility === 'PRIVATE') note.recipientUserIds = []
-  if (note.visibility === 'NARRATOR_ONLY' && (!narrator(actorId, note.campaignId) || note.recipientUserIds.length)) fail(403, 'Somente o Narrador atual pode manter anotações exclusivas sem destinatários.')
-  if (note.visibility === 'SHARED') {
-    if (!note.campaignId || !devIsUserInCampaign(note.campaignId, actorId) || note.recipientUserIds.some(user => user === note.authorUserId || !devIsUserInCampaign(note.campaignId!, user))) fail(422, 'Compartilhamento exige participantes atuais da mesma mesa.')
-    if (!note.recipientUserIds.length) {
-      if (previous?.visibility !== 'SHARED') fail(422, 'Escolha ao menos um destinatário para compartilhar.')
-      note.visibility = 'PRIVATE'
-    }
-  }
-  if (!Array.isArray(note.links) || note.links.length > 20) fail(422, 'Vínculos inválidos.')
-  const seen = new Set<string>()
-  for (const link of note.links) {
-    if (!link || typeof link !== 'object' || Array.isArray(link) || Object.keys(link).some(key => !['targetType', 'targetId'].includes(key)) || !['CHARACTER', 'NPC', 'EVENT', 'SESSION'].includes(link.targetType) || !noteUuid(link.targetId)) fail(422, 'Vínculo inválido.')
-    const resolved = target(actorId, link)
-    const key = `${link.targetType}:${link.targetId}`
-    if (!resolved || resolved.campaignId !== note.campaignId || seen.has(key)) fail(422, 'Vínculo indisponível, duplicado ou de outra mesa.')
-    seen.add(key)
-  }
+  validateNoteSharing(note, actorId, previous)
+  validateNoteLinks(note, actorId)
 }
 
 export function getNote(actorId: string, id: string) {
@@ -115,7 +91,10 @@ export function createNote(actorId: string, input: unknown) {
   const hash = createHash('sha256').update(JSON.stringify(Object.fromEntries(Object.entries(fields).sort(([first], [second]) => first.localeCompare(second))))).digest('hex')
   const requestId = `${actorId}:${idempotencyKey}`
   const saved = store.requests.get(requestId)
-  if (saved) { if (saved.hash !== hash) fail(409, 'Chave já utilizada com outro conteúdo.'); return getNote(actorId, saved.id) }
+  if (saved) {
+    if (saved.hash !== hash) fail(409, 'Chave já utilizada com outro conteúdo.')
+    return getNote(actorId, saved.id)
+  }
   const now = new Date().toISOString()
   const note = { title: '', campaignId: null, visibility: 'PRIVATE', body: '', recipientUserIds: [], links: [], ...structuredClone(fields), id: randomUUID(), authorUserId: actorId, revision: 0, createdAt: now, updatedAt: now } as Note
   validate(note, actorId)
@@ -158,4 +137,38 @@ export function notesContext(actorId: string) {
   const nights = global.__chronicleNightMemory
   if (nights && nights.store === global.__devDb) links.push(...nights.nights.map(night => ({ targetType: 'SESSION' as const, targetId: night.result.id })))
   return { campaigns, targets: links.flatMap(link => { const resolved = target(actorId, link); return resolved ? [{ ...link, ...resolved }] : [] }) }
+}
+
+function validateNoteSharing(note: Note, actorId: string, previous?: Note) {
+  if (!Array.isArray(note.recipientUserIds) || note.recipientUserIds.length > 20 || note.recipientUserIds.some(user => typeof user !== 'string' || !user.trim() || user.length > 200) || new Set(note.recipientUserIds).size !== note.recipientUserIds.length) fail(422, 'Destinatários inválidos.')
+  if (note.visibility === 'PRIVATE') note.recipientUserIds = []
+  if (note.visibility === 'NARRATOR_ONLY' && (!narrator(actorId, note.campaignId) || note.recipientUserIds.length)) fail(403, 'Somente o Narrador atual pode manter anotações exclusivas sem destinatários.')
+  if (note.visibility === 'SHARED') {
+    if (!note.campaignId || !devIsUserInCampaign(note.campaignId, actorId) || note.recipientUserIds.some(user => user === note.authorUserId || !devIsUserInCampaign(note.campaignId!, user))) fail(422, 'Compartilhamento exige participantes atuais da mesma mesa.')
+    if (!note.recipientUserIds.length) {
+      if (previous?.visibility !== 'SHARED') fail(422, 'Escolha ao menos um destinatário para compartilhar.')
+      note.visibility = 'PRIVATE'
+    }
+  }
+}
+
+function validateNoteLinks(note: Note, actorId: string) {
+  if (!Array.isArray(note.links) || note.links.length > 20) fail(422, 'Vínculos inválidos.')
+  const seen = new Set<string>()
+  for (const link of note.links) {
+    if (!link || typeof link !== 'object' || Array.isArray(link) || Object.keys(link).some(key => !['targetType', 'targetId'].includes(key)) || !['CHARACTER', 'NPC', 'EVENT', 'SESSION'].includes(link.targetType) || !noteUuid(link.targetId)) fail(422, 'Vínculo inválido.')
+    const resolved = target(actorId, link)
+    const key = `${link.targetType}:${link.targetId}`
+    if (!resolved || resolved.campaignId !== note.campaignId || seen.has(key)) fail(422, 'Vínculo indisponível, duplicado ou de outra mesa.')
+    seen.add(key)
+  }
+}
+
+function characterNoteTarget(actorId: string, link: NoteLink) {
+  const character = global.__devDb?.characters.find(entry => entry.id === link.targetId)
+  if (!character) return null
+  const npc = ['HUMAN_NPC', 'VAMPIRE_NPC'].includes(character.characterType ?? '')
+  if (npc !== (link.targetType === 'NPC')) return null
+  const authorized = character.userId === actorId || narrator(actorId, character.campaignId) || (npc && character.visibility === 'PLAYER_VISIBLE' && character.campaignId && devIsUserInCampaign(character.campaignId, actorId))
+  return authorized ? { campaignId: character.campaignId, label: character.name } : null
 }

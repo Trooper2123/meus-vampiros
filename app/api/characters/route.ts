@@ -14,7 +14,7 @@ import { notesActor } from '@/lib/notes-http'
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const PROTECTED_FIELDS = ['disciplineAcquisitions', 'disciplineAccessGrants', 'gameState', 'masterOverride', 'predatorDisciplineBonus', 'predatorEffectsVersion', 'clanCode', 'clanSelection', 'clanRulesVersion', 'creationAdvantageDots', 'creationFlawDots', 'predatorTypeCode', 'predador', 'predatorTypeOverrides', 'predatorTypeOverride', 'predatorTypeSelection', 'predatorTypeRelationshipRequirements', 'predatorTypeBaseHumanity', 'predatorTypeBaseBloodPotency']
 
-class InvalidPayload extends Error {}
+class InvalidPayload extends Error { }
 
 async function readPayload(request: Request) {
   const body = await request.json().catch(() => { throw new InvalidPayload() })
@@ -86,16 +86,9 @@ export async function POST(request: Request) {
     let campaignId = requestedCampaignId
     let policyConsent: { campaignId: string; acceptedAt: string; acceptedBy: string } | undefined
     if (invitation !== undefined) {
-      if (await notesActor(request, true) !== session.user.sub) throw new CharacterCommandError(403, 'Sessão alterada. Tente novamente.')
-      if (!invitation || typeof invitation !== 'object' || Array.isArray(invitation) || invitation.accepted !== true || Object.keys(invitation).some(key => !['campaignId', 'token', 'accepted'].includes(key))) throw new InvalidPayload()
-      const campaign = invitedCampaign(invitation.campaignId, invitation.token)
-      if (requestedCampaignId && requestedCampaignId !== campaign.id) throw new InvalidPayload()
-      if (data?.characterType && data.characterType !== 'PLAYER_VAMPIRE') throw new InvalidPayload()
-      campaignId = campaign.id
-      validateInvitedClan(campaign.id, data ?? {})
-      policyConsent = { campaignId, acceptedAt: new Date().toISOString(), acceptedBy: session.user.sub }
+      ({ campaignId,policyConsent }=await acceptCreationInvitation(request, session.user.sub, invitation, requestedCampaignId, data))
     }
-    if (data?.characterType && !canCreateCharacterType(data.characterType as CharacterType, await hasMasterAccess(session.user))) return NextResponse.json({ error: 'Este tipo de ficha é exclusivo do Mestre.' }, { status: 403 })
+    if (['HUMAN_NPC', 'VAMPIRE_NPC'].includes(String(data?.characterType))) return NextResponse.json({ error: 'Crie NPCs pelo gerenciamento da mesa.' }, { status: 403 })
     await ensureAllTables()
     if (campaignId && !policyConsent && !(await isUserInCampaign(campaignId, session.user.sub))) return NextResponse.json({ error: 'Você não pertence a esta mesa.' }, { status: 403 })
     if (campaignId && !policyConsent && (data?.characterType ?? 'PLAYER_VAMPIRE') === 'PLAYER_VAMPIRE' && global.__devDb?.campaigns.find(campaign => campaign.id === campaignId)?.creationPolicy) throw new CharacterCommandError(409, 'Consulte o convite e aceite as regras antes de criar a ficha.')
@@ -105,6 +98,18 @@ export async function POST(request: Request) {
   } catch (error) {
     return errorResponse(error, 'Não foi possível salvar a ficha.')
   }
+}
+
+async function acceptCreationInvitation(request: Request, userId: string, invitation: unknown, requestedCampaignId: string | null | undefined, data: Record<string, unknown> | undefined) {
+  if (await notesActor(request, true) !== userId) throw new CharacterCommandError(403, 'Sessão alterada. Tente novamente.')
+  if (!invitation || typeof invitation !== 'object' || Array.isArray(invitation)) throw new InvalidPayload()
+  const fields = invitation as Record<string, unknown>
+  if (fields.accepted !== true || Object.keys(fields).some(key => !['campaignId', 'token', 'accepted'].includes(key))) throw new InvalidPayload()
+  const campaign = invitedCampaign(fields.campaignId, fields.token)
+  if (requestedCampaignId && requestedCampaignId !== campaign.id) throw new InvalidPayload()
+  if (data?.characterType && data.characterType !== 'PLAYER_VAMPIRE') throw new InvalidPayload()
+  validateInvitedClan(campaign.id, data ?? {})
+  return { campaignId: campaign.id, policyConsent: { campaignId: campaign.id, acceptedAt: new Date().toISOString(), acceptedBy: userId } }
 }
 
 export async function PUT(request: Request) {
@@ -119,6 +124,7 @@ export async function PUT(request: Request) {
     if (campaignId !== undefined && campaignId !== original.campaignId) return NextResponse.json({ error: 'A alteração do vínculo aguarda o fluxo de aprovação da mesa.' }, { status: 409 })
     if (!Number.isSafeInteger(expectedRevision) || expectedRevision < 0) return NextResponse.json({ error: 'Recarregue a ficha antes de editar.' }, { status: 409 })
     const characterType = data?.characterType ?? original.characterType
+    if (characterType !== original.characterType) return NextResponse.json({ error: 'O tipo da ficha não pode ser alterado.' }, { status: 422 })
     if (!canCreateCharacterType(characterType as CharacterType, await hasMasterAccess(session.user))) return NextResponse.json({ error: 'Este tipo de ficha é exclusivo do Mestre.' }, { status: 403 })
     await updateCharacter(id, session.user.sub, { name, data: safeCharacterData(data, original.data as Record<string, unknown>), campaignId, expectedRevision })
     return NextResponse.json({ ok: true, campaignId })

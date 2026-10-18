@@ -89,7 +89,7 @@ export function validateSpecialty(specialty: Specialty, existing: readonly Speci
   if (others.filter(entry => normalizeSpecialtySkillId(entry.skillId) === skillId).length + 1 > specialtyLimit(rules, skillId, skills[skillId] ?? 0)) errors.push('Limite de especialidades excedido.')
   if (['SKILL', 'CREATION', 'PREDATOR'].includes(specialty.origin)) {
     const grant = calculateSpecialtyGrants(rules).find(entry => entry.id === specialty.grantId)
-    if (!grant || grant.origin !== specialty.origin || (grant.skillId && grant.skillId !== skillId) || (grant.options && !grant.options.some(option => option.skillId === skillId && option.name.toLocaleLowerCase('pt-BR') === name.toLocaleLowerCase('pt-BR')))) errors.push('Concessão incompatível.')
+    if (grant?.origin !== specialty.origin || (grant.skillId && grant.skillId !== skillId) || (grant.options && !grant.options.some(option => option.skillId === skillId && option.name.toLocaleLowerCase('pt-BR') === name.toLocaleLowerCase('pt-BR')))) errors.push('Concessão incompatível.')
     if (others.some(entry => entry.grantId === specialty.grantId)) errors.push('Concessão já utilizada.')
   } else if (specialty.grantId) errors.push('Origem incompatível com concessão.')
   return errors
@@ -137,6 +137,6 @@ export function specialtyRollBonus(selectedIds: readonly string[], skill: string
   if (selectedIds.length > 1) throw new Error('Apenas uma especialidade por rolagem.')
   if (!selectedIds.length) return 0
   const specialty = authorizedSpecialties.find(entry => entry.id === selectedIds[0])
-  if (!specialty || specialty.status !== 'APPROVED' || normalizeSpecialtySkillId(specialty.skillId) !== normalizeSpecialtySkillId(skill) || !applicable) throw new Error('Especialidade não aplicável à rolagem.')
+  if (specialty?.status !== 'APPROVED' || normalizeSpecialtySkillId(specialty.skillId) !== normalizeSpecialtySkillId(skill) || !applicable) throw new Error('Especialidade não aplicável à rolagem.')
   return 1
 }

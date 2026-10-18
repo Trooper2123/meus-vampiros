@@ -12,7 +12,7 @@ async function load(url: string): Promise<View> {
   if (!response.ok) throw new Error(body.error ?? 'Não foi possível carregar a evolução.')
   return body
 }
-export function CharacterDisciplineProgression({ characterId }: { characterId: string }) {
+export function CharacterDisciplineProgression({ characterId }: Readonly<{ characterId: string }>) {
   const url = `/api/characters/${characterId}/disciplines`
   const { data, error, mutate } = useSWR<View>(url, load)
   const [selected, setSelected] = useState('')
@@ -44,7 +44,7 @@ export function CharacterDisciplineProgression({ characterId }: { characterId: s
       await mutate(body, { revalidate: false })
       setReason('')
       setMessage(command.kind === 'PURCHASE' ? 'Nível adquirido e XP registrado. Complete o poder e revise a ficha no editor.' : 'Autorização registrada. Nenhum nível ou XP foi concedido.')
-    } catch (failure) { setMessage(failure instanceof Error ? failure.message : 'Falha de conexão. Reenvie a mesma operação.') }
+    } catch (error_) { setMessage(error_ instanceof Error ? error_.message : 'Falha de conexão. Reenvie a mesma operação.') }
     finally { inFlight.current = false; setBusy(false) }
   }
   function submit(kind: 'PURCHASE' | 'AUTHORIZE') {
@@ -54,7 +54,7 @@ export function CharacterDisciplineProgression({ characterId }: { characterId: s
   return <section className="border border-border bg-card p-5" aria-label="Evolução de Disciplinas" aria-busy={busy}>
     <p className="eyebrow">Experiência e aprendizado</p><h2 className="mt-2 font-serif text-2xl">Evolução de Disciplinas</h2>
     {error && <p role="alert" className="mt-3 text-sm">Não foi possível carregar a evolução.</p>}
-    {!data && !error && <p role="status">Carregando Disciplinas…</p>}
+    {!data && !error && <output>Carregando Disciplinas…</output>}
     {data && discipline && <div className="mt-4 flex flex-col gap-4">
       <p className="text-sm">XP disponível: {data.availableXp}. Custos por novo nível: clã ×5, fora do clã ×7 e Caitiff ×6.</p>
       <label className="sheet-field"><span>Disciplina para evoluir</span><select className="select" value={discipline.id} disabled={locked} onChange={event => setSelected(event.target.value)}>{data.disciplines.map(entry => <option key={entry.id} value={entry.id}>{entry.name} — nível {entry.level}</option>)}</select></label>
@@ -71,7 +71,7 @@ export function CharacterDisciplineProgression({ characterId }: { characterId: s
         {data.grants.filter(grant => !grant.revokedAt).map(grant => <div key={grant.id} className="flex flex-wrap items-center gap-3 text-sm"><span>{data.disciplines.find(entry => entry.id === grant.disciplineId)?.name} · nível {grant.targetLevel} · {grant.requirement === 'CLAN_ASSOCIATION' ? 'Distribuição inicial' : 'Aprendizado'}</span><button type="button" className="button-ghost" disabled={locked || !reason.trim()} onClick={() => void execute({ kind: 'REVOKE', disciplineId: grant.disciplineId, targetLevel: grant.targetLevel, grantId: grant.id, reason: reason.trim(), expectedRevision: data.revision, idempotencyKey: crypto.randomUUID() })}>Revogar autorização</button></div>)}
       </fieldset>}
     </div>}
-    {message && <p role="status" className="mt-4 text-sm">{message}</p>}
+    {message && <output className="block mt-4 text-sm">{message}</output>}
     {retry && !busy && <button type="button" className="button-ghost mt-3" onClick={() => void execute(retry)}>Reenviar mesma operação</button>}
   </section>
 }

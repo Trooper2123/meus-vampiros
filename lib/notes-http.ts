@@ -33,8 +33,9 @@ export async function notesBody(request: Request): Promise<Record<string, unknow
   text += decoder.decode()
   try {
     const value = JSON.parse(text)
-    if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error()
+    if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('Dados JSON inválidos.')
     return value
   } catch { throw new CharacterCommandError(400, 'Dados JSON inválidos.') }
 }
-export function notesId(id: string) { if (!noteUuid(id)) throw new CharacterCommandError(400, 'Identificador inválido.'); return id }
+export function notesId(id: string) { if (!noteUuid(id)) throw new CharacterCommandError(400, 'Identificador inválido.');
+  return id }

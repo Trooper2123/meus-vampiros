@@ -27,6 +27,16 @@ function request(body: unknown): Request {
 function specialties(): Specialty[] { return global.__devDb!.characters[0].gameState!.specialties as Specialty[] }
 
 describe('comandos de especialidades e autorização real em memória', () => {
+  beforeEach(() => {
+    const now = new Date()
+    global.__devDb = {
+      characters: [{ id, userId: 'player', createdByUserId: 'player', name: 'Helena', concept: null, clan: null, generation: null, status: 'DRAFT', characterType: 'PLAYER_VAMPIRE', campaignId, data: { 'habilidade-erudição': 2, 'habilidade-briga': 2 }, totalXp: 10, spentXp: 0, revision: 0, gameState: {}, createdAt: now, updatedAt: now }],
+      campaigns: [{ id: campaignId, masterUserId: 'narrator', name: 'Mesa', theme: null, principios: null, averageXp: null, status: 'Ativa', lastSessionAt: null, createdAt: now, updatedAt: now }], possessions: [], characterLedgerEvents: [],
+    }
+    session.mockReset()
+    session.mockResolvedValue({ user: { sub: 'player' } })
+  })
+
   it('compra duas especialidades distintas de Ofícios com um ponto e cobra cada operação uma vez', async () => {
     const record = global.__devDb!.characters[0]
     record.campaignId = null
@@ -57,15 +67,7 @@ describe('comandos de especialidades e autorização real em memória', () => {
     expect(global.__devDb!.characters[0].spentXp).toBe(3)
   })
 
-  beforeEach(() => {
-    const now = new Date()
-    global.__devDb = {
-      characters: [{ id, userId: 'player', createdByUserId: 'player', name: 'Helena', concept: null, clan: null, generation: null, status: 'DRAFT', characterType: 'PLAYER_VAMPIRE', campaignId, data: { 'habilidade-erudição': 2, 'habilidade-briga': 2 }, totalXp: 10, spentXp: 0, revision: 0, gameState: {}, createdAt: now, updatedAt: now }],
-      campaigns: [{ id: campaignId, masterUserId: 'narrator', name: 'Mesa', theme: null, principios: null, averageXp: null, status: 'Ativa', lastSessionAt: null, createdAt: now, updatedAt: now }], possessions: [], characterLedgerEvents: [],
-    }
-    session.mockReset()
-    session.mockResolvedValue({ user: { sub: 'player' } })
-  })
+  
 
   it('seleciona concessão uma vez, preservando especialidade pendente e aprovação em retry', async () => {
     const first = await changeSpecialty('player', id, grant)

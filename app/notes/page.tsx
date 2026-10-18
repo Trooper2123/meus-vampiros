@@ -4,7 +4,7 @@ import { getSessionOrDev } from '@/lib/auth0'
 import { NotesPanel } from '@/components/notes/notes-panel'
 import { noteUuid, type NoteLink } from '@/lib/notes'
 
-export default async function NotesPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+export default async function NotesPage({ searchParams }: Readonly<{ searchParams: Promise<Record<string, string | string[] | undefined>> }>) {
   const session = await getSessionOrDev()
   if (!session?.user?.sub) redirect('/auth/login?returnTo=/notes')
   const params = await searchParams

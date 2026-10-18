@@ -1,6 +1,6 @@
 import { sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { randomUUID } from 'crypto'
+import { randomUUID } from 'node:crypto'
 import { devIsUserInCampaign, devGetCampaignById } from './dev-db'
 
 export type AvailabilityStatus = 'disponível' | 'talvez' | 'indisponível'

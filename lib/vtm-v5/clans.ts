@@ -12,7 +12,7 @@ const definitions = [
   { code: 'TREMERE', name: 'Tremere', disciplines: ['Auspícios', 'Dominação', 'Feitiçaria de Sangue'], bane: 'Vitae não cria Laço de Sangue em Membros; mortais e carniçais exigem ingestões adicionais.', compulsion: 'Perfeccionismo: penalidade até obter resultado crítico ou repetir a tarefa com rigor.' },
   { code: 'VENTRUE', name: 'Ventrue', disciplines: ['Dominação', 'Fortitude', 'Presença'], bane: 'Alimentação fora da preferência exige Força de Vontade conforme a Gravidade da Perdição.', compulsion: 'Arrogância: assumir comando e conseguir obediência não sobrenatural.' },
   { code: 'CAITIFF', name: 'Caitiff', disciplines: [], bane: 'Sem Perdição comum; Suspeito 1 e sem Status positivo na criação.', compulsion: 'Sem compulsão padrão de clã; decisão contextual do Narrador.' },
-  { code: 'THIN_BLOOD', name: 'Sangue-fraco', disciplines: ['Alquimia de Sangue-Fraco'], bane: 'Sem Perdição de clã; Potência de Sangue 0 e limitações de Laço, Abraço e carniçais.', compulsion: 'Sem compulsão de clã tradicional.' },
+  { code: 'THIN_BLOOD', name: 'Sangue-ralo', disciplines: ['Alquimia de Sangue-Ralo'], bane: 'Sem Perdição de clã; Potência de Sangue 0 e limitações de Laço, Abraço e carniçais.', compulsion: 'Sem compulsão de clã tradicional.' },
 ] as const
 
 const additionalClans = [['BANU_HAQIM', 'Banu Haqim'], ['HECATA', 'Hecata'], ['LASOMBRA', 'Lasombra'], ['MINISTRY', 'Ministério'], ['RAVNOS', 'Ravnos'], ['SALUBRI', 'Salubri'], ['TZIMISCE', 'Tzimisce']] as const
@@ -23,7 +23,7 @@ export function normalizeDiscipline(name: string): string {
   if (canonical) return canonical.id === 'PROTEAN' ? 'Proteanismo' : canonical.name
   const key = name.normalize('NFD').replace(/\p{M}/gu, '').trim().toLowerCase()
   const aliases: Record<string, string> = { animalism: 'Animalismo', auspex: 'Auspícios', dominate: 'Dominação', celerity: 'Rapidez', potence: 'Potência', presence: 'Presença', obfuscate: 'Ofuscação', protean: 'Proteanismo', 'blood sorcery': 'Feitiçaria de Sangue', oblivion: 'Oblívio' }
-  return aliases[key] ?? [...DISCIPLINE_NAMES, 'Presença', 'Alquimia de Sangue-Fraco'].find(entry => entry.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase() === key) ?? name.trim()
+  return aliases[key] ?? [...DISCIPLINE_NAMES, 'Presença', 'Alquimia de Sangue-Ralo'].find(entry => entry.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase() === key) ?? name.trim()
 }
 
 export function validateClanSelection(selection: ClanSelection, authorizedDisciplines: readonly string[] = []) {
@@ -33,7 +33,7 @@ export function validateClanSelection(selection: ClanSelection, authorizedDiscip
   if (!definition) throw new Error('Clã não disponível na referência implementada.')
   if (!selection.disciplineDots || typeof selection.disciplineDots !== 'object' || Array.isArray(selection.disciplineDots)) throw new Error('Escolhas de disciplinas inválidas.')
   if (selection.code === 'THIN_BLOOD') {
-    if (Object.keys(selection.disciplineDots).length) throw new Error('Sangue-fraco não recebe o pacote comum de disciplinas.')
+    if (Object.keys(selection.disciplineDots).length) throw new Error('Sangue-ralo não recebe o pacote comum de disciplinas.')
     return definition
   }
   const rawAvailable = selection.code === 'CAITIFF' ? selection.caitiffDisciplines ?? [] : [...definition.disciplines, ...authorizedDisciplines]

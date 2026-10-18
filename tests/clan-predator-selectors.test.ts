@@ -13,7 +13,7 @@ describe('projeções renderizadas dos seletores', () => {
   it('oferece clãs públicos antes de salvar o primeiro rascunho', () => {
     const html = renderToStaticMarkup(createElement(CharacterClan, { characterId: null, onBeforeSubmit: async () => characterId, onChange: () => {} }))
     expect(html).toContain('>Brujah</strong>')
-    expect(html).toContain('>Sangue-fraco</strong>')
+    expect(html).toContain('>Sangue-ralo</strong>')
     expect(html).not.toContain('Revise os gatilhos')
   })
   it('respeita clãs habilitados no seletor da ficha vinculada', () => {
@@ -26,11 +26,11 @@ describe('projeções renderizadas dos seletores', () => {
     const html = renderToStaticMarkup(createElement(SWRConfig, { value: { provider: () => new Map(), revalidateOnMount: false, fallback: { [`/api/characters/${characterId}/clan`]: { revision: 0, selection: null, clans } } } }, createElement(CharacterClan, { characterId, onBeforeSubmit: async () => characterId, onChange: () => {} })))
     expect(html).toContain('Disciplina com 2 pontos')
     expect(html).toContain('>Caitiff</strong>')
-    expect(html).toContain('>Sangue-fraco</strong>')
+    expect(html).toContain('>Sangue-ralo</strong>')
     expect(html).not.toContain('LASOMBRA')
     expect(html).not.toContain('Revise os gatilhos')
   })
-  it.each(['OSIRIS', 'BLOOD_LEECH', 'SCENE_QUEEN', 'ONLINE_PREDATOR', 'PAY_FOR_BLOOD'])('exibe escolhas adicionais para %s', code => {
+  it.each(['OSIRIS', 'BLOOD_LEECH', 'SCENE_QUEEN', 'ONLINE_PREDATOR', 'PAY_FOR_BLOOD', 'EXTORTIONIST', 'TITHE_COLLECTOR'])('exibe escolhas adicionais para %s', code => {
     const predatorTypes = PREDATOR_TYPES.map(entry => toPlayerPredatorTypeDto(entry))
     const html = renderToStaticMarkup(createElement(SWRConfig, { value: { provider: () => new Map(), revalidateOnMount: false, fallback: { [`/api/predator-types?characterId=${characterId}`]: { predatorTypes, selectedCode: code } } } }, createElement(PlayerPredatorSelector, { characterId, selectedCode: code })))
     expect(html).toContain('Escolhas adicionais: distribua')
@@ -48,5 +48,15 @@ describe('projeções renderizadas dos seletores', () => {
     expect(html).toContain('id="predator-selector-title"')
     expect(html).not.toContain('hidden=""')
     expect(html).not.toContain('Confirmar escolha')
+  })
+  it('identifica fontes, referências e consulta bloqueada sem permitir confirmação', () => {
+    const entry = PREDATOR_TYPES.find(type => type.code === 'ROADSIDE_KILLER')!
+    const predatorTypes = [toPlayerPredatorTypeDto(entry, [{ code: 'PREDATOR_RULESET_UNSUPPORTED', message: 'Pontuação do defeito pendente.', blocking: true }], false)]
+    const html = renderToStaticMarkup(createElement(SWRConfig, { value: { provider: () => new Map(), revalidateOnMount: false, fallback: { [`/api/predator-types?characterId=${characterId}`]: { predatorTypes, selectedCode: entry.code } } } }, createElement(PlayerPredatorSelector, { characterId, selectedCode: entry.code })))
+    expect(html).toContain('Guia comunitário de Bully (2021)')
+    expect(html).toContain('Sabbat (versão alternativa)')
+    expect(html).toContain('Live from the Succubus Club')
+    expect(html).toContain('Pontuação do defeito pendente.')
+    expect(html).toMatch(/disabled=""[^>]*>Confirmar escolha/)
   })
 })

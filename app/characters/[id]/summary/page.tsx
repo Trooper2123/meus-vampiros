@@ -7,9 +7,9 @@ import Link from 'next/link'
 
 export default async function CharacterSummaryPage({
   params,
-}: {
+}: Readonly<{
   params: Promise<{ id: string }>
-}) {
+}>) {
   const session = await getSessionOrDev()
   if (!session?.user) redirect('/auth/login')
 

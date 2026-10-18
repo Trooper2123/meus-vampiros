@@ -54,9 +54,9 @@ const skillGroups = [
   },
 ] as const
 
-function DotTrack({ total, value }: { total: number; value: number }) {
+function DotTrack({ total, value }: Readonly<{ total: number; value: number }>) {
   return (
-    <div className="flex gap-1" role="group" aria-label={`${value} de ${total}`}>
+    <fieldset className="flex gap-1" aria-label={`${value} de ${total}`}>
       {Array.from({ length: total }, (_, index) => (
         <div
           key={index}
@@ -65,11 +65,11 @@ function DotTrack({ total, value }: { total: number; value: number }) {
           }`}
         />
       ))}
-    </div>
+    </fieldset>
   )
 }
 
-export function SummarySkills({ skills }: SummarySkillsProps) {
+export function SummarySkills({ skills }: Readonly<SummarySkillsProps>) {
   const hasSkills = Object.values(skills).some((value) => value > 0)
 
   if (!hasSkills) {

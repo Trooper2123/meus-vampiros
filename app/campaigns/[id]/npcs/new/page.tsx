@@ -4,7 +4,7 @@ import { getSessionOrDev } from '@/lib/auth0'
 import { getCampaignsForMaster } from '@/lib/campaigns'
 import { CampaignNpcCreator } from '@/components/campaign-npc-creator'
 
-export default async function NewNpcPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function NewNpcPage({ params }: Readonly<{ params: Promise<{ id: string }> }>) {
   const session = await getSessionOrDev()
   if (!session?.user) redirect('/auth/login?returnTo=/campaigns')
   const { id } = await params

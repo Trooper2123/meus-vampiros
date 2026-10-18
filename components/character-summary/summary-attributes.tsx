@@ -46,9 +46,9 @@ const attributeGroups = [
   },
 ] as const
 
-function DotTrack({ total, value }: { total: number; value: number }) {
+function DotTrack({ total, value }: Readonly<{ total: number; value: number }>) {
   return (
-    <div className="flex gap-1" role="group" aria-label={`${value} de ${total}`}>
+    <fieldset className="flex gap-1" aria-label={`${value} de ${total}`}>
       {Array.from({ length: total }, (_, index) => (
         <div
           key={index}
@@ -57,11 +57,11 @@ function DotTrack({ total, value }: { total: number; value: number }) {
           }`}
         />
       ))}
-    </div>
+    </fieldset>
   )
 }
 
-export function SummaryAttributes({ attributes }: SummaryAttributesProps) {
+export function SummaryAttributes({ attributes }: Readonly<SummaryAttributesProps>) {
   const hasAttributes = Object.values(attributes).some(
     (value) => (value as number) > 0
   )

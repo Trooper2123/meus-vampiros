@@ -8,7 +8,7 @@ type Merit = { id?: string; name?: string; level?: number; description?: string 
 
 type SummaryMeritsProps = { merits: Merit[]; flaws: Merit[]; grants?: CreationGrant[] }
 
-function MeritColumn({ title, items, kind, grants }: { title: string; items: Merit[]; kind: CreationGrant['kind']; grants?: CreationGrant[] }) {
+function MeritColumn({ title, items, kind, grants }: Readonly<{ title: string; items: Merit[]; kind: CreationGrant['kind']; grants?: CreationGrant[] }>) {
   if (items.length === 0) return null
   return (
     <div className="flex flex-col gap-3">
@@ -27,7 +27,7 @@ function MeritColumn({ title, items, kind, grants }: { title: string; items: Mer
   )
 }
 
-export function SummaryMerits({ merits, flaws, grants }: SummaryMeritsProps) {
+export function SummaryMerits({ merits, flaws, grants }: Readonly<SummaryMeritsProps>) {
   const filledMerits = merits.filter(item => hasSummaryName(item.name))
   const filledFlaws = flaws.filter(item => hasSummaryName(item.name))
   if (filledMerits.length === 0 && filledFlaws.length === 0) return null

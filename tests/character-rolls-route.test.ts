@@ -43,7 +43,7 @@ describe('API de rolagens com provider real e sessão mockada', () => {
     expect(await (await GET(new Request('http://localhost'), context)).json()).toMatchObject({ canUseSpecialties: true, canRollSecret: false })
   })
 
-  it('GET permite especialidade independente sem liberar rolagem secreta', async () => {
+  it('GET permite especialidade independente sem liberar rolagem secreta (regressão)', async () => {
     global.__devDb!.characters[0].campaignId = null
     expect(await (await GET(new Request('http://localhost'), context)).json()).toMatchObject({ canUseSpecialties: true, canRollSecret: false })
   })

@@ -12,7 +12,7 @@ export function getLiveKitUrl() {
   return requireLiveKitEnv().url
 }
 
-export async function generateLiveKitToken({ identity, name, roomName, isHost }: { identity: string; name?: string | null; roomName: string; isHost: boolean }) {
+export function generateLiveKitToken({ identity, name, roomName, isHost }: { identity: string; name?: string | null; roomName: string; isHost: boolean }) {
   const { apiKey, apiSecret } = requireLiveKitEnv()
   const token = new AccessToken(apiKey, apiSecret, { identity, name: name ?? identity, ttl: '2h' })
   token.addGrant({ roomJoin: true, room: roomName, canPublish: true, canSubscribe: true, roomAdmin: isHost })

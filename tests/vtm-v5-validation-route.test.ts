@@ -67,7 +67,7 @@ describe('POST /api/characters/[id]/validate', () => {
       campaignId: null,
       status: 'DRAFT',
       characterType: 'PLAYER_VAMPIRE',
-      data: validPersistedData(),
+      data: validPersistedData(), gameState: {}, masterId: null,
     })
   })
 
@@ -107,7 +107,7 @@ describe('POST /api/characters/[id]/validate', () => {
       campaignId: '22222222-2222-4222-8222-222222222222',
       status: 'DRAFT',
       characterType: 'PLAYER_VAMPIRE',
-      data: validPersistedData(),
+      data: validPersistedData(), gameState: {}, masterId: null,
     })
     mocks.canManageCampaign.mockResolvedValue(true)
 

@@ -13,7 +13,7 @@ function formatEventDate(event: CampaignEvent) {
   return [event.fictionalWeekday, event.fictionalMonth, event.fictionalYear].filter((value) => value !== null).join(', ')
 }
 
-export function EventCard({ event, master, onEdit, onDelete }: { event: CampaignEvent; master: boolean; onEdit: (event: CampaignEvent) => void; onDelete: (event: CampaignEvent) => void }) {
+export function EventCard({ event, master, onEdit, onDelete }: Readonly<{ event: CampaignEvent; master: boolean; onEdit: (event: CampaignEvent) => void; onDelete: (event: CampaignEvent) => void }>) {
   return (
     <article className="flex flex-col border border-border bg-card p-5">
       <div className="flex flex-wrap items-start justify-between gap-3"><VisibilityBadge visibility={event.visibility} />{master && <div className="flex gap-2"><button type="button" className="button-ghost" onClick={() => onEdit(event)} aria-label={`Editar ${event.title}`}><Pencil className="size-3.5" /></button><button type="button" className="button-ghost" onClick={() => onDelete(event)} aria-label={`Excluir ${event.title}`}><Trash2 className="size-3.5" /></button></div>}</div>

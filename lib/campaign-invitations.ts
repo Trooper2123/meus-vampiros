@@ -24,7 +24,7 @@ const tokenHash = (token: string) => createHash('sha256').update(token).digest('
 export function createCampaignInvitation(actorId: string, campaignId: string, codes: unknown) {
   const exceptionCodes = validateCampaignExceptions(codes)
   const campaign = memoryCampaign(campaignId)
-  if (!campaign || campaign.masterUserId !== actorId) throw new CharacterCommandError(403, 'Acesso negado.')
+  if (campaign?.masterUserId !== actorId) throw new CharacterCommandError(403, 'Acesso negado.')
   if (campaign.creationPolicy) throw new CharacterCommandError(409, 'A política é definida apenas na criação da mesa.')
   const token = randomBytes(32).toString('base64url')
   campaign.creationPolicy = { exceptionCodes, inviteHash: tokenHash(token) }

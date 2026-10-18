@@ -14,11 +14,11 @@ const fetcher = async (url: string): Promise<CallStatus> => {
   return body
 }
 
-export function LiveKitRoomLink({ campaignId, master, campaignName }: { campaignId: string; master: boolean; campaignName?: string | null }) {
+export function LiveKitRoomLink({ campaignId, master, campaignName }: Readonly<{ campaignId: string; master: boolean; campaignName?: string | null }>) {
   return <RoomPanel key={campaignId} campaignId={campaignId} master={master} campaignName={campaignName} />
 }
 
-function RoomPanel({ campaignId, master, campaignName }: { campaignId: string; master: boolean; campaignName?: string | null }) {
+function RoomPanel({ campaignId, master, campaignName }: Readonly<{ campaignId: string; master: boolean; campaignName?: string | null }>) {
   const endpoint = `/api/campaigns/${campaignId}/call`
   const { data: status, error: statusError, mutate } = useSWR(endpoint, fetcher, { refreshInterval: 5000 })
   const [room, setRoom] = useState<RoomInfo | null>(null)
@@ -43,7 +43,7 @@ function RoomPanel({ campaignId, master, campaignName }: { campaignId: string; m
       if (!response.ok) throw new Error(body.error ?? 'Não foi possível acessar a sala virtual.')
       setRoom(body)
       setJoined(true)
-    } catch (failure) { setError(failure instanceof Error ? failure.message : 'Falha de conexão. Tente novamente.') }
+    } catch (error_) { setError(error_ instanceof Error ? error_.message : 'Falha de conexão. Tente novamente.') }
     finally { setLoading(false) }
   }
 
@@ -56,19 +56,27 @@ function RoomPanel({ campaignId, master, campaignName }: { campaignId: string; m
       const body = await response.json()
       if (!response.ok) throw new Error(body.error ?? 'Não foi possível alterar a convocação.')
       await mutate(body, { revalidate: false })
-    } catch (failure) { setError(failure instanceof Error ? failure.message : 'Falha de conexão. Tente novamente.') }
+    } catch (error_) { setError(error_ instanceof Error ? error_.message : 'Falha de conexão. Tente novamente.') }
     finally { setLoading(false) }
   }
 
   if (!master && !status?.canSummon && !canEnter) return null
 
+  let roomLabel
+  if (loading) {
+    roomLabel = 'Preparando sala...'
+  } else if (status?.canSummon || master) {
+    roomLabel = 'Entrar como host'
+  } else {
+    roomLabel = 'Entrar na sessão da mesa'
+  }
   return <section aria-labelledby={`virtual-room-${campaignId}`} className="border border-border bg-card p-6">
     <p className="eyebrow">Comunicação</p><h2 id={`virtual-room-${campaignId}`} className="mt-2 font-serif text-2xl">Mesa virtual{campaignName ? ` · ${campaignName}` : ''}</h2>
     <p className="mt-2 text-sm text-muted-foreground">{status?.active ? 'O Narrador convocou os participantes para a sessão da mesa.' : 'Aguardando convocação do Narrador.'}</p>
     {(error || statusError) && <p role="alert" className="mt-4 text-sm text-primary">{error ?? statusError.message}</p>}
     <div className="mt-5 flex flex-wrap gap-3">
       {status?.canSummon && <button type="button" className="button-ghost" disabled={loading} onClick={() => void summon()}>{status.active ? 'Encerrar convocação' : 'Convocar jogadores'}</button>}
-      {!joined && <button type="button" className="button-primary inline-flex items-center gap-2" onClick={() => void enterRoom()} disabled={loading || !canEnter}><Video className="size-4" aria-hidden="true" />{loading ? 'Preparando sala...' : status?.canSummon || master ? 'Entrar como host' : 'Entrar na sessão da mesa'}</button>}
+      {!joined && <button type="button" className="button-primary inline-flex items-center gap-2" onClick={() => void enterRoom()} disabled={loading || !canEnter}><Video className="size-4" aria-hidden="true" />{roomLabel}</button>}
       <button type="button" className="button-ghost inline-flex items-center gap-2" onClick={async () => {
         try { await navigator.clipboard.writeText(`${window.location.origin}/characters`); setCopied(true); window.setTimeout(() => setCopied(false), 1800) }
         catch { setError('Não foi possível copiar o link.') }

@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import styles from './campaign-calendar.module.css'
 
-export function CampaignCalendarToggle({ campaignId, calendar, label, initialEnabled, onChange }: { campaignId: string; calendar: 'event' | 'scheduling'; label: string; initialEnabled: boolean; onChange: (enabled: boolean) => void }) {
+export function CampaignCalendarToggle({ campaignId, calendar, label, initialEnabled, onChange }: Readonly<{ campaignId: string; calendar: 'event' | 'scheduling'; label: string; initialEnabled: boolean; onChange: (enabled: boolean) => void }>) {
   const [enabled, setEnabled] = useState(initialEnabled)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -20,5 +20,13 @@ export function CampaignCalendarToggle({ campaignId, calendar, label, initialEna
     onChange(body.enabled)
   }
 
-  return <div className={styles.toggleCard}><div><p className="font-semibold">{label}</p><p className="mt-1 text-xs text-muted-foreground">{enabled ? 'Habilitado para esta mesa.' : 'Desabilitado sem remover os dados existentes.'}</p>{error && <p role="alert" className="mt-2 text-xs text-primary">{error}</p>}</div><button type="button" className={enabled ? 'button-ghost' : 'button-primary'} onClick={() => void toggle()} disabled={saving}>{saving ? 'Salvando...' : enabled ? 'Desabilitar' : 'Habilitar'}</button></div>
+  let toggleLabel
+  if (saving) {
+    toggleLabel = 'Salvando...'
+  } else if (enabled) {
+    toggleLabel = 'Desabilitar'
+  } else {
+    toggleLabel = 'Habilitar'
+  }
+  return <div className={styles.toggleCard}><div><p className="font-semibold">{label}</p><p className="mt-1 text-xs text-muted-foreground">{enabled ? 'Habilitado para esta mesa.' : 'Desabilitado sem remover os dados existentes.'}</p>{error && <p role="alert" className="mt-2 text-xs text-primary">{error}</p>}</div><button type="button" className={enabled ? 'button-ghost' : 'button-primary'} onClick={() => void toggle()} disabled={saving}>{toggleLabel}</button></div>
 }

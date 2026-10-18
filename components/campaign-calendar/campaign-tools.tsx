@@ -10,7 +10,7 @@ import { CampaignEventCalendar } from './campaign-event-calendar'
 
 type CalendarStatus = { event: boolean; scheduling: boolean; eventConfig: CampaignCalendarConfig }
 
-export function CampaignTools({ campaignId, master }: { campaignId: string; master: boolean }) {
+export function CampaignTools({ campaignId, master }: Readonly<{ campaignId: string; master: boolean }>) {
   const [status, setStatus] = useState<CalendarStatus | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -26,7 +26,7 @@ export function CampaignTools({ campaignId, master }: { campaignId: string; mast
   }, [campaignId])
 
   if (error) return <p role="alert" className="text-sm text-primary">{error}</p>
-  if (!status) return <p role="status" className="text-sm text-muted-foreground">Carregando calendários...</p>
+  if (!status) return <output className="block text-sm text-muted-foreground">Carregando calendários...</output>
 
   return <div className="flex flex-col gap-8">
     {status.scheduling && <details className="border border-border bg-card p-5"><summary className="archive-disclosure"><span><span className="eyebrow block mb-3">Próximo encontro</span><span className="font-serif text-2xl">Disponibilidade</span></span><span className="archive-expand">Expandir</span><span className="archive-collapse">Recolher</span></summary><div className="mt-5"><DateAvailabilityCalendar campaignId={campaignId} master={master} /></div></details>}

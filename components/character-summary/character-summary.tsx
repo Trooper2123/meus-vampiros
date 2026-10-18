@@ -31,6 +31,7 @@ type CharacterData = {
     raciocinio?: number
     determinacao?: number
   }
+  convictions?: Array<{ touchstone: string; text: string }>
   skills: Record<string, number>
   merits: Array<{ name?: string; level?: number; description?: string }>
   flaws: Array<{ name?: string; level?: number; description?: string }>
@@ -60,7 +61,7 @@ type CharacterSummaryProps = {
   onChangeResources?: (resources: CharacterData['resources']) => void
 }
 
-export function CharacterSummary({ data, onChangeResources, specialties, resources, headerActions, clanDetails }: CharacterSummaryProps) {
+export function CharacterSummary({ data, onChangeResources, specialties, resources, headerActions, clanDetails }: Readonly<CharacterSummaryProps>) {
   const maxima = data.characterType === 'PLAYER_VAMPIRE' ? calculateSecondaryAttributes(data.attributes) : undefined
   const handleResourcesChange = (newResources: CharacterData['resources']) => {
     onChangeResources?.(newResources)
@@ -79,6 +80,7 @@ export function CharacterSummary({ data, onChangeResources, specialties, resourc
       />
       {clanDetails}
       {resources}
+      {Boolean(data.convictions?.length) && <section className="border border-border bg-card p-6" aria-label="Pilares e convicções"><h2 className="mb-5 font-serif text-2xl">Pilares e convicções</h2><dl className="grid gap-4 sm:grid-cols-3">{data.convictions?.map((entry, index) => <div key={index}><dt className="font-semibold">{entry.touchstone || 'Pilar não informado'}</dt><dd className="mt-2 text-sm text-muted-foreground">{entry.text || 'Convicção não informada'}</dd></div>)}</dl></section>}
       <SummaryAttributes attributes={data.attributes} />
       <SummarySkills skills={data.skills} />
       {specialties}

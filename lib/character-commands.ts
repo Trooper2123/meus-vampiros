@@ -1,3 +1,4 @@
+import { characterText } from '@/lib/vtm-v5/text'
 import { createHash, randomUUID } from 'node:crypto'
 import { sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
@@ -33,7 +34,7 @@ function commandMemory() {
   return global.__characterCommandMemory!
 }
 
-async function locked<Result>(id: string, action: () => Promise<Result>): Promise<Result> {
+async function locked<Result>(id: string, action: () => Result | Promise<Result>): Promise<Result> {
   const locks = commandMemory().locks
   const previous = locks.get(id) ?? Promise.resolve()
   let release!: () => void
@@ -44,7 +45,11 @@ async function locked<Result>(id: string, action: () => Promise<Result>): Promis
 }
 
 function requestHash(command: Command) {
-  const canonical = (value: unknown): unknown => Array.isArray(value) ? value.map(canonical) : value && typeof value === 'object' ? Object.fromEntries(Object.entries(value).sort(([first], [second]) => first.localeCompare(second)).map(([key, entry]) => [key, canonical(entry)])) : value
+  const canonical = (value: unknown): unknown => {
+    if (Array.isArray(value)) return value.map(canonical)
+    if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value).sort(([first], [second]) => first.localeCompare(second)).map(([key, entry]) => [key, canonical(entry)]))
+    return value
+  }
   return createHash('sha256').update(JSON.stringify(canonical({ type: command.type, payload: command.payload }))).digest('hex')
 }
 
@@ -88,7 +93,7 @@ export async function runCharacterCommand(
   const hash = requestHash(command)
   if (process.env.NODE_ENV !== 'production' && !process.env.DATABASE_URL) {
     devGetCharacterAccessRecord(characterId)
-    return locked(characterId, async () => {
+    return locked(characterId, () => {
       const original = devGetCharacterAccessRecord(characterId)
       if (!original) throw new CharacterCommandError(404, 'Ficha não encontrada.')
       const character = memoryCharacter(original)
@@ -105,12 +110,13 @@ export async function runCharacterCommand(
       original.totalXp = character.totalXp
       original.spentXp = character.spentXp
       original.status = character.status
+      original.campaignId = character.campaignId
       if (character.validationUpdated) { original.validationReport = character.validationReport; original.validatedAt = new Date() }
       original.name = character.name
       original.characterType = character.characterType
       original.concept = typeof character.data.conceito === 'string' ? character.data.conceito : null
       original.clan = typeof character.data.cla === 'string' ? character.data.cla : null
-      original.generation = character.data.geracao === undefined ? null : String(character.data.geracao)
+      original.generation = character.data.geracao === undefined ? null : characterText(character.data.geracao)
       original.revision = character.revision + 1
       original.updatedAt = new Date()
       global.__devDb!.characterLedgerEvents.push({ id: randomUUID(), characterId, eventType: command.type, origin: 'USER_ACTION', createdByUserId: actorId, payload: { commandKey: command.key, input: command.payload, before, after: structuredClone(result) }, createdAt: new Date() })
@@ -138,7 +144,7 @@ export async function runCharacterCommand(
     checkRevision(character, command)
     const before = { totalXp: character.totalXp, spentXp: character.spentXp, revision: character.revision, gameState: structuredClone(character.gameState) }
     const result = { ...apply(character), revision: character.revision + 1 }
-    await transaction.execute(sql`UPDATE characters SET name = ${character.name}, concept = ${typeof character.data.conceito === 'string' ? character.data.conceito : null}, clan = ${typeof character.data.cla === 'string' ? character.data.cla : null}, generation = ${character.data.geracao === undefined ? null : String(character.data.geracao)}, character_type = ${character.characterType}, data = ${JSON.stringify(character.data)}::jsonb, game_state = ${JSON.stringify(character.gameState)}::jsonb, status = ${character.status}, total_xp = ${character.totalXp}, spent_xp = ${character.spentXp}, revision = revision + 1, updated_at = NOW() WHERE id = ${characterId}::uuid`)
+    await transaction.execute(sql`UPDATE characters SET name = ${character.name}, concept = ${typeof character.data.conceito === 'string' ? character.data.conceito : null}, clan = ${typeof character.data.cla === 'string' ? character.data.cla : null}, generation = ${character.data.geracao === undefined ? null : characterText(character.data.geracao)}, character_type = ${character.characterType}, data = ${JSON.stringify(character.data)}::jsonb, game_state = ${JSON.stringify(character.gameState)}::jsonb, status = ${character.status}, total_xp = ${character.totalXp}, spent_xp = ${character.spentXp}, revision = revision + 1, updated_at = NOW() WHERE id = ${characterId}::uuid`)
     if (character.validationUpdated) await transaction.execute(sql`UPDATE characters SET validation_report = ${JSON.stringify(character.validationReport)}::jsonb, validated_at = NOW() WHERE id = ${characterId}::uuid`)
     await transaction.execute(sql`INSERT INTO character_commands (character_id, command_key, actor_user_id, request_hash, result) VALUES (${characterId}::uuid, ${command.key}, ${actorId}, ${hash}, ${JSON.stringify(result)}::jsonb)`)
     await transaction.execute(sql`INSERT INTO character_ledger_events (character_id, event_type, origin, payload, created_by_user_id) VALUES (${characterId}::uuid, ${command.type}, 'USER_ACTION', ${JSON.stringify({ commandKey: command.key, input: command.payload, before, after: result })}::jsonb, ${actorId})`)

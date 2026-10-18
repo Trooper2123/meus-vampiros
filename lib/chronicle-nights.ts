@@ -42,7 +42,7 @@ async function campaignLock<Result>(store: NightMemory, campaignId: string, acti
 }
 
 function hashRequest(input: NightRequest) {
-  return createHash('sha256').update(JSON.stringify({ inGameDate: input.inGameDate, characterIds: [...input.characterIds].sort(), confirmed: true })).digest('hex')
+  return createHash('sha256').update(JSON.stringify({ inGameDate: input.inGameDate, characterIds: [...input.characterIds].sort((first, second) => first.localeCompare(second)), confirmed: true })).digest('hex')
 }
 
 function validateSelection(characters: NightCharacter[], ids: string[], campaignId: string) {
@@ -78,7 +78,7 @@ function fromMemory(character: DevCharacter): NightCharacter {
 
 export async function startChronicleNight(actorId: string, campaignId: string, input: NightRequest, dice: DiceProvider = serverDiceProvider): Promise<NightResult> {
   if (!uuid.test(campaignId) || !validateNightRequest(input)) throw new CharacterCommandError(400, 'Dados de início de noite inválidos.')
-  input = { ...input, characterIds: input.characterIds.map(id => id.toLowerCase()).sort(), idempotencyKey: input.idempotencyKey.toLowerCase() }
+  input = { ...input, characterIds: input.characterIds.map(id => id.toLowerCase()).sort((first, second) => first.localeCompare(second)), idempotencyKey: input.idempotencyKey.toLowerCase() }
   campaignId = campaignId.toLowerCase()
   const hash = hashRequest(input)
   if (isMemory()) {

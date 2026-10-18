@@ -25,30 +25,39 @@ const resourceDefinitions = [
   { label: 'Fome', name: 'fome', total: 5, icon: Flame, color: 'text-muted-foreground' },
 ] as const
 
-function DotTrack({ total, value, onChange, color }: { total: number; value: number; onChange: (value: number) => void; color: string }) {
+function DotTrack({ total, value, onChange, color }: Readonly<{ total: number; value: number; onChange: (value: number) => void; color: string }>) {
   return (
-    <div className="flex gap-1.5" role="group" aria-label={`${value} de ${total}`}>
+    <fieldset className="flex gap-1.5" aria-label={`${value} de ${total}`}>
       {Array.from({ length: total }, (_, index) => {
         const point = index + 1
         return (
           <button
             key={point}
             type="button"
-            className={`h-3 w-3 rounded-full transition-colors ${
-              point <= value ? `bg-primary ${color}` : 'bg-muted'
-            }`}
+            className={`h-3 w-3 rounded-full transition-colors ${point <= value ? `bg-primary ${color}` : 'bg-muted'
+              }`}
             aria-label={`Definir nível ${point}`}
             aria-pressed={point <= value}
             onClick={() => onChange(point === value ? point - 1 : point)}
           />
         )
       })}
-    </div>
+    </fieldset>
   )
 }
 
-export function SummaryResources({ resources, maxima, onChange }: SummaryResourcesProps) {
-  const maximum = (name: keyof typeof resources) => name === 'vitalidade' && maxima ? maxima.healthMax : name === 'vontade' && maxima ? maxima.willpowerMax : resourceDefinitions.find((resource) => resource.name === name)?.total ?? 10
+export function SummaryResources({ resources, maxima, onChange }: Readonly<SummaryResourcesProps>) {
+  const maximum = (name: keyof typeof resources) => {
+    let resourceMaximum
+    if (name === 'vitalidade' && maxima) {
+      resourceMaximum = maxima.healthMax
+    } else if (name === 'vontade' && maxima) {
+      resourceMaximum = maxima.willpowerMax
+    } else {
+      resourceMaximum = resourceDefinitions.find((resource) => resource.name === name)?.total ?? 10
+    }
+    return resourceMaximum
+  }
   const handleChange = (name: keyof typeof resources, value: number) => {
     onChange({ ...resources, [name]: Math.max(0, Math.min(value, maximum(name))) })
   }
