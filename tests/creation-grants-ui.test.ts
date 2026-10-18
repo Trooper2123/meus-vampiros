@@ -13,6 +13,18 @@ const grants: CreationGrant[] = [
   { id: 'merit', kind: 'MERIT', origin: 'PREDATOR', name: 'Aparência', dots: 2 },
 ]
 
+it('Nosferatu mantém Aparência −2 e ignora bônus manuais ou concedidos sem apagar dados', () => {
+  const merits = [{ id: 'merit', name: 'Aparência: Bela', level: 2 }, { name: 'Stunning Looks', level: 4 }, { name: 'Recursos', level: 3 }]
+  const html = renderToStaticMarkup(createElement(SummaryMerits, { clan: 'Nosferatu', merits, flaws: [], grants }))
+  expect(html).toContain('Aparência: −2')
+  expect(html.match(/Bônus de Aparência ignorado/g)).toHaveLength(2)
+  expect(html).toContain('Nível 3')
+  expect(html).not.toContain('Nível 2')
+  expect(merits[0].level).toBe(2)
+  expect(renderToStaticMarkup(createElement(SummaryMerits, { clan: 'Toreador', merits, flaws: [], grants }))).toContain('Nível 2')
+  expect(renderToStaticMarkup(createElement(SummaryMerits, { clan: 'Nosferatu', merits: [], flaws: [] }))).toContain('Aparência: −2')
+})
+
 beforeEach(() => { vi.stubEnv('NODE_ENV', 'test'); vi.stubEnv('DATABASE_URL', ''); global.__devDb = undefined })
 
 it('distingue pontos manuais de concessões somadas sem criar pontos', () => {

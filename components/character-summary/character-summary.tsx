@@ -84,7 +84,7 @@ export function CharacterSummary({ data, onChangeResources, specialties, resourc
       <SummaryAttributes attributes={data.attributes} />
       <SummarySkills skills={data.skills} />
       {specialties}
-      <SummaryMerits merits={data.merits} flaws={data.flaws} grants={data.creationGrants} />
+      <SummaryMerits merits={data.merits} flaws={data.flaws} grants={data.creationGrants} clan={data.clan} />
       <SummaryDisciplines disciplines={data.disciplines} grants={data.creationGrants} />
       {onChangeResources && (
         <SummaryResources resources={data.resources} maxima={maxima} onChange={handleResourcesChange} />

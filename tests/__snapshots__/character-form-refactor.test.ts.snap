@@ -1,28 +1,28 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
-exports[`preserva HTML completo em atributos para HUMAN_NPC 1`] = `"ef94d3ef18186fbbaad06903819524a5d00719bec2554205603f234bd3007d2d"`;
+exports[`preserva HTML completo em atributos para HUMAN_NPC 1`] = `"4c843311003e6ccdfdcfd0b4abe5ee69373fff7398fef88758a097a6f9f445bc"`;
 
-exports[`preserva HTML completo em atributos para PLAYER_VAMPIRE 1`] = `"ef94d3ef18186fbbaad06903819524a5d00719bec2554205603f234bd3007d2d"`;
+exports[`preserva HTML completo em atributos para PLAYER_VAMPIRE 1`] = `"9771a39e506e59874efcd4443f22f657d76964c9fa3f5311d61d2a11a2498bca"`;
 
-exports[`preserva HTML completo em atributos para RETAINER 1`] = `"ef94d3ef18186fbbaad06903819524a5d00719bec2554205603f234bd3007d2d"`;
+exports[`preserva HTML completo em atributos para RETAINER 1`] = `"4c843311003e6ccdfdcfd0b4abe5ee69373fff7398fef88758a097a6f9f445bc"`;
 
-exports[`preserva HTML completo em atributos para VAMPIRE_NPC 1`] = `"ef94d3ef18186fbbaad06903819524a5d00719bec2554205603f234bd3007d2d"`;
+exports[`preserva HTML completo em atributos para VAMPIRE_NPC 1`] = `"4c843311003e6ccdfdcfd0b4abe5ee69373fff7398fef88758a097a6f9f445bc"`;
 
-exports[`preserva HTML completo em disciplinas para HUMAN_NPC 1`] = `"2be99f7e41c743dc7c4b3fdf559b782b0934d20523b0ac85e8fd390d3686e49a"`;
+exports[`preserva HTML completo em disciplinas para HUMAN_NPC 1`] = `"96dff5e87a7323f608570448e49ce0148cb85c30e4f682847b2adc3105a900b3"`;
 
-exports[`preserva HTML completo em disciplinas para PLAYER_VAMPIRE 1`] = `"dd32a6e03b9cfb970024752b4c53811268df5c5f678b3ccf58d4f5c355f287a2"`;
+exports[`preserva HTML completo em disciplinas para PLAYER_VAMPIRE 1`] = `"b023b6b94818767673a325e4d81a330338f17122a67165a655c6ba21232a4014"`;
 
-exports[`preserva HTML completo em disciplinas para RETAINER 1`] = `"e674cb3ea44d84ba62a75f772bc56058904f2909c866da928d6af60c877e3276"`;
+exports[`preserva HTML completo em disciplinas para RETAINER 1`] = `"f4b92a9bf0d61de701b77d9b7ea7cae8de46637af0e252e52331b845c2c05ab6"`;
 
-exports[`preserva HTML completo em disciplinas para VAMPIRE_NPC 1`] = `"2be99f7e41c743dc7c4b3fdf559b782b0934d20523b0ac85e8fd390d3686e49a"`;
+exports[`preserva HTML completo em disciplinas para VAMPIRE_NPC 1`] = `"96dff5e87a7323f608570448e49ce0148cb85c30e4f682847b2adc3105a900b3"`;
 
-exports[`preserva HTML completo em habilidades para HUMAN_NPC 1`] = `"6b63d0740575abded1abae9d548cad6f38cafe9b05fa5ad2b4ef76fd5bc35e8e"`;
+exports[`preserva HTML completo em habilidades para HUMAN_NPC 1`] = `"1337d8c8a6e7adb42911417d81e93540abb2b3885c2616f32e05c7004d364fda"`;
 
-exports[`preserva HTML completo em habilidades para PLAYER_VAMPIRE 1`] = `"6b63d0740575abded1abae9d548cad6f38cafe9b05fa5ad2b4ef76fd5bc35e8e"`;
+exports[`preserva HTML completo em habilidades para PLAYER_VAMPIRE 1`] = `"dd45144b2a90c93ecbc564b9e76d2c4bcd739852b5289668857bf2eafbd54558"`;
 
-exports[`preserva HTML completo em habilidades para RETAINER 1`] = `"6b63d0740575abded1abae9d548cad6f38cafe9b05fa5ad2b4ef76fd5bc35e8e"`;
+exports[`preserva HTML completo em habilidades para RETAINER 1`] = `"1337d8c8a6e7adb42911417d81e93540abb2b3885c2616f32e05c7004d364fda"`;
 
-exports[`preserva HTML completo em habilidades para VAMPIRE_NPC 1`] = `"6b63d0740575abded1abae9d548cad6f38cafe9b05fa5ad2b4ef76fd5bc35e8e"`;
+exports[`preserva HTML completo em habilidades para VAMPIRE_NPC 1`] = `"1337d8c8a6e7adb42911417d81e93540abb2b3885c2616f32e05c7004d364fda"`;
 
 exports[`preserva HTML completo em historico para HUMAN_NPC 1`] = `"2a4ef74f95168392620ee908a659e31a53c24288f8658a5a4e36640091ddd7f9"`;
 
@@ -32,10 +32,10 @@ exports[`preserva HTML completo em historico para RETAINER 1`] = `"2a4ef74f95168
 
 exports[`preserva HTML completo em historico para VAMPIRE_NPC 1`] = `"2a4ef74f95168392620ee908a659e31a53c24288f8658a5a4e36640091ddd7f9"`;
 
-exports[`preserva HTML completo em recursos para HUMAN_NPC 1`] = `"b8d55c6a2d2fa3d1ad1f8ac902db5468b2ff39f8bc30748cd17652686949c10f"`;
+exports[`preserva HTML completo em recursos para HUMAN_NPC 1`] = `"06222c01037ca39016aece9f0ac844c96c5cbf25b678498173a864c5f3099abc"`;
 
-exports[`preserva HTML completo em recursos para PLAYER_VAMPIRE 1`] = `"5d923face85cf1343a208ae68c2737e58c8797f5f74f5a7a0c2514904353925c"`;
+exports[`preserva HTML completo em recursos para PLAYER_VAMPIRE 1`] = `"f310d307dfd7cca9420ba4693ccf7faf27f787f4e93ec5524e47ee462fa06f47"`;
 
-exports[`preserva HTML completo em recursos para RETAINER 1`] = `"b8d55c6a2d2fa3d1ad1f8ac902db5468b2ff39f8bc30748cd17652686949c10f"`;
+exports[`preserva HTML completo em recursos para RETAINER 1`] = `"06222c01037ca39016aece9f0ac844c96c5cbf25b678498173a864c5f3099abc"`;
 
-exports[`preserva HTML completo em recursos para VAMPIRE_NPC 1`] = `"b8d55c6a2d2fa3d1ad1f8ac902db5468b2ff39f8bc30748cd17652686949c10f"`;
+exports[`preserva HTML completo em recursos para VAMPIRE_NPC 1`] = `"06222c01037ca39016aece9f0ac844c96c5cbf25b678498173a864c5f3099abc"`;

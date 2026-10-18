@@ -7,7 +7,7 @@ const issue = (code: string, field: string, message: string): ValidationIssue =>
 const sortedValues = (values: number[]) => values.filter((value) => value > 0).sort((first, second) => second - first)
 const sameDistribution = (actual: number[], expected: readonly number[]) => actual.length === expected.length && actual.every((value, index) => value === expected[index])
 
-export function validateCharacter(input: CharacterRulesInput, exceptionCodes: readonly string[] = []): ValidationReport {
+export function validateCharacter(input: CharacterRulesInput, exceptionCodes: readonly string[] = [], independent = false): ValidationReport {
   const exceptions = new Set(exceptionCodes)
   const errors: ValidationIssue[] = []
   const warnings: ValidationIssue[] = []
@@ -27,6 +27,12 @@ export function validateCharacter(input: CharacterRulesInput, exceptionCodes: re
   validateNpc(input, errors)
   validateRetainer(input, errors, warnings)
 
+  if (independent && input.characterType === 'PLAYER_VAMPIRE') {
+    const creationRules = new Set(['ATTRIBUTES_INVALID_DISTRIBUTION', 'SKILLS_INVALID_DISTRIBUTION', 'CONVICTIONS_INVALID_COUNT', 'TOUCHSTONE_REQUIRED', 'TOUCHSTONE_NOT_UNIQUE', 'DISCIPLINE_DOTS_INVALID', 'DISCIPLINE_POWER_REQUIRED', 'ADVANTAGES_LIMIT_EXCEEDED', 'FLAWS_MINIMUM_NOT_MET'])
+    for (let index = errors.length - 1; index >= 0; index--) {
+      if (creationRules.has(errors[index].code)) warnings.unshift(...errors.splice(index, 1))
+    }
+  }
   return { valid: errors.length === 0, errors, warnings, derived: { health: Number.isFinite(stamina) ? stamina + 3 : null, willpower: Number.isFinite(resolve) && Number.isFinite(composure) ? resolve + composure : null, humanity: input.humanity ?? adjustment.humanity, initialXp: adjustment.initialXp, bloodPotency: input.bloodPotency ?? (expectedBloodPotency === null ? null : expectedBloodPotency + adjustment.bloodPotencyModifier) } }
 }
 
@@ -35,10 +41,10 @@ function validatePlayerTraits(input: CharacterRulesInput, errors: ValidationIssu
 
   const attributes = Object.values(input.attributes)
   if (!input.masterOverride && !sameDistribution([...attributes].sort((a, b) => b - a), ATTRIBUTE_DISTRIBUTION)) errors.push(issue('ATTRIBUTES_INVALID_DISTRIBUTION', 'attributes', 'A distribuição deve ser 4, 3, 3, 3, 2, 2, 2, 2, 1.'))
-  if (attributes.length !== 9 || attributes.some((value) => value < 1 || value > 5)) errors.push(issue('ATTRIBUTES_OUT_OF_RANGE', 'attributes', 'Preencha os nove atributos com valores entre 1 e 5.'))
+  if (attributes.length !== 9 || attributes.some((value) => !Number.isSafeInteger(value) || value < 1 || value > 5)) errors.push(issue('ATTRIBUTES_OUT_OF_RANGE', 'attributes', 'Preencha os nove atributos com valores entre 1 e 5.'))
 
   const skillValues = Object.values(input.skills)
-  if (skillValues.some((value) => value < 0 || value > 5)) errors.push(issue('SKILLS_OUT_OF_RANGE', 'skills', 'Habilidades devem possuir valores entre 0 e 5.'))
+  if (skillValues.some((value) => !Number.isSafeInteger(value) || value < 0 || value > 5)) errors.push(issue('SKILLS_OUT_OF_RANGE', 'skills', 'Habilidades devem possuir valores entre 0 e 5.'))
   if (input.skillMode && input.skillMode !== 'DETAILED' && !sameDistribution(sortedValues(skillValues), SKILL_DISTRIBUTIONS[input.skillMode])) errors.push(issue('SKILLS_INVALID_DISTRIBUTION', 'skills', 'A distribuição de habilidades não corresponde ao perfil selecionado.'))
 
 

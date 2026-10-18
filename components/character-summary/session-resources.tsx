@@ -93,7 +93,7 @@ function ResourceForm({ data, url, refresh, notify }: Readonly<{ data: ResourceR
   }
 
   function changeScalar(field: 'hunger' | 'humanity' | 'stains', delta: number) {
-    if (locked || inFlight.current || (field !== 'hunger' && !data.canEditNarrative) || (field === 'humanity' && delta < 0)) return
+    if (locked || inFlight.current || (field !== 'hunger' && !data.canEditNarrative)) return
     const value = data.state[field] + delta
     if (!Number.isSafeInteger(value) || value < 0 || value > (field === 'hunger' ? 5 : 10)) return
     if (field === 'hunger' && value === 0) { zeroDialog.current?.showModal(); return }
@@ -134,7 +134,7 @@ function ResourceForm({ data, url, refresh, notify }: Readonly<{ data: ResourceR
   return <div aria-busy={saving} className="flex flex-col gap-5">
     <output className="block text-sm text-muted-foreground">{savingMessage}</output>
     <dl className="archive-resource-strip archive-session-resources">
-      <div><dt>Humanidade</dt><dd><span className="block font-serif text-4xl">{data.state.humanity}</span><div className="mt-4"><ResourceButtons label="Humanidade" onIncrease={() => changeScalar('humanity', 1)} disabled={locked || !data.canEditNarrative} cannotIncrease={data.state.humanity >= 10} /></div></dd></div>
+      <div><dt>Humanidade</dt><dd><span className="block font-serif text-4xl">{data.state.humanity}</span><div className="mt-4"><ResourceButtons label="Humanidade" onReduce={() => changeScalar('humanity', -1)} cannotReduce={data.state.humanity <= 0} onIncrease={() => changeScalar('humanity', 1)} disabled={locked || !data.canEditNarrative} cannotIncrease={data.state.humanity >= 10} /></div></dd></div>
       {damageResource('willpower', 'Força de vontade', data.maxima.willpowerMax)}
       {damageResource('health', 'Vitalidade', data.maxima.healthMax)}
       <div><dt>Fome</dt><dd><span className="archive-hunger" aria-label={`${data.state.hunger} de 5`}>{Array.from({ length: 5 }, (_, index) => <span key={index} aria-hidden="true" className={`dot ${index < data.state.hunger ? 'is-filled' : ''}`} />)}</span><span className="mt-2 block font-sans text-xs text-muted-foreground">{data.state.hunger} de 5</span><div className="mt-4"><ResourceButtons label="Fome" onReduce={() => changeScalar('hunger', -1)} onIncrease={() => changeScalar('hunger', 1)} disabled={locked} cannotReduce={data.state.hunger <= 0} cannotIncrease={data.state.hunger >= 5} /></div><p className="mt-2 font-sans text-xs text-muted-foreground">Sem custo de XP.</p></dd></div>

@@ -61,7 +61,7 @@ describe('catálogo e política de Disciplinas', () => {
 })
 describe('domínio transacional e segurança', () => {
   it('bloqueia criação, edição livre e troca com alocação incompatível', async () => {
-    await expect(createCharacter('player', { data: { cla: 'Brujah', disciplinas: [{ name: 'Dominação', level: 1 }] } })).rejects.toMatchObject({ status: 422 })
+    await expect(createCharacter('player', { campaignId, data: { cla: 'Brujah', disciplinas: [{ name: 'Dominação', level: 1 }] } })).rejects.toMatchObject({ status: 422 })
     await clan()
     await expect(updateCharacter(id, 'player', { data: { disciplinas: [{ id: 'forged', name: 'Dominação', level: 3 }] }, expectedRevision: 1 })).rejects.toMatchObject({ status: 422 })
     await expect(selectCharacterClan(id, 'player', { code: 'TOREADOR', disciplineDots: { Dominação: 2, Potência: 1 } }, 1, key())).rejects.toMatchObject({ status: 422 })

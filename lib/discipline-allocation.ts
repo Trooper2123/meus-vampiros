@@ -50,18 +50,18 @@ export function validateDisciplineAllocation(character: Pick<CommandCharacter, '
     const xpDots = xpAcquisitions(character).filter(entry => entry.disciplineId === definition.id && entry.source === 'XP').length
     const clanDots = clanEffects.filter(effect => effect.id === row.id).reduce((sum, effect) => sum + effect.dots, 0)
     const initialDots = Number(row.level) - predatorDots - xpDots
-    if (initialDots < 0 || (clanEffects.length > 0 && initialDots !== clanDots)) throw new CharacterCommandError(422, 'Altere pontos pelos seletores de origem ou pela evolução com XP.')
+    if (initialDots < 0 || (Boolean(character.campaignId) && clanEffects.length > 0 && initialDots !== clanDots)) throw new CharacterCommandError(422, 'Altere pontos pelos seletores de origem ou pela evolução com XP.')
     if (initialDots > 0) {
       const access = evaluateDisciplineAccess({ character: context, disciplineId: definition.id, acquisitionSource: 'CLAN', targetLevel: initialDots })
-      if (!access.eligible) throw new CharacterCommandError(422, access.blockers[0].message)
+      if (character.campaignId && !access.eligible) throw new CharacterCommandError(422, access.blockers[0].message)
       initial.push(initialDots)
       if (!clanEffects.length) manualAcquisitions.push({ id: `CLAN:${definition.id}`, disciplineId: definition.id, source: 'CLAN', fromLevel: 0, targetLevel: initialDots, xpCost: 0 })
     }
   }
   validatePurchasedDisciplineRows(character,rows)
-  if (initial.reduce((sum, dots) => sum + dots, 0) > 3 || initial.filter(dots => dots === 2).length > 1) throw new CharacterCommandError(422, 'Distribua os pontos iniciais em 2+1, somente nas Disciplinas disponíveis.')
+  if (character.campaignId && (initial.reduce((sum, dots) => sum + dots, 0) > 3 || initial.filter(dots => dots === 2).length > 1)) throw new CharacterCommandError(422, 'Distribua os pontos iniciais em 2+1, somente nas Disciplinas disponíveis.')
   if (!clanEffects.length) character.gameState.disciplineAcquisitions = [...xpAcquisitions(character).filter(entry => entry.source !== 'CLAN'), ...manualAcquisitions]
-  if (complete && context.clanCode !== 'THIN_BLOOD' && [...initial].sort((first, second) => first - second).join(',') !== '1,2') throw new CharacterCommandError(422, 'A distribuição inicial exige 2 pontos em uma Disciplina e 1 em outra.')
+  if (complete && character.campaignId && context.clanCode !== 'THIN_BLOOD' && [...initial].sort((first, second) => first - second).join(',') !== '1,2') throw new CharacterCommandError(422, 'A distribuição inicial exige 2 pontos em uma Disciplina e 1 em outra.')
 }
 function validatePurchasedDisciplineRows(character: Pick<CommandCharacter,"data"|"gameState"|"campaignId"|"masterId"|"characterType">,rows: Record<string,unknown>[]) {
 for(const acquisition of xpAcquisitions(character).filter(entry => entry.source==='XP')) {

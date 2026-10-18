@@ -73,11 +73,48 @@ describe('clã: comandos, origens e autorização em memória', () => {
 
   it('aplica exceções Caitiff/sangue-ralo e restrições cruzadas', async () => {
     stored().data.predatorTypeCode = 'SIREN'
-    await expect(selectCharacterClan(id, 'player', selection, 0, key)).rejects.toMatchObject({ status: 422 })
     await expect(selectCharacterClan(id, 'player', { code: 'THIN_BLOOD', disciplineDots: {} }, 0, key)).rejects.toMatchObject({ status: 422 })
     delete stored().data.predatorTypeCode
     await selectCharacterClan(id, 'player', { code: 'THIN_BLOOD', disciplineDots: {} }, 0, key)
     expect(stored().data).toMatchObject({ isThinBlood: true, cla: '', 'potencia-de-sangue': 0 })
+  })
+
+  it('aceita Nosferatu com Siren e Aparência positiva sem apagar os traços', async () => {
+    stored().data.predatorTypeCode = 'SIREN'
+    stored().data.vantagens = [{ name: 'Aparência: Bela', level: 2 }]
+    await selectCharacterClan(id, 'player', selection, 0, key)
+    expect(stored().data.clanCode).toBe('NOSFERATU')
+    expect(stored().data.vantagens).toEqual([{ name: 'Aparência: Bela', level: 2 }])
+    expect(stored().data.defeitos).toContainEqual(expect.objectContaining({ name: 'Repulsivo', level: 2 }))
+  })
+
+  it('aplica Siren a Nosferatu sem bloquear as demais concessões', async () => {
+    await selectCharacterClan(id, 'player', selection, 0, key)
+    const definition = PREDATOR_TYPE_BY_CODE.get('SIREN')!
+    const applied = applyPredatorTypeSelection(stored().data, definition, { code: 'SIREN', specialty: 'Persuasão (Sedução)', discipline: 'Presença', optionCodes: [] })
+    await persistPredatorTypeData(id, applied.data, 'player', { expectedRevision: 1, eventType: 'PREDATOR_TYPE_APPLIED', payload: {} })
+    expect(stored().data.predatorTypeCode).toBe('SIREN')
+    expect(stored().data.defeitos).toContainEqual(expect.objectContaining({ name: 'Repulsivo', level: 2 }))
+  })
+
+  it('troca clã independente sem exigir pacote 2+1 ou apagar disciplinas livres', async () => {
+    stored().campaignId = null
+    stored().data.disciplinas = [{ id: 'manual', name: 'Animalismo', level: 5, powers: [] }]
+    await selectCharacterClan(id, 'player', { code: 'VENTRUE', disciplineDots: {} }, 0, key)
+    expect(stored().data.clanCode).toBe('VENTRUE')
+    expect(stored().data.disciplinas).toEqual([{ id: 'manual', name: 'Animalismo', level: 5, powers: [] }])
+    await updateCharacter(id, 'player', { data: { disciplinas: [{ id: 'manual', name: 'Animalismo', level: 1, powers: [] }] } })
+    expect(stored().data.disciplinas).toEqual([expect.objectContaining({ name: 'Animalismo', level: 1 })])
+  })
+
+  it('libera redução de pontos iniciais em independente preservando o defeito de clã', async () => {
+    await selectCharacterClan(id, 'player', selection, 0, key)
+    stored().campaignId = null
+    const rows = stored().data.disciplinas as Record<string, unknown>[]
+    await updateCharacter(id, 'player', { data: { disciplinas: rows.map(row => ({ ...row, level: 0 })) } })
+    expect(stored().data.defeitos).toContainEqual(expect.objectContaining({ name: 'Repulsivo', level: 2 }))
+    expect(stored().gameState!.creationEffects).not.toContainEqual(expect.objectContaining({ origin: 'CLAN', kind: 'DISCIPLINE' }))
+    expect(stored().data.disciplinas).toEqual(expect.arrayContaining([expect.objectContaining({ level: 0 })]))
   })
 
   it('retorna 401/403/400 e rejeita campos forjados na API', async () => {
