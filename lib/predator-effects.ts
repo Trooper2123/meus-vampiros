@@ -22,7 +22,6 @@ export function applyPredatorEffects(character: CommandCharacter) {
   const definition = PREDATOR_TYPE_BY_CODE.get(selection.code)
   if (!definition || validatePredatorChoices(definition, selection.specialty, selection.discipline, selection.optionCodes).some(issue => issue.blocking)) throw new CharacterCommandError(422, 'Escolhas de predação inválidas.')
   const clan = characterText(character.data.cla).trim().toLowerCase()
-  if (definition.code === 'SIREN' && clan === 'nosferatu') throw new CharacterCommandError(422, 'Nosferatu não pode receber Aparência positiva de Siren.')
   if (['BAGGER', 'OSIRIS'].includes(definition.code) && selection.discipline === 'Feitiçaria de Sangue' && clan !== 'tremere') throw new CharacterCommandError(422, 'Esta escolha de Feitiçaria de Sangue exige Tremere.')
   const access = evaluateDisciplineAccess({ character: { ...disciplineContext(character), currentLevel: 0 }, disciplineId: disciplineDefinition(selection.discipline)?.id ?? selection.discipline, acquisitionSource: 'PREDATOR', targetLevel: 1 })
   if (!access.eligible) throw new CharacterCommandError(422, access.blockers[0].message)

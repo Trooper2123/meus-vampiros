@@ -74,8 +74,8 @@ beforeEach(() => {
 })
 afterEach(() => vi.unstubAllGlobals())
 
-it('botões mostram só símbolos, e Humanidade não tem redutor', () => {
-  expect(button('Reduzir Humanidade')).toBeUndefined()
+it('botões mostram só símbolos, incluindo redutor de Humanidade', () => {
+  expect(text(button('Reduzir Humanidade'))).toBe('−')
   expect(text(button('Aumentar Humanidade'))).toBe('+')
   expect(text(button('Reduzir Fome'))).toBe('−')
   expect(text(button('Aumentar Fome'))).toBe('+')
@@ -123,6 +123,8 @@ it('cada clique de Fome salva, usa nova revisão e mantém cinco pontos nos limi
 })
 
 it('Humanidade/manchas sem permissão permanecem bloqueadas até no callback', async () => {
+  expect(button('Reduzir Humanidade').props.disabled).toBe(true)
+  await button('Reduzir Humanidade').props.onClick()
   expect(button('Aumentar Humanidade').props.disabled).toBe(true)
   expect(button('Aumentar Manchas').props.disabled).toBe(true)
   await button('Aumentar Humanidade').props.onClick()
@@ -130,7 +132,7 @@ it('Humanidade/manchas sem permissão permanecem bloqueadas até no callback', a
   expect(fetch).not.toHaveBeenCalled()
 })
 
-it('proprietário autorizado aumenta Humanidade até 10 sem opção de reduzir', async () => {
+it('proprietário autorizado aumenta e reduz Humanidade entre 0 e 10', async () => {
   harness.data.canEditNarrative = true
   harness.data.state.humanity = 9
   await button('Aumentar Humanidade').props.onClick()
@@ -138,7 +140,12 @@ it('proprietário autorizado aumenta Humanidade até 10 sem opção de reduzir',
   expect(button('Aumentar Humanidade').props.disabled).toBe(true)
   await button('Aumentar Humanidade').props.onClick()
   expect(fetch).toHaveBeenCalledTimes(1)
-  expect(button('Reduzir Humanidade')).toBeUndefined()
+  await button('Reduzir Humanidade').props.onClick()
+  expect(command(1)).toMatchObject({ changes: { humanity: 9 }, reason: 'Ajuste de Humanidade: 10 → 9.' })
+  harness.data.state.humanity = 0
+  expect(button('Reduzir Humanidade').props.disabled).toBe(true)
+  await button('Reduzir Humanidade').props.onClick()
+  expect(fetch).toHaveBeenCalledTimes(2)
 })
 
 it('proprietário autorizado aumenta e reduz Manchas com salvamento automático', async () => {

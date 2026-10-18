@@ -6,6 +6,15 @@ import { calculateSecondaryAttributes } from '@/lib/vtm-v5/secondary-attributes'
 describe('fichas independentes e atributos secundários', () => {
   beforeEach(() => { global.__devDb = undefined })
 
+  it('cria e edita Disciplinas livremente sem mesa, mantendo limites e propriedade', async () => {
+    const created = await createCharacter('owner', { data: { cla: 'Toreador', disciplinas: [{ name: 'Animalismo', level: 5, powers: [] }] } })
+    await updateCharacter(created.id!, 'owner', { data: { disciplinas: [{ name: 'Potência', level: 4, powers: [] }] } })
+    expect((await getCharacterById(created.id!, 'owner'))?.data.disciplinas).toEqual([expect.objectContaining({ name: 'Potência', level: 4 })])
+    expect(await updateCharacter(created.id!, 'other', { data: { disciplinas: [] } })).toBeNull()
+    await expect(updateCharacter(created.id!, 'owner', { data: { disciplinas: [{ name: 'Potência', level: 6 }] } })).rejects.toMatchObject({ status: 422 })
+    await expect(updateCharacter(created.id!, 'owner', { data: { disciplinas: [{ name: 'Inventada', level: 1 }] } })).rejects.toMatchObject({ status: 422 })
+  })
+
   it('persiste máximos e Humanidade inicial calculados pelo servidor', async () => {
     const created = await createCharacter('owner', { name: 'Helena', data: { vigor: 3, determinacao: 2, compostura: 4, creationType: 'ANCILLA', humanidade: 10, secondaryAttributes: { healthMax: 99 } } })
     const stored = await getCharacterById(created.id!, 'owner')

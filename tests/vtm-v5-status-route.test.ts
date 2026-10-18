@@ -32,6 +32,27 @@ describe('PATCH status com transação real em memória', () => {
     expect((await PATCH(request('APPROVED'), context)).status).toBe(200)
     expect(global.__devDb!.characters[0]).toMatchObject({ status: 'APPROVED', revision: 1, validationReport: { valid: true } })
   })
+  it('conclui independente com distribuição livre e escolhas fora do clã, sem requisitos de criação', async () => {
+    const character = global.__devDb!.characters[0]
+    character.campaignId = null
+    character.data = { creationType: 'FLEDGLING', cla: 'Toreador', humanidade: 7,
+      forca: 5, destreza: 5, vigor: 5, carisma: 5, manipulacao: 5, compostura: 5, inteligencia: 5, raciocinio: 5, determinacao: 5,
+      'habilidade-briga': 5, skillMode: 'BALANCED', disciplinas: [{ name: 'Animalismo', level: 5, powers: [] }] }
+    const response = await PATCH(request('APPROVED'), context)
+    expect(response.status).toBe(200)
+    expect(await response.json()).toMatchObject({ status: 'APPROVED', report: { valid: true, errors: [], warnings: expect.arrayContaining([expect.objectContaining({ code: 'ATTRIBUTES_INVALID_DISTRIBUTION' })]) } })
+  })
+  it.each([6, -1, 1.5, 'inválido'])('independente mantém limites de atributos: %s', async value => {
+    const character = global.__devDb!.characters[0]
+    character.campaignId = null
+    character.data.forca = value
+    expect((await PATCH(request('APPROVED'), context)).status).toBe(422)
+    expect(character.status).toBe('DRAFT')
+  })
+  it('não confia em flags do cliente para dispensar regras de ficha vinculada', async () => {
+    global.__devDb!.characters[0].data = { ...validData(), independent: true, campaignId: null, forca: 5 }
+    expect((await PATCH(request('PENDING_REVIEW'), context)).status).toBe(422)
+  })
   it('não envia ficha independente a Narrador inexistente', async () => {
     global.__devDb!.characters[0].campaignId = null
     expect((await PATCH(request('PENDING_REVIEW'), context)).status).toBe(409)

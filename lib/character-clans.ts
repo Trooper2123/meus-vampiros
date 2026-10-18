@@ -15,6 +15,7 @@ export async function getClanView(characterId: string, actorId: string) {
   if (character.ownerId !== actorId && character.masterId !== actorId) throw new CharacterCommandError(403, 'Acesso negado.')
   return structuredClone({
     revision: character.revision,
+    independent: !character.campaignId,
     authorizedInitialDisciplines: (disciplineContext(character).grants ?? []).filter(grant => !grant.revokedAt && grant.acquisitionSource === 'CLAN' && grant.requirement === 'CLAN_ASSOCIATION' && grant.clanCode === disciplineContext(character).clanCode && grant.campaignId === character.campaignId && grant.createdByUserId === character.masterId).map(grant => ({ name: disciplineDefinition(grant.disciplineId)!.name, targetLevel: grant.targetLevel })),
     selection: character.data.clanSelection ?? null,
     clans: CLANS.filter(clan => campaignClanCodes(character.campaignId).includes(clan.code) || clan.code === character.data.clanCode).map(({ guidance, ...publicData }) => character.masterId === actorId ? { ...publicData, guidance } : publicData),
@@ -29,7 +30,7 @@ export async function selectCharacterClan(characterId: string, actorId: string, 
     try {
       const candidate = { ...disciplineContext(character), clanCode: selection?.code, caitiffDisciplines: selection?.caitiffDisciplines }
       const authorized = Object.entries(selection?.disciplineDots ?? {}).filter(([name, targetLevel]) => evaluateDisciplineAccess({ character: candidate, disciplineId: name, acquisitionSource: 'CLAN', targetLevel }).eligible).map(([name]) => name)
-      definition = validateClanSelection(selection, authorized)
+      definition = validateClanSelection(selection, authorized, !character.campaignId)
     } catch { throw new CharacterCommandError(422, 'Escolhas de clã inválidas. Revise Disciplinas e requisitos do clã.') }
     selection = { ...selection, disciplineDots: Object.fromEntries(Object.entries(selection.disciplineDots).map(([name, dots]) => [disciplineDefinition(name)!.id, dots])), ...(selection.caitiffDisciplines ? { caitiffDisciplines: selection.caitiffDisciplines.map(name => disciplineDefinition(name)!.id) } : {}) }
     if (!campaignClanCodes(character.campaignId).includes(selection.code)) throw new CharacterCommandError(422, 'Este clã não está habilitado na mesa.')
@@ -38,13 +39,13 @@ export async function selectCharacterClan(characterId: string, actorId: string, 
     const baseRows: Record<string, unknown>[] = rows.map(row => ({ ...row, level: Number(row.level) - creationEffects(character).filter(effect => effect.origin === 'PREDATOR' && effect.kind === 'DISCIPLINE' && effect.id === row.id).reduce((sum, effect) => sum + effect.dots, 0) }))
     const hasExistingDots = baseRows.some(row => Number(row.level) > 0)
     const adopt = !hasClanOrigin && hasExistingDots
-    if (adopt && (character.spentXp !== 0 || baseRows.filter(row => Number(row.level) > 0).length !== Object.keys(selection.disciplineDots).length || baseRows.some(row => Number(row.level) > 0 && selection.disciplineDots[disciplineDefinition(row.disciplineId ?? row.name)?.id ?? ''] !== row.level))) throw new CharacterCommandError(409, 'Disciplinas existentes não correspondem ao pacote escolhido. Revise a ficha sem sobrescrever pontos adquiridos.')
+    if (character.campaignId && adopt && (character.spentXp !== 0 || baseRows.filter(row => Number(row.level) > 0).length !== Object.keys(selection.disciplineDots).length || baseRows.some(row => Number(row.level) > 0 && selection.disciplineDots[disciplineDefinition(row.disciplineId ?? row.name)?.id ?? ''] !== row.level))) throw new CharacterCommandError(409, 'Disciplinas existentes não correspondem ao pacote escolhido. Revise a ficha sem sobrescrever pontos adquiridos.')
     validateClanTraits(selection,character)
     validateClanPredation(character,selection,definition)
     const accessContext = { ...disciplineContext(character), clanCode: selection.code, caitiffDisciplines: selection.caitiffDisciplines }
     for (const [name, targetLevel] of Object.entries(selection.disciplineDots)) {
       const access = evaluateDisciplineAccess({ character: accessContext, disciplineId: disciplineDefinition(name)?.id ?? name, acquisitionSource: 'CLAN', targetLevel })
-      if (!access.eligible) throw new CharacterCommandError(422, access.blockers[0].message)
+      if (character.campaignId && !access.eligible) throw new CharacterCommandError(422, access.blockers[0].message)
     }
     let clanTraits: Parameters<typeof applyCreationEffects>[3]
     if (selection.code === 'NOSFERATU') {
@@ -54,7 +55,9 @@ export async function selectCharacterClan(characterId: string, actorId: string, 
     } else {
       clanTraits = []
     }
-    applyCreationEffects(character, 'CLAN', selection.disciplineDots, clanTraits, adopt)
+    const independentDisciplines = !character.campaignId ? structuredClone(rows) : null
+    applyCreationEffects(character, 'CLAN', character.campaignId ? selection.disciplineDots : {}, clanTraits, adopt)
+    if (independentDisciplines) character.data.disciplinas = independentDisciplines
     character.data.clanSelection = structuredClone(selection)
     character.data.clanCode = definition.code
     character.data.clanRulesVersion = definition.version
@@ -77,6 +80,5 @@ if(predator&&!validatePredatorType(predator,{ clan: definition.name,bloodPotency
 
 function validateClanTraits(selection: ClanSelection,character: CommandCharacter) {
 if(selection.code==='THIN_BLOOD'&&character.data.predatorTypeCode) throw new CharacterCommandError(422,'Remova a predação antes de selecionar sangue-ralo.')
-if(selection.code==='NOSFERATU'&&(character.data.predatorTypeCode==='SIREN'||(Array.isArray(character.data.vantagens)&&character.data.vantagens.some(trait => trait&&typeof trait==='object'&&/apar[eê]ncia|beautiful|looks|bela/iu.test(String(trait.name))&&Number(trait.level)>0)))) throw new CharacterCommandError(422,'Nosferatu não pode receber Aparência positiva ou predação Siren.')
 if(selection.code==='CAITIFF'&&Array.isArray(character.data.vantagens)&&character.data.vantagens.some(trait => trait&&typeof trait==='object'&&/^status$/iu.test(String(trait.name).trim())&&Number(trait.level)>0)) throw new CharacterCommandError(422,'Caitiff não pode iniciar com Status positivo.')
 }

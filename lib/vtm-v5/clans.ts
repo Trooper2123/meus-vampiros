@@ -7,7 +7,7 @@ const definitions = [
   { code: 'BRUJAH', name: 'Brujah', disciplines: ['Rapidez', 'Potência', 'Presença'], bane: 'Subtrai a Gravidade da Perdição ao resistir a frenesi de fúria, mínimo de um dado.', compulsion: 'Rebelião: desafiar autoridade, ordem ou expectativa.' },
   { code: 'GANGREL', name: 'Gangrel', disciplines: ['Animalismo', 'Fortitude', 'Proteanismo'], bane: 'Frenesi manifesta características animais e penalidades associadas à Gravidade da Perdição.', compulsion: 'Impulsos ferais: fala e comportamento animalescos.' },
   { code: 'MALKAVIAN', name: 'Malkavian', disciplines: ['Auspícios', 'Dominação', 'Ofuscação'], bane: 'Falha bestial ou compulsão impõe penalidade à categoria de pools configurada por uma cena.', compulsion: 'Delírio: percepções distorcidas prejudicam ações e resistência ao terror.' },
-  { code: 'NOSFERATU', name: 'Nosferatu', disciplines: ['Animalismo', 'Ofuscação', 'Potência'], bane: 'Repulsivo 2; não melhora Aparência. Disfarces humanos sofrem penalidade pela Gravidade da Perdição.', compulsion: 'Criptofilia: necessidade de buscar informações ocultas.' },
+  { code: 'NOSFERATU', name: 'Nosferatu', disciplines: ['Animalismo', 'Ofuscação', 'Potência'], bane: 'Aparência sempre −2; ignora todos os modificadores positivos de Aparência. Disfarces humanos sofrem penalidade pela Gravidade da Perdição.', compulsion: 'Criptofilia: necessidade de buscar informações ocultas.' },
   { code: 'TOREADOR', name: 'Toreador', disciplines: ['Auspícios', 'Rapidez', 'Presença'], bane: 'Ambiente sem beleza impõe penalidade pela Gravidade da Perdição ao usar disciplinas.', compulsion: 'Obsessão: fixação em algo belo prejudica outras ações.' },
   { code: 'TREMERE', name: 'Tremere', disciplines: ['Auspícios', 'Dominação', 'Feitiçaria de Sangue'], bane: 'Vitae não cria Laço de Sangue em Membros; mortais e carniçais exigem ingestões adicionais.', compulsion: 'Perfeccionismo: penalidade até obter resultado crítico ou repetir a tarefa com rigor.' },
   { code: 'VENTRUE', name: 'Ventrue', disciplines: ['Dominação', 'Fortitude', 'Presença'], bane: 'Alimentação fora da preferência exige Força de Vontade conforme a Gravidade da Perdição.', compulsion: 'Arrogância: assumir comando e conseguir obediência não sobrenatural.' },
@@ -26,12 +26,20 @@ export function normalizeDiscipline(name: string): string {
   return aliases[key] ?? [...DISCIPLINE_NAMES, 'Presença', 'Alquimia de Sangue-Ralo'].find(entry => entry.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase() === key) ?? name.trim()
 }
 
-export function validateClanSelection(selection: ClanSelection, authorizedDisciplines: readonly string[] = []) {
+export function validateClanSelection(selection: ClanSelection, authorizedDisciplines: readonly string[] = [], independent = false) {
   if (!selection || typeof selection !== 'object' || Array.isArray(selection)) throw new Error('Escolha de clã inválida.')
   if (Object.keys(selection).some(key => !['code', 'disciplineDots', 'caitiffDisciplines', 'feedingPreference', 'afflictionCategory'].includes(key))) throw new Error('Campos de clã desconhecidos.')
   const definition = CLANS.find(entry => entry.code === selection.code)
   if (!definition) throw new Error('Clã não disponível na referência implementada.')
   if (!selection.disciplineDots || typeof selection.disciplineDots !== 'object' || Array.isArray(selection.disciplineDots)) throw new Error('Escolhas de disciplinas inválidas.')
+  if (independent) {
+    const choices = Object.entries(selection.disciplineDots)
+    if (new Set(choices.map(([name]) => disciplineDefinition(name)?.id)).size !== choices.length || choices.some(([name, dots]) => !disciplineDefinition(name) || !Number.isSafeInteger(dots) || dots < 0 || dots > 5)) throw new Error('Disciplinas ou pontos inválidos.')
+    if (selection.caitiffDisciplines !== undefined && (!Array.isArray(selection.caitiffDisciplines) || selection.caitiffDisciplines.length > DISCIPLINE_NAMES.length || selection.caitiffDisciplines.some(name => typeof name !== 'string' || !disciplineDefinition(name)))) throw new Error('Disciplinas Caitiff inválidas.')
+    if (selection.afflictionCategory !== undefined && !['PHYSICAL', 'SOCIAL', 'MENTAL'].includes(selection.afflictionCategory)) throw new Error('Categoria de Perdição inválida.')
+    if (selection.feedingPreference !== undefined && (typeof selection.feedingPreference !== 'string' || selection.feedingPreference.length > 200)) throw new Error('Preferência alimentar inválida.')
+    return definition
+  }
   if (selection.code === 'THIN_BLOOD') {
     if (Object.keys(selection.disciplineDots).length) throw new Error('Sangue-ralo não recebe o pacote comum de disciplinas.')
     return definition

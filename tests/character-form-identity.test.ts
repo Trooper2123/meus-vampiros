@@ -28,12 +28,20 @@ it('disciplinas inicia com um campo vazio e botão para adicionar outras', () =>
   const html = renderToStaticMarkup(createElement(CharacterFormClient, {}))
   expect(html.match(/name="disciplina-\d+-nome"/g)).toHaveLength(1)
   expect(html).toContain('Adicionar disciplina')
-  expect(html).toContain('distribua os 3 pontos iniciais')
+  expect(html).not.toContain('distribua os 3 pontos iniciais')
 })
-it.each(['FLEDGLING', 'NEONATE', 'ANCILLA', 'THIN_BLOOD'])('orienta distribuição conforme perfil %s', profile => {
+it.each(['FLEDGLING', 'NEONATE', 'ANCILLA', 'THIN_BLOOD'])('mantém distribuição livre sem mesa no perfil %s', profile => {
   state.tab = 'disciplinas'; state.creationType = profile
   const html = renderToStaticMarkup(createElement(CharacterFormClient, {}))
-  expect(html).toContain(profile === 'THIN_BLOOD' ? 'não distribua os três pontos' : '2 em uma e 1 em outra')
+  expect(html).not.toContain('2 em uma e 1 em outra')
+  expect(html).not.toContain('não distribua os três pontos')
+})
+
+it('mantém as orientações obrigatórias para ficha vinculada', () => {
+  state.tab = 'disciplinas'
+  const id = '11111111-1111-4111-8111-111111111111'
+  const html = renderToStaticMarkup(createElement(SWRConfig, { value: { provider: () => new Map(), revalidateOnMount: false, fallback: { [`/api/characters?id=${id}`]: { character: { id, campaignId: 'mesa', data: {}, revision: 0, characterType: 'PLAYER_VAMPIRE', status: 'DRAFT' } } } } }, createElement(CharacterFormClient, { initialCharacterId: id, mode: 'edit' })))
+  expect(html).toContain('2 em uma e 1 em outra')
 })
 it.each(['HUMAN_NPC', 'VAMPIRE_NPC', 'RETAINER'])('não impõe pacote de jogador para %s', profile => {
   state.tab = 'disciplinas'; state.characterType = profile

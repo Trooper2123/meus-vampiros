@@ -335,6 +335,10 @@ function applyCharacterDataEdit(character: CommandCharacter, incoming: Record<st
   try { mergedData = mergeCharacterSkills(character.data, incoming) }
   catch { throw new CharacterCommandError(422, 'Habilidades ou pontos inválidos.') }
   character.data = applySecondaryAttributes(mergedData, character.data)
+  if (!character.campaignId) {
+    character.gameState.creationEffects = creationEffects(character).filter(effect => effect.kind !== 'DISCIPLINE' || effect.origin !== 'CLAN')
+    character.gameState.disciplineAcquisitions = xpAcquisitions(character).filter(entry => entry.source !== 'CLAN')
+  }
   validateCreationEffects(character)
   validateDisciplineAllocation(character)
   delete character.data['experiencia-total']
