@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
   try {
     await ensureAllTables()
     const session = await getSessionOrDev()
-    
+
     if (!session?.user) {
       return unauthorized()
     }
@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
   try {
     await ensureAllTables()
     const session = await getSessionOrDev()
-    
+
     if (!session?.user) {
       return unauthorized()
     }
@@ -111,27 +111,8 @@ export async function POST(request: NextRequest) {
       return badRequest('Título deve ter entre 1 e 100 caracteres.')
     }
 
-    if (description !== undefined && description !== null) {
-      if (typeof description !== 'string' || description.length > 1000) {
-        return badRequest('Descrição deve ter no máximo 1000 caracteres.')
-      }
-    }
-
-    if (eventDate && !isValidDate(eventDate)) {
-      return badRequest('Data inválida. Use o formato YYYY-MM-DD.')
-    }
-
-    if (!eventDate && (!Number.isInteger(fictionalYear) || Number(fictionalYear) < 0 || !fictionalMonth?.trim() || !fictionalWeekday?.trim())) {
-      return badRequest('Informe dia da semana, mês e ano fictícios válidos.')
-    }
-
-    if (!isValidTime(eventTime ?? null)) {
-      return badRequest('Hora inválida. Use o formato HH:MM.')
-    }
-
-    if (!isValidVisibility(visibility)) {
-      return badRequest('Visibilidade deve ser "master" ou "everyone".')
-    }
+    const fieldsError = validateNewEventFields(body)
+    if (fieldsError) return fieldsError
 
     // Check authorization - only master can create events
     if (!await canManageCampaign(session.user.sub, campaignId)) {
@@ -178,7 +159,7 @@ export async function PATCH(request: NextRequest) {
   try {
     await ensureAllTables()
     const session = await getSessionOrDev()
-    
+
     if (!session?.user) {
       return unauthorized()
     }
@@ -211,6 +192,100 @@ export async function PATCH(request: NextRequest) {
       return badRequest('Use um dia da semana e um mês reais no modo de data fictícia livre.')
     }
 
+    const changes = readEventChanges(body)
+    if (changes instanceof NextResponse) return changes
+    const updateData = changes
+
+    // Check if there's anything to update
+    if (Object.keys(updateData).length === 0) {
+      return badRequest('Nenhum campo para atualizar.')
+    }
+
+    // Update the event
+    await updateCampaignEvent(eventId, updateData)
+    const updatedEvent = await getCampaignEventById(eventId)
+
+    if (!updatedEvent) {
+      return badRequest('Não foi possível recuperar o evento atualizado.')
+    }
+
+    return NextResponse.json({ event: updatedEvent })
+  } catch (error) {
+    console.error('[PATCH /api/campaign-events]', error)
+    return NextResponse.json({ error: 'Não foi possível atualizar o evento.' }, { status: 500 })
+  }
+}
+
+// ─── DELETE /api/campaign-events ──────────────────────────────────────────────
+
+export async function DELETE(request: NextRequest) {
+  try {
+    await ensureAllTables()
+    const session = await getSessionOrDev()
+
+    if (!session?.user) {
+      return unauthorized()
+    }
+
+    const body: { eventId: string } = await request.json()
+    const { eventId } = body
+
+    // Validate required fields
+    if (!eventId) {
+      return badRequest('Campo eventId é obrigatório.')
+    }
+
+    if (!isValidUUID(eventId)) {
+      return badRequest('ID do evento inválido.')
+    }
+
+    // Check if event exists and get campaignId
+    const existingEvent = await getCampaignEventById(eventId)
+    if (!existingEvent) {
+      return badRequest('Evento não encontrado.')
+    }
+
+    // Check authorization - only master can delete events
+    if (!await canManageCampaign(session.user.sub, existingEvent.campaignId)) {
+      return forbidden()
+    }
+
+    // Delete the event
+    await deleteCampaignEvent(eventId)
+
+    return NextResponse.json({ ok: true })
+  } catch (error) {
+    console.error('[DELETE /api/campaign-events]', error)
+    return NextResponse.json({ error: 'Não foi possível excluir o evento.' }, { status: 500 })
+  }
+}
+
+function validateNewEventFields({ description, eventDate, fictionalYear, fictionalMonth, fictionalWeekday, eventTime, visibility }: EventFormData) {
+    if (description !== undefined && description !== null) {
+      if (typeof description !== 'string' || description.length > 1000) {
+        return badRequest('Descrição deve ter no máximo 1000 caracteres.')
+      }
+    }
+
+    if (eventDate && !isValidDate(eventDate)) {
+      return badRequest('Data inválida. Use o formato YYYY-MM-DD.')
+    }
+
+    if (!eventDate && (!Number.isInteger(fictionalYear) || Number(fictionalYear) < 0 || !fictionalMonth?.trim() || !fictionalWeekday?.trim())) {
+      return badRequest('Informe dia da semana, mês e ano fictícios válidos.')
+    }
+
+    if (!isValidTime(eventTime ?? null)) {
+      return badRequest('Hora inválida. Use o formato HH:MM.')
+    }
+
+    if (!isValidVisibility(visibility ?? '')) {
+      return badRequest('Visibilidade deve ser "master" ou "everyone".')
+    }
+
+}
+
+function readEventChanges({ title, description, eventDate, fictionalYear, fictionalMonth, fictionalMonthIndex, fictionalWeekday, fictionalWeekdayIndex, eventTime, visibility }: EventFormData) {
     // Validate provided fields
     const updateData: Partial<EventFormData> = {}
 
@@ -255,66 +330,6 @@ export async function PATCH(request: NextRequest) {
       updateData.visibility = visibility
     }
 
-    // Check if there's anything to update
-    if (Object.keys(updateData).length === 0) {
-      return badRequest('Nenhum campo para atualizar.')
-    }
 
-    // Update the event
-    await updateCampaignEvent(eventId, updateData)
-    const updatedEvent = await getCampaignEventById(eventId)
-
-    if (!updatedEvent) {
-      return badRequest('Não foi possível recuperar o evento atualizado.')
-    }
-
-    return NextResponse.json({ event: updatedEvent })
-  } catch (error) {
-    console.error('[PATCH /api/campaign-events]', error)
-    return NextResponse.json({ error: 'Não foi possível atualizar o evento.' }, { status: 500 })
-  }
-}
-
-// ─── DELETE /api/campaign-events ──────────────────────────────────────────────
-
-export async function DELETE(request: NextRequest) {
-  try {
-    await ensureAllTables()
-    const session = await getSessionOrDev()
-    
-    if (!session?.user) {
-      return unauthorized()
-    }
-
-    const body: { eventId: string } = await request.json()
-    const { eventId } = body
-
-    // Validate required fields
-    if (!eventId) {
-      return badRequest('Campo eventId é obrigatório.')
-    }
-
-    if (!isValidUUID(eventId)) {
-      return badRequest('ID do evento inválido.')
-    }
-
-    // Check if event exists and get campaignId
-    const existingEvent = await getCampaignEventById(eventId)
-    if (!existingEvent) {
-      return badRequest('Evento não encontrado.')
-    }
-
-    // Check authorization - only master can delete events
-    if (!await canManageCampaign(session.user.sub, existingEvent.campaignId)) {
-      return forbidden()
-    }
-
-    // Delete the event
-    await deleteCampaignEvent(eventId)
-
-    return NextResponse.json({ ok: true })
-  } catch (error) {
-    console.error('[DELETE /api/campaign-events]', error)
-    return NextResponse.json({ error: 'Não foi possível excluir o evento.' }, { status: 500 })
-  }
+  return updateData
 }

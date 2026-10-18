@@ -20,7 +20,15 @@ export function validateSkillValues(values: Record<string, unknown>) {
       issues.push({ field, message: 'Habilidade desconhecida.' })
       continue
     }
-    const dots = typeof value === 'number' ? value : typeof value === 'string' && /^[0-5]$/u.test(value.trim()) ? Number(value.trim()) : Number.NaN
+    let parsedDots
+    if (typeof value === 'number') {
+      parsedDots = value
+    } else if (typeof value === 'string' && /^[0-5]$/u.test(value.trim())) {
+      parsedDots = Number(value.trim())
+    } else {
+      parsedDots = Number.NaN
+    }
+    const dots = parsedDots
     if (!Number.isSafeInteger(dots) || dots < 0 || dots > 5 || (seen.has(skillId) && seen.get(skillId) !== dots)) {
       invalid.add(skillId)
       issues.push({ field, skillId, message: 'Pontos inválidos ou valores conflitantes para a habilidade.' })

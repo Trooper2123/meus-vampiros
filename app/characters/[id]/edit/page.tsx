@@ -5,7 +5,7 @@ import { CHARACTER_TYPES, PLAYER_CHARACTER_TYPES } from '@/lib/vtm-v5/types'
 import CharacterFormClient from '../../character-form-client'
 import { Suspense } from 'react'
 
-export default async function EditCharacterPage({ params }: PageProps<'/characters/[id]/edit'>) {
+export default async function EditCharacterPage({ params }: Readonly<PageProps<'/characters/[id]/edit'>>) {
   const session = await getSessionOrDev()
   if (!session?.user) redirect('/auth/login')
   const { id } = await params

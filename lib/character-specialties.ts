@@ -33,38 +33,10 @@ export function changeSpecialty(actorId: string, id: string, input: SpecialtyInp
     if (character.characterType !== 'PLAYER_VAMPIRE') throw new CharacterCommandError(422, 'Este fluxo exige um vampiro jogável.')
     const rules = specialtyRules(character)
     let specialties = structuredClone(characterSpecialties(character))
-    const master = character.masterId === actorId
     try {
-      if (input.kind === 'APPROVE' || input.kind === 'REJECT') {
-        if (!master) throw new CharacterCommandError(403, 'Somente o Narrador pode revisar especialidades.')
-        const specialty = specialties.find(entry => entry.id === input.specialtyId)
-        if (!specialty) throw new CharacterCommandError(404, 'Especialidade não encontrada.')
-        if (specialty.status !== 'PENDING') throw new CharacterCommandError(409, 'A especialidade já foi revisada.')
-        if (input.kind === 'REJECT') {
-          if (specialty.origin === 'XP') {
-            if (character.spentXp < 3) throw new CharacterCommandError(422, 'Saldo de XP inconsistente.')
-            character.spentXp -= 3
-          }
-          specialties = specialties.filter(entry => entry.id !== specialty.id)
-        } else {
-          const errors = validateSpecialty(specialty, specialties, rules)
-          if (errors.length) throw new CharacterCommandError(422, errors.join(' '))
-          specialty.status = 'APPROVED'
-        }
-      } else if (input.kind === 'GRANT') {
-        if (character.status !== 'DRAFT') throw new CharacterCommandError(409, 'Escolhas iniciais exigem ficha em rascunho.')
-        const specialty = selectSpecialtyGrant({ grantId: input.grantId!, skillId: input.skillId!, name: input.name! }, specialties, rules)
-        if (!character.campaignId) specialty.status = 'APPROVED'
-        if (!specialties.some(entry => entry.id === specialty.id)) specialties.push(specialty)
-      } else {
-        if (!Number.isSafeInteger(character.totalXp) || !Number.isSafeInteger(character.spentXp) || character.totalXp < 0 || character.spentXp < 0 || character.spentXp > character.totalXp) throw new CharacterCommandError(422, 'Saldo de XP inconsistente.')
-        calculateSpecialtyPurchase(character.totalXp - character.spentXp)
-        const specialty: Specialty = { id: randomUUID(), skillId: normalizeSpecialtySkillId(input.skillId!), name: normalizeSpecialtyName(input.name!), origin: 'XP', status: character.campaignId ? 'PENDING' : 'APPROVED', costXp: 3 }
-        const errors = validateSpecialty(specialty, specialties, rules)
-        if (errors.length) throw new CharacterCommandError(422, errors.join(' '))
-        character.spentXp += 3
-        specialties.push(specialty)
-      }
+      if (input.kind === 'APPROVE' || input.kind === 'REJECT') specialties = reviewSpecialty(character, actorId, input, rules, specialties)
+      else if (input.kind === 'GRANT') specialties = grantInitialSpecialty(character, actorId, input, rules, specialties)
+      else specialties = purchaseSpecialty(character, actorId, input, rules, specialties)
     } catch (error) {
       if (error instanceof CharacterCommandError) throw error
       throw new CharacterCommandError(422, error instanceof Error ? error.message : 'Especialidade inválida.')
@@ -72,4 +44,50 @@ export function changeSpecialty(actorId: string, id: string, input: SpecialtyInp
     character.gameState = { ...character.gameState, specialties }
     return { ok: true, specialties, availableXp: character.totalXp - character.spentXp }
   })
+}
+
+function reviewSpecialty(character: CommandCharacter, actorId: string, input: SpecialtyInput, rules: SpecialtyRules, specialties: Specialty[]) {
+  const master = character.masterId === actorId
+
+  if (!master) throw new CharacterCommandError(403, 'Somente o Narrador pode revisar especialidades.')
+  const specialty = specialties.find(entry => entry.id === input.specialtyId)
+  if (!specialty) throw new CharacterCommandError(404, 'Especialidade não encontrada.')
+  if (specialty.status !== 'PENDING') throw new CharacterCommandError(409, 'A especialidade já foi revisada.')
+  if (input.kind === 'REJECT') {
+    if (specialty.origin === 'XP') {
+      if (character.spentXp < 3) throw new CharacterCommandError(422, 'Saldo de XP inconsistente.')
+      character.spentXp -= 3
+    }
+    specialties = specialties.filter(entry => entry.id !== specialty.id)
+  } else {
+    const errors = validateSpecialty(specialty, specialties, rules)
+    if (errors.length) throw new CharacterCommandError(422, errors.join(' '))
+    specialty.status = 'APPROVED'
+  }
+
+  return specialties
+}
+
+function grantInitialSpecialty(character: CommandCharacter, actorId: string, input: SpecialtyInput, rules: SpecialtyRules, specialties: Specialty[]) {
+
+
+  if (character.status !== 'DRAFT') throw new CharacterCommandError(409, 'Escolhas iniciais exigem ficha em rascunho.')
+  const specialty = selectSpecialtyGrant({ grantId: input.grantId!, skillId: input.skillId!, name: input.name! }, specialties, rules)
+  if (!character.campaignId) specialty.status = 'APPROVED'
+  if (!specialties.some(entry => entry.id === specialty.id)) specialties.push(specialty)
+
+  return specialties
+}
+
+function purchaseSpecialty(character: CommandCharacter, actorId: string, input: SpecialtyInput, rules: SpecialtyRules, specialties: Specialty[]) {
+
+
+  if (!Number.isSafeInteger(character.totalXp) || !Number.isSafeInteger(character.spentXp) || character.totalXp < 0 || character.spentXp < 0 || character.spentXp > character.totalXp) throw new CharacterCommandError(422, 'Saldo de XP inconsistente.')
+  calculateSpecialtyPurchase(character.totalXp - character.spentXp)
+  const specialty: Specialty = { id: randomUUID(), skillId: normalizeSpecialtySkillId(input.skillId!), name: normalizeSpecialtyName(input.name!), origin: 'XP', status: character.campaignId ? 'PENDING' : 'APPROVED', costXp: 3 }
+  const errors = validateSpecialty(specialty, specialties, rules)
+  if (errors.length) throw new CharacterCommandError(422, errors.join(' '))
+  character.spentXp += 3
+  specialties.push(specialty)
+  return specialties
 }

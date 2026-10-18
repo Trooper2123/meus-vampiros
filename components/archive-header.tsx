@@ -9,7 +9,7 @@ async function fetchCampaigns(url: string): Promise<{ campaigns: { id: string }[
   return response.json()
 }
 
-export function ArchiveHeader({ title, showCampaigns }: { title: string; showCampaigns?: boolean }) {
+export function ArchiveHeader({ title, showCampaigns }: Readonly<{ title: string; showCampaigns?: boolean }>) {
   const { data } = useSWR(showCampaigns === undefined ? '/api/campaigns' : null, fetchCampaigns)
   const hasCampaigns = showCampaigns ?? Boolean(data?.campaigns?.length)
   const links = <>

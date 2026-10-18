@@ -28,7 +28,7 @@ describe('Potência do Sangue CORE_V5', () => {
   it.each([6, 7, 8, 9, 10, -1, 1.5, 11, '', null, false, 'wrong'])('não presume valores para %j', potency => {
     expect(() => calculateBloodPotencyEffects({ 'potencia-de-sangue': potency })).toThrow()
   })
-  it('não aceita perfil desconhecido e trata Caitiff/sangue-fraco', () => {
+  it('não aceita perfil desconhecido e trata Caitiff/sangue-ralo', () => {
     expect(() => calculateBloodPotencyEffects({ 'potencia-de-sangue': 1 }, 'COMPANION')).toThrow()
     expect(calculateBloodPotencyEffects({ 'potencia-de-sangue': 3, cla: 'Caitiff' }).baneSeverity).toBeNull()
     expect(calculateBloodPotencyEffects({ 'potencia-de-sangue': 0, creationType: 'THIN_BLOOD' }).baneSeverity).toBe(0)

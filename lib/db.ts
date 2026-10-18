@@ -50,6 +50,7 @@ export async function ensureAllTables() {
       name TEXT NOT NULL,
       theme TEXT,
       principios TEXT,
+      blood_policy JSONB,
       status TEXT NOT NULL DEFAULT 'Ativa',
       average_xp INT DEFAULT 0,
       last_session_at TIMESTAMPTZ,
@@ -614,7 +615,7 @@ export async function createLiveKitRoom(
 
 // ─── Development Mode Helpers ────────────────────────────────────────────────
 
-import { randomUUID } from 'crypto'
+import { randomUUID } from 'node:crypto'
 
 declare global {
   var __devDbCampaignCalendarV2: {

@@ -9,6 +9,7 @@ vi.mock('@/lib/auth0', () => ({ getSessionOrDev: session }))
 vi.mock('@/lib/db', () => ({ ensureAllTables: vi.fn(), db: null }))
 import { POST } from '@/app/api/campaigns/[id]/npcs/route'
 import { PUT } from '@/app/api/characters/route'
+import { POST as validateNpc } from '@/app/api/characters/[id]/validate/route'
 import { devCreateCampaign, devCreateCharacter } from '@/lib/dev-db'
 import { getCharacterForViewer } from '@/lib/characters'
 import { notesContext } from '@/lib/notes'
@@ -68,4 +69,28 @@ it('não usa provider externo nem expõe falha interna', async () => {
   const response = await POST(request({ name: 'NPC', characterType: 'HUMAN_NPC' }), context())
   expect(response.status).toBe(500)
   expect(await response.text()).not.toContain('segredo interno')
+})
+
+it.each(['HUMAN_NPC', 'VAMPIRE_NPC'])('valida %s somente para seu Narrador com dados persistidos', async characterType => {
+  const created = await POST(request({ name: 'NPC válido', characterType }), context())
+  const { id } = await created.json()
+  const npc = global.__devDb!.characters.find(entry => entry.id === id)!
+  npc.data = { characterType, cla: 'Brujah', npc: { mode: 'POOLS', physicalPool: 4, socialPool: 3, mentalPool: 2 } }
+  const ctx = { params: Promise.resolve({ id }) }
+  const validated = await validateNpc(request({}), ctx)
+  expect((await validated.json()).valid).toBe(true)
+  expect(npc.validationReport).toMatchObject({ valid: true })
+  for (const actor of ['player', 'outsider', 'other-narrator']) {
+    session.mockResolvedValue({ user: { sub: actor } })
+    expect((await validateNpc(request({}), ctx)).status).toBe(403)
+  }
+  session.mockResolvedValue(null)
+  expect((await validateNpc(request({}), ctx)).status).toBe(401)
+})
+
+it.each(['HUMAN_NPC', 'VAMPIRE_NPC'])('impede converter jogador em %s pelo editor comum', async characterType => {
+  const player = devCreateCharacter('narrator', { name: 'Jogável', campaignId, data: { characterType: 'PLAYER_VAMPIRE' } })
+  const response = await PUT(request({ id: player.id, data: { characterType }, expectedRevision: 0 }))
+  expect(response.status).toBe(422)
+  expect(player.characterType).toBe('PLAYER_VAMPIRE')
 })

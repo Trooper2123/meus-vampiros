@@ -1,8 +1,18 @@
 import { describe, expect, it } from 'vitest'
-import { mergeCharacterSkills, normalizeSkillId, serializeCharacterSkills, validateCharacterSkills, validateSkillValues } from '../lib/vtm-v5/skills'
-import { calculateSpecialtyGrants, eligibleSpecialtySkills, type Specialty } from '../lib/vtm-v5/specialties'
+import { mergeCharacterSkills, normalizeSkillId, serializeCharacterSkills, SPECIALTY_SKILL_NAMES, validateCharacterSkills, validateSkillValues } from '@/lib/vtm-v5/skills'
+import { calculateSpecialtyGrants, eligibleSpecialtySkills, type Specialty } from '@/lib/vtm-v5/specialties'
 
 describe('validação e elegibilidade de habilidades', () => {
+  it.each(Object.keys(SPECIALTY_SKILL_NAMES))('oferece especialidade inicial para %s com um ponto', skillId => {
+    expect(eligibleSpecialtySkills({ skills: { [skillId]: 1 } }, []).map(option => option.skillId)).toContain(skillId)
+  })
+
+  it('mantém Ofícios elegível depois da primeira especialidade e mantém as demais restrições', () => {
+    const first: Specialty = { id: 'craft', skillId: 'oficios', name: 'Pintura', origin: 'XP', status: 'APPROVED', costXp: 3 }
+    expect(eligibleSpecialtySkills({ skills: { Ofícios: 1 } }, [first])).toEqual([{ skillId: 'oficios', dots: 1, name: 'Ofícios' }])
+    expect(eligibleSpecialtySkills({ skills: { Ofícios: 1 }, limits: { oficios: 1 } }, [first])).toEqual([])
+    expect(eligibleSpecialtySkills({ skills: { Ofícios: 0 } }, [first])).toEqual([])
+  })
   it('normaliza rótulos, prefixos, acentos e alias Erudição', () => {
     expect(normalizeSkillId('HABILIDADE-Erudição')).toBe('academicos')
     expect(normalizeSkillId('Armas de fogo')).toBe('armas-de-fogo')

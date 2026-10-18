@@ -4,12 +4,14 @@ import { resolvePredatorChoices } from './mechanics'
 export function validatePredatorType(definition: PredatorTypeDefinition, input: PredatorValidationInput): PredatorValidationReport {
   const issues: PredatorTypeIssue[] = []
   const clan = input.clan?.trim().toLocaleLowerCase('pt-BR')
-  if (!input.enabled) issues.push({ code: 'PREDATOR_TYPE_DISABLED_FOR_CAMPAIGN', message: 'Este tipo não está habilitado para a campanha.', blocking: true })
-  if (definition.code === 'BAGGER' && clan === 'ventrue') issues.push({ code: 'PREDATOR_BAGGER_VENTRUE', message: 'Bagger não é permitido para Ventrue.', blocking: true })
+  if (!input.enabled) issues.push({ code: 'PREDATOR_TYPE_DISABLED_FOR_CAMPAIGN', message: 'Este tipo exige habilitação pelo Narrador da mesa.', blocking: true })
+  if ((definition.code === 'BAGGER' || definition.baseCode === 'BAGGER') && clan === 'ventrue') issues.push({ code: 'PREDATOR_BAGGER_VENTRUE', message: 'Bagger não é permitido para Ventrue.', blocking: true })
   if (definition.code === 'FARMER' && (clan === 'ventrue' || (input.bloodPotency ?? 0) >= 3)) issues.push({ code: 'PREDATOR_FARMER_RESTRICTED', message: 'Farmer não é permitido para Ventrue ou Potência de Sangue 3 ou maior.', blocking: true })
-  if (input.isThinBlood) issues.push({ code: 'THIN_BLOOD_PREDATOR_REVIEW', message: 'Sangue-fraco recém-criado exige exceção explícita do Narrador para escolher predação.', blocking: true })
+  if (input.isThinBlood) issues.push({ code: 'THIN_BLOOD_PREDATOR_REVIEW', message: 'Sangue-ralo recém-criado exige exceção explícita do Narrador para escolher predação.', blocking: true })
   const activeOverrides = new Set((input.overrides ?? []).filter((entry) => !entry.revokedAt).map((entry) => entry.ruleCode))
   const visibleIssues = issues.map((issue) => activeOverrides.has(issue.code) ? { ...issue, blocking: false, message: `${issue.message} Exceção predefinida da mesa aplicada.` } : issue)
+  if (definition.availabilityBlocker) visibleIssues.push({ code: 'PREDATOR_RULESET_UNSUPPORTED', message: definition.availabilityBlocker, blocking: true })
+  if (definition.code === 'TITHE_COLLECTOR' && input.creationType !== 'ANCILLA') visibleIssues.push({ code: 'PREDATOR_ANCILLA_REQUIRED', message: 'Cobrador de Tributos exige o perfil de criação Ancilla.', blocking: true })
   return { valid: !visibleIssues.some((issue) => issue.blocking), issues: visibleIssues, relationshipRequirements: [...definition.relationshipRequirements] }
 }
 

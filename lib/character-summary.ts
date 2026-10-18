@@ -1,3 +1,5 @@
+import { SPECIALTY_SKILL_NAMES, validateCharacterSkills } from '@/lib/vtm-v5/skills'
+import { disciplineDefinition } from '@/lib/vtm-v5/disciplines'
 import { characterText } from '@/lib/vtm-v5/text'
 import { getCharacterForViewer } from '@/lib/characters'
 import { getCampaignById } from '@/lib/campaigns'
@@ -32,7 +34,7 @@ export async function getCharacterSummaryData(id: string, userId: string) {
   const disciplines = Array.isArray(rawDisciplines)
     ? (rawDisciplines as LegacyDiscipline[]).map((d) => ({
         id: d.id || `disc-${d.name?.toLowerCase()}`,
-        name: d.name || '',
+        name: disciplineDefinition(d.name)?.name ?? d.name ?? '',
         level: d.level || 0,
         powers: Array.isArray(d.powers) ? d.powers : [],
       }))
@@ -85,35 +87,8 @@ export async function getCharacterSummaryData(id: string, userId: string) {
       raciocinio: parseIntSafe(data['raciocinio']),
       determinacao: parseIntSafe(data['determinacao']),
     },
-    skills: {
-      'Armas brancas': parseIntSafe(data['habilidade-armas brancas']),
-      'Armas de fogo': parseIntSafe(data['habilidade-armas de fogo']),
-      'Atletismo': parseIntSafe(data['habilidade-atletismo']),
-      'Briga': parseIntSafe(data['habilidade-briga']),
-      'Condução': parseIntSafe(data['habilidade-condução']),
-      'Furtividade': parseIntSafe(data['habilidade-furtividade']),
-      'Ladroagem': parseIntSafe(data['habilidade-ladroagem']),
-      'Ofícios': parseIntSafe(data['habilidade-ofícios']),
-      'Sobrevivência': parseIntSafe(data['habilidade-sobrevivência']),
-      'Empatia com animais': parseIntSafe(data['habilidade-empatia com animais']),
-      'Etiqueta': parseIntSafe(data['habilidade-etiqueta']),
-      'Intimidação': parseIntSafe(data['habilidade-intimidação']),
-      'Liderança': parseIntSafe(data['habilidade-liderança']),
-      'Manha': parseIntSafe(data['habilidade-manha']),
-      'Performance': parseIntSafe(data['habilidade-performance']),
-      'Persuasão': parseIntSafe(data['habilidade-persuasão']),
-      'Sagacidade': parseIntSafe(data['habilidade-sagacidade']),
-      'Subterfúgio': parseIntSafe(data['habilidade-subterfúgio']),
-      'Ciência': parseIntSafe(data['habilidade-ciência']),
-      'Erudição': parseIntSafe(data['habilidade-erudição']),
-      'Finanças': parseIntSafe(data['habilidade-finanças']),
-      'Investigação': parseIntSafe(data['habilidade-investigação']),
-      'Medicina': parseIntSafe(data['habilidade-medicina']),
-      'Ocultismo': parseIntSafe(data['habilidade-ocultismo']),
-      'Percepção': parseIntSafe(data['habilidade-percepção']),
-      'Política': parseIntSafe(data['habilidade-política']),
-      'Tecnologia': parseIntSafe(data['habilidade-tecnologia']),
-    },
+    convictions: [1, 2, 3].map(index => ({ touchstone: characterText(data[`convicoes-pilar-${index}`]), text: characterText(data[`convicoes-crenca-${index}`]) })).filter(entry => entry.touchstone.trim() || entry.text.trim()),
+    skills: Object.fromEntries(Object.entries(validateCharacterSkills(data).skills).map(([id, dots]) => [SPECIALTY_SKILL_NAMES[id], dots])),
     merits: Array.isArray(data['vantagens']) ? data['vantagens'] as Array<{ name?: string; level?: number; description?: string }> : [],
     flaws: Array.isArray(data['defeitos']) ? data['defeitos'] as Array<{ name?: string; level?: number; description?: string }> : [],
     disciplines,

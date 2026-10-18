@@ -5,6 +5,7 @@ import { SkillsStep } from '@/components/character-form/skills-step'
 import { ResourcesStep, type Conviction, type Resources } from '@/components/character-form/resources-step'
 import { HistoryStep } from '@/components/character-form/history-step'
 import { DisciplinesStep } from '@/components/character-form/disciplines-step'
+import { DisciplinePowerRow } from '@/components/character-form/discipline-power-row'
 import { createEmptyPower, type Discipline } from '@/components/character-form/discipline-fields'
 import { calculateSecondaryAttributes } from '@/lib/vtm-v5/secondary-attributes'
 
@@ -69,6 +70,9 @@ it('disciplinas delegam limites e preservam concessões e campos dos poderes', (
   expect(nodes.some(element => element.props.className?.includes('is-granted'))).toBe(true)
   nodes.find(element => element.type === 'button' && element.props['aria-label'] === 'Definir nível 2')!.props.onClick()
   expect(handleDisciplineLevelChange).toHaveBeenCalledWith(0, 2)
-  nodes.find(element => element.props.name === 'disciplina-0-poder-0-name')!.props.onChange({ target: { value: 'Fascínio' } })
+  const row = nodes.find(element => element.type === DisciplinePowerRow)!
+  expect(row.props.disciplineName).toBe('Presença')
+  expect(row.props.maxLevel).toBe(1)
+  row.props.onSelect({ ...createEmptyPower(), name: 'Fascínio' })
   expect(setDisciplines.mock.calls[0][0](disciplines)[0].powers[0]).toEqual({ ...createEmptyPower(), name: 'Fascínio' })
 })

@@ -7,8 +7,9 @@ import Link from 'next/link'
 import { ArrowRight, Check, Copy, Plus } from 'lucide-react'
 import { SchedulingCalendarIntroModal } from '@/components/campaign-calendar/scheduling-calendar-intro-modal'
 import { CAMPAIGN_EXCEPTIONS } from '@/lib/campaign-exception-options'
+import { PREDATOR_SOURCE_LABELS, type PredatorTypeSource } from '@/lib/vtm-v5/predator-types/types'
 
-function CopyId({ id }: { id: string }) {
+function CopyId({ id }: Readonly<{ id: string }>) {
   const [copied, setCopied] = useState(false)
   return (
     <button
@@ -45,7 +46,7 @@ export default function NewCampaignPage() {
   const [enableSchedulingCalendar, setEnableSchedulingCalendar] = useState(true)
   const [showSchedulingIntro, setShowSchedulingIntro] = useState(false)
   const [clans, setClans] = useState<{ code: string; name: string }[]>([])
-  const [predatorTypes, setPredatorTypes] = useState<{ code: string; name: string; source: string }[]>([])
+  const [predatorTypes, setPredatorTypes] = useState<{ code: string; name: string; source: PredatorTypeSource }[]>([])
   const [enabledClanCodes, setEnabledClanCodes] = useState<string[]>([])
   const [enabledPredatorCodes, setEnabledPredatorCodes] = useState<string[]>([])
 
@@ -63,9 +64,9 @@ export default function NewCampaignPage() {
         setPredatorTypes(data.predatorTypes ?? [])
         setEnabledClanCodes((data.clans ?? []).map((entry: { code: string }) => entry.code))
         setEnabledPredatorCodes((data.predatorTypes ?? []).filter((entry: { source: string }) => entry.source === 'COREBOOK').map((entry: { code: string }) => entry.code))
-      } catch (failure) { if (mounted) setError(failure instanceof Error ? failure.message : 'Não foi possível consultar as regras da mesa.') }
+      } catch (error_) { if (mounted) setError(error_ instanceof Error ? error_.message : 'Não foi possível consultar as regras da mesa.') }
     }
-    checkAccess()
+    void checkAccess()
     return () => { mounted = false }
   }, [])
 
@@ -204,8 +205,8 @@ export default function NewCampaignPage() {
                 />
               </label>
               <fieldset className="span-2 border border-border bg-card p-4"><legend>Quais clãs serão permitidos?</legend><div className="mt-3 grid gap-2 sm:grid-cols-2">{clans.map(clan => <label key={clan.code} className="flex items-center gap-2 text-sm"><input type="checkbox" disabled={submitting} checked={enabledClanCodes.includes(clan.code)} onChange={event => setEnabledClanCodes(values => event.target.checked ? [...values, clan.code] : values.filter(code => code !== clan.code))} />{clan.name}</label>)}</div></fieldset>
-              <fieldset className="span-2 border border-border bg-card p-4"><legend>Quais predações serão permitidas?</legend><p className="mt-2 text-sm text-muted-foreground">Após criar a campanha, os painéis mostram somente os tipos usados pelas fichas vinculadas.</p><div className="mt-3 grid gap-2 sm:grid-cols-2">{predatorTypes.map(predator => <label key={predator.code} className="flex items-center gap-2 text-sm"><input type="checkbox" disabled={submitting} checked={enabledPredatorCodes.includes(predator.code)} onChange={event => setEnabledPredatorCodes(values => event.target.checked ? [...values, predator.code] : values.filter(code => code !== predator.code))} />{predator.name}{predator.source === 'PLAYERS_GUIDE' ? ' (Livro do Jogador)' : ''}</label>)}</div></fieldset>
-              <fieldset className="span-2 border border-border bg-card p-4"><legend>Exceções predefinidas de predação</legend><label className="mt-3 flex items-center gap-2 text-sm"><input type="checkbox" checked={allowExceptions} disabled={submitting} onChange={event => { setAllowExceptions(event.target.checked); setExceptionCodes([]) }} />Permitir exceções de predação nesta mesa</label>{allowExceptions && <div className="mt-3 flex flex-col gap-3">{CAMPAIGN_EXCEPTIONS.map(rule => <label key={rule.code} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={exceptionCodes.includes(rule.code)} disabled={submitting} onChange={event => setExceptionCodes(values => event.target.checked ? [...values, rule.code] : values.filter(code => code !== rule.code))} />{rule.name}</label>)}</div>}<p className="mt-3 text-xs text-muted-foreground">Definidas somente ao criar a mesa. Não habilitam predações bloqueadas, não concedem pontos e não dispensam as demais regras.</p></fieldset>
+              <fieldset className="span-2 border border-border bg-card p-4"><legend>Quais predações serão permitidas?</legend><p className="mt-2 text-sm text-muted-foreground">Após criar a campanha, os painéis mostram somente os tipos usados pelas fichas vinculadas.</p><div className="mt-3 grid gap-2 sm:grid-cols-2">{predatorTypes.map(predator => <label key={predator.code} className="flex items-center gap-2 text-sm"><input type="checkbox" disabled={submitting} checked={enabledPredatorCodes.includes(predator.code)} onChange={event => setEnabledPredatorCodes(values => event.target.checked ? [...values, predator.code] : values.filter(code => code !== predator.code))} />{predator.name}{predator.source !== 'COREBOOK' ? ' (' + PREDATOR_SOURCE_LABELS[predator.source] + ')' : ''}</label>)}</div></fieldset>
+              <fieldset className="span-2 border border-border bg-card p-4"><legend>Exceções predefinidas de predação</legend><label className="mt-3 flex items-center gap-2 text-sm"><input type="checkbox" checked={allowExceptions} disabled={submitting} onChange={event => { setAllowExceptions(event.target.checked); setExceptionCodes([]) }} />Permitir exceções de predação nesta mesa</label>{allowExceptions && <div className="mt-3 flex flex-col gap-3">{CAMPAIGN_EXCEPTIONS.map(rule => <label key={rule.code} className="flex items-center gap-2 text-sm"><input type="checkbox" aria-label={rule.name} checked={exceptionCodes.includes(rule.code)} disabled={submitting} onChange={event => setExceptionCodes(values => event.target.checked ? [...values, rule.code] : values.filter(code => code !== rule.code))} />{rule.name}</label>)}</div>}<p className="mt-3 text-xs text-muted-foreground">Definidas somente ao criar a mesa. Não habilitam predações bloqueadas, não concedem pontos e não dispensam as demais regras.</p></fieldset>
               <label className="span-2 flex cursor-pointer items-start gap-3 border border-border bg-card p-4">
                 <input
                   type="checkbox"

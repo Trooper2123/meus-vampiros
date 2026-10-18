@@ -38,7 +38,7 @@ describe('assistência de distribuição na criação', () => {
     expect(errors[1].message).toContain('Rapidez')
   })
 
-  it('gera um erro por disciplina sem poderes, mesmo compartilhando código/campo', () => {
+  it('gera um erro por disciplina sem poderes, mesmo compartilhando código/campo (regressão)', () => {
     const report = validateCharacter(normalizeCharacterRulesInput({ disciplinas: [{ name: 'Presença', level: 2, powers: [] }, { name: 'Rapidez', level: 1, powers: [] }] }))
     const errors = report.errors.filter(issue => issue.code === 'DISCIPLINE_POWER_REQUIRED')
     expect(errors).toHaveLength(2)

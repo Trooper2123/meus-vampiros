@@ -18,7 +18,7 @@ async function fetchPanel(url: string): Promise<PanelData> {
   return body
 }
 
-export function AwakePanel({ campaignId }: { campaignId: string }) {
+export function AwakePanel({ campaignId }: Readonly<{ campaignId: string }>) {
   const url = `/api/campaigns/${campaignId}/nights/awake`
   const { data, error, isLoading, mutate } = useSWR<PanelData>(url, fetchPanel)
   const { mutate: refreshCache } = useSWRConfig()
@@ -72,21 +72,29 @@ export function AwakePanel({ campaignId }: { campaignId: string }) {
   }
 
   const history = result ? [result, ...(data?.nights ?? []).filter(night => night.id !== result.id)] : data?.nights ?? []
+  let awakeLabel
+  if (processing) {
+    awakeLabel = 'Processando despertares…'
+  } else if (retrying) {
+    awakeLabel = 'Reenviar início de noite'
+  } else {
+    awakeLabel = 'Confirmar início de noite'
+  }
   return <section className="border border-border bg-card p-5 sm:p-6" aria-labelledby="awake-title">
     <p className="eyebrow">Crônica / Despertar</p>
     <h2 id="awake-title" className="mt-2 font-serif text-2xl">Iniciar nova noite</h2>
     <p className="mb-5 mt-2 text-sm text-muted-foreground">A data da crônica é independente da sessão real. Uma nova confirmação inicia outra noite, inclusive na mesma data. Torpor exige intervenção do Narrador; personagens empalados continuam impedidos de agir.</p>
-    {feedback && <p role="status" className="mb-4 text-sm text-muted-foreground">{feedback}</p>}
-    {isLoading && <p role="status" className="text-sm text-muted-foreground">Carregando fichas e noites…</p>}
+    {feedback && <output className="block mb-4 text-sm text-muted-foreground">{feedback}</output>}
+    {isLoading && <output className="block text-sm text-muted-foreground">Carregando fichas e noites…</output>}
     {error && <div role="alert" className="flex flex-col gap-3"><p className="text-sm text-primary">{error instanceof Error ? error.message : 'Falha ao carregar o início de noite.'}</p><button className="button-ghost self-start" type="button" onClick={() => void mutate()}>Recarregar início de noite</button></div>}
     {data && !error && <>
       <form onSubmit={start} className="flex flex-col gap-5">
         <label className="flex max-w-sm flex-col gap-2 text-sm"><span>Data da crônica</span><input className="input" type="date" value={inGameDate} onChange={event => setInGameDate(event.target.value)} required disabled={processing || retrying} /></label>
         <fieldset className="flex flex-col gap-3"><legend className="mb-3 font-mono text-xs uppercase tracking-wider">Selecionar vampiros</legend>
           {!data.characters.length && <p className="empty-state text-sm">Nenhuma ficha está vinculada a esta mesa.</p>}
-          {data.characters.map(character => <label key={character.id} className="flex items-start gap-3 border border-border p-3 text-sm"><input className="mt-1 accent-primary" type="checkbox" checked={selected.includes(character.id)} disabled={!character.eligible || processing || retrying} onChange={event => setSelected(current => event.target.checked ? [...current, character.id] : current.filter(id => id !== character.id))} /><span><strong>{character.name}</strong><span className="mt-1 block text-xs text-muted-foreground">Fome {character.hunger} / 5 · Última noite: {character.lastProcessedNight ?? 'nenhuma'} · {conditions[character.condition] ?? 'Condição inválida'}{!character.eligible && ' · Ficha indisponível para despertar'}{character.eligible && character.hunger === 5 && ' · Risco de torpor em caso de falha'}</span></span></label>)}
+          {data.characters.map(character => <label key={character.id} className="flex items-start gap-3 border border-border p-3 text-sm"><input className="mt-1 accent-primary" type="checkbox" aria-label={`Incluir ${character.name} no despertar`} checked={selected.includes(character.id)} disabled={!character.eligible || processing || retrying} onChange={event => setSelected(current => event.target.checked ? [...current, character.id] : current.filter(id => id !== character.id))} /><span><strong>{character.name}</strong><span className="mt-1 block text-xs text-muted-foreground">Fome {character.hunger} / 5 · Última noite: {character.lastProcessedNight ?? 'nenhuma'} · {conditions[character.condition] ?? 'Condição inválida'}{!character.eligible && ' · Ficha indisponível para despertar'}{character.eligible && character.hunger === 5 && ' · Risco de torpor em caso de falha'}</span></span></label>)}
         </fieldset>
-        <button className="button-primary self-start" type="submit" disabled={processing || (!retrying && !selected.length)}>{processing ? 'Processando despertares…' : retrying ? 'Reenviar início de noite' : 'Confirmar início de noite'}</button>
+        <button className="button-primary self-start" type="submit" disabled={processing || (!retrying && !selected.length)}>{awakeLabel}</button>
       </form>
       {history.length > 0 && <div className="mt-6 flex flex-col gap-4 border-t border-border pt-5"><h3 className="font-serif text-xl">Histórico de despertares</h3>{history.map(night => <article key={night.id} className="border border-border p-4"><h4 className="font-semibold">Noite {night.nightNumber} · {night.inGameDate}</h4><ul className="mt-3 flex flex-col gap-3">{night.results.map(entry => <li key={entry.characterId} className="text-sm"><strong>{entry.name}</strong>: {outcomes[entry.outcome] ?? 'Resultado não reconhecido'}<span className="mt-1 block text-xs text-muted-foreground">D10: {entry.roll ?? 'não rolado'} · Fome {entry.before.hunger} → {entry.after.hunger} · {conditions[entry.after.condition] ?? 'Condição inválida'}{entry.after.torpor && ` · Causa: ${{ HUNGER: 'Fome', DAMAGE: 'Dano', VOLUNTARY: 'Voluntário' }[entry.after.torpor.cause]}`}</span></li>)}</ul><NotesBacklinks targetType="SESSION" targetId={night.id} /></article>)}</div>}
     </>}

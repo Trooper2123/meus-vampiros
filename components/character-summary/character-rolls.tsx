@@ -18,11 +18,11 @@ async function fetchRollData(url: string): Promise<RollData> {
   return body
 }
 
-export function CharacterRolls({ characterId }: { characterId: string }) {
+export function CharacterRolls({ characterId }: Readonly<{ characterId: string }>) {
   return <RollPanel key={characterId} characterId={characterId} />
 }
 
-function RollPanel({ characterId }: { characterId: string }) {
+function RollPanel({ characterId }: Readonly<{ characterId: string }>) {
   const fieldId = useId()
   const endpoint = `/api/characters/${characterId}/rolls`
   const { data, error: loadError, isLoading, mutate } = useSWR<RollData>(endpoint, fetchRollData)
@@ -63,8 +63,8 @@ function RollPanel({ characterId }: { characterId: string }) {
       setResult(body as RollResponse)
       setRetryCommand(null)
       await mutate().catch(() => setError('A rolagem foi registrada, mas os dados da ficha precisam ser carregados novamente.'))
-    } catch (failure) {
-      setError(failure instanceof Error ? failure.message : 'Falha de conexão. Tente novamente a mesma solicitação.')
+    } catch (error_) {
+      setError(error_ instanceof Error ? error_.message : 'Falha de conexão. Tente novamente a mesma solicitação.')
     } finally {
       submitting.current = false
       setBusy(false)
@@ -81,10 +81,10 @@ function RollPanel({ characterId }: { characterId: string }) {
     <p className="eyebrow">Teste de habilidade</p>
     <h2 id={`${fieldId}-title`} className="mt-2 font-serif text-xl">Rolagem de dados</h2>
     <p className="mt-2 text-sm text-muted-foreground">Selecione atributo, habilidade e dificuldade. O resultado é calculado e registrado no servidor.</p>
-    {isLoading && <p role="status" className="mt-4 text-sm">Carregando dados da rolagem…</p>}
+    {isLoading && <output className="block mt-4 text-sm">Carregando dados da rolagem…</output>}
     {loadError && <div role="alert" className="mt-4 flex flex-col gap-3 text-sm"><p>Não foi possível carregar os dados da rolagem.</p><button type="button" className="button-ghost min-h-10" disabled={busy} onClick={() => void mutate().catch(() => undefined)}>Carregar novamente</button></div>}
     {data && <form onSubmit={submit} className="mt-5 flex flex-col gap-4">
-      {data.status !== 'APPROVED' && <p role="status" className="text-sm text-muted-foreground">A ficha precisa estar aprovada para realizar rolagens.</p>}
+      {data.status !== 'APPROVED' && <output className="block text-sm text-muted-foreground">A ficha precisa estar aprovada para realizar rolagens.</output>}
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="flex flex-col gap-2 text-sm" htmlFor={`${fieldId}-attribute`}>Atributo<select id={`${fieldId}-attribute`} className="select min-h-10 w-full" disabled={disabled} value={selectedAttribute} onChange={event => setAttribute(event.target.value)}>{attributes.length === 0 && <option value="">Nenhum atributo disponível</option>}{attributes.map(([key, dots]) => <option key={key} value={key}>{attributeNames[key] ?? key} ({dots})</option>)}</select></label>
         <label className="flex flex-col gap-2 text-sm" htmlFor={`${fieldId}-skill`}>Habilidade<select id={`${fieldId}-skill`} className="select min-h-10 w-full" disabled={disabled} value={selectedSkill} onChange={event => { setSkillId(event.target.value); setSpecialtyId('') }}>{skills.length === 0 && <option value="">Nenhuma habilidade disponível</option>}{skills.map(([key, dots]) => <option key={key} value={key}>{skillNames[key] ?? key} ({dots})</option>)}</select></label>
@@ -97,7 +97,7 @@ function RollPanel({ characterId }: { characterId: string }) {
     </form>}
     {error && <p role="alert" className="mt-4 text-sm text-primary">{error}</p>}
     {retryCommand && !busy && <button type="button" className="button-ghost mt-3 min-h-10" onClick={() => void execute(retryCommand)}>Tentar novamente a mesma rolagem</button>}
-    {busy && <p role="status" className="mt-4 text-sm text-muted-foreground">Registrando rolagem…</p>}
-    {result && <div className="mt-5 border-t border-border pt-5" role="status" aria-live="polite"><h3 className="font-serif text-xl">{outcomeNames[result.result.outcome]}</h3><p className="mt-2 text-sm">{result.result.successes} sucesso(s) · Dificuldade {result.result.difficulty} · {result.pool} dado(s){result.specialtyBonus > 0 ? ' · Especialidade +1' : ''}</p><p className="mt-2 text-xs text-muted-foreground">{result.visibility === 'SECRET' ? 'Rolagem secreta — somente Narrador' : 'Rolagem pública'}</p><dl className="mt-4 grid gap-3 sm:grid-cols-2"><div><dt className="text-sm">Dados normais</dt><dd className="mt-1 font-mono text-sm">{result.result.normalDice.join(' · ') || 'Nenhum'}</dd></div><div><dt className="text-sm">Dados de Fome</dt><dd className="mt-1 font-mono text-sm">{result.result.hungerDice.join(' · ') || 'Nenhum'}</dd></div></dl></div>}
+    {busy && <output className="block mt-4 text-sm text-muted-foreground">Registrando rolagem…</output>}
+    {result && <output className="block mt-5 border-t border-border pt-5" aria-live="polite"><h3 className="font-serif text-xl">{outcomeNames[result.result.outcome]}</h3><span className="block mt-2 text-sm">{result.result.successes} sucesso(s) · Dificuldade {result.result.difficulty} · {result.pool} dado(s){result.specialtyBonus > 0 ? ' · Especialidade +1' : ''}</span><span className="block mt-2 text-xs text-muted-foreground">{result.visibility === 'SECRET' ? 'Rolagem secreta — somente Narrador' : 'Rolagem pública'}</span><dl className="mt-4 grid gap-3 sm:grid-cols-2"><div><dt className="text-sm">Dados normais</dt><dd className="mt-1 font-mono text-sm">{result.result.normalDice.join(' · ') || 'Nenhum'}</dd></div><div><dt className="text-sm">Dados de Fome</dt><dd className="mt-1 font-mono text-sm">{result.result.hungerDice.join(' · ') || 'Nenhum'}</dd></div></dl></output>}
   </section>
 }

@@ -29,8 +29,8 @@ export async function GET(request: Request) {
   const clan = characterText(data.cla).trim() || null
   const bloodPotency = Number(data['potencia-de-sangue'] ?? 0)
   const isThinBlood = data.creationType === 'THIN_BLOOD' || data.isThinBlood === true
-  const predatorTypes = PREDATOR_TYPES.filter((definition) => isPredatorTypeEnabled(definition.code, settings)).map((definition) => {
-    const report = validatePredatorType(definition, { clan, bloodPotency, isThinBlood, enabled: true, overrides: campaignPredatorOverrides(campaignId) })
+  const predatorTypes = PREDATOR_TYPES.filter((definition) => !campaignId || isPredatorTypeEnabled(definition.code, settings)).map((definition) => {
+    const report = validatePredatorType(definition, { clan, bloodPotency, isThinBlood, creationType: data.creationType, enabled: isPredatorTypeEnabled(definition.code, settings), overrides: campaignPredatorOverrides(campaignId) })
     return toPlayerPredatorTypeDto(definition, report.issues, report.valid)
   })
   return NextResponse.json({ predatorTypes, selectedCode: data.predatorTypeCode ?? null })

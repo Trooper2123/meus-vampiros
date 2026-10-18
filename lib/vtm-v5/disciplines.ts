@@ -9,8 +9,8 @@
   { id: 'OBLIVION', name: 'Oblívio', aliases: ['Oblivion'] },
   { id: 'POTENCE', name: 'Potência', aliases: ['Potence'] },
   { id: 'PRESENCE', name: 'Presença', aliases: ['Presence'] },
-  { id: 'PROTEAN', name: 'Proteanismo', aliases: ['Proteanismo', 'Protean'] },
-  { id: 'THIN_BLOOD_ALCHEMY', name: 'Alquimia de Sangue-Ralo', aliases: ['Thin-Blood Alchemy'] },
+  { id: 'PROTEAN', name: 'Proteanismo', aliases: ['Metamorfose', 'Metamerfose', 'Protean'] },
+  { id: 'THIN_BLOOD_ALCHEMY', name: 'Alquimia de Sangue-Ralo', aliases: ['Thin-Blood Alchemy', 'Alquimia de Sangue-Fraco'] },
 ] as const
 export type DisciplineId = typeof DISCIPLINES[number]['id']
 export const CLAN_DISCIPLINES: Readonly<Record<string, readonly DisciplineId[]>> = {

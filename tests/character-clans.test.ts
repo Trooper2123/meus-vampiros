@@ -71,7 +71,7 @@ describe('clã: comandos, origens e autorização em memória', () => {
     expect(stored().status).toBe('DRAFT')
   })
 
-  it('aplica exceções Caitiff/sangue-fraco e restrições cruzadas', async () => {
+  it('aplica exceções Caitiff/sangue-ralo e restrições cruzadas', async () => {
     stored().data.predatorTypeCode = 'SIREN'
     await expect(selectCharacterClan(id, 'player', selection, 0, key)).rejects.toMatchObject({ status: 422 })
     await expect(selectCharacterClan(id, 'player', { code: 'THIN_BLOOD', disciplineDots: {} }, 0, key)).rejects.toMatchObject({ status: 422 })
@@ -103,7 +103,7 @@ describe('clã: comandos, origens e autorização em memória', () => {
     expect(global.__devDb!.characters.find(entry => entry.id === copy!.id)!.gameState!.specialties).toEqual([expect.objectContaining({ status: 'APPROVED' })])
   })
 
-  it('predação independente concede especialidade automaticamente, inclusive na cópia', async () => {
+  it('predação independente concede especialidade automaticamente, inclusive na cópia (regressão)', async () => {
     stored().campaignId = null
     stored().data['habilidade-persuasao'] = 2
     const definition = PREDATOR_TYPE_BY_CODE.get('SIREN')!

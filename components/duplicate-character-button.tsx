@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
-export function DuplicateCharacterButton({ characterId }: { characterId: string }) {
+export function DuplicateCharacterButton({ characterId }: Readonly<{ characterId: string }>) {
   const [pending, setPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
@@ -17,8 +17,8 @@ export function DuplicateCharacterButton({ characterId }: { characterId: string 
       if (!response.ok) throw new Error(body.error ?? 'Não foi possível duplicar a ficha.')
       router.push(`/characters/${body.id}/edit`)
       router.refresh()
-    } catch (failure) {
-      setError(failure instanceof Error ? failure.message : 'Não foi possível duplicar a ficha.')
+    } catch (error_) {
+      setError(error_ instanceof Error ? error_.message : 'Não foi possível duplicar a ficha.')
     } finally {
       setPending(false)
     }

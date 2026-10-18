@@ -28,7 +28,7 @@ type SummaryDisciplinesProps = {
   disciplines: Discipline[]
 }
 
-export function SummaryDisciplines({ disciplines, grants }: SummaryDisciplinesProps) {
+export function SummaryDisciplines({ disciplines, grants }: Readonly<SummaryDisciplinesProps>) {
   const activeDisciplines = disciplines.filter((discipline) => discipline.level > 0 && hasSummaryName(discipline.name))
 
   if (activeDisciplines.length === 0) {

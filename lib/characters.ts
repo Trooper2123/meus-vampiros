@@ -1,3 +1,4 @@
+import { characterText } from '@/lib/vtm-v5/text'
 import type { DisciplineAcquisition } from './vtm-v5/discipline-access'
 import { xpAcquisitions, validateDisciplineAllocation } from './discipline-allocation'
 import { sql } from 'drizzle-orm'
@@ -17,7 +18,7 @@ import { CREATION_ADJUSTMENTS } from '@/lib/vtm-v5/presets'
 import type { CharacterVisibility, CreationType } from '@/lib/vtm-v5/types'
 import { applySecondaryAttributes } from '@/lib/vtm-v5/secondary-attributes'
 import { projectIndependentCharacter } from '@/lib/character-duplicate'
-import { getCommandCharacter, runCharacterCommand, CharacterCommandError } from '@/lib/character-commands'
+import { getCommandCharacter, runCharacterCommand, CharacterCommandError, type CommandCharacter } from '@/lib/character-commands'
 import { randomUUID } from 'node:crypto'
 import { readSessionState, type SessionState } from '@/lib/vtm-v5/session-state'
 import { mergeCharacterSkills } from '@/lib/vtm-v5/skills'
@@ -226,7 +227,7 @@ export async function createCharacter(
 ) {
   const candidateData = normalizeDisciplines(payload.data ?? {})
   const allocationState: Record<string, unknown> = creationState ? structuredClone(creationState) : {}
-  validateDisciplineAllocation({ data: candidateData, gameState: allocationState, campaignId: payload.campaignId ?? null, masterId: null, characterType: String(candidateData.characterType ?? 'PLAYER_VAMPIRE') })
+  validateDisciplineAllocation({ data: candidateData, gameState: allocationState, campaignId: payload.campaignId ?? null, masterId: null, characterType: characterText(candidateData.characterType ?? 'PLAYER_VAMPIRE') })
   payload = { ...payload, data: candidateData }
   assertBloodPotencyInput(payload.data ?? {})
   payload = { ...payload, data: applySecondaryAttributes(payload.data ?? {}, resourceSource) }
@@ -293,53 +294,61 @@ export async function updateCharacter(
 ) {
   const previous = await getCharacterById(id, userId)
   if (!previous) return null
-  const mechanicalFields = new Set(['forca', 'destreza', 'vigor', 'carisma', 'manipulacao', 'compostura', 'inteligencia', 'raciocinio', 'determinacao', 'cla', 'geracao', 'characterType', 'creationType', 'disciplinas', 'vantagens', 'defeitos', 'retainer', 'npc', 'potencia-de-sangue', 'isCaitiff', 'isThinBlood'])
   return runCharacterCommand(userId, id, { key: randomUUID(), type: 'CHARACTER_EDITED', expectedRevision: payload.expectedRevision ?? previous.revision, payload }, character => character.ownerId === userId, character => {
     if (['ARCHIVED', 'DISABLED'].includes(character.status)) throw new CharacterCommandError(409, 'Esta ficha precisa ser reativada pelo Narrador antes da edição.')
     if (payload.campaignId !== undefined && payload.campaignId !== character.campaignId) throw new CharacterCommandError(409, 'A alteração do vínculo exige aprovação da mesa.')
-    if (payload.data) {
-      for (const field of ['gameState', 'disciplineAccessGrants', 'disciplineAcquisitions']) if (Object.hasOwn(payload.data, field)) throw new CharacterCommandError(422, 'Autorizações e aquisições exigem o comando específico.')
-      assertBloodPotencyInput(payload.data, character.data)
-      if (character.campaignId && global.__devDb?.campaigns.find(campaign => campaign.id === character.campaignId)?.creationPolicy) validateInvitedClan(character.campaignId, payload.data)
-      if (character.data.clanRulesVersion || character.data.predatorEffectsVersion) {
-        for (const field of ['cla', 'clanCode', 'clanSelection', 'clanRulesVersion', 'isCaitiff', 'isThinBlood', 'creationType', 'creationAdvantageDots', 'creationFlawDots']) {
-          if (Object.hasOwn(payload.data, field) && JSON.stringify(payload.data[field]) !== JSON.stringify(character.data[field])) throw new CharacterCommandError(422, 'Altere o clã pelo seletor específico, não pela edição geral.')
-        }
-      }
-      const changedMechanics = Object.entries(payload.data).some(([field, value]) => (mechanicalFields.has(field) || /^habilidade-/iu.test(field) || field.startsWith('convicoes-')) && JSON.stringify(value) !== JSON.stringify(character.data[field]))
-      if (changedMechanics && character.status !== 'DRAFT') character.status = 'DRAFT'
-      let mergedData: Record<string, unknown>
-      try { mergedData = mergeCharacterSkills(character.data, payload.data) }
-      catch { throw new CharacterCommandError(422, 'Habilidades ou pontos inválidos.') }
-      character.data = applySecondaryAttributes(mergedData, character.data)
-      validateCreationEffects(character)
-      validateDisciplineAllocation(character)
-      delete character.data['experiencia-total']
-      delete character.data['experiencia-gasta']
-    }
+    if (payload.data) applyCharacterDataEdit(character, payload.data)
     if (payload.name !== undefined) {
       character.name = payload.name
       if ('nome' in character.data) character.data.nome = payload.name
     }
-    character.characterType = String(character.data.characterType ?? character.characterType)
+    character.characterType = characterText(character.data.characterType ?? character.characterType)
     return { ok: true, status: character.status }
   })
 }
 
 export async function duplicateCharacter(id: string, userId: string) {
   const original = await getCharacterById(id, userId)
-  if (!original || original.characterType !== 'PLAYER_VAMPIRE') return null
-    const data = projectIndependentCharacter(original.data as Record<string, unknown>)
-    const source = await getCommandCharacter(id)
-    if (!source || source.ownerId !== userId) return null
-    const effects = creationEffects(source).map(({ origin, kind, id: effectId, disciplineId, name, dots, baseDots }) => ({ origin, kind, id: effectId, disciplineId, name, dots, baseDots }))
-    for (const field of ['disciplinas', 'vantagens', 'defeitos']) {
-      const originals = Array.isArray(source.data[field]) ? source.data[field] as Record<string, unknown>[] : []
-      const copies = Array.isArray(data[field]) ? data[field] as Record<string, unknown>[] : []
-      copies.forEach((row, index) => { if (effects.some(effect => effect.id === originals[index]?.id)) row.id = originals[index].id })
-    }
-    for (const field of ['clanCode', 'clanRulesVersion', 'predatorDisciplineBonus', 'predatorEffectsVersion', 'creationAdvantageDots', 'creationFlawDots']) if (source.data[field] !== undefined) data[field] = structuredClone(source.data[field])
-    if (source.data.clanSelection) data.clanSelection = structuredClone(source.data.clanSelection)
-    const specialties = characterSpecialties(source).filter(entry => entry.origin === 'PREDATOR').map(({ id: specialtyId, skillId, name, origin, grantId }) => ({ id: specialtyId, skillId, name, origin, grantId, status: 'APPROVED' as const, costXp: 0 }))
-    return createCharacter(userId, { name: `${original.name} — Cópia`, campaignId: null, data }, data, { creationEffects: effects, specialties, disciplineAcquisitions: xpAcquisitions(source).map(({ id: acquisitionId, disciplineId, source: acquisitionSource, fromLevel, targetLevel, xpCost }) => ({ id: acquisitionId, disciplineId, source: acquisitionSource, fromLevel, targetLevel, xpCost })) })
+  if (original?.characterType !== 'PLAYER_VAMPIRE') return null
+  const data = projectIndependentCharacter(original.data as Record<string, unknown>)
+  const source = await getCommandCharacter(id)
+  if (source?.ownerId !== userId) return null
+  const effects = creationEffects(source).map(({ origin, kind, id: effectId, disciplineId, name, dots, baseDots }) => ({ origin, kind, id: effectId, disciplineId, name, dots, baseDots }))
+  for (const field of ['disciplinas', 'vantagens', 'defeitos']) {
+    const originals = Array.isArray(source.data[field]) ? source.data[field] as Record<string, unknown>[] : []
+    const copies = Array.isArray(data[field]) ? data[field] as Record<string, unknown>[] : []
+    copies.forEach((row, index) => { if (effects.some(effect => effect.id === originals[index]?.id)) row.id = originals[index].id })
+  }
+  for (const field of ['clanCode', 'clanRulesVersion', 'predatorDisciplineBonus', 'predatorEffectsVersion', 'creationAdvantageDots', 'creationFlawDots']) if (source.data[field] !== undefined) data[field] = structuredClone(source.data[field])
+  if (source.data.clanSelection) data.clanSelection = structuredClone(source.data.clanSelection)
+  const specialties = characterSpecialties(source).filter(entry => entry.origin === 'PREDATOR').map(({ id: specialtyId, skillId, name, origin, grantId }) => ({ id: specialtyId, skillId, name, origin, grantId, status: 'APPROVED' as const, costXp: 0 }))
+  return createCharacter(userId, { name: `${original.name} — Cópia`, campaignId: null, data }, data, { creationEffects: effects, specialties, disciplineAcquisitions: xpAcquisitions(source).map(({ id: acquisitionId, disciplineId, source: acquisitionSource, fromLevel, targetLevel, xpCost }) => ({ id: acquisitionId, disciplineId, source: acquisitionSource, fromLevel, targetLevel, xpCost })) })
+}
+
+function applyCharacterDataEdit(character: CommandCharacter, incoming: Record<string, unknown>) {
+  const mechanicalFields = new Set(['forca', 'destreza', 'vigor', 'carisma', 'manipulacao', 'compostura', 'inteligencia', 'raciocinio', 'determinacao', 'cla', 'geracao', 'characterType', 'creationType', 'disciplinas', 'vantagens', 'defeitos', 'retainer', 'npc', 'potencia-de-sangue', 'isCaitiff', 'isThinBlood'])
+
+  assertEditableCharacterFields(incoming,character)
+  const changedMechanics = Object.entries(incoming).some(([field, value]) => (mechanicalFields.has(field) || /^habilidade-/iu.test(field) || field.startsWith('convicoes-')) && JSON.stringify(value) !== JSON.stringify(character.data[field]))
+  if (changedMechanics && character.status !== 'DRAFT') character.status = 'DRAFT'
+  let mergedData: Record<string, unknown>
+  try { mergedData = mergeCharacterSkills(character.data, incoming) }
+  catch { throw new CharacterCommandError(422, 'Habilidades ou pontos inválidos.') }
+  character.data = applySecondaryAttributes(mergedData, character.data)
+  validateCreationEffects(character)
+  validateDisciplineAllocation(character)
+  delete character.data['experiencia-total']
+  delete character.data['experiencia-gasta']
+}
+
+function assertEditableCharacterFields(incoming: Record<string,unknown>,character: CommandCharacter) {
+if(incoming.characterType!==undefined&&incoming.characterType!==character.characterType) throw new CharacterCommandError(422,'O tipo da ficha não pode ser alterado.')
+for(const field of ['gameState','disciplineAccessGrants','disciplineAcquisitions']) if(Object.hasOwn(incoming,field)) throw new CharacterCommandError(422,'Autorizações e aquisições exigem o comando específico.')
+assertBloodPotencyInput(incoming,character.data)
+if(character.campaignId&&global.__devDb?.campaigns.find(campaign => campaign.id===character.campaignId)?.creationPolicy) validateInvitedClan(character.campaignId,incoming)
+if(character.data.clanRulesVersion||character.data.predatorEffectsVersion) {
+for(const field of ['cla','clanCode','clanSelection','clanRulesVersion','isCaitiff','isThinBlood','creationType','creationAdvantageDots','creationFlawDots']) {
+if(Object.hasOwn(incoming,field)&&JSON.stringify(incoming[field])!==JSON.stringify(character.data[field])) throw new CharacterCommandError(422,'Altere o clã pelo seletor específico, não pela edição geral.')
+}
+}
 }

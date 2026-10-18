@@ -49,6 +49,16 @@ describe('especialidades V5', () => {
     expect(() => validateSpecialty(first, [], { skills: { briga: 1 }, limits: { briga: -1 } })).toThrow()
   })
 
+  it('Ofícios permite mais especialidades que pontos sem liberar duplicatas ou habilidades zeradas', () => {
+    const first: Specialty = { ...specialty, skillId: 'oficios', origin: 'CUSTOM', grantId: undefined, name: 'Pintura' }
+    const second: Specialty = { ...first, id: 'second', name: 'Escultura' }
+    expect(validateSpecialty(second, [first], { skills: { Ofícios: 1 } })).toEqual([])
+    expect(validateSpecialty(second, [first], { skills: { Ofícios: 1 }, limits: { oficios: 1 } })).toContain('Limite de especialidades excedido.')
+    expect(validateSpecialty({ ...second, name: 'Pintura' }, [first], { skills: { Ofícios: 1 } })).toContain('Especialidade duplicada.')
+    expect(validateSpecialty(second, [first], { skills: { Ofícios: 0 } })).toContain('A habilidade precisa de ao menos um ponto.')
+    expect(reconcileSpecialties([first, second], { skills: { Ofícios: 1 } }).preserved).toHaveLength(2)
+  })
+
   it('trocar predador informa incompatibilidade e concede a nova escolha uma vez', () => {
     const selected: Specialty = { ...specialty, origin: 'PREDATOR', grantId: 'predator:CONFIDANT:specialty', name: 'Psicologia' }
     const initial: SpecialtyRules = { ...rules, predator: { code: 'CONFIDANT', options: [{ skillId: 'Erudição', name: 'Psicologia' }] } }

@@ -15,7 +15,7 @@ function eventMonth(event: CampaignEvent) {
   return event.eventDate ? Number(event.eventDate.slice(5, 7)) : event.fictionalMonthIndex
 }
 
-export function CampaignEventCalendar({ campaignId, master, config }: { campaignId: string; master: boolean; config: CampaignCalendarConfig }) {
+export function CampaignEventCalendar({ campaignId, master, config }: Readonly<{ campaignId: string; master: boolean; config: CampaignCalendarConfig }>) {
   const [events, setEvents] = useState<CampaignEvent[]>([])
   const [yearFilter, setYearFilter] = useState('all')
   const [monthFilter, setMonthFilter] = useState('all')
@@ -56,11 +56,21 @@ export function CampaignEventCalendar({ campaignId, master, config }: { campaign
     await loadEvents()
   }
 
+  let calendarContent
+  if (loading) {
+    calendarContent = <output className="block mt-6 text-sm text-muted-foreground">Carregando eventos...</output>
+  } else if (events.length === 0) {
+    calendarContent = <div className="empty-state mt-6"><p>Nenhum evento cadastrado.</p></div>
+  } else if (visibleEvents.length === 0) {
+    calendarContent = <div className="empty-state mt-6"><p>Nenhum evento corresponde aos filtros selecionados.</p></div>
+  } else {
+    calendarContent = <div className={`${styles.eventGrid} mt-6`}>{visibleEvents.map((event) => <EventCard key={event.id} event={event} master={master} onEdit={setEditingEvent} onDelete={(selectedEvent) => void deleteEvent(selectedEvent)} />)}</div>
+  }
   return <section aria-labelledby="campaign-events-title" className="border border-border p-6">
     <div className="flex flex-wrap items-end justify-between gap-4 border-b border-border pb-5"><div><p className="eyebrow">Linha do tempo</p><h2 id="campaign-events-title" className="mt-2 font-serif text-2xl">Calendário de eventos</h2></div>{master && <button type="button" className="button-primary inline-flex items-center gap-2" onClick={() => setEditingEvent(null)}><Plus className="size-4" aria-hidden="true" /> Criar evento</button>}</div>
     {showFilters && <div className="mt-5 grid grid-cols-1 gap-4 border-b border-border pb-5 sm:grid-cols-2" aria-label="Filtrar eventos"><label className="sheet-field"><span>Ano</span><select className="select" value={yearFilter} onChange={(event) => setYearFilter(event.target.value)}><option value="all">Todos os anos</option>{years.map((year) => <option key={year} value={year}>{year}</option>)}</select></label><label className="sheet-field"><span>Mês</span><select className="select" value={monthFilter} onChange={(event) => setMonthFilter(event.target.value)}><option value="all">Todos os meses</option>{months.map(([index, label]) => <option key={index} value={index}>{label}</option>)}</select></label></div>}
     {error && <p role="alert" className="mt-4 text-sm text-primary">{error}</p>}
-    {loading ? <p role="status" className="mt-6 text-sm text-muted-foreground">Carregando eventos...</p> : events.length === 0 ? <div className="empty-state mt-6"><p>Nenhum evento cadastrado.</p></div> : visibleEvents.length === 0 ? <div className="empty-state mt-6"><p>Nenhum evento corresponde aos filtros selecionados.</p></div> : <div className={`${styles.eventGrid} mt-6`}>{visibleEvents.map((event) => <EventCard key={event.id} event={event} master={master} onEdit={setEditingEvent} onDelete={(selectedEvent) => void deleteEvent(selectedEvent)} />)}</div>}
+    {calendarContent}
     {editingEvent !== undefined && <EventFormModal event={editingEvent} config={config} submitting={submitting} error={error} onClose={() => { setEditingEvent(undefined); setError(null) }} onSubmit={saveEvent} />}
   </section>
 }

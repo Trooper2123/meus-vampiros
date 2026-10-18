@@ -58,12 +58,12 @@ describe('controle de tipos de ficha por perfil', () => {
     expect(mocks.createCharacter).not.toHaveBeenCalled()
   })
 
-  it.each(['HUMAN_NPC', 'VAMPIRE_NPC'])('permite %s para Mestre', async (characterType) => {
+  it.each(['HUMAN_NPC', 'VAMPIRE_NPC'])('recusa %s fora da mesa mesmo para Mestre', async (characterType) => {
     mocks.hasMasterAccess.mockResolvedValue(true)
 
     const response = await POST(createRequest(characterType))
 
-    expect(response.status).toBe(201)
-    expect(mocks.createCharacter).toHaveBeenCalledOnce()
+    expect(response.status).toBe(403)
+    expect(mocks.createCharacter).not.toHaveBeenCalled()
   })
 })

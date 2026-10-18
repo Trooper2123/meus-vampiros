@@ -3,7 +3,7 @@ import { disciplineDefinition } from './vtm-v5/disciplines'
 import { evaluateDisciplineAccess } from './vtm-v5/discipline-access'
 import { randomUUID } from 'node:crypto'
 import { campaignPredatorOverrides } from './campaign-invitations'
-import { CharacterCommandError, getCommandCharacter, runCharacterCommand } from './character-commands'
+import { CharacterCommandError, CommandCharacter, getCommandCharacter, runCharacterCommand } from './character-commands'
 import { applyCreationEffects, creationEffects } from './creation-effects'
 import { CLANS, validateClanSelection, type ClanSelection } from './vtm-v5/clans'
 import { PREDATOR_TYPE_BY_CODE, validatePredatorType, type PredatorTypeCode } from './vtm-v5/predator-types'
@@ -39,19 +39,22 @@ export async function selectCharacterClan(characterId: string, actorId: string, 
     const hasExistingDots = baseRows.some(row => Number(row.level) > 0)
     const adopt = !hasClanOrigin && hasExistingDots
     if (adopt && (character.spentXp !== 0 || baseRows.filter(row => Number(row.level) > 0).length !== Object.keys(selection.disciplineDots).length || baseRows.some(row => Number(row.level) > 0 && selection.disciplineDots[disciplineDefinition(row.disciplineId ?? row.name)?.id ?? ''] !== row.level))) throw new CharacterCommandError(409, 'Disciplinas existentes não correspondem ao pacote escolhido. Revise a ficha sem sobrescrever pontos adquiridos.')
-    if (selection.code === 'THIN_BLOOD' && character.data.predatorTypeCode) throw new CharacterCommandError(422, 'Remova a predação antes de selecionar sangue-fraco.')
-    if (selection.code === 'NOSFERATU' && (character.data.predatorTypeCode === 'SIREN' || (Array.isArray(character.data.vantagens) && character.data.vantagens.some(trait => trait && typeof trait === 'object' && /apar[eê]ncia|beautiful|looks|bela/iu.test(String(trait.name)) && Number(trait.level) > 0)))) throw new CharacterCommandError(422, 'Nosferatu não pode receber Aparência positiva ou predação Siren.')
-    if (selection.code === 'CAITIFF' && Array.isArray(character.data.vantagens) && character.data.vantagens.some(trait => trait && typeof trait === 'object' && /^status$/iu.test(String(trait.name).trim()) && Number(trait.level) > 0)) throw new CharacterCommandError(422, 'Caitiff não pode iniciar com Status positivo.')
-    const predator = PREDATOR_TYPE_BY_CODE.get(character.data.predatorTypeCode as PredatorTypeCode)
-    const predatorSelection = character.data.predatorTypeSelection as { discipline?: string } | undefined
-    if (predator && ['BAGGER', 'OSIRIS'].includes(predator.code) && predatorSelection?.discipline === 'Feitiçaria de Sangue' && selection.code !== 'TREMERE') throw new CharacterCommandError(422, 'A disciplina de predação atual exige Tremere.')
-    if (predator && !validatePredatorType(predator, { clan: definition.name, bloodPotency: Number(character.data['potencia-de-sangue'] ?? 0), isThinBlood: selection.code === 'THIN_BLOOD', enabled: true, overrides: campaignPredatorOverrides(character.campaignId) }).valid) throw new CharacterCommandError(422, 'O clã é incompatível com a predação atual.')
+    validateClanTraits(selection,character)
+    validateClanPredation(character,selection,definition)
     const accessContext = { ...disciplineContext(character), clanCode: selection.code, caitiffDisciplines: selection.caitiffDisciplines }
     for (const [name, targetLevel] of Object.entries(selection.disciplineDots)) {
       const access = evaluateDisciplineAccess({ character: accessContext, disciplineId: disciplineDefinition(name)?.id ?? name, acquisitionSource: 'CLAN', targetLevel })
       if (!access.eligible) throw new CharacterCommandError(422, access.blockers[0].message)
     }
-    applyCreationEffects(character, 'CLAN', selection.disciplineDots, selection.code === 'NOSFERATU' ? [{ kind: 'FLAW', name: 'Repulsivo', dots: 2 }] : selection.code === 'CAITIFF' ? [{ kind: 'FLAW', name: 'Suspeito', dots: 1 }] : [], adopt)
+    let clanTraits: Parameters<typeof applyCreationEffects>[3]
+    if (selection.code === 'NOSFERATU') {
+      clanTraits = [{ kind: 'FLAW', name: 'Repulsivo', dots: 2 }]
+    } else if (selection.code === 'CAITIFF') {
+      clanTraits = [{ kind: 'FLAW', name: 'Suspeito', dots: 1 }]
+    } else {
+      clanTraits = []
+    }
+    applyCreationEffects(character, 'CLAN', selection.disciplineDots, clanTraits, adopt)
     character.data.clanSelection = structuredClone(selection)
     character.data.clanCode = definition.code
     character.data.clanRulesVersion = definition.version
@@ -59,8 +62,21 @@ export async function selectCharacterClan(characterId: string, actorId: string, 
     character.data.isCaitiff = selection.code === 'CAITIFF'
     character.data.isThinBlood = selection.code === 'THIN_BLOOD'
     if (selection.code === 'THIN_BLOOD') { character.data.creationType = 'THIN_BLOOD'; character.data['potencia-de-sangue'] = 0 }
-    else if (character.data.creationType === 'THIN_BLOOD') throw new CharacterCommandError(409, 'A troca de perfil sangue-fraco exige revisão da criação pelo Narrador.')
+    else if (character.data.creationType === 'THIN_BLOOD') throw new CharacterCommandError(409, 'A troca de perfil sangue-ralo exige revisão da criação pelo Narrador.')
     character.status = 'DRAFT'
     return { ok: true, selection: character.data.clanSelection }
   })
+}
+
+function validateClanPredation(character: CommandCharacter,selection: ClanSelection,definition: ReturnType<typeof validateClanSelection>) {
+const predator=PREDATOR_TYPE_BY_CODE.get(character.data.predatorTypeCode as PredatorTypeCode)
+const predatorSelection=character.data.predatorTypeSelection as { discipline?: string} |undefined
+if(predator&&['BAGGER','OSIRIS'].includes(predator.code)&&predatorSelection?.discipline==='Feitiçaria de Sangue'&&selection.code!=='TREMERE') throw new CharacterCommandError(422,'A disciplina de predação atual exige Tremere.')
+if(predator&&!validatePredatorType(predator,{ clan: definition.name,bloodPotency: Number(character.data['potencia-de-sangue']??0),isThinBlood: selection.code==='THIN_BLOOD',enabled: true,creationType: character.data.creationType,overrides: campaignPredatorOverrides(character.campaignId) }).valid) throw new CharacterCommandError(422,'O clã é incompatível com a predação atual.')
+}
+
+function validateClanTraits(selection: ClanSelection,character: CommandCharacter) {
+if(selection.code==='THIN_BLOOD'&&character.data.predatorTypeCode) throw new CharacterCommandError(422,'Remova a predação antes de selecionar sangue-ralo.')
+if(selection.code==='NOSFERATU'&&(character.data.predatorTypeCode==='SIREN'||(Array.isArray(character.data.vantagens)&&character.data.vantagens.some(trait => trait&&typeof trait==='object'&&/apar[eê]ncia|beautiful|looks|bela/iu.test(String(trait.name))&&Number(trait.level)>0)))) throw new CharacterCommandError(422,'Nosferatu não pode receber Aparência positiva ou predação Siren.')
+if(selection.code==='CAITIFF'&&Array.isArray(character.data.vantagens)&&character.data.vantagens.some(trait => trait&&typeof trait==='object'&&/^status$/iu.test(String(trait.name).trim())&&Number(trait.level)>0)) throw new CharacterCommandError(422,'Caitiff não pode iniciar com Status positivo.')
 }

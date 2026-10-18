@@ -2,6 +2,7 @@ import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { beforeEach, expect, it, vi } from 'vitest'
 import CharacterFormClient from '@/app/characters/character-form-client'
+import { SWRConfig } from 'swr'
 
 const state = vi.hoisted(() => ({ tab: 'identidade', characterType: 'PLAYER_VAMPIRE', creationType: 'FLEDGLING' }))
 vi.mock('next/navigation', () => ({ useSearchParams: () => new URLSearchParams(), useRouter: () => ({ push: vi.fn() }) }))
@@ -11,6 +12,16 @@ vi.mock('react', async importOriginal => {
 })
 
 beforeEach(() => { state.tab = 'identidade'; state.characterType = 'PLAYER_VAMPIRE'; state.creationType = 'FLEDGLING' })
+
+it.each([['create', null, false], ['edit', null, true], ['edit', 'mesa', false]] as const)('vínculo no início somente no editor independente (%s, %s)', (mode, campaignId, expected) => {
+  const id = '11111111-1111-4111-8111-111111111111'
+  const html = renderToStaticMarkup(createElement(SWRConfig, { value: { provider: () => new Map(), revalidateOnMount: false, fallback: { [`/api/characters?id=${id}`]: { character: { id, campaignId, data: {}, revision: 0, characterType: 'PLAYER_VAMPIRE', status: 'DRAFT' } } } } }, createElement(CharacterFormClient, { initialCharacterId: id, mode })))
+  expect(html.includes('Incluir vínculo de mesa')).toBe(expected)
+  if (expected) expect(html.indexOf('Incluir vínculo de mesa')).toBeLessThan(html.indexOf('Seções da ficha'))
+  expect(html).not.toContain('ID da mesa')
+  expect(html).not.toContain('value="HUMAN_NPC"')
+  expect(html).not.toContain('value="VAMPIRE_NPC"')
+})
 
 it('disciplinas inicia com um campo vazio e botão para adicionar outras', () => {
   state.tab = 'disciplinas'

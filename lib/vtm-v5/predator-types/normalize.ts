@@ -7,6 +7,7 @@ const aliases = new Map<string, PredatorTypeCode>()
 for (const definition of PREDATOR_TYPES) {
   aliases.set(normalizeKey(definition.code), definition.code)
   aliases.set(normalizeKey(definition.name), definition.code)
+  if (definition.originalName) aliases.set(normalizeKey(definition.originalName), definition.code)
 }
 aliases.set('SEREIA', 'SIREN')
 aliases.set('GATO_DE_BECO', 'ALLEYCAT')

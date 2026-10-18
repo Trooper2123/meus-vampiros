@@ -9,6 +9,7 @@ vi.mock('@/lib/predator-types', async (importOriginal) => ({ ...(await importOri
 
 import { GET } from '@/app/api/predator-types/route'
 import { POST } from '@/app/api/characters/[id]/predator-type/route'
+import { PREDATOR_TYPE_BY_CODE, type PredatorTypeCode } from '@/lib/vtm-v5/predator-types'
 
 const context = { params: Promise.resolve({ id: '11111111-1111-4111-8111-111111111111' }) }
 const settings = { enabledSources: ['COREBOOK'] as const, enabledCodes: null, disabledCodes: [] }
@@ -23,10 +24,11 @@ describe('rotas públicas de tipos de predação', () => {
     expect((await GET(new Request('http://localhost/api/predator-types'))).status).toBe(401)
   })
 
-  it('retorna somente os dez tipos básicos e não vaza campos privados', async () => {
+  it('permite consultar 41 registros independentes, habilita só os básicos e não vaza campos privados', async () => {
     const response = await GET(new Request('http://localhost/api/predator-types?characterId=11111111-1111-4111-8111-111111111111'))
     const body = await response.json()
-    expect(body.predatorTypes).toHaveLength(10)
+    expect(body.predatorTypes).toHaveLength(41)
+    expect(body.predatorTypes.filter((entry: { selectable: boolean }) => entry.selectable)).toHaveLength(10)
     expect(body.predatorTypes[0]).not.toHaveProperty('commonRisks')
     expect(body.predatorTypes[0]).not.toHaveProperty('flawsOrCosts')
   })
@@ -51,5 +53,24 @@ describe('rotas públicas de tipos de predação', () => {
     expect(locked.status).toBe(409)
     const incomplete = await POST(new Request('http://localhost', { method: 'POST', body: JSON.stringify({ code: 'SIREN', specialty: '', discipline: '', optionCodes: [] }) }), context)
     expect(incomplete.status).toBe(422)
+  })
+
+  it.each(['ROADSIDE_KILLER', 'SABBAT_RECLAIMER', 'TITHE_COLLECTOR'] as PredatorTypeCode[])('recusa %s mesmo com fonte habilitada e perfil enviado pelo cliente', async code => {
+    mocks.getPredatorTypeSettings.mockResolvedValue({ enabledSources: ['COREBOOK'], enabledCodes: [code], disabledCodes: [] })
+    const entry = PREDATOR_TYPE_BY_CODE.get(code)!
+    const body = { code, specialty: entry.specialtyOptions[0], discipline: entry.disciplineOptions[0], optionCodes: (entry.choiceGroups ?? []).map(group => `${group.code}:${group.options[0].code}:${group.totalDots}`), creationType: 'ANCILLA' }
+    const response = await POST(new Request('http://localhost', { method: 'POST', body: JSON.stringify(body) }), context)
+    expect(response.status).toBe(422)
+    expect(mocks.persistPredatorTypeData).not.toHaveBeenCalled()
+  })
+
+  it('aplica Extorsionista somente com habilitação e escolhas completas', async () => {
+    const entry = PREDATOR_TYPE_BY_CODE.get('EXTORTIONIST')!
+    const request = () => new Request('http://localhost', { method: 'POST', body: JSON.stringify({ code: entry.code, specialty: entry.specialtyOptions[0], discipline: 'Dominação', optionCodes: ['PROTECTION:CONTACTS:1', 'PROTECTION:RESOURCES:2'] }) })
+    expect((await POST(request(), context)).status).toBe(422)
+    expect(mocks.persistPredatorTypeData).not.toHaveBeenCalled()
+    mocks.getPredatorTypeSettings.mockResolvedValue({ enabledSources: ['COREBOOK'], enabledCodes: ['EXTORTIONIST'], disabledCodes: [] })
+    expect((await POST(request(), context)).status).toBe(200)
+    expect(mocks.persistPredatorTypeData).toHaveBeenCalledOnce()
   })
 })

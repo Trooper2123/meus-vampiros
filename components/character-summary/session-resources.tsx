@@ -30,14 +30,14 @@ async function fetchResources(url: string): Promise<ResourceResponse> {
   return body
 }
 
-function ResourceButtons({ label, onReduce, onIncrease, disabled, cannotReduce, cannotIncrease }: { label: string; onReduce?: () => void; onIncrease: () => void; disabled: boolean; cannotReduce?: boolean; cannotIncrease: boolean }) {
+function ResourceButtons({ label, onReduce, onIncrease, disabled, cannotReduce, cannotIncrease }: Readonly<{ label: string; onReduce?: () => void; onIncrease: () => void; disabled: boolean; cannotReduce?: boolean; cannotIncrease: boolean }>) {
   return <div className="flex shrink-0 items-center gap-2">
     {onReduce && <button type="button" className="button-ghost min-w-10 px-3" aria-label={`Reduzir ${label}`} disabled={disabled || cannotReduce} onClick={onReduce}>−</button>}
     <button type="button" className="button-ghost min-w-10 px-3" aria-label={`Aumentar ${label}`} disabled={disabled || cannotIncrease} onClick={onIncrease}>+</button>
   </div>
 }
 
-function ResourceForm({ data, url, refresh, notify }: { data: ResourceResponse; url: string; refresh: (updated: ResourceResponse) => Promise<unknown>; notify: (message: string, error?: boolean) => void }) {
+function ResourceForm({ data, url, refresh, notify }: Readonly<{ data: ResourceResponse; url: string; refresh: (updated: ResourceResponse) => Promise<unknown>; notify: (message: string, error?: boolean) => void }>) {
   const [saving, setSaving] = useState(false)
   const [retrying, setRetrying] = useState(false)
   const pending = useRef<ResourceCommand | null>(null)
@@ -116,15 +116,23 @@ function ResourceForm({ data, url, refresh, notify }: { data: ResourceResponse; 
     const total = current.superficial + current.aggravated
     return <div><dt>{label}</dt><dd>
       <span className="block font-serif text-4xl" aria-label={`${label} atual`}>{Math.max(0, maximum - total)} / {maximum}</span>
-      <div className="mt-4 flex flex-col gap-3">{(['superficial', 'aggravated'] as const).map(type => <div key={type} role="group" aria-label={`Dano ${type === 'superficial' ? 'superficial' : 'agravado'} de ${label}`} className="flex flex-wrap items-center justify-center gap-2">
+      <div className="mt-4 flex flex-col gap-3">{(['superficial', 'aggravated'] as const).map(type => <fieldset key={type} aria-label={`Dano ${type === 'superficial' ? 'superficial' : 'agravado'} de ${label}`} className="flex flex-wrap items-center justify-center gap-2">
         <span className="font-sans text-xs text-muted-foreground">{type === 'superficial' ? 'Superficial' : 'Agravado'} <span className="font-mono text-sm text-foreground">{current[type]}</span></span>
         <ResourceButtons label={`dano ${type === 'superficial' ? 'superficial' : 'agravado'} de ${label}`} onReduce={() => changeDamage(track, type, -1)} onIncrease={() => changeDamage(track, type, 1)} disabled={locked} cannotReduce={current[type] <= 0} cannotIncrease={total >= maximum} />
-      </div>)}</div>
+      </fieldset>)}</div>
     </dd></div>
   }
 
+  let savingMessage
+  if (saving) {
+    savingMessage = 'Salvando alteração…'
+  } else if (retrying) {
+    savingMessage = 'Salvamento não confirmado. Reenvie ou recarregue os recursos.'
+  } else {
+    savingMessage = 'Cada alteração é salva automaticamente. Contadores mostram os valores confirmados.'
+  }
   return <div aria-busy={saving} className="flex flex-col gap-5">
-    <p role="status" className="text-sm text-muted-foreground">{saving ? 'Salvando alteração…' : retrying ? 'Salvamento não confirmado. Reenvie ou recarregue os recursos.' : 'Cada alteração é salva automaticamente. Contadores mostram os valores confirmados.'}</p>
+    <output className="block text-sm text-muted-foreground">{savingMessage}</output>
     <dl className="archive-resource-strip archive-session-resources">
       <div><dt>Humanidade</dt><dd><span className="block font-serif text-4xl">{data.state.humanity}</span><div className="mt-4"><ResourceButtons label="Humanidade" onIncrease={() => changeScalar('humanity', 1)} disabled={locked || !data.canEditNarrative} cannotIncrease={data.state.humanity >= 10} /></div></dd></div>
       {damageResource('willpower', 'Força de vontade', data.maxima.willpowerMax)}
@@ -143,7 +151,7 @@ function ResourceForm({ data, url, refresh, notify }: { data: ResourceResponse; 
   </div>
 }
 
-export function SessionResources({ characterId }: { characterId: string }) {
+export function SessionResources({ characterId }: Readonly<{ characterId: string }>) {
   const url = `/api/characters/${characterId}/resources`
   const { data, error, isLoading, mutate } = useSWR<ResourceResponse>(url, fetchResources, { revalidateOnFocus: false })
   const [feedback, setFeedback] = useState({ message: '', error: false })
@@ -151,7 +159,7 @@ export function SessionResources({ characterId }: { characterId: string }) {
     <p className="eyebrow">Estado da sessão</p>
     <h2 id="recursos-sessao-titulo" className="mb-5 mt-2 font-serif text-xl">Recursos</h2>
     {feedback.message && <div className="mb-4 flex flex-col items-start gap-3"><p role={feedback.error ? 'alert' : 'status'} className="text-sm text-muted-foreground">{feedback.message}</p>{feedback.error && <button type="button" className="button-ghost" onClick={() => void mutate()}>Recarregar recursos</button>}</div>}
-    {isLoading && <p role="status" className="text-sm text-muted-foreground">Carregando recursos…</p>}
+    {isLoading && <output className="block text-sm text-muted-foreground">Carregando recursos…</output>}
     {error && <div role="alert" className="mb-4 flex flex-col gap-3"><p className="text-sm text-primary">{error instanceof Error ? error.message : 'Falha ao carregar recursos.'}</p><button type="button" className="button-ghost self-start" onClick={() => void mutate()}>Recarregar recursos</button></div>}
     {data && !error && <ResourceForm key={`${characterId}:${data.revision}`} data={data} url={url} refresh={updated => mutate(updated, { revalidate: false })} notify={(message, error = false) => setFeedback({ message, error })} />}
   </section>

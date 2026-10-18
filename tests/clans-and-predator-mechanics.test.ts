@@ -22,7 +22,7 @@ describe('clãs da referência local V5', () => {
     expect(() => validateClanSelection({ code: 'VENTRUE', disciplineDots: { Dominação: 2, Fortitude: 1 } })).toThrow()
     expect(() => validateClanSelection({ code: 'MALKAVIAN', disciplineDots: { Auspícios: 2, Dominação: 1 } })).toThrow()
   })
-  it('valida as exceções Caitiff e sangue-fraco', () => {
+  it('valida as exceções Caitiff e sangue-ralo', () => {
     expect(validateClanSelection({ code: 'CAITIFF', caitiffDisciplines: ['Animalismo', 'Fortitude', 'Presença'], disciplineDots: { Fortitude: 2, Presença: 1 } }).code).toBe('CAITIFF')
     expect(() => validateClanSelection({ code: 'CAITIFF', caitiffDisciplines: ['Animalismo', 'Animalismo', 'Fortitude'], disciplineDots: { Fortitude: 2, Animalismo: 1 } })).toThrow()
     expect(validateClanSelection({ code: 'THIN_BLOOD', disciplineDots: {} }).code).toBe('THIN_BLOOD')
@@ -48,7 +48,7 @@ describe('escolhas mecânicas de predação', () => {
     expect(character.spentXp).toBe(3)
     expect(character.gameState.healthDamage).toEqual({ superficial: 2, aggravated: 1 })
   })
-  it('exige exceção explícita do Narrador para sangue-fraco', () => {
+  it('exige exceção explícita do Narrador para sangue-ralo', () => {
     const definition = PREDATOR_TYPES[0]
     const input = { clan: null, bloodPotency: 0, isThinBlood: true, enabled: true }
     expect(validatePredatorType(definition, input).valid).toBe(false)

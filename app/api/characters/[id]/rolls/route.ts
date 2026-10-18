@@ -8,7 +8,7 @@ import { normalizeSpecialtySkillId } from '@/lib/vtm-v5/specialties'
 import { characterSpecialties } from '@/lib/character-specialties'
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-const attributes = ['forca', 'destreza', 'vigor', 'carisma', 'manipulacao', 'compostura', 'inteligencia', 'raciocinio', 'determinacao']
+const attributes = new Set(['forca', 'destreza', 'vigor', 'carisma', 'manipulacao', 'compostura', 'inteligencia', 'raciocinio', 'determinacao'])
 
 export async function GET(_request: Request, context: { params: Promise<{ id: string }> }) {
   try {
@@ -31,7 +31,7 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     if (!session?.user?.sub) return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
     const { id } = await context.params
     const body = await request.json().catch(() => null)
-    if (!UUID_PATTERN.test(id) || !body || !attributes.includes(body.attribute) || typeof body.skillId !== 'string' || body.skillId.length > 100 || !Number.isSafeInteger(body.difficulty) || body.difficulty < 1 || body.difficulty > 50 || !['PUBLIC', 'SECRET'].includes(body.visibility) || typeof body.reason !== 'string' || !body.reason.trim() || body.reason.length > 500 || !Number.isSafeInteger(body.expectedRevision) || body.expectedRevision < 0 || typeof body.idempotencyKey !== 'string' || !UUID_PATTERN.test(body.idempotencyKey) || (body.specialtyId !== undefined && (typeof body.specialtyId !== 'string' || body.specialtyId.length > 250)) || ['result', 'roll', 'pool', 'modifiers', 'specialtyBonus'].some(field => body[field] !== undefined)) return NextResponse.json({ error: 'Intenção de rolagem inválida.' }, { status: 400 })
+    if (!UUID_PATTERN.test(id) || !body || !attributes.has(body.attribute) || typeof body.skillId !== 'string' || body.skillId.length > 100 || !Number.isSafeInteger(body.difficulty) || body.difficulty < 1 || body.difficulty > 50 || !['PUBLIC', 'SECRET'].includes(body.visibility) || typeof body.reason !== 'string' || !body.reason.trim() || body.reason.length > 500 || !Number.isSafeInteger(body.expectedRevision) || body.expectedRevision < 0 || typeof body.idempotencyKey !== 'string' || !UUID_PATTERN.test(body.idempotencyKey) || (body.specialtyId !== undefined && (typeof body.specialtyId !== 'string' || body.specialtyId.length > 250)) || ['result', 'roll', 'pool', 'modifiers', 'specialtyBonus'].some(field => body[field] !== undefined)) return NextResponse.json({ error: 'Intenção de rolagem inválida.' }, { status: 400 })
     if (body.mode !== undefined || body.notation !== undefined) return NextResponse.json({ error: 'Intenção de rolagem inválida.' }, { status: 400 })
     await ensureAllTables()
     return NextResponse.json(await executeCharacterRoll(session.user.sub, id, { attribute: body.attribute, skillId: body.skillId, difficulty: body.difficulty, specialtyId: body.specialtyId, visibility: body.visibility, reason: body.reason.trim(), expectedRevision: body.expectedRevision, idempotencyKey: body.idempotencyKey }))

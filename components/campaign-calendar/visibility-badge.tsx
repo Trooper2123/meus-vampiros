@@ -1,7 +1,7 @@
 import { Eye, LockKeyhole } from 'lucide-react'
 import type { CampaignEventVisibility } from '@/lib/types/campaign-event'
 
-export function VisibilityBadge({ visibility }: { visibility: CampaignEventVisibility }) {
+export function VisibilityBadge({ visibility }: Readonly<{ visibility: CampaignEventVisibility }>) {
   const privateEvent = visibility === 'master'
   const Icon = privateEvent ? LockKeyhole : Eye
 

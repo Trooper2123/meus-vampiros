@@ -7,13 +7,13 @@ import { getSessionOrDev } from '@/lib/auth0'
 import { getCommandCharacter } from '@/lib/character-commands'
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
-export default async function CharacterEvolutionPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function CharacterEvolutionPage({ params }: Readonly<{ params: Promise<{ id: string }> }>) {
   const session = await getSessionOrDev()
   if (!session?.user?.sub) redirect('/auth/login')
   const { id } = await params
   if (!UUID.test(id)) notFound()
   const character = await getCommandCharacter(id)
-  if (!character || character.characterType !== 'PLAYER_VAMPIRE' || character.ownerId !== session.user.sub && character.masterId !== session.user.sub) notFound()
+  if (character?.characterType !== 'PLAYER_VAMPIRE' || character.ownerId !== session.user.sub && character.masterId !== session.user.sub) notFound()
   return <main className="min-h-screen bg-background text-foreground">
     <div className="noise" aria-hidden="true" />
     <ArchiveHeader title="Evolução de personagem" />

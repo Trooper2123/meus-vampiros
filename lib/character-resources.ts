@@ -3,8 +3,8 @@ import { readSessionState, validateDamage, type SessionState } from './vtm-v5/se
 import { calculateSecondaryAttributes } from './vtm-v5/secondary-attributes'
 
 export function changeCharacterResources(actorId: string, id: string, changes: Record<string, unknown>, reason: string, expectedRevision: number, key: string) {
-  const allowed = ['hunger', 'humanity', 'healthDamage', 'willpowerDamage', 'stains']
-  if (!reason.trim() || reason.length > 500 || !Number.isSafeInteger(expectedRevision) || expectedRevision < 0 || !Object.keys(changes).length || Object.keys(changes).some(field => !allowed.includes(field))) throw new CharacterCommandError(400, 'Alteração de recursos inválida.')
+  const allowed = new Set(['hunger', 'humanity', 'healthDamage', 'willpowerDamage', 'stains'])
+  if (!reason.trim() || reason.length > 500 || !Number.isSafeInteger(expectedRevision) || expectedRevision < 0 || !Object.keys(changes).length || Object.keys(changes).some(field => !allowed.has(field))) throw new CharacterCommandError(400, 'Alteração de recursos inválida.')
   return runCharacterCommand(actorId, id, { key, expectedRevision, type: 'RESOURCES_CHANGED', payload: { changes, reason: reason.trim() } }, character => character.ownerId === actorId || character.masterId === actorId, character => {
     if (character.characterType !== 'PLAYER_VAMPIRE') throw new CharacterCommandError(422, 'Este fluxo exige uma ficha de vampiro jogável.')
     const state = readSessionState(character.data, character.gameState)
