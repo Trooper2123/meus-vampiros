@@ -63,7 +63,6 @@ function readCampaignPolicy(body: Record<string, unknown>) {
     const exceptionCodes = validateCampaignExceptions(body.exceptionCodes ?? [])
     if (!isDev && exceptionCodes.length) throw new CharacterCommandError(503, 'Exceções com banco externo ainda não disponíveis.')
     if (!Array.isArray(enabledClanCodes) || enabledClanCodes.length > CLANS.length || new Set(enabledClanCodes).size !== enabledClanCodes.length || enabledClanCodes.some(code => !CLANS.some(clan => clan.code === code)) || !Array.isArray(enabledPredatorCodes) || enabledPredatorCodes.length > PREDATOR_TYPE_CODES.length || new Set(enabledPredatorCodes).size !== enabledPredatorCodes.length || enabledPredatorCodes.some(code => !PREDATOR_TYPE_CODES.includes(code))) throw new CharacterCommandError(400, 'Clãs ou predações inválidos.')
-    if (!isDev && (body.enabledClanCodes !== undefined || body.enabledPredatorCodes !== undefined)) throw new CharacterCommandError(503, 'Configuração inicial de clãs e predações no banco externo ainda não disponível.')
 
   return { enabledClanCodes, enabledPredatorCodes, exceptionCodes }
 }
