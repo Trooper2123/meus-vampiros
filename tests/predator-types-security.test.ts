@@ -3,7 +3,6 @@ import { sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { createTestCampaign, createTestCharacter, preparePostgresTest } from './postgres-test-helpers'
 import { getPredatorTypeSettings, isPredatorTypeEnabled, persistPredatorTypeData, sanitizePredatorTypeSettings, savePredatorTypeSettings } from '@/lib/predator-types'
-import { PREDATOR_TYPES } from '@/lib/vtm-v5/predator-types'
 
 const settings = { enabledSources: ['COREBOOK'] as ['COREBOOK'], enabledCodes: null, disabledCodes: [] }
 const operation = { expectedRevision: 0, eventType: 'PREDATOR_TYPE_APPLIED', payload: { code: 'SIREN' } }
@@ -21,11 +20,10 @@ async function ledgerCount(id: string) {
 describe('segurança dos serviços de predação no PostgreSQL', () => {
   beforeEach(preparePostgresTest)
 
-  it('mantém suplementos desativados por padrão, inclusive sem mesa', async () => {
-    const independent = await getPredatorTypeSettings(null)
-    expect(independent.enabledSources).toEqual(['COREBOOK'])
-    expect(PREDATOR_TYPES.filter(entry => isPredatorTypeEnabled(entry.code, independent))).toHaveLength(10)
-    independent.enabledSources.length = 0
+  it('mantém COREBOOK como configuração padrão de mesa e isola os valores carregados', async () => {
+    const unconfigured = await getPredatorTypeSettings(null)
+    expect(unconfigured.enabledSources).toEqual(['COREBOOK'])
+    unconfigured.enabledSources.length = 0
     expect((await getPredatorTypeSettings(null)).enabledSources).toHaveLength(1)
     const campaign = await createTestCampaign('test|settings-master')
     const linked = await getPredatorTypeSettings(campaign.id)
@@ -33,17 +31,19 @@ describe('segurança dos serviços de predação no PostgreSQL', () => {
     expect(isPredatorTypeEnabled('SIREN', linked)).toBe(true)
   })
 
-  it('recusa material comunitário sem habilitação e permite escolha explícita do Narrador', async () => {
-    const character = await createTestCharacter('test|predator-owner', null, 'Ficha', { humanidade: 7 })
+  it('permite suplemento em ficha independente, mas exige habilitação na campanha', async () => {
     const data = { humanidade: 7, predatorTypeCode: 'BUSINESS_OWNER', predador: 'Business Owner' }
-    await expect(persistPredatorTypeData(character.id, data, 'test|predator-owner', operation)).rejects.toMatchObject({ status: 422 })
+    const independent = await createTestCharacter('test|predator-owner', null, 'Ficha independente', { humanidade: 7 })
+    await persistPredatorTypeData(independent.id, data, 'test|predator-owner', operation)
+    expect((await readCharacter(independent.id)).data.predatorTypeCode).toBe('BUSINESS_OWNER')
+
     const campaign = await createTestCampaign('test|predator-master')
-    await db.execute(sql`UPDATE characters SET campaign_id = ${campaign.id}::uuid WHERE id = ${character.id}::uuid`)
-    await expect(persistPredatorTypeData(character.id, data, 'test|predator-owner', operation)).rejects.toMatchObject({ status: 422 })
+    const linked = await createTestCharacter('test|predator-owner', campaign.id, 'Ficha da campanha', { humanidade: 7 })
+    await expect(persistPredatorTypeData(linked.id, data, 'test|predator-owner', operation)).rejects.toMatchObject({ status: 422 })
     await savePredatorTypeSettings(campaign.id, { ...settings, enabledCodes: ['BUSINESS_OWNER'] }, 'test|predator-master')
-    await persistPredatorTypeData(character.id, data, 'test|predator-owner', operation)
-    expect((await readCharacter(character.id)).data.predatorTypeCode).toBe('BUSINESS_OWNER')
-    expect((await readCharacter(character.id)).revision).toBe(1)
+    await persistPredatorTypeData(linked.id, data, 'test|predator-owner', operation)
+    expect((await readCharacter(linked.id)).data.predatorTypeCode).toBe('BUSINESS_OWNER')
+    expect((await readCharacter(linked.id)).revision).toBe(1)
   })
 
   it.each([[], {}, { ...settings, enabledSources: ['INVALID'] }, { ...settings, enabledCodes: ['INVALID'] }, { ...settings, disabledCodes: [1] }, { ...settings, masterOverride: true }])('rejeita configurações inválidas: %j', input => {

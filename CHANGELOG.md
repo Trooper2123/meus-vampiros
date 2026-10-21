@@ -2,6 +2,11 @@
 
 Registro cronológico de todas as alterações relevantes implementadas no projeto.
 
+## 2026-10-21 02:24 BRT - fix - Predações sem mesa não exigem habilitação do Narrador
+- Arquivos principais: `app/api/predator-types/route.ts`, `app/api/characters/[id]/predator-type/route.ts`, `lib/predator-types.ts`, testes das rotas e serviços de predação.
+- Fichas independentes podem consultar e aplicar tipos de predação de qualquer fonte sem habilitação de uma mesa. Fichas vinculadas continuam respeitando a configuração do Narrador.
+- Validação: 26 testes específicos, TypeScript e ESLint focados aprovados; Vitest reporta timeout ao encerrar workers após a conclusão dos testes.
+
 ## 2026-10-21 02:05 BRT - fix - JSX e testes alinhados à persistência PostgreSQL
 - Arquivos principais: `components/character-form/attributes-step.tsx`, `components/character-form/skills-step.tsx`, `vitest.config.ts`, `tests/postgres-global-setup.ts`, `tests/postgres-test-helpers.ts`, testes de calendário, convocação, convites, fichas independentes, notas, predação e rolagens de chamada; `lib/dev-db.ts`.
 - Vitest carrega o ambiente local e direciona conexões de loopback ao schema isolado `meus_vampiros_test`, criado e preparado antes das suítes; recusa URLs de banco remoto. Fixtures usam UUIDs próprios, não executam limpeza global nem acessam registros de `public`. Testes que verificam o provedor em memória continuam isolados explicitamente.
