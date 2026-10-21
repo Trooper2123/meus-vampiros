@@ -2,6 +2,12 @@
 
 Registro cronológico de todas as alterações relevantes implementadas no projeto.
 
+## 2026-10-21 02:05 BRT - fix - JSX e testes alinhados à persistência PostgreSQL
+- Arquivos principais: `components/character-form/attributes-step.tsx`, `components/character-form/skills-step.tsx`, `vitest.config.ts`, `tests/postgres-global-setup.ts`, `tests/postgres-test-helpers.ts`, testes de calendário, convocação, convites, fichas independentes, notas, predação e rolagens de chamada; `lib/dev-db.ts`.
+- Vitest carrega o ambiente local e direciona conexões de loopback ao schema isolado `meus_vampiros_test`, criado e preparado antes das suítes; recusa URLs de banco remoto. Fixtures usam UUIDs próprios, não executam limpeza global nem acessam registros de `public`. Testes que verificam o provedor em memória continuam isolados explicitamente.
+- Removidas chaves JSX excedentes nos passos de atributos e habilidades. Atualizadas as expectativas que liam funções assíncronas ou objetos `__devDb` depois da migração. A tipagem da memória de noites agora descreve os campos já usados pela fixture.
+- Validação: TypeScript sem erros; 64 testes em oito arquivos passaram contra o schema PostgreSQL isolado; ESLint focado aprovado. Nenhuma limpeza global foi executada.
+
 ## 2026-10-20 22:45 BRT - chore - Biblioteca de PDFs versionada via Git LFS
 - Arquivos principais: `.gitattributes`, `docs/books/*.pdf`, `docs/books/README.md`.
 - Livros previamente staged passam a usar Git LFS, incluindo dois PDFs maiores que 100 MB, para permitir envio ao GitHub e manter os caminhos usados pelas fontes autenticadas. Checkout e deploy precisam baixar os objetos LFS; nenhum PDF foi alterado ou removido do diretório local.

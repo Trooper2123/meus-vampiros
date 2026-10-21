@@ -1,25 +1,27 @@
-import { beforeEach, expect, it, vi } from 'vitest'
-vi.hoisted(() => { vi.stubEnv('NODE_ENV', 'test'); vi.stubEnv('DATABASE_URL', undefined) })
-import { devCreateCampaign, devCreateCharacter } from '@/lib/dev-db'
+import { beforeEach, expect, it } from 'vitest'
+import { sql } from 'drizzle-orm'
+import { db } from '@/lib/db'
+import { createTestCampaign, createTestCharacter, preparePostgresTest } from './postgres-test-helpers'
 import { getCallRollCharacters } from '@/lib/call-roll-characters'
 
-beforeEach(() => { global.__devDb = undefined })
+beforeEach(preparePostgresTest)
 
-it('jogador recebe somente fichas próprias aprovadas da mesa, Narrador recebe as autorizadas', () => {
-  const campaign = devCreateCampaign('narrator', { name: 'Mesa', theme: null, principios: null, averageXp: 0, status: 'Ativa', lastSessionAt: null })
-  const otherCampaign = devCreateCampaign('stranger', { name: 'Outra', theme: null, principios: null, averageXp: 0, status: 'Ativa', lastSessionAt: null })
-  const create = (owner: string, campaignId: string, status: string, characterType = 'PLAYER_VAMPIRE') => {
-    const character = devCreateCharacter(owner, { campaignId, name: owner, data: { characterType, narratorNotes: 'PRIVATE' } })
-    character.status = status
+it('jogador recebe somente fichas próprias aprovadas e Narrador recebe as fichas autorizadas', async () => {
+  const campaign = await createTestCampaign('roll-narrator')
+  const otherCampaign = await createTestCampaign('roll-stranger')
+  const create = async (owner: string, campaignId: string, name: string, type = 'PLAYER_VAMPIRE') => {
+    const character = await createTestCharacter(owner, campaignId, name)
+    await db.execute(sql`UPDATE characters SET status = 'APPROVED', character_type = ${type}, data = '{"narratorNotes":"PRIVATE"}'::jsonb WHERE id = ${character.id}::uuid`)
     return character
   }
-  const owned = create('player', campaign.id, 'APPROVED')
-  const another = create('other-player', campaign.id, 'APPROVED')
-  create('player', campaign.id, 'DRAFT')
-  create('player', otherCampaign.id, 'APPROVED')
-  create('narrator', campaign.id, 'APPROVED', 'HUMAN_NPC')
-  expect(getCallRollCharacters('player', campaign.id)).toEqual({ characters: [{ id: owned.id, name: 'player' }] })
-  expect(getCallRollCharacters('narrator', campaign.id).characters.map(entry => entry.id)).toEqual([owned.id, another.id])
-  expect(() => getCallRollCharacters('outsider', campaign.id)).toThrow('Acesso negado')
-  expect(JSON.stringify(getCallRollCharacters('narrator', campaign.id))).not.toContain('PRIVATE')
+  const owned = await create('roll-player', campaign.id, 'owned')
+  const another = await create('roll-other-player', campaign.id, 'another')
+  await create('roll-player', campaign.id, 'draft').then(character => db.execute(sql`UPDATE characters SET status = 'DRAFT' WHERE id = ${character.id}::uuid`))
+  await create('roll-player', otherCampaign.id, 'outside')
+  await create('roll-narrator', campaign.id, 'npc', 'HUMAN_NPC')
+
+  expect(await getCallRollCharacters('roll-player', campaign.id)).toEqual({ characters: [{ id: owned.id, name: 'owned' }] })
+  expect((await getCallRollCharacters('roll-narrator', campaign.id)).characters.map(entry => entry.id)).toEqual([another.id, owned.id])
+  await expect(getCallRollCharacters('roll-outsider', campaign.id)).rejects.toThrow('Acesso negado')
+  expect(JSON.stringify(await getCallRollCharacters('roll-narrator', campaign.id))).not.toContain('PRIVATE')
 })
