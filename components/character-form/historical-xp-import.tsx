@@ -7,7 +7,7 @@ type Props = {
   revision: number
   totalXp: number
   spentXp: number
-  onImported: () => Promise<unknown>
+  onImported: (balance: { totalXp: number; spentXp: number }) => Promise<unknown>
 }
 
 export function HistoricalXpImport({ characterId, revision, totalXp, spentXp, onImported }: Readonly<Props>) {
@@ -37,7 +37,7 @@ export function HistoricalXpImport({ characterId, revision, totalXp, spentXp, on
       })
       const result = await response.json()
       if (!response.ok) throw new Error(result.error ?? 'Falha na importação.')
-      await onImported()
+      await onImported({ totalXp: received, spentXp: consumed })
       setMessage('Experiência histórica importada com sucesso.')
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Falha na importação.')

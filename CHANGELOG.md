@@ -2,6 +2,15 @@
 
 Registro cronológico de todas as alterações relevantes implementadas no projeto.
 
+## [2026-10-21 19:51 BRT] — fix - Modo de ficha independente e XP histórico
+
+**Tipo:** fix
+**Arquivos principais:** `app/characters/character-form-client.tsx`, `components/character-form/historical-xp-import.tsx`, `tests/character-form-identity.test.ts`, `tests/historical-xp-import.test.ts`
+
+- O modo de preenchimento aparece antes das abas no formulário independente.
+- A importação de XP histórico atualiza total, gasto e saldo exibidos na ficha.
+- Validação: teste de ordem do formulário e teste de importação histórica.
+
 ## [2026-10-21 19:31 BRT] — fix - Seletor de habilidades para rolagem
 
 **Tipo:** fix
