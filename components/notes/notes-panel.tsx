@@ -6,8 +6,8 @@ import useSWR, { SWRConfig, useSWRConfig } from 'swr'
 import Link from 'next/link'
 import type { getNote, notesContext, NoteLink } from '@/lib/notes'
 
-type NoteView = ReturnType<typeof getNote>
-type Context = ReturnType<typeof notesContext>
+type NoteView = Awaited<ReturnType<typeof getNote>>
+type Context = Awaited<ReturnType<typeof notesContext>>
 const fetcher = async (url: string) => {
   const response = await fetch(url)
   const body = await response.json()
@@ -93,7 +93,7 @@ function NotesEditor({ link, initialCampaignId }: Readonly<{ link?: NoteLink; in
   const readOnly = busy || (current !== null && !current.canEdit)
   if ([401, 403].includes(error?.status)) return <p role="alert">Sua sessão não permite acessar as anotações. Recarregue após entrar novamente.</p>
   return <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
-    <section className="border border-border bg-card p-5"><h2 className="font-serif text-xl">Suas anotações</h2><p className="mt-2 text-sm text-muted-foreground">Privadas por padrão, sem acesso implícito do Narrador. Em desenvolvimento, a memória é perdida após reiniciar o servidor.</p>
+    <section className="border border-border bg-card p-5"><h2 className="font-serif text-xl">Suas anotações</h2><p className="mt-2 text-sm text-muted-foreground">Privadas por padrão, sem acesso implícito do Narrador.</p>
       <button type="button" className="button-ghost mt-4" disabled={busy} onClick={() => { if (!(title || body) || window.confirm('Descartar alterações não salvas?')) reset() }}>Nova anotação</button>
       {error && <p role="alert">{error.message}</p>}{!data && !error && <output>Carregando...</output>}{data?.total === 0 && <p className="empty-state mt-4">Nenhuma anotação disponível.</p>}
       <ul className="mt-4 space-y-2">{data?.notes.map(note => {

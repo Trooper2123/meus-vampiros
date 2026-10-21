@@ -1,10 +1,12 @@
-import { CharacterCommandError } from './character-commands'
-import { devGetCampaignById } from './dev-db'
+import { sql } from 'drizzle-orm'
+import { db } from '@/lib/db'
 import { CLANS } from './vtm-v5/clans'
+import { CharacterCommandError } from './character-commands'
 
-export function campaignClanCodes(campaignId: string | null): string[] {
+export async function campaignClanCodes(campaignId: string | null): Promise<string[]> {
   if (!campaignId) return CLANS.map(clan => clan.code)
-  if (process.env.NODE_ENV === 'production' || process.env.DATABASE_URL) throw new CharacterCommandError(503, 'Configuração de clãs no banco externo ainda não disponível.')
-  if (!devGetCampaignById(campaignId)) throw new CharacterCommandError(404, 'Mesa não encontrada.')
-  return [...(global.__devDb!.campaigns.find(campaign => campaign.id === campaignId)!.enabledClanCodes ?? CLANS.map(clan => clan.code))]
+  const result = await db.execute<{ enabled_clan_codes: string[] | null }>(sql`SELECT enabled_clan_codes FROM campaigns WHERE id = ${campaignId}::uuid`)
+  const codes = result.rows[0]?.enabled_clan_codes
+  if (!result.rows.length) throw new CharacterCommandError(404, 'Mesa não encontrada.')
+  return [...(codes ?? CLANS.map(clan => clan.code))]
 }

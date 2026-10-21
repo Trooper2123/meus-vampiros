@@ -2,14 +2,16 @@ import { randomUUID } from 'node:crypto'
 import { CharacterCommandError, getCommandCharacter, runCharacterCommand, type CommandCharacter } from './character-commands'
 import { serverDiceProvider, type DiceProvider } from './vtm-v5/dice-provider'
 import { evaluateV5Roll } from './vtm-v5/dice-evaluator'
+import { drawD10 } from './vtm-v5/dice-roll-service'
 import { readSessionState } from './vtm-v5/session-state'
 import { RULE_PROFILE, publicRuleSource } from './vtm-v5/rule-profile'
+import type { ClanModifiers } from './vtm-v5/clan-mechanics'
 
 export const ROLL_MODES = ['TEST', 'CHECK', 'WILLPOWER', 'HUMANITY', 'TAKING_HALF', 'AUTOMATIC'] as const
 export type RollMode = typeof ROLL_MODES[number]
 type RollResult = ReturnType<typeof evaluateV5Roll>
 type Adjudication = { id: string; kind: 'COMPLICATION' | 'NARRATIVE_FAILURE' | 'OFFER_COST' | 'ACCEPT_COST'; note: string; shared: boolean; actorId: string; offerId?: string }
-export type StoredRoll = { id: string; mode: RollMode; pool: number; specialtyBonus: number; visibility: 'PUBLIC' | 'SECRET'; hiddenDifficulty: boolean; reason: string; actorId: string; campaignId: string | null; ruleProfile: typeof RULE_PROFILE; revisions: { number: number; result: RollResult; replacements?: { dieId: string; before: number; after: number }[] }[]; willpowerUsed: boolean; adjudications: Adjudication[] }
+export type StoredRoll = { id: string; mode: RollMode; pool: number; specialtyBonus: number; clanModifiers?: ClanModifiers; visibility: 'PUBLIC' | 'SECRET'; hiddenDifficulty: boolean; reason: string; actorId: string; campaignId: string | null; ruleProfile: typeof RULE_PROFILE; revisions: { number: number; result: RollResult; replacements?: { dieId: string; before: number; after: number }[] }[]; willpowerUsed: boolean; adjudications: Adjudication[] }
 
 export function characterRollHistory(character: Pick<CommandCharacter, 'gameState'>): StoredRoll[] {
   // shortcut: histórico no agregado da ficha; separar e paginar antes de persistência externa ou sessões extensas.
@@ -22,7 +24,7 @@ export function projectRoll(roll: StoredRoll, isMaster: boolean) {
   const revision = roll.revisions.at(-1)!
   return {
     id: roll.id, mode: roll.mode, pool: roll.pool, specialtyBonus: roll.specialtyBonus, visibility: roll.visibility, reason: roll.reason, hiddenDifficulty: roll.hiddenDifficulty,
-    ruleProfile: roll.ruleProfile, sources: ['CORE-DICE', 'CORE-HUNGER', 'CORE-WP', 'COMP-DICE'].map(id => publicRuleSource(id as Parameters<typeof publicRuleSource>[0])),
+    ruleProfile: roll.ruleProfile, ...(roll.clanModifiers ? { clanModifiers: roll.clanModifiers } : {}), sources: [...new Set(['CORE-DICE', 'CORE-HUNGER', 'CORE-WP', 'COMP-DICE', ...(roll.clanModifiers?.sourceIds ?? [])])].map(id => publicRuleSource(id as Parameters<typeof publicRuleSource>[0])),
     result: visibleResult(revision.result), rollRevision: revision.number,
     dice: [...revision.result.normalDice.map((value, index) => ({ id: `N:${index}`, type: 'NORMAL', value })), ...revision.result.hungerDice.map((value, index) => ({ id: `H:${index}`, type: 'HUNGER', value }))],
     revisions: roll.revisions.map(entry => ({ number: entry.number, result: visibleResult(entry.result), replacements: entry.replacements })),
@@ -31,7 +33,7 @@ export function projectRoll(roll: StoredRoll, isMaster: boolean) {
   }
 }
 
-export function storeRoll(character: CommandCharacter, actorId: string, input: { mode: RollMode; pool: number; specialtyBonus: number; visibility: 'PUBLIC' | 'SECRET'; hiddenDifficulty?: boolean; reason: string }, result: RollResult) {
+export function storeRoll(character: CommandCharacter, actorId: string, input: { mode: RollMode; pool: number; specialtyBonus: number; clanModifiers?: ClanModifiers; visibility: 'PUBLIC' | 'SECRET'; hiddenDifficulty?: boolean; reason: string }, result: RollResult) {
   const roll: StoredRoll = { id: randomUUID(), ...input, actorId, campaignId: character.campaignId, hiddenDifficulty: input.hiddenDifficulty === true, ruleProfile: RULE_PROFILE, revisions: [{ number: 0, result }], willpowerUsed: false, adjudications: [] }
   character.gameState.rolls = [...characterRollHistory(character), roll]
   return projectRoll(roll, character.masterId === actorId)
@@ -70,7 +72,7 @@ export async function rerollCharacterDice(actorId: string, characterId: string, 
     if (indexes.some(index => !Number.isSafeInteger(index) || index >= previous.normalDice.length)) throw new CharacterCommandError(400, 'Dado comum não encontrado.')
     const state = readSessionState(character.data, character.gameState)
     if (state.willpowerCurrent < 1) throw new CharacterCommandError(422, 'Força de Vontade insuficiente.')
-    const replacements = provider.rollD10(indexes.length)
+  const replacements = drawD10(provider, indexes.length)
     if (replacements.length !== indexes.length) throw new CharacterCommandError(500, 'Resposta inválida do provedor de dados.')
     const normalDice = [...previous.normalDice]
     indexes.forEach((index, position) => { normalDice[index] = replacements[position] })

@@ -2,9 +2,10 @@
 
 import { useRef, useState } from 'react'
 import useSWR from 'swr'
+import type { ClanModifiers } from '@/lib/vtm-v5/clan-mechanics'
 
 type Result = { normalDice: number[]; hungerDice: number[]; successes: number; difficulty?: number; margin?: number; outcome?: string; totalFailure: boolean }
-type Roll = { id: string; mode: string; reason: string; visibility: string; hiddenDifficulty: boolean; result: Result; canReroll: boolean; canAdjudicate?: boolean; dice: { id: string; type: string; value: number }[]; revisions: { number: number; result: Result; replacements?: { dieId: string; before: number; after: number }[] }[]; adjudications: { id: string; kind: string; note: string; offerId?: string }[]; sources: { id: string; book: string; edition: string; printed: string; pdf: number; href: string }[] }
+type Roll = { id: string; mode: string; reason: string; visibility: string; hiddenDifficulty: boolean; clanModifiers?: ClanModifiers; result: Result; canReroll: boolean; canAdjudicate?: boolean; dice: { id: string; type: string; value: number }[]; revisions: { number: number; result: Result; replacements?: { dieId: string; before: number; after: number }[] }[]; adjudications: { id: string; kind: string; note: string; offerId?: string }[]; sources: { id: string; book: string; edition: string; printed: string; pdf: number; href: string }[] }
 type History = { revision: number; history: Roll[]; canAdjudicate: boolean; canAcceptCost?: boolean }
 type Pending = { path: string; body: Record<string, unknown> }
 const outcomes: Record<string, string> = { SUCCESS: 'Vitória', CRITICAL: 'Vitória crítica', MESSY_CRITICAL: 'Crítico com Fome', FAILURE: 'Falha', BESTIAL_FAILURE: 'Falha bestial' }
@@ -59,12 +60,13 @@ export function RollHistory({ characterId }: Readonly<{ characterId: string }>) 
     <h2 className="font-serif text-xl">Histórico de dados</h2>
     <p className="mt-2 text-sm text-muted-foreground">Força de Vontade: uma ativação por teste, até três dados comuns, com 1 dano superficial. Os novos valores substituem os anteriores, mesmo quando forem menores.</p>
     {error && <p role="alert">Não foi possível carregar o histórico.</p>}
-    {message && <p role="status" className="mt-3 text-sm">{message}</p>}
+    {message && <output className="mt-3 block text-sm" aria-live="polite">{message}</output>}
     {retry && <button type="button" className="button-ghost mt-3" disabled={busy} onClick={() => void send()}>Reenviar a mesma operação</button>}
     <div className="mt-4 flex flex-col gap-4">{data?.history.toReversed().map(roll => <details key={roll.id} className="border border-border p-4">
       <summary className="cursor-pointer text-sm">{roll.reason} · {roll.result.successes} sucesso(s) · {outcomes[roll.result.outcome ?? ''] ?? 'Resolução reservada'}{roll.visibility === 'SECRET' ? ' · Secreta' : ''}</summary>
       <p className="mt-3 text-sm">{roll.result.difficulty === undefined ? 'Dificuldade reservada; a rerrolagem é conduzida pelo Narrador.' : `Dificuldade ${roll.result.difficulty} · Margem ${roll.result.margin}`} · {modeNames[roll.mode] ?? 'Teste registrado'}</p>
       {roll.result.totalFailure && <p className="mt-2 text-sm">Nenhum sucesso: falha total.</p>}
+      {roll.clanModifiers && <p className="mt-2 text-sm">{roll.clanModifiers.labels.join(' · ')} · Penalidade de clã: −{roll.clanModifiers.dicePenalty} dado(s).</p>}
       <fieldset className="mt-3 flex flex-wrap gap-2" disabled={busy || retry || !roll.canReroll}>
         <legend className="mb-2 text-xs">Selecionar dados comuns para rerrolar</legend>
         {roll.dice.map(die => <label key={die.id} className="flex items-center gap-2 border border-border p-2 text-sm"><input type="checkbox" aria-label={`${die.type === 'NORMAL' ? 'Dado comum' : 'Dado de Fome'} ${die.id}, valor ${die.value}`} disabled={die.type !== 'NORMAL'} checked={selection.rollId === roll.id && selection.ids.includes(die.id)} onChange={() => setSelection(current => {

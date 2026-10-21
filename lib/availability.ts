@@ -1,17 +1,11 @@
 import { sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import { randomUUID } from 'node:crypto'
-import { devIsUserInCampaign, devGetCampaignById } from './dev-db'
 
 export type AvailabilityStatus = 'disponível' | 'talvez' | 'indisponível'
 export type AvailabilityEntry = { id: string; campaignId: string; userId: string; name: string; date: string; status: AvailabilityStatus; suggested: boolean }
 export type CampaignSchedule = { startTime: string | null; endTime: string | null }
 
-const isDev = process.env.NODE_ENV !== 'production' && !process.env.DATABASE_URL
-const memory: AvailabilityEntry[] = []
-
 export async function getAvailability(campaignId: string): Promise<AvailabilityEntry[]> {
-  if (isDev) return memory.filter((entry) => entry.campaignId === campaignId)
   const result = await db.execute<any>(sql`
     SELECT a.id, a.campaign_id, a.user_id, COALESCE(u.name, u.email, 'Jogador') AS name,
       a.date::text, a.status, a.suggested
@@ -22,12 +16,6 @@ export async function getAvailability(campaignId: string): Promise<AvailabilityE
 }
 
 export async function saveAvailability(campaignId: string, userId: string, name: string, date: string, status: AvailabilityStatus, suggested = false) {
-  if (isDev) {
-    const current = memory.find((entry) => entry.campaignId === campaignId && entry.userId === userId && entry.date === date)
-    if (current) { current.status = status; current.suggested = suggested || current.suggested; return current }
-    const entry = { id: randomUUID(), campaignId, userId, name, date, status, suggested }
-    memory.push(entry); return entry
-  }
   const result = await db.execute<any>(sql`
     INSERT INTO campaign_availability (campaign_id, user_id, date, status, suggested)
     VALUES (${campaignId}::uuid, ${userId}, ${date}::date, ${status}, ${suggested})
@@ -39,12 +27,6 @@ export async function saveAvailability(campaignId: string, userId: string, name:
 }
 
 export async function suggestAvailability(campaignId: string, userId: string, date: string) {
-  if (isDev) {
-    const current = memory.find((entry) => entry.campaignId === campaignId && entry.userId === userId && entry.date === date)
-    if (current) current.suggested = !current.suggested
-    else await saveAvailability(campaignId, userId, 'Mestre', date, 'indisponível', true)
-    return
-  }
   await db.execute(sql`
     INSERT INTO campaign_availability (campaign_id, user_id, date, status, suggested)
     VALUES (${campaignId}::uuid, ${userId}, ${date}::date, 'indisponível', true)
@@ -53,11 +35,6 @@ export async function suggestAvailability(campaignId: string, userId: string, da
 }
 
 export async function getCampaignSchedule(campaignId: string): Promise<CampaignSchedule> {
-  if (isDev) {
-    devGetCampaignById(campaignId)
-    const campaign = global.__devDb!.campaigns.find(entry => entry.id === campaignId)
-    return { startTime: campaign?.sessionStartTime ?? null, endTime: campaign?.sessionEndTime ?? null }
-  }
   const result = await db.execute<{ session_start_time: string | null; session_end_time: string | null }>(sql`
     SELECT session_start_time::text, session_end_time::text FROM campaigns WHERE id = ${campaignId}::uuid
   `)
@@ -66,15 +43,6 @@ export async function getCampaignSchedule(campaignId: string): Promise<CampaignS
 }
 
 export async function saveCampaignSchedule(campaignId: string, startTime: string | null, endTime: string | null) {
-  if (isDev) {
-    devGetCampaignById(campaignId)
-    const campaign = global.__devDb!.campaigns.find(entry => entry.id === campaignId)
-    if (!campaign) throw new Error('Mesa não encontrada.')
-    campaign.sessionStartTime = startTime
-    campaign.sessionEndTime = endTime
-    campaign.updatedAt = new Date()
-    return { startTime, endTime }
-  }
   await db.execute(sql`UPDATE campaigns SET session_start_time = ${startTime}::time, session_end_time = ${endTime}::time, updated_at = now() WHERE id = ${campaignId}::uuid`)
   return { startTime, endTime }
 }
@@ -93,18 +61,11 @@ export function getAvailabilitySummary(entries: AvailabilityEntry[]) {
 export function isCampaignMember(entries: AvailabilityEntry[], userId: string) { return entries.some((entry) => entry.userId === userId) }
 
 export async function isUserInCampaign(campaignId: string, userId: string) {
-  if (isDev) {
-    return devIsUserInCampaign(campaignId, userId)
-  }
   const result = await db.execute<{ exists: boolean }>(sql`SELECT EXISTS (SELECT 1 FROM campaigns WHERE id = ${campaignId}::uuid AND master_user_id = ${userId} UNION SELECT 1 FROM characters WHERE campaign_id = ${campaignId}::uuid AND user_id = ${userId}) AS exists`)
   return result.rows[0]?.exists === true
 }
 
 export async function getCampaignOwner(campaignId: string) {
-  if (isDev) {
-    devGetCampaignById(campaignId)
-    return global.__devDb!.campaigns.find(campaign => campaign.id === campaignId)?.masterUserId ?? null
-  }
   const result = await db.execute<{ master_user_id: string }>(sql`SELECT master_user_id FROM campaigns WHERE id = ${campaignId}::uuid`)
   return result.rows[0]?.master_user_id ?? null
 }

@@ -36,6 +36,19 @@ it('não mistura rituais, cerimônias ou conteúdo não publicado com poderes', 
   for (const id of ['BLOOD_SORCERY', 'OBLIVION', 'CELERITY']) for (const entry of disciplinePowerOptions(id, 5)) expect(rows.find(row => row.id === entry.id)).toMatchObject({ type: 'Poder', status: 'Publicação', disciplineId: id })
   expect(disciplinePowerOptions('CELERITY', 1).every(entry => entry.level === 1)).toBe(true)
 })
+it('atualiza os textos ingleses e preserva IDs e referências das fichas existentes', () => {
+  const bond = rows.find(row => row.id === 'ANIMALISM:poder:1:20-vtm-v5-vampire-the-masquerade-pdf:245:bond-famulus')!
+  expect(bond.effect).toContain('When Blood Bonding an animal')
+  expect(bond.cost).toBe('Three Rouse Checks on separate nights to establish the bond; free at character creation. Maintenance blood is negligible.')
+  expect(bond).toMatchObject({ source: 'Vampire: The Masquerade — Corebook', printed_page: '245', pdf_page: 247 })
+  expect(bond.notes).not.toContain('Sistema (original, trecho)')
+  for (const name of ['Fortezza Sindonica', 'Knit the Veil', 'Death Rattle']) {
+    expect(rows.find(row => row.name === name)).toMatchObject({ disciplineId: 'OBLIVION', type: 'Cerimônia', status: 'Publicação' })
+  }
+  const squirm = rows.find(row => row.name === 'Squirm')!
+  expect(squirm.status).toBe('Captura enviada')
+  expect(disciplinePowerOptions(squirm.disciplineId, 5).some(option => option.id === squirm.id)).toBe(false)
+})
 it('não expõe falhas internas da sessão', async () => {
   session.mockRejectedValue(new Error('segredo interno'))
   const result = await GET(request())

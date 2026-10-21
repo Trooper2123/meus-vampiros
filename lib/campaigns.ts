@@ -1,14 +1,7 @@
 import { sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import {
-  devGetCampaignsForMaster,
-  devGetCampaignById,
-  devCreateCampaign,
-} from '@/lib/dev-db'
 
 const ROLES_CLAIM = 'https://meus-vampiros.app/roles'
-const isDev = process.env.NODE_ENV !== 'production' && !process.env.DATABASE_URL
-
 type Auth0User = {
   sub: string
   name?: string | null
@@ -42,8 +35,6 @@ export type CampaignSummary = {
 }
 
 export async function getCampaignsForMaster(masterUserId: string): Promise<CampaignSummary[]> {
-  if (isDev) return devGetCampaignsForMaster(masterUserId)
-
   const result = await db.execute<{
     id: string
     name: string
@@ -77,8 +68,6 @@ export async function createCampaign(
   masterUserId: string,
   input: { name: string; theme: string | null; principios: string | null; averageXp: number | null; status: string; lastSessionAt: string | null; enabledClanCodes?: string[] }
 ): Promise<CampaignSummary> {
-  if (isDev) return devCreateCampaign(masterUserId, input)
-
   const result = await db.execute<{
     id: string
     name: string
@@ -88,8 +77,8 @@ export async function createCampaign(
     status: string
     last_session_at: Date | null
   }>(sql`
-    INSERT INTO campaigns (master_user_id, name, theme, principios, average_xp, status, last_session_at)
-    VALUES (${masterUserId}, ${input.name}, ${input.theme}, ${input.principios}, ${input.averageXp}, ${input.status}, ${input.lastSessionAt})
+    INSERT INTO campaigns (master_user_id, name, theme, principios, average_xp, status, last_session_at, enabled_clan_codes)
+    VALUES (${masterUserId}, ${input.name}, ${input.theme}, ${input.principios}, ${input.averageXp}, ${input.status}, ${input.lastSessionAt}, ${input.enabledClanCodes ? JSON.stringify(input.enabledClanCodes) : null}::jsonb)
     RETURNING id, name, theme, principios, average_xp, status, last_session_at
   `)
 
@@ -107,8 +96,6 @@ export async function createCampaign(
 }
 
 export async function getCampaignById(id: string): Promise<{ id: string; name: string; theme: string | null; principios: string | null; averageXp: number | null } | null> {
-  if (isDev) return devGetCampaignById(id)
-
   const result = await db.execute<{ id: string; name: string; theme: string | null; principios: string | null; average_xp: number | null }>(sql`
     SELECT id, name, theme, principios, average_xp FROM campaigns WHERE id = ${id}::uuid
   `)
@@ -118,11 +105,6 @@ export async function getCampaignById(id: string): Promise<{ id: string; name: s
 }
 
 export async function toggleCampaignEventCalendar(campaignId: string, enabled: boolean): Promise<{ enabled: boolean }> {
-  if (isDev) {
-    // In dev mode, just return the enabled value (no actual persistence)
-    return { enabled }
-  }
-
   const result = await db.execute<{ enabled: boolean }>(sql`
     INSERT INTO campaign_event_calendars (campaign_id, enabled)
     VALUES (${campaignId}, ${enabled})

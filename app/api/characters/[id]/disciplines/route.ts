@@ -25,8 +25,8 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     const { id } = await context.params
     await notesActor(request, true)
     const input = await notesBody(request)
-    const fields = ['kind', 'disciplineId', 'targetLevel', 'acquisitionSource', 'requirement', 'grantId', 'reason', 'expectedRevision', 'idempotencyKey']
-    if (!UUID.test(id) || !input || typeof input !== 'object' || Array.isArray(input) || Object.keys(input).some(field => !fields.includes(field)) || typeof input.idempotencyKey !== 'string' || !UUID.test(input.idempotencyKey) || input.grantId !== undefined && (typeof input.grantId !== 'string' || !UUID.test(input.grantId))) throw new CharacterCommandError(400, 'Comando de Disciplina inválido.')
+    const fields = new Set(['kind', 'disciplineId', 'targetLevel', 'acquisitionSource', 'requirement', 'grantId', 'reason', 'expectedRevision', 'idempotencyKey'])
+    if (!UUID.test(id) || !input || typeof input !== 'object' || Array.isArray(input) || Object.keys(input).some(field => !fields.has(field)) || typeof input.idempotencyKey !== 'string' || !UUID.test(input.idempotencyKey) || input.grantId !== undefined && (typeof input.grantId !== 'string' || !UUID.test(input.grantId))) throw new CharacterCommandError(400, 'Comando de Disciplina inválido.')
     await ensureAllTables()
     return notesResponse(await changeCharacterDiscipline(session.user.sub, id, input as Parameters<typeof changeCharacterDiscipline>[2]))
   } catch (error) { return errorResponse(error) }

@@ -5,7 +5,10 @@ import pluginReactRefresh from 'eslint-plugin-react-refresh'
 
 export default tseslint.config(
   {
-    ignores: ['.next/**', 'node_modules/**', 'coverage/**', '.continue/**', '.vs/**'],
+    ignores: ['.next/**', 'node_modules/**', 'coverage/**', '.continue/**',
+      '.vs/**', '.idea/**', 'dist/**', 'out/**', 'build/**', 'public/**',
+    '.next-vackup**/**', 'tmp/**', 'temp/**', 'logs/**', '.cache/**', '.turbo/**',
+    'codex/**', 'codex-vackup/**', 'docs/**', 'docs-vackup/**', 'scripts/**', 'scripts-vackup/**', 'tests/**', 'tests-vackup/**'],
   },
   eslint.configs.recommended,
   ...tseslint.configs.recommended,

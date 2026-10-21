@@ -20,14 +20,14 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
     const body = await request.json().catch(() => null)
     if (!UUID_PATTERN.test(id) || !body || !CHARACTER_STATUSES.includes(body.status) || (body.expectedRevision !== undefined && (!Number.isSafeInteger(body.expectedRevision) || body.expectedRevision < 0)) || (body.idempotencyKey !== undefined && (typeof body.idempotencyKey !== 'string' || !UUID_PATTERN.test(body.idempotencyKey)))) return NextResponse.json({ error: 'Transição inválida.' }, { status: 400 })
     await ensureAllTables()
-    const result = await runCharacterCommand(session.user.sub, id, { key: body.idempotencyKey ?? randomUUID(), type: 'STATUS_CHANGE', expectedRevision: body.expectedRevision, payload: { status: body.status } }, character => character.ownerId === session.user.sub || character.masterId === session.user.sub, character => {
+    const result = await runCharacterCommand(session.user.sub, id, { key: body.idempotencyKey ?? randomUUID(), type: 'STATUS_CHANGE', expectedRevision: body.expectedRevision, payload: { status: body.status } }, character => character.ownerId === session.user.sub || character.masterId === session.user.sub, async character => {
       const isOwner = character.ownerId === session.user.sub
       const isMaster = character.masterId === session.user.sub
       const nextStatus = body.status as CharacterStatus
       if (!character.campaignId && nextStatus === 'PENDING_REVIEW') throw new CharacterCommandError(409, 'Uma ficha independente não precisa de revisão do narrador.')
       const state = readSessionState(character.data, character.gameState)
       if (body.status === 'PENDING_REVIEW' || body.status === 'APPROVED') validateDisciplineAllocation(character, true)
-      const report = validateCharacter(normalizeCharacterRulesInput({ ...character.data, humanidade: state.humanity, characterType: character.characterType }, undefined, xpAcquisitions(character)), campaignPredatorOverrides(character.campaignId).map(rule => rule.ruleCode), !character.campaignId)
+      const report = validateCharacter(normalizeCharacterRulesInput({ ...character.data, humanidade: state.humanity, characterType: character.characterType }, undefined, xpAcquisitions(character)), (await campaignPredatorOverrides(character.campaignId)).map(rule => rule.ruleCode), !character.campaignId)
       const independentApproval = !character.campaignId && isOwner && character.status === 'DRAFT' && nextStatus === 'APPROVED' && report.valid
       if (!independentApproval && !canTransitionCharacterStatus(character.status as CharacterStatus, nextStatus, isMaster, report.valid)) throw new CharacterCommandError(report.valid ? 409 : 422, report.valid ? 'Transição de status não permitida.' : 'Corrija os erros da ficha antes de enviá-la.')
       character.status = nextStatus

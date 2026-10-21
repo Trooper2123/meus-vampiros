@@ -1,6 +1,15 @@
+import { sql } from 'drizzle-orm'
+import { db } from './db'
 import { getCampaignCall } from './campaign-calls'
 
-export function getCallRollCharacters(actorId: string, campaignId: string) {
-  const call = getCampaignCall(actorId, campaignId)
-  return { characters: global.__devDb!.characters.filter(character => character.campaignId === campaignId && character.characterType === 'PLAYER_VAMPIRE' && character.status === 'APPROVED' && (call.canSummon || character.userId === actorId)).map(character => ({ id: character.id, name: character.name })) }
+export async function getCallRollCharacters(actorId: string, campaignId: string) {
+  const call = await getCampaignCall(actorId, campaignId)
+  const result = await db.execute<{ id: string; name: string }>(sql`
+    SELECT id, name FROM characters
+    WHERE campaign_id = ${campaignId}::uuid
+      AND character_type = 'PLAYER_VAMPIRE' AND status = 'APPROVED'
+      AND (${call.canSummon} OR user_id = ${actorId})
+    ORDER BY name
+  `)
+  return { characters: result.rows }
 }

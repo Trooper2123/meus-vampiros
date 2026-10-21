@@ -1,52 +1,55 @@
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto'
+import { sql } from 'drizzle-orm'
+import { db } from './db'
 import { CharacterCommandError } from './character-commands'
-import { devGetCampaignById } from './dev-db'
 import { CLANS } from './vtm-v5/clans'
 import type { PredatorTypeOverride } from './vtm-v5/predator-types'
-
 import { CAMPAIGN_EXCEPTIONS } from './campaign-exception-options'
 export { CAMPAIGN_EXCEPTIONS } from './campaign-exception-options'
 
+type CreationPolicy = { exceptionCodes: string[]; inviteHash: string }
+type CampaignRow = { id: string; master_user_id: string; name: string; theme: string | null; creation_policy: CreationPolicy | null; enabled_clan_codes: string[] | null; created_at: Date }
 export function validateCampaignExceptions(value: unknown): string[] {
   if (!Array.isArray(value) || value.length > CAMPAIGN_EXCEPTIONS.length || new Set(value).size !== value.length || value.some(code => !CAMPAIGN_EXCEPTIONS.some(rule => rule.code === code))) throw new CharacterCommandError(400, 'Exceções de predação inválidas.')
   return [...value]
 }
-
-function memoryCampaign(id: string) {
-  if (process.env.NODE_ENV === 'production' || process.env.DATABASE_URL) throw new CharacterCommandError(503, 'Convites de criação com banco externo ainda não disponíveis.')
-  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) throw new CharacterCommandError(400, 'Mesa inválida.')
-  devGetCampaignById(id)
-  return global.__devDb!.campaigns.find(campaign => campaign.id === id)
-}
-
 const tokenHash = (token: string) => createHash('sha256').update(token).digest('hex')
-
-export function createCampaignInvitation(actorId: string, campaignId: string, codes: unknown) {
+async function campaign(id: unknown): Promise<CampaignRow> {
+  if (typeof id !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) throw new CharacterCommandError(400, 'Mesa inválida.')
+  const result = await db.execute<CampaignRow>(sql`SELECT id, master_user_id, name, theme, creation_policy, enabled_clan_codes, created_at FROM campaigns WHERE id = ${id}::uuid`)
+  if (!result.rows[0]) throw new CharacterCommandError(404, 'Mesa não encontrada.')
+  return result.rows[0]
+}
+export async function createCampaignInvitation(actorId: string, campaignId: string, codes: unknown) {
   const exceptionCodes = validateCampaignExceptions(codes)
-  const campaign = memoryCampaign(campaignId)
-  if (campaign?.masterUserId !== actorId) throw new CharacterCommandError(403, 'Acesso negado.')
-  if (campaign.creationPolicy) throw new CharacterCommandError(409, 'A política é definida apenas na criação da mesa.')
   const token = randomBytes(32).toString('base64url')
-  campaign.creationPolicy = { exceptionCodes, inviteHash: tokenHash(token) }
+  const result = await db.execute(sql`UPDATE campaigns SET creation_policy = ${JSON.stringify({ exceptionCodes, inviteHash: tokenHash(token) })}::jsonb, updated_at = now() WHERE id = ${campaignId}::uuid AND master_user_id = ${actorId} AND creation_policy IS NULL RETURNING id`)
+  if (!result.rows.length) {
+    const current = await campaign(campaignId)
+    if (current.master_user_id !== actorId) throw new CharacterCommandError(403, 'Acesso negado.')
+    throw new CharacterCommandError(409, 'A política é definida apenas na criação da mesa.')
+  }
   return token
 }
-
-export function invitedCampaign(campaignId: unknown, token: unknown) {
-  if (typeof campaignId !== 'string' || typeof token !== 'string' || !/^[A-Za-z0-9_-]{43}$/.test(token)) throw new CharacterCommandError(403, 'Convite inválido.')
-  const campaign = memoryCampaign(campaignId)
-  if (!campaign?.creationPolicy || !timingSafeEqual(Buffer.from(campaign.creationPolicy.inviteHash, 'hex'), Buffer.from(tokenHash(token), 'hex'))) throw new CharacterCommandError(403, 'Convite inválido.')
-  return campaign
+export async function invitedCampaign(campaignId: unknown, token: unknown) {
+  if (typeof token !== 'string' || !/^[A-Za-z0-9_-]{43}$/.test(token)) throw new CharacterCommandError(403, 'Convite inválido.')
+  const row = await campaign(campaignId)
+  const expected = row.creation_policy?.inviteHash
+  const actual = tokenHash(token)
+  if (!expected || !/^[a-f0-9]{64}$/i.test(expected) || !timingSafeEqual(Buffer.from(expected, 'hex'), Buffer.from(actual, 'hex'))) throw new CharacterCommandError(403, 'Convite inválido.')
+  return { id: row.id, masterUserId: row.master_user_id, name: row.name, theme: row.theme, creationPolicy: row.creation_policy, enabledClanCodes: row.enabled_clan_codes, createdAt: row.created_at }
 }
-
-export function campaignPredatorOverrides(campaignId: string | null): PredatorTypeOverride[] {
-  if (process.env.NODE_ENV === 'production' || process.env.DATABASE_URL) return []
-  const campaign = global.__devDb?.campaigns.find(entry => entry.id === campaignId)
-  return (campaign?.creationPolicy?.exceptionCodes ?? []).map(ruleCode => ({ ruleCode, justification: 'Exceção predefinida na criação da mesa.', createdByUserId: campaign!.masterUserId, createdAt: campaign!.createdAt.toISOString() }))
+export async function campaignPredatorOverrides(campaignId: string | null): Promise<PredatorTypeOverride[]> {
+  if (!campaignId) return []
+  const row = await campaign(campaignId)
+  return (row.creation_policy?.exceptionCodes ?? []).map(ruleCode => ({ ruleCode, justification: 'Exceção predefinida na criação da mesa.', createdByUserId: row.master_user_id, createdAt: new Date(row.created_at).toISOString() }))
 }
-
-export function validateInvitedClan(campaignId: string, data: Record<string, unknown>) {
+export async function campaignRequiresInvitation(campaignId: string) {
+  return !!(await campaign(campaignId)).creation_policy
+}
+export async function validateInvitedClan(campaignId: string, data: Record<string, unknown>) {
   if (!data.cla) return
-  const campaign = memoryCampaign(campaignId)
-  const allowed = campaign?.enabledClanCodes ?? CLANS.map(clan => clan.code)
+  const row = await campaign(campaignId)
+  const allowed = row.enabled_clan_codes ?? CLANS.map(clan => clan.code)
   if (!CLANS.some(clan => allowed.includes(clan.code) && (data.cla === clan.name || data.cla === clan.code))) throw new CharacterCommandError(422, 'O clã não é permitido nesta mesa. Use o seletor de clã.')
 }

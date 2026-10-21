@@ -4,6 +4,7 @@ import { Check, Copy, Video } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import useSWR from 'swr'
 import { LiveKitRoom } from './livekit-room'
+import { CallRolls } from './call-rolls'
 
 type RoomInfo = { roomName: string; roomUrl: string; isHost: boolean; token: string }
 type CallStatus = { active: boolean; canSummon: boolean }
@@ -82,7 +83,7 @@ function RoomPanel({ campaignId, master, campaignName }: Readonly<{ campaignId: 
         catch { setError('Não foi possível copiar o link.') }
       }}><Copy className="size-4" aria-hidden="true" />{copied ? <><Check className="size-4" aria-hidden="true" /> Link copiado</> : 'Copiar link para participantes'}</button>
     </div>
-    {joined && canEnter && room && <div className="mt-6"><LiveKitRoom token={room.token} serverUrl={room.roomUrl} onDisconnected={() => { setJoined(false); setRoom(null) }} /></div>}
+    {joined && canEnter && room && <div className="mt-6"><LiveKitRoom token={room.token} serverUrl={room.roomUrl} onDisconnected={() => { setJoined(false); setRoom(null) }} /><CallRolls campaignId={campaignId} /></div>}
     {status?.canSummon && <p className="mt-3 text-xs text-muted-foreground">Prepare a sala entrando como host. Encerrar a convocação bloqueia novas entradas, mas não revoga tokens já emitidos.</p>}
   </section>
 }

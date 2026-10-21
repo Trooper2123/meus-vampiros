@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
 import { getSessionOrDev } from '@/lib/auth0'
 import { CharacterCommandError } from '@/lib/character-commands'
-import { getClanView, selectCharacterClan } from '@/lib/character-clans'
+import { getClanView, selectCharacterClan, setCharacterClanConditions } from '@/lib/character-clans'
+import { notesActor, notesBody, notesResponse } from '@/lib/notes-http'
 import type { ClanSelection } from '@/lib/vtm-v5/clans'
 
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -17,7 +18,18 @@ export async function GET(_request: Request, context: Context) {
     if (!session?.user?.sub) return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
     const { id } = await context.params
     if (!uuid.test(id)) throw new CharacterCommandError(400, 'Ficha inválida.')
-    return NextResponse.json(await getClanView(id, session.user.sub))
+    return notesResponse(await getClanView(id, session.user.sub))
+  } catch (error) { return failure(error) }
+}
+
+export async function PATCH(request: Request, context: Context) {
+  try {
+    const actorId = await notesActor(request, true)
+    const { id } = await context.params
+    if (!uuid.test(id)) throw new CharacterCommandError(400, 'Ficha inválida.')
+    const body = await notesBody(request)
+    if (Object.keys(body).some(key => !['active', 'expectedRevision', 'key'].includes(key)) || !Number.isSafeInteger(body.expectedRevision) || Number(body.expectedRevision) < 0 || typeof body.key !== 'string' || !uuid.test(body.key)) throw new CharacterCommandError(400, 'Condições de clã inválidas.')
+    return notesResponse(await setCharacterClanConditions(id, actorId, body.active, Number(body.expectedRevision), body.key))
   } catch (error) { return failure(error) }
 }
 

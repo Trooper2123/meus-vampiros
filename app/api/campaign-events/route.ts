@@ -165,7 +165,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     const body: EventFormData = await request.json()
-    const { eventId, title, description, eventDate, eventTime, visibility, fictionalYear, fictionalMonth, fictionalMonthIndex, fictionalWeekday, fictionalWeekdayIndex } = body
+    const { eventId, eventDate, fictionalMonth, fictionalWeekday } = body
 
     // Validate required fields
     if (!eventId) {

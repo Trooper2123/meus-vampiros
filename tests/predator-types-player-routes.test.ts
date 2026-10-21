@@ -24,11 +24,11 @@ describe('rotas públicas de tipos de predação', () => {
     expect((await GET(new Request('http://localhost/api/predator-types'))).status).toBe(401)
   })
 
-  it('permite consultar 41 registros independentes, habilita só os básicos e não vaza campos privados', async () => {
+  it('permite consultar e escolher tipos sem habilitação de Narrador em ficha independente', async () => {
     const response = await GET(new Request('http://localhost/api/predator-types?characterId=11111111-1111-4111-8111-111111111111'))
     const body = await response.json()
     expect(body.predatorTypes).toHaveLength(41)
-    expect(body.predatorTypes.filter((entry: { selectable: boolean }) => entry.selectable)).toHaveLength(10)
+    expect(body.predatorTypes.find((entry: { code: string }) => entry.code === 'BUSINESS_OWNER')).toMatchObject({ selectable: true, publicWarnings: [] })
     expect(body.predatorTypes[0]).not.toHaveProperty('commonRisks')
     expect(body.predatorTypes[0]).not.toHaveProperty('flawsOrCosts')
   })
@@ -36,6 +36,15 @@ describe('rotas públicas de tipos de predação', () => {
   it('impede outro usuário de consultar a ficha', async () => {
     mocks.getSessionOrDev.mockResolvedValue({ user: { sub: 'auth0|other' } })
     expect((await GET(new Request('http://localhost/api/predator-types?characterId=11111111-1111-4111-8111-111111111111'))).status).toBe(403)
+  })
+
+  it('retorna escolhas salvas projetadas para restaurar o seletor sem campos privados', async () => {
+    mocks.getCharacterAccessRecord.mockResolvedValueOnce({ userId: 'auth0|owner', campaignId: null, data: { predatorTypeCode: 'OSIRIS', predatorTypeSelection: { code: 'OSIRIS', specialty: 'Performance (Canto)', discipline: 'Presença', optionCodes: ['FOLLOWERS:FAME:2'], privateNarratorNote: 'segredo' } } })
+    const response = await GET(new Request('http://localhost/api/predator-types?characterId=11111111-1111-4111-8111-111111111111'))
+    expect(response.headers.get('cache-control')).toBe('private, no-store')
+    const body = await response.json()
+    expect(body.selection).toEqual({ code: 'OSIRIS', specialty: 'Performance (Canto)', discipline: 'Presença', optionCodes: ['FOLLOWERS:FAME:2'] })
+    expect(JSON.stringify(body)).not.toContain('segredo')
   })
 
   it('aplica uma seleção válida e gera ledger uma única vez', async () => {
@@ -55,7 +64,7 @@ describe('rotas públicas de tipos de predação', () => {
     expect(incomplete.status).toBe(422)
   })
 
-  it.each(['ROADSIDE_KILLER', 'SABBAT_RECLAIMER', 'TITHE_COLLECTOR'] as PredatorTypeCode[])('recusa %s mesmo com fonte habilitada e perfil enviado pelo cliente', async code => {
+  it.each(['SABBAT_RECLAIMER', 'TITHE_COLLECTOR'] as PredatorTypeCode[])('recusa %s mesmo com fonte habilitada e perfil enviado pelo cliente', async code => {
     mocks.getPredatorTypeSettings.mockResolvedValue({ enabledSources: ['COREBOOK'], enabledCodes: [code], disabledCodes: [] })
     const entry = PREDATOR_TYPE_BY_CODE.get(code)!
     const body = { code, specialty: entry.specialtyOptions[0], discipline: entry.disciplineOptions[0], optionCodes: (entry.choiceGroups ?? []).map(group => `${group.code}:${group.options[0].code}:${group.totalDots}`), creationType: 'ANCILLA' }
@@ -64,12 +73,18 @@ describe('rotas públicas de tipos de predação', () => {
     expect(mocks.persistPredatorTypeData).not.toHaveBeenCalled()
   })
 
-  it('aplica Extorsionista somente com habilitação e escolhas completas', async () => {
+  it.each([1, 3, 5])('registra a pontuação %i definida pelo jogador quando a fonte não informa o custo', async dots => {
+    const entry = PREDATOR_TYPE_BY_CODE.get('ROADSIDE_KILLER')!
+    const optionCodes = [`PREY_EXCLUSION:LOCAL_RESIDENTS:${dots}`]
+    const response = await POST(new Request('http://localhost', { method: 'POST', body: JSON.stringify({ code: entry.code, specialty: entry.specialtyOptions[0], discipline: entry.disciplineOptions[0], optionCodes }) }), context)
+    expect(response.status).toBe(200)
+    expect(await response.json()).toMatchObject({ selection: { code: entry.code, optionCodes } })
+    expect(mocks.persistPredatorTypeData).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ predatorTypeSelection: expect.objectContaining({ optionCodes }) }), 'auth0|owner', expect.any(Object))
+  })
+
+  it('permite Extorsionista em ficha independente sem habilitação de Narrador', async () => {
     const entry = PREDATOR_TYPE_BY_CODE.get('EXTORTIONIST')!
     const request = () => new Request('http://localhost', { method: 'POST', body: JSON.stringify({ code: entry.code, specialty: entry.specialtyOptions[0], discipline: 'Dominação', optionCodes: ['PROTECTION:CONTACTS:1', 'PROTECTION:RESOURCES:2'] }) })
-    expect((await POST(request(), context)).status).toBe(422)
-    expect(mocks.persistPredatorTypeData).not.toHaveBeenCalled()
-    mocks.getPredatorTypeSettings.mockResolvedValue({ enabledSources: ['COREBOOK'], enabledCodes: ['EXTORTIONIST'], disabledCodes: [] })
     expect((await POST(request(), context)).status).toBe(200)
     expect(mocks.persistPredatorTypeData).toHaveBeenCalledOnce()
   })

@@ -96,6 +96,9 @@ type DevStore = {
 declare global {
 
   var __devDb: DevStore | undefined
+  var __notesMemory: { store: DevStore; notes: Map<string, { links: Array<{ targetId: string; targetType: string }>; revision: number; updatedAt: string }> } | undefined
+  var __chronicleNightMemory: { store: DevStore; locks: Map<string, unknown>; nights: Array<{ actorId: string; hash: string; key: string; result: { id?: string; campaignId?: string; nightNumber?: number; inGameDate?: string; status?: string; results: Array<{ characterId: string }> } }> } | undefined
+  var __characterCommandMemory: { store: DevStore; commands: Map<string, unknown> } | undefined
 }
 
 const DEV_USER_ID = 'dev|local'

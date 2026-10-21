@@ -8,9 +8,6 @@ import { createCampaignInvitation, validateCampaignExceptions } from '@/lib/camp
 import { CLANS } from '@/lib/vtm-v5/clans'
 import { PREDATOR_TYPE_CODES, PREDATOR_TYPES, type PredatorTypeCode } from '@/lib/vtm-v5/predator-types'
 import { savePredatorTypeSettings } from '@/lib/predator-types'
-import { devToggleCampaignSchedulingCalendar } from '@/lib/dev-db'
-
-const isDev = process.env.NODE_ENV !== 'production' && !process.env.DATABASE_URL
 
 async function getAuthenticatedUser() {
   const session = await getSessionOrDev()
@@ -39,18 +36,16 @@ export async function POST(request: Request) {
     if (!body || typeof body !== 'object' || Array.isArray(body)) return NextResponse.json({ error: 'Dados da mesa inválidos.' }, { status: 400 })
     const { enabledClanCodes, enabledPredatorCodes, exceptionCodes } = readCampaignPolicy(body)
     const { name, theme, principios, averageXp, status, lastSessionAt, enableSchedulingCalendar } = readCampaignDetails(body)
-    const campaign = await createCampaign(user.sub, { name, theme, principios, averageXp: Number.isFinite(averageXp) ? averageXp : null, status, lastSessionAt, ...(isDev ? { enabledClanCodes } : {}) })
+    const campaign = await createCampaign(user.sub, { name, theme, principios, averageXp: Number.isFinite(averageXp) ? averageXp : null, status, lastSessionAt, enabledClanCodes })
 
     // Criar registro no calendário de marcação com valor padrão do checkbox
-    if (isDev) {
-      devToggleCampaignSchedulingCalendar(campaign.id, enableSchedulingCalendar)
-      await savePredatorTypeSettings(campaign.id, { enabledSources: ['COREBOOK'], enabledCodes: enabledPredatorCodes as PredatorTypeCode[], disabledCodes: PREDATOR_TYPE_CODES.filter(code => !enabledPredatorCodes.includes(code)) }, user.sub)
-    } else await db.execute(sql`
+    await db.execute(sql`
       INSERT INTO campaign_scheduling_calendars (campaign_id, enabled)
       VALUES (${campaign.id}, ${enableSchedulingCalendar})
     `)
+    await savePredatorTypeSettings(campaign.id, { enabledSources: ['COREBOOK'], enabledCodes: enabledPredatorCodes as PredatorTypeCode[], disabledCodes: PREDATOR_TYPE_CODES.filter(code => !enabledPredatorCodes.includes(code)) }, user.sub)
 
-    const inviteToken = isDev ? createCampaignInvitation(user.sub, campaign.id, exceptionCodes) : undefined
+    const inviteToken = await createCampaignInvitation(user.sub, campaign.id, exceptionCodes)
     return NextResponse.json({ campaign, inviteToken }, { status: 201, headers: { 'Cache-Control': 'private, no-store', Vary: 'Cookie' } })
   } catch (error) {
     return NextResponse.json({ error: error instanceof CharacterCommandError ? error.message : 'Não foi possível criar a mesa.' }, { status: error instanceof CharacterCommandError ? error.status : 500 })
@@ -61,7 +56,6 @@ function readCampaignPolicy(body: Record<string, unknown>) {
     const enabledClanCodes = body.enabledClanCodes ?? CLANS.map(clan => clan.code)
     const enabledPredatorCodes = body.enabledPredatorCodes ?? PREDATOR_TYPE_CODES.slice(0, 10)
     const exceptionCodes = validateCampaignExceptions(body.exceptionCodes ?? [])
-    if (!isDev && exceptionCodes.length) throw new CharacterCommandError(503, 'Exceções com banco externo ainda não disponíveis.')
     if (!Array.isArray(enabledClanCodes) || enabledClanCodes.length > CLANS.length || new Set(enabledClanCodes).size !== enabledClanCodes.length || enabledClanCodes.some(code => !CLANS.some(clan => clan.code === code)) || !Array.isArray(enabledPredatorCodes) || enabledPredatorCodes.length > PREDATOR_TYPE_CODES.length || new Set(enabledPredatorCodes).size !== enabledPredatorCodes.length || enabledPredatorCodes.some(code => !PREDATOR_TYPE_CODES.includes(code))) throw new CharacterCommandError(400, 'Clãs ou predações inválidos.')
 
   return { enabledClanCodes, enabledPredatorCodes, exceptionCodes }

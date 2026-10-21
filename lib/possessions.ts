@@ -1,14 +1,5 @@
 import { sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import {
-  devGetPossessionsForCharacter,
-  devGetPossessionsForCampaign,
-  devCreatePossession,
-  devUpdatePossessionStatus,
-} from '@/lib/dev-db'
-
-const isDev = process.env.NODE_ENV !== 'production' && !process.env.DATABASE_URL
-
 export type Possession = {
   id: string
   characterId: string
@@ -23,15 +14,6 @@ export type Possession = {
 }
 
 export async function getPossessionsForCharacter(characterId: string): Promise<Possession[]> {
-  if (isDev) {
-    const list = devGetPossessionsForCharacter(characterId)
-    return list.map((p) => ({
-      ...p,
-      createdAt: p.createdAt.toISOString(),
-      updatedAt: p.updatedAt.toISOString(),
-    }))
-  }
-
   const result = await db.execute<{
     id: string
     character_id: string
@@ -65,15 +47,6 @@ export async function getPossessionsForCharacter(characterId: string): Promise<P
 }
 
 export async function getPossessionsForCampaign(campaignId: string): Promise<Possession[]> {
-  if (isDev) {
-    const list = devGetPossessionsForCampaign(campaignId)
-    return list.map((p) => ({
-      ...p,
-      createdAt: p.createdAt.toISOString(),
-      updatedAt: p.updatedAt.toISOString(),
-    }))
-  }
-
   const result = await db.execute<{
     id: string
     character_id: string
@@ -110,15 +83,6 @@ export async function createPossession(
   characterId: string,
   input: { label: string; description?: string | null; origin?: 'player' | 'master'; campaignId?: string | null }
 ): Promise<Possession> {
-  if (isDev) {
-    const p = devCreatePossession(characterId, input)
-    return {
-      ...p,
-      createdAt: p.createdAt.toISOString(),
-      updatedAt: p.updatedAt.toISOString(),
-    }
-  }
-
   const origin = input.origin ?? 'player'
   const result = await db.execute<{
     id: string
@@ -158,16 +122,6 @@ export async function updatePossessionStatus(
   id: string,
   input: { status: 'pendente' | 'aprovado' | 'reprovado'; masterComment?: string | null }
 ): Promise<Possession | null> {
-  if (isDev) {
-    const p = devUpdatePossessionStatus(id, input)
-    if (!p) return null
-    return {
-      ...p,
-      createdAt: p.createdAt.toISOString(),
-      updatedAt: p.updatedAt.toISOString(),
-    }
-  }
-
   const result = await db.execute<{
     id: string
     character_id: string

@@ -8,7 +8,6 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
   try {
     const actorId = await notesActor(request, true)
     const campaignId = notesId((await context.params).id)
-    if (process.env.NODE_ENV === 'production' || process.env.DATABASE_URL) throw new CharacterCommandError(503, 'Criação de NPCs da mesa com banco externo ainda não disponível.')
     const body = await notesBody(request)
     if (Object.keys(body).some(key => !['name', 'characterType'].includes(key)) || typeof body.name !== 'string' || !body.name.trim() || body.name.length > 120 || !['HUMAN_NPC', 'VAMPIRE_NPC'].includes(body.characterType as string)) throw new CharacterCommandError(400, 'Informe nome e tipo de NPC válidos.')
     await ensureAllTables()
