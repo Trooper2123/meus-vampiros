@@ -2,6 +2,35 @@
 
 Registro cronológico de todas as alterações relevantes implementadas no projeto.
 
+## [2026-10-21 19:51 BRT] — fix - Modo de ficha independente e XP histórico
+
+**Tipo:** fix
+**Arquivos principais:** `app/characters/character-form-client.tsx`, `components/character-form/historical-xp-import.tsx`, `tests/character-form-identity.test.ts`, `tests/historical-xp-import.test.ts`
+
+- O modo de preenchimento aparece antes das abas no formulário independente.
+- A importação de XP histórico atualiza total, gasto e saldo exibidos na ficha.
+- Validação: teste de ordem do formulário e teste de importação histórica.
+
+## [2026-10-21 19:31 BRT] — fix - Seletor de habilidades para rolagem
+
+**Tipo:** fix
+**Arquivos principais:** `components/character-summary/character-rolls.tsx`, `tests/character-rolls-ui.test.ts`
+
+- O seletor de habilidades da rolagem exibe somente habilidades com pelo menos um ponto atribuído.
+- Validação: teste de interface da rolagem aprovado; ESLint do componente sem erros.
+
+
+## 2026-10-21 02:24 BRT - fix - Predações sem mesa não exigem habilitação do Narrador
+- Arquivos principais: `app/api/predator-types/route.ts`, `app/api/characters/[id]/predator-type/route.ts`, `lib/predator-types.ts`, testes das rotas e serviços de predação.
+- Fichas independentes podem consultar e aplicar tipos de predação de qualquer fonte sem habilitação de uma mesa. Fichas vinculadas continuam respeitando a configuração do Narrador.
+- Validação: 26 testes específicos, TypeScript e ESLint focados aprovados; Vitest reporta timeout ao encerrar workers após a conclusão dos testes.
+
+## 2026-10-21 02:05 BRT - fix - JSX e testes alinhados à persistência PostgreSQL
+- Arquivos principais: `components/character-form/attributes-step.tsx`, `components/character-form/skills-step.tsx`, `vitest.config.ts`, `tests/postgres-global-setup.ts`, `tests/postgres-test-helpers.ts`, testes de calendário, convocação, convites, fichas independentes, notas, predação e rolagens de chamada; `lib/dev-db.ts`.
+- Vitest carrega o ambiente local e direciona conexões de loopback ao schema isolado `meus_vampiros_test`, criado e preparado antes das suítes; recusa URLs de banco remoto. Fixtures usam UUIDs próprios, não executam limpeza global nem acessam registros de `public`. Testes que verificam o provedor em memória continuam isolados explicitamente.
+- Removidas chaves JSX excedentes nos passos de atributos e habilidades. Atualizadas as expectativas que liam funções assíncronas ou objetos `__devDb` depois da migração. A tipagem da memória de noites agora descreve os campos já usados pela fixture.
+- Validação: TypeScript sem erros; 64 testes em oito arquivos passaram contra o schema PostgreSQL isolado; ESLint focado aprovado. Nenhuma limpeza global foi executada.
+
 ## 2026-10-20 22:45 BRT - chore - Biblioteca de PDFs versionada via Git LFS
 - Arquivos principais: `.gitattributes`, `docs/books/*.pdf`, `docs/books/README.md`.
 - Livros previamente staged passam a usar Git LFS, incluindo dois PDFs maiores que 100 MB, para permitir envio ao GitHub e manter os caminhos usados pelas fontes autenticadas. Checkout e deploy precisam baixar os objetos LFS; nenhum PDF foi alterado ou removido do diretório local.

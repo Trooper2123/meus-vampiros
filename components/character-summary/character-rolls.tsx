@@ -47,7 +47,7 @@ function RollPanel({ characterId }: Readonly<{ characterId: string }>) {
   const [result, setResult] = useState<RollResponse | null>(null)
   const submitting = useRef(false)
   const attributes = Object.entries(data?.attributes ?? {})
-  const skills = Object.entries(data?.skills ?? {})
+  const skills = Object.entries(data?.skills ?? {}).filter(([, dots]) => dots > 0)
   const selectedAttribute = attributes.some(([key]) => key === attribute) ? attribute : attributes[0]?.[0] ?? ''
   const selectedSkill = skills.some(([key]) => key === skillId) ? skillId : skills[0]?.[0] ?? ''
   const specialties = data?.canUseSpecialties ? data.specialties.filter(entry => entry.status === 'APPROVED' && entry.skillId === selectedSkill) : []

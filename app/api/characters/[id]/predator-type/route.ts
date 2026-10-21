@@ -42,7 +42,7 @@ export async function POST(request: Request, context: RouteContext<'/api/charact
   if (!body || typeof body.code !== 'string' || !PREDATOR_TYPE_CODES.includes(body.code as PredatorTypeCode)) return NextResponse.json({ error: 'Código inválido.' }, { status: 400 })
   const definition = PREDATOR_TYPE_BY_CODE.get(body.code as PredatorTypeCode)!
   const settings = await getPredatorTypeSettings(character.campaignId)
-  const enabled = isPredatorTypeEnabled(definition.code, settings)
+  const enabled = !character.campaignId || isPredatorTypeEnabled(definition.code, settings)
   const data = character.data
   const report = validatePredatorType(definition, { clan: characterText(data.cla).trim() || null, bloodPotency: Number(data['potencia-de-sangue'] ?? 0), isThinBlood: data.creationType === 'THIN_BLOOD' || data.isThinBlood === true, enabled, creationType: data.creationType, overrides: await campaignPredatorOverrides(character.campaignId) })
   const choiceIssues = validatePredatorChoices(definition, body.specialty, body.discipline, body.optionCodes)

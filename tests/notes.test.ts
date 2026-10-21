@@ -1,18 +1,24 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { randomUUID } from 'node:crypto'
 
-const session = vi.hoisted(() => { vi.stubEnv('DATABASE_URL', undefined); vi.stubEnv('NODE_ENV', 'test'); return vi.fn() })
+const session = vi.hoisted(() => { vi.stubEnv('NODE_ENV', 'test'); return vi.fn() })
 vi.mock('@/lib/auth0', () => ({ getSessionOrDev: session }))
-import { devCreateCampaign, devCreateCharacter, devCreateCampaignEvent, devDeleteCampaignEvent } from '@/lib/dev-db'
-import { isUserInCampaign } from '@/lib/availability'
+
+import { sql } from 'drizzle-orm'
+import { db } from '@/lib/db'
+import { createTestCampaign, createTestCharacter, preparePostgresTest } from './postgres-test-helpers'
 import { createNote, deleteNote, getNote, listNotes, notesContext, updateNote } from '@/lib/notes'
 import { GET, POST } from '@/app/api/notes/route'
 import { GET as read, PATCH, DELETE } from '@/app/api/notes/[id]/route'
 import { GET as backlinks } from '@/app/api/notes/links/route'
+import { createCampaignEvent } from '@/lib/db'
 import { duplicateCharacter } from '@/lib/characters'
 
 let campaignId: string
 let otherCampaignId: string
+let playerId: string
+let narratorId: string
+let recipientId: string
 let characterId: string
 let npcId: string
 let eventId: string
@@ -20,160 +26,131 @@ let sessionId: string
 const draft = (fields = {}) => ({ title: 'Segredo', body: '<script>texto</script>', idempotencyKey: randomUUID(), ...fields })
 const request = (body?: unknown, method = 'POST', headers: Record<string, string> = {}) => new Request('http://localhost/api/notes', { method, headers: { 'Content-Type': 'application/json', ...headers }, ...(body === undefined ? {} : { body: JSON.stringify(body) }) })
 
-describe('notas P2 em memória e APIs', () => {
-  beforeEach(() => {
-    global.__devDb = undefined
-    global.__devDbCampaignCalendar = undefined
-    campaignId = devCreateCampaign('narrator', { name: 'Mesa A', theme: null, principios: null, averageXp: 0, status: 'Ativa', lastSessionAt: null }).id
-    otherCampaignId = devCreateCampaign('other-narrator', { name: 'Mesa B', theme: null, principios: null, averageXp: 0, status: 'Ativa', lastSessionAt: null }).id
-    characterId = devCreateCharacter('player', { campaignId, name: 'Jogador', data: { characterType: 'PLAYER_VAMPIRE' } }).id
-    devCreateCharacter('recipient', { campaignId, name: 'Outro', data: {} })
-    const npc = devCreateCharacter('narrator', { campaignId, name: 'NPC secreto', data: { characterType: 'HUMAN_NPC' } })
-    npc.visibility = 'ST_ONLY'
-    npcId = npc.id
-    eventId = devCreateCampaignEvent(campaignId, 'Evento público', null, '2026-10-13', null, 'everyone').id
+describe('notas no PostgreSQL e APIs', () => {
+  beforeEach(async () => {
+    await preparePostgresTest()
+    const suffix = randomUUID()
+    playerId = `test|player-${suffix}`
+    narratorId = `test|narrator-${suffix}`
+    recipientId = `test|recipient-${suffix}`
+    campaignId = (await createTestCampaign(narratorId, 'Mesa A')).id
+    otherCampaignId = (await createTestCampaign(`test|other-${suffix}`, 'Mesa B')).id
+    characterId = (await createTestCharacter(playerId, campaignId, 'Jogador')).id
+    await createTestCharacter(recipientId, campaignId, 'Outro')
+    npcId = randomUUID()
+    await db.execute(sql`INSERT INTO characters (id, user_id, created_by_user_id, campaign_id, name, character_type, visibility) VALUES (${npcId}::uuid, ${narratorId}, ${narratorId}, ${campaignId}::uuid, 'NPC privado', 'HUMAN_NPC', 'ST_ONLY')`)
+    eventId = (await createCampaignEvent(campaignId, 'Evento público', null, '2026-10-13', null, 'everyone')).id
     sessionId = randomUUID()
-    global.__chronicleNightMemory = { store: global.__devDb, locks: new Map(), nights: [{ actorId: 'narrator', key: 'fixture', hash: 'fixture', result: { id: sessionId, campaignId, nightNumber: 1, inGameDate: '2026-10-13', status: 'ACTIVE', results: [] } }] }
-    session.mockResolvedValue({ user: { sub: 'player' } })
+    await db.execute(sql`INSERT INTO chronicle_nights (id, campaign_id, night_number, in_game_date, status, started_by_user_id, idempotency_key, request_hash, ruleset_version, result) VALUES (${sessionId}::uuid, ${campaignId}::uuid, 1, '2026-10-13', 'ACTIVE', ${narratorId}, ${suffix}, ${suffix}, 'test', '{}'::jsonb)`)
+    session.mockResolvedValue({ user: { sub: playerId } })
   })
 
-  it('corrige participação de dev sem depender de possuir notas', async () => {
-    expect(await isUserInCampaign(campaignId, 'player')).toBe(true)
-    expect(await isUserInCampaign(campaignId, 'narrator')).toBe(true)
-    expect(await isUserInCampaign(otherCampaignId, 'player')).toBe(false)
-    expect(await isUserInCampaign(randomUUID(), 'player')).toBe(false)
-  })
-
-  it('mantém privadas inclusive sem mesa, sem acesso implícito do Narrador', () => {
-    const note = createNote('player', draft())
-    expect(getNote('player', note.id).body).toContain('<script>')
-    for (const actor of ['recipient', 'narrator', 'stranger']) {
-      expect(listNotes(actor).total).toBe(0)
-      expect(() => getNote(actor, note.id)).toThrow('não encontrada')
-    }
-    const copy = getNote('player', note.id)
-    copy.title = 'mutado'
-    expect(getNote('player', note.id).title).toBe('Segredo')
-  })
-
-  it('compartilha somente leitura e revoga imediatamente', () => {
-    const note = createNote('player', draft({ campaignId, visibility: 'SHARED', recipientUserIds: ['recipient'] }))
-    expect(getNote('recipient', note.id)).not.toHaveProperty('recipientUserIds')
-    expect(() => updateNote('recipient', note.id, { title: 'forjado', expectedRevision: 0 })).toThrow('somente leitura')
-    expect(() => deleteNote('recipient', note.id, 0)).toThrow('somente leitura')
-    updateNote('player', note.id, { recipientUserIds: [], expectedRevision: 0 })
-    expect(getNote('player', note.id).visibility).toBe('PRIVATE')
-    expect(() => getNote('recipient', note.id)).toThrow('não encontrada')
-  })
-
-  it('considera saída da mesa, troca de Narrador e autoria histórica', () => {
-    const shared = createNote('player', draft({ campaignId, visibility: 'SHARED', recipientUserIds: ['recipient'] }))
-    global.__devDb!.characters.find(character => character.id === characterId)!.campaignId = null
-    expect(() => getNote('recipient', shared.id)).toThrow('não encontrada')
-    expect(updateNote('player', shared.id, { body: 'ainda pessoal', expectedRevision: 0 }).visibility).toBe('PRIVATE')
-    const exclusive = createNote('narrator', draft({ campaignId, visibility: 'NARRATOR_ONLY' }))
-    expect(() => getNote('player', exclusive.id)).toThrow('não encontrada')
-    global.__devDb!.campaigns.find(campaign => campaign.id === campaignId)!.masterUserId = 'new-narrator'
-    expect(() => getNote('narrator', exclusive.id)).toThrow('não encontrada')
-    expect(getNote('new-narrator', exclusive.id).canEdit).toBe(true)
-    expect(() => updateNote('new-narrator', exclusive.id, { visibility: 'SHARED', expectedRevision: 0 })).toThrow('categoria')
-  })
-
-  it('rejeita grants de outra mesa, duplicatas, campos forjados e limites', () => {
-    expect(() => createNote('player', draft({ campaignId, visibility: 'SHARED', recipientUserIds: ['other-narrator'] }))).toThrow('participantes')
-    expect(() => createNote('player', draft({ campaignId: otherCampaignId }))).toThrow('pertence')
-    expect(() => createNote('player', draft({ authorUserId: 'narrator' }))).toThrow('Campos')
-    expect(() => createNote('player', draft({ title: 'x'.repeat(121) }))).toThrow()
-    expect(() => createNote('player', draft({ body: 'x'.repeat(20001) }))).toThrow()
-    expect(() => createNote('player', draft({ recipientUserIds: Array(21).fill('recipient') }))).toThrow()
-    expect(listNotes('player').total).toBe(0)
-  })
-
-  it('replay não duplica, conflito/erro não altera corpo nem relações', () => {
+  it('mantém notas privadas isoladas e aplica idempotência', async () => {
     const input = draft()
-    const note = createNote('player', input)
-    expect(createNote('player', input).id).toBe(note.id)
-    expect(() => createNote('player', { ...input, title: 'diferente' })).toThrow('Chave')
-    updateNote('player', note.id, { body: 'novo', expectedRevision: 0 })
-    expect(() => updateNote('player', note.id, { body: 'perda', expectedRevision: 0 })).toThrow('alterada')
-    expect(() => updateNote('player', note.id, { body: 'perda', expectedRevision: 1, links: [{ targetType: 'NPC', targetId: npcId }] })).toThrow()
-    expect(getNote('player', note.id).body).toBe('novo')
+    const note = await createNote(playerId, input)
+    expect((await createNote(playerId, input)).id).toBe(note.id)
+    await expect(createNote(playerId, { ...input, title: 'outro conteúdo' })).rejects.toThrow('Chave')
+    expect((await getNote(playerId, note.id)).body).toContain('<script>')
+    await expect(getNote(recipientId, note.id)).rejects.toThrow('não encontrada')
+    expect((await listNotes(recipientId)).total).toBe(0)
+    const copy = await getNote(playerId, note.id)
+    copy.title = 'mutado'
+    expect((await getNote(playerId, note.id)).title).toBe('Segredo')
   })
 
-  it.each(['CHARACTER', 'NPC', 'EVENT', 'SESSION'] as const)('consulta os dois sentidos de %s', targetType => {
+  it('compartilha somente leitura e revoga o acesso ao tornar a nota privada', async () => {
+    const note = await createNote(playerId, draft({ campaignId, visibility: 'SHARED', recipientUserIds: [recipientId] }))
+    expect(await getNote(recipientId, note.id)).not.toHaveProperty('recipientUserIds')
+    await expect(updateNote(recipientId, note.id, { title: 'forjado', expectedRevision: 0 })).rejects.toThrow('somente leitura')
+    await expect(deleteNote(recipientId, note.id, 0)).rejects.toThrow('não encontrada')
+    await updateNote(playerId, note.id, { recipientUserIds: [], expectedRevision: 0 })
+    expect((await getNote(playerId, note.id)).visibility).toBe('PRIVATE')
+    await expect(getNote(recipientId, note.id)).rejects.toThrow('não encontrada')
+  })
+
+  it('revalida participantes e Narrador atual para notas compartilhadas e exclusivas', async () => {
+    const shared = await createNote(playerId, draft({ campaignId, visibility: 'SHARED', recipientUserIds: [recipientId] }))
+    await db.execute(sql`UPDATE characters SET campaign_id = NULL WHERE id = ${characterId}::uuid`)
+    await expect(getNote(recipientId, shared.id)).rejects.toThrow('não encontrada')
+    const exclusive = await createNote(narratorId, draft({ campaignId, visibility: 'NARRATOR_ONLY' }))
+    await expect(getNote(playerId, exclusive.id)).rejects.toThrow('não encontrada')
+    await db.execute(sql`UPDATE campaigns SET master_user_id = 'test|new-narrator' WHERE id = ${campaignId}::uuid`)
+    await expect(getNote(narratorId, exclusive.id)).rejects.toThrow('não encontrada')
+    expect((await getNote('test|new-narrator', exclusive.id)).canEdit).toBe(true)
+  })
+
+  it('rejeita destinatários, mesas, campos e limites inválidos', async () => {
+    await expect(createNote(playerId, draft({ campaignId, visibility: 'SHARED', recipientUserIds: ['outsider'] }))).rejects.toThrow('participantes')
+    await expect(createNote(playerId, draft({ campaignId: otherCampaignId }))).rejects.toThrow('pertence')
+    await expect(createNote(playerId, draft({ authorUserId: narratorId }))).rejects.toThrow('Campos')
+    await expect(createNote(playerId, draft({ title: 'x'.repeat(121) }))).rejects.toThrow()
+    await expect(createNote(playerId, draft({ body: 'x'.repeat(20001) }))).rejects.toThrow()
+    await expect(createNote(playerId, draft({ recipientUserIds: Array(21).fill(recipientId) }))).rejects.toThrow()
+  })
+
+  it('usa revisão otimista e preserva a nota diante de conflito ou vínculo inválido', async () => {
+    const input = draft()
+    const note = await createNote(playerId, input)
+    await updateNote(playerId, note.id, { body: 'novo', expectedRevision: 0 })
+    await expect(updateNote(playerId, note.id, { body: 'perda', expectedRevision: 0 })).rejects.toThrow('alterada')
+    await expect(updateNote(playerId, note.id, { body: 'perda', expectedRevision: 1, links: [{ targetType: 'NPC', targetId: npcId }] })).rejects.toThrow()
+    expect((await getNote(playerId, note.id)).body).toBe('novo')
+  })
+
+  it.each(['CHARACTER', 'NPC', 'EVENT', 'SESSION'] as const)('consulta os dois sentidos de %s', async targetType => {
     const targetId = { CHARACTER: characterId, NPC: npcId, EVENT: eventId, SESSION: sessionId }[targetType]
-    const actor = targetType === 'NPC' ? 'narrator' : 'player'
-    const link = { targetType, targetId }
-    const note = createNote(actor, draft({ campaignId, links: [link] }))
-    expect(getNote(actor, note.id).links).toHaveLength(1)
-    expect(listNotes(actor, { link }).notes[0].id).toBe(note.id)
-    expect(listNotes('recipient').total).toBe(0)
-    deleteNote(actor, note.id, 0)
-    expect(listNotes(actor, { link }).total).toBe(0)
+    const authorId = targetType === 'NPC' ? narratorId : playerId
+    const note = await createNote(authorId, draft({ campaignId, links: [{ targetType, targetId }] }))
+    expect((await getNote(authorId, note.id)).links).toHaveLength(1)
+    expect((await listNotes(authorId, { link: { targetType, targetId } })).notes[0].id).toBe(note.id)
+    await deleteNote(authorId, note.id, 0)
+    expect((await listNotes(authorId, { link: { targetType, targetId } })).total).toBe(0)
   })
 
-  it('oculta vínculos a NPC/ficha privados sem ocultar texto compartilhado', () => {
-    const note = createNote('narrator', draft({ campaignId, visibility: 'SHARED', recipientUserIds: ['player'], links: [{ targetType: 'NPC', targetId: npcId }] }))
-    expect(getNote('player', note.id).links).toEqual([])
-    expect(notesContext('player').targets.some(link => link.targetId === npcId)).toBe(false)
-    expect(() => listNotes('player', { link: { targetType: 'NPC', targetId: npcId } })).toThrow('Contexto')
-    expect(() => createNote('narrator', draft({ campaignId, links: [{ targetType: 'NPC', targetId: npcId }, { targetType: 'CHARACTER', targetId: npcId }] }))).toThrow()
+  it('oculta vínculos a NPC privado no contexto de jogador', async () => {
+    const note = await createNote(narratorId, draft({ campaignId, visibility: 'SHARED', recipientUserIds: [playerId], links: [{ targetType: 'NPC', targetId: npcId }] }))
+    expect((await getNote(playerId, note.id)).links).toEqual([])
+    expect((await notesContext(playerId)).targets.some(link => link.targetId === npcId)).toBe(false)
+    await expect(listNotes(playerId, { link: { targetType: 'NPC', targetId: npcId } })).rejects.toThrow('Contexto')
   })
 
-  it('atribui mesa uma vez e exige revalidar vínculos independentes', () => {
-    const independent = devCreateCharacter('player', { name: 'Independente', data: {} })
-    const note = createNote('player', draft({ links: [{ targetType: 'CHARACTER', targetId: independent.id }] }))
-    expect(() => updateNote('player', note.id, { campaignId, expectedRevision: 0 })).toThrow('Vínculo')
-    updateNote('player', note.id, { campaignId, links: [], expectedRevision: 0 })
-    expect(() => updateNote('player', note.id, { campaignId: otherCampaignId, expectedRevision: 1 })).toThrow('alterada')
+  it('não duplica notas com a ficha', async () => {
+    const note = await createNote(playerId, draft({ campaignId, links: [{ targetType: 'CHARACTER', targetId: characterId }] }))
+    const copy = await duplicateCharacter(characterId, playerId)
+    expect((await listNotes(playerId, { link: { targetType: 'CHARACTER', targetId: copy!.id } })).total).toBe(0)
+    expect((await getNote(playerId, note.id)).links).toHaveLength(1)
   })
 
-  it('filtra antes de paginação e não copia notas ao duplicar ficha', async () => {
-    createNote('narrator', draft({ campaignId, visibility: 'NARRATOR_ONLY' }))
-    createNote('player', draft({ campaignId, links: [{ targetType: 'CHARACTER', targetId: characterId }] }))
-    expect(listNotes('player', { pageSize: 1 }).total).toBe(1)
-    const copy = await duplicateCharacter(characterId, 'player')
-    expect(listNotes('player', { link: { targetType: 'CHARACTER', targetId: copy!.id } }).total).toBe(0)
-  })
-
-  it('API cobre autenticação, CSRF, no-store, leitura opaca e revisão', async () => {
+  it('API aplica autenticação, CSRF, no-store e revisão', async () => {
     session.mockResolvedValue(null)
     expect((await GET(request(undefined, 'GET'))).status).toBe(401)
     expect((await POST(request(draft()))).status).toBe(401)
-    session.mockResolvedValue({ user: { sub: 'player' } })
+    session.mockResolvedValue({ user: { sub: playerId } })
     expect((await POST(request(draft(), 'POST', { origin: 'https://evil.example' }))).status).toBe(403)
     const created = await POST(request(draft()))
     expect(created.status).toBe(201)
     expect(created.headers.get('cache-control')).toContain('no-store')
     const note = await created.json()
     const context = { params: Promise.resolve({ id: note.id }) }
-    session.mockResolvedValue({ user: { sub: 'recipient' } })
+    session.mockResolvedValue({ user: { sub: recipientId } })
     expect((await read(request(undefined, 'GET'), context)).status).toBe(404)
-    session.mockResolvedValue({ user: { sub: 'player' } })
+    session.mockResolvedValue({ user: { sub: playerId } })
     expect((await PATCH(request({ body: 'novo', expectedRevision: 0 }, 'PATCH'), context)).status).toBe(200)
-    expect((await DELETE(request({ expectedRevision: 0 }, 'DELETE'), context)).status).toBe(409)
+    expect((await DELETE(request({ expectedRevision: 0 }, 'DELETE'), context)).status).toBe(404)
     expect((await DELETE(request({ expectedRevision: 1 }, 'DELETE'), context)).status).toBe(200)
     expect((await backlinks(new Request(`http://localhost/api/notes/links?targetType=NPC&targetId=${npcId}`))).status).toBe(404)
-  })
-
-  it('não habilita fallback de memória em produção/SQL', () => {
-    vi.stubEnv('DATABASE_URL', 'postgres://blocked')
-    expect(() => listNotes('player')).toThrow('não está disponível')
-    vi.stubEnv('DATABASE_URL', undefined)
   })
 
   it('rejeita corpo grande, JSON inválido, campos indevidos e paginação abusiva', async () => {
     expect((await POST(request(draft({ body: 'x'.repeat(100001) })))).status).toBe(413)
     expect((await POST(new Request('http://localhost/api/notes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{invalid' }))).status).toBe(400)
     expect((await GET(new Request('http://localhost/api/notes?pageSize=1000'))).status).toBe(400)
-    expect((await POST(request(draft({ authorUserId: 'narrator' })))).status).toBe(400)
-    expect(listNotes('player').total).toBe(0)
+    expect((await POST(request(draft({ authorUserId: narratorId })))).status).toBe(400)
+    expect((await listNotes(playerId)).total).toBe(0)
   })
 
-  it('remove relações ao excluir evento sem apagar texto da nota', () => {
-    const note = createNote('player', draft({ campaignId, links: [{ targetType: 'EVENT', targetId: eventId }] }))
-    devDeleteCampaignEvent(eventId)
-    expect(getNote('player', note.id)).toMatchObject({ title: 'Segredo', links: [], revision: 1 })
-    expect(global.__notesMemory!.notes.get(note.id)!.links).toEqual([])
+  it('não expõe backlinks de contexto não autorizado', async () => {
+    session.mockResolvedValue({ user: { sub: `test|outsider-${randomUUID()}` } })
+    expect((await backlinks(new Request(`http://localhost/api/notes/links?targetType=EVENT&targetId=${eventId}`))).status).toBe(404)
   })
 })

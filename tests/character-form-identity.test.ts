@@ -58,6 +58,8 @@ it.each(['identidade', 'atributos', 'habilidades', 'disciplinas', 'recursos', 'v
 
 it('identidade não duplica entradas de clã/predação nem permite editar XP', () => {
   const html = renderToStaticMarkup(createElement(CharacterFormClient, {}))
+  expect(html).toContain('Como deseja preencher a ficha?')
+  expect(html.indexOf('Como deseja preencher a ficha?')).toBeLessThan(html.indexOf('role="tablist"'))
   expect(html).not.toContain('name="cla"')
   expect(html).not.toContain('name="predador"')
   expect(html).not.toContain('name="experiencia-total"')
@@ -70,4 +72,11 @@ it('identidade não duplica entradas de clã/predação nem permite editar XP', 
   expect(html.indexOf('name="sire"')).toBeLessThan(html.indexOf('Classificação da ficha'))
   expect(html).not.toContain('name="surto-de-sangue"')
   expect(html).toContain('Efeitos calculados da Potência do Sangue')
+})
+
+it('identifica como histórico o XP já importado', () => {
+  const id = '11111111-1111-4111-8111-111111111111'
+  const html = renderToStaticMarkup(createElement(SWRConfig, { value: { provider: () => new Map(), revalidateOnMount: false, fallback: { [`/api/characters?id=${id}`]: { character: { id, campaignId: null, data: { historicalXpImported: true, 'experiencia-total': 50, 'experiencia-gasta': 47 }, revision: 1, characterType: 'PLAYER_VAMPIRE', status: 'DRAFT' } } } } }, createElement(CharacterFormClient, { initialCharacterId: id, mode: 'edit' })))
+  expect(html).toContain('aria-label="Experiência histórica"')
+  expect(html).toContain('XP histórico disponível')
 })
