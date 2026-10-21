@@ -24,7 +24,7 @@ export function BloodPolicySettings({ campaignId }: Readonly<{ campaignId: strin
       const result = await response.json()
       if (!response.ok) throw new Error(result.error ?? 'Falha ao salvar o perfil.')
       await mutate(result); setMessage('Perfil salvo. As próximas consultas usam estas regras; eventos anteriores são preservados.')
-    } catch (failure) { setMessage(failure instanceof Error ? failure.message : 'Falha ao salvar.') }
+    } catch (error_) { setMessage(error_ instanceof Error ? error_.message : 'Falha ao salvar.') }
     finally { setSaving(false) }
   }
   return <section className="border border-border bg-card p-5">
@@ -35,7 +35,7 @@ export function BloodPolicySettings({ campaignId }: Readonly<{ campaignId: strin
       <label>Perfil<select className="ml-2 border border-border bg-background p-2" name="profile" defaultValue={data.rulesetVersion}>{BLOOD_RULESETS.map(profile => <option key={profile} value={profile}>{profile === 'CORE_V5_ORIGINAL_V1' ? 'Livro básico original' : 'Companion — atualizações opcionais'}</option>)}</select></label>
       <label><input name="elders" type="checkbox" defaultChecked={data.allowPlayerPotencyAboveFive} /> Permitir Potência permanente 6+ para jogadores, respeitando a geração</label>
       <label><input name="community" type="checkbox" defaultChecked={data.communityEnabled} /> Habilitar pacote comunitário de Bully (exige Companion)</label>
-      <button className="button-primary justify-self-start" disabled={saving}>{saving ? 'Salvando...' : 'Salvar perfil'}</button>
+      <button type="submit" className="button-primary justify-self-start" disabled={saving}>{saving ? 'Salvando...' : 'Salvar perfil'}</button>
     </form>}
     <output className="mt-3 block text-sm" aria-live="polite">{message}</output>
   </section>

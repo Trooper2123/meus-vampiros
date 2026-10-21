@@ -8,7 +8,7 @@ import { isUserInCampaign } from '@/lib/availability'
 import { canCreateCharacterType, CHARACTER_TYPES, CREATION_TYPES, type CharacterType, type CreationType } from '@/lib/vtm-v5/types'
 import { grantCharacterXp } from '@/lib/character-xp'
 import { CharacterCommandError } from '@/lib/character-commands'
-import { invitedCampaign, validateInvitedClan } from '@/lib/campaign-invitations'
+import { campaignRequiresInvitation, invitedCampaign, validateInvitedClan } from '@/lib/campaign-invitations'
 import { notesActor } from '@/lib/notes-http'
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -91,7 +91,7 @@ export async function POST(request: Request) {
     if (['HUMAN_NPC', 'VAMPIRE_NPC'].includes(String(data?.characterType))) return NextResponse.json({ error: 'Crie NPCs pelo gerenciamento da mesa.' }, { status: 403 })
     await ensureAllTables()
     if (campaignId && !policyConsent && !(await isUserInCampaign(campaignId, session.user.sub))) return NextResponse.json({ error: 'Você não pertence a esta mesa.' }, { status: 403 })
-    if (campaignId && !policyConsent && (data?.characterType ?? 'PLAYER_VAMPIRE') === 'PLAYER_VAMPIRE' && global.__devDb?.campaigns.find(campaign => campaign.id === campaignId)?.creationPolicy) throw new CharacterCommandError(409, 'Consulte o convite e aceite as regras antes de criar a ficha.')
+    if (campaignId && !policyConsent && (data?.characterType ?? 'PLAYER_VAMPIRE') === 'PLAYER_VAMPIRE' && await campaignRequiresInvitation(campaignId)) throw new CharacterCommandError(409, 'Consulte o convite e aceite as regras antes de criar a ficha.')
     if (campaignId && !(await getCampaignById(campaignId))) return NextResponse.json({ error: 'Mesa não encontrada.' }, { status: 400 })
     const result = await createCharacter(session.user.sub, { name: name ?? 'Personagem sem nome', data: safeCharacterData(data), campaignId: campaignId ?? null }, undefined, undefined, policyConsent)
     return NextResponse.json({ id: result.id }, { status: 201 })
@@ -105,10 +105,10 @@ async function acceptCreationInvitation(request: Request, userId: string, invita
   if (!invitation || typeof invitation !== 'object' || Array.isArray(invitation)) throw new InvalidPayload()
   const fields = invitation as Record<string, unknown>
   if (fields.accepted !== true || Object.keys(fields).some(key => !['campaignId', 'token', 'accepted'].includes(key))) throw new InvalidPayload()
-  const campaign = invitedCampaign(fields.campaignId, fields.token)
+  const campaign = await invitedCampaign(fields.campaignId, fields.token)
   if (requestedCampaignId && requestedCampaignId !== campaign.id) throw new InvalidPayload()
   if (data?.characterType && data.characterType !== 'PLAYER_VAMPIRE') throw new InvalidPayload()
-  validateInvitedClan(campaign.id, data ?? {})
+  await validateInvitedClan(campaign.id, data ?? {})
   return { campaignId: campaign.id, policyConsent: { campaignId: campaign.id, acceptedAt: new Date().toISOString(), acceptedBy: userId } }
 }
 

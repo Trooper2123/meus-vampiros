@@ -3,9 +3,9 @@ import type { CreationType } from './types'
 export const ATTRIBUTE_DISTRIBUTION = [4, 3, 3, 3, 2, 2, 2, 2, 1]
 
 export const SKILL_DISTRIBUTIONS = {
-  JACK_OF_ALL_TRADES: [3, ...Array(8).fill(2), ...Array(10).fill(1)],
-  BALANCED: [...Array(3).fill(3), ...Array(5).fill(2), ...Array(7).fill(1)],
-  SPECIALIST: [4, ...Array(3).fill(3), ...Array(3).fill(2), ...Array(3).fill(1)],
+  JACK_OF_ALL_TRADES: [3, ...Array.from({ length: 8 }, () => 2), ...Array.from({ length: 10 }, () => 1)],
+  BALANCED: [...Array.from({ length: 3 }, () => 3), ...Array.from({ length: 5 }, () => 2), ...Array.from({ length: 7 }, () => 1)],
+  SPECIALIST: [4, ...Array.from({ length: 3 }, () => 3), ...Array.from({ length: 3 }, () => 2), ...Array.from({ length: 3 }, () => 1)],
 } as const
 
 export const CREATION_ADJUSTMENTS: Record<CreationType, { initialXp: number; humanity: number; bloodPotencyModifier: number; advantageDots: number; flawDots: number }> = {

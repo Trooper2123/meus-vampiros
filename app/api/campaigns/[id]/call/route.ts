@@ -10,13 +10,13 @@ function failure(error: unknown) {
 export async function GET(request: Request, context: { params: Promise<{ id: string }> }) {
   try {
     const actorId = await notesActor(request)
-    return NextResponse.json(getCampaignCall(actorId, (await context.params).id), { headers: { 'Cache-Control': 'private, no-store', Vary: 'Cookie' } })
+    return NextResponse.json(await getCampaignCall(actorId, (await context.params).id), { headers: { 'Cache-Control': 'private, no-store', Vary: 'Cookie' } })
   } catch (error) { return failure(error) }
 }
 
 export async function PUT(request: Request, context: { params: Promise<{ id: string }> }) {
   try {
     const actorId = await notesActor(request, true)
-    return NextResponse.json(setCampaignCall(actorId, (await context.params).id, await notesBody(request)), { headers: { 'Cache-Control': 'private, no-store', Vary: 'Cookie' } })
+    return NextResponse.json(await setCampaignCall(actorId, (await context.params).id, await notesBody(request)), { headers: { 'Cache-Control': 'private, no-store', Vary: 'Cookie' } })
   } catch (error) { return failure(error) }
 }

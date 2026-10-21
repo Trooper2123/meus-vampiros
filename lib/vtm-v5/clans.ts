@@ -1,4 +1,5 @@
 import { CLAN_DISCIPLINES, disciplineDefinition } from './disciplines'
+import { CLAN_RULES } from './clan-rules'
 export const DISCIPLINE_NAMES = ['Animalismo', 'Auspícios', 'Dominação', 'Fortitude', 'Ofuscação', 'Potência', 'Presença', 'Rapidez', 'Proteanismo', 'Feitiçaria de Sangue', 'Oblívio'] as const
 export type ClanCode = 'BRUJAH' | 'GANGREL' | 'MALKAVIAN' | 'NOSFERATU' | 'TOREADOR' | 'TREMERE' | 'VENTRUE' | 'CAITIFF' | 'THIN_BLOOD' | 'BANU_HAQIM' | 'HECATA' | 'LASOMBRA' | 'MINISTRY' | 'RAVNOS' | 'SALUBRI' | 'TZIMISCE'
 export type ClanSelection = { code: ClanCode; disciplineDots: Record<string, number>; caitiffDisciplines?: string[]; feedingPreference?: string; afflictionCategory?: string }
@@ -16,7 +17,18 @@ const definitions = [
 ] as const
 
 const additionalClans = [['BANU_HAQIM', 'Banu Haqim'], ['HECATA', 'Hecata'], ['LASOMBRA', 'Lasombra'], ['MINISTRY', 'Ministério'], ['RAVNOS', 'Ravnos'], ['SALUBRI', 'Salubri'], ['TZIMISCE', 'Tzimisce']] as const
-export const CLANS = [...definitions, ...additionalClans.map(([code, name]) => ({ code, name, disciplines: CLAN_DISCIPLINES[code].map(id => normalizeDiscipline(id)), bane: 'Consultar a referência de regras da crônica.', compulsion: 'Consultar a referência de regras da crônica.' }))].map(entry => ({ ...entry, disciplineIds: CLAN_DISCIPLINES[entry.code], version: 1, source: 'REFERENCIA_LOCAL_V5', guidance: `Revise os gatilhos e consequências de ${entry.name} com a crônica antes de aplicar penalidades contextuais. Não automatize Perdição ou Compulsão sem contexto narrativo.` }))
+export const CLANS = [...definitions, ...additionalClans.map(([code, name]) => ({ code, name, disciplines: CLAN_DISCIPLINES[code].map(id => normalizeDiscipline(id)), bane: CLAN_RULES[code]!.baneRule.description, compulsion: CLAN_RULES[code]!.compulsionRule.description }))].map(entry => ({ ...entry, ...CLAN_RULES[entry.code], disciplineIds: CLAN_DISCIPLINES[entry.code], version: CLAN_RULES[entry.code] ? 2 : 1, source: CLAN_RULES[entry.code]?.baneRule.sourceId ?? 'REFERENCIA_LOCAL_V5', guidance: `Revise os gatilhos e consequências de ${entry.name} com a crônica antes de aplicar penalidades contextuais. Não automatize Perdição ou Compulsão sem contexto narrativo.` }))
+
+export type PublicClan = Omit<typeof CLANS[number], 'guidance'>
+export function publicClan(clan: typeof CLANS[number]): PublicClan {
+  return { code: clan.code, name: clan.name, originalName: clan.originalName, description: clan.description, disciplines: clan.disciplines, disciplineIds: clan.disciplineIds, bane: clan.bane, compulsion: clan.compulsion, baneRule: clan.baneRule, compulsionRule: clan.compulsionRule, source: clan.source, version: clan.version }
+}
+
+export function characterClan(data: Record<string, unknown>) {
+  if (data.isThinBlood || data.creationType === 'THIN_BLOOD') return CLANS.find(clan => clan.code === 'THIN_BLOOD')
+  if (data.isCaitiff) return CLANS.find(clan => clan.code === 'CAITIFF')
+  return CLANS.find(clan => clan.code === data.clanCode) ?? CLANS.find(clan => clan.name.toLocaleLowerCase('pt-BR') === String(data.cla ?? '').trim().toLocaleLowerCase('pt-BR'))
+}
 
 export function normalizeDiscipline(name: string): string {
   const canonical = disciplineDefinition(name)

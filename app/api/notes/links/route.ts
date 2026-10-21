@@ -8,6 +8,6 @@ export async function GET(request: Request) {
     const query = new URL(request.url).searchParams
     if ([...query.keys()].some(key => !['targetType', 'targetId', 'page', 'pageSize'].includes(key))) throw new CharacterCommandError(400, 'Filtros inválidos.')
     const link = { targetType: query.get('targetType') as NoteLink['targetType'], targetId: notesId(query.get('targetId') ?? '') }
-    return notesResponse(listNotes(actor, { link, page: query.has('page') ? Number(query.get('page')) : undefined, pageSize: query.has('pageSize') ? Number(query.get('pageSize')) : undefined }))
+    return notesResponse(await listNotes(actor, { link, page: query.has('page') ? Number(query.get('page')) : undefined, pageSize: query.has('pageSize') ? Number(query.get('pageSize')) : undefined }))
   } catch (error) { return notesFailure(error) }
 }

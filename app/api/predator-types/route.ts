@@ -29,9 +29,12 @@ export async function GET(request: Request) {
   const clan = characterText(data.cla).trim() || null
   const bloodPotency = Number(data['potencia-de-sangue'] ?? 0)
   const isThinBlood = data.creationType === 'THIN_BLOOD' || data.isThinBlood === true
+  const overrides = await campaignPredatorOverrides(campaignId)
   const predatorTypes = PREDATOR_TYPES.filter((definition) => !campaignId || isPredatorTypeEnabled(definition.code, settings)).map((definition) => {
-    const report = validatePredatorType(definition, { clan, bloodPotency, isThinBlood, creationType: data.creationType, enabled: isPredatorTypeEnabled(definition.code, settings), overrides: campaignPredatorOverrides(campaignId) })
+    const report = validatePredatorType(definition, { clan, bloodPotency, isThinBlood, creationType: data.creationType, enabled: isPredatorTypeEnabled(definition.code, settings), overrides })
     return toPlayerPredatorTypeDto(definition, report.issues, report.valid)
   })
-  return NextResponse.json({ predatorTypes, selectedCode: data.predatorTypeCode ?? null })
+  const saved = data.predatorTypeSelection && typeof data.predatorTypeSelection === 'object' && !Array.isArray(data.predatorTypeSelection) ? data.predatorTypeSelection as Record<string, unknown> : null
+  const selection = saved ? { code: typeof saved.code === 'string' ? saved.code : '', specialty: typeof saved.specialty === 'string' ? saved.specialty : '', discipline: typeof saved.discipline === 'string' ? saved.discipline : '', optionCodes: Array.isArray(saved.optionCodes) ? saved.optionCodes.filter((value): value is string => typeof value === 'string') : [] } : null
+  return NextResponse.json({ predatorTypes, selectedCode: data.predatorTypeCode ?? selection?.code ?? null, selection }, { headers: { 'Cache-Control': 'private, no-store', Vary: 'Cookie' } })
 }

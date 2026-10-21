@@ -27,9 +27,11 @@ describe('suplementos de predação do documento fornecido', () => {
     for (const specialty of entry.specialtyOptions) expect(SPECIALTY_SKILL_NAMES).toHaveProperty(normalizeSpecialtySkillId(specialty.split('(')[0]))
   })
 
-  it('mantém custos desconhecidos sem inventar pontos e bloqueia mesmo com override forjado', () => {
+  it('não inventa pontos fixos e preserva bloqueios de regras incompletas mesmo com override forjado', () => {
     const roadside = definition('ROADSIDE_KILLER')
     expect(roadside.flawsOrCosts).toEqual([])
+    expect(roadside.availabilityBlocker).toBeUndefined()
+    expect(roadside.choiceGroups).toContainEqual(expect.objectContaining({ mode: 'PLAYER_DEFINED' }))
     for (const entry of PREDATOR_TYPES.filter(item => item.availabilityBlocker)) {
       expect(validatePredatorType(entry, { ...context, overrides: [{ ruleCode: 'PREDATOR_RULESET_UNSUPPORTED', justification: 'forjado', createdByUserId: 'owner', createdAt: '' }] }).issues).toContainEqual(expect.objectContaining({ code: 'PREDATOR_RULESET_UNSUPPORTED', blocking: true }))
     }

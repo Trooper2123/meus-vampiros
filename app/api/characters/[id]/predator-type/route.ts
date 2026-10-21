@@ -44,7 +44,7 @@ export async function POST(request: Request, context: RouteContext<'/api/charact
   const settings = await getPredatorTypeSettings(character.campaignId)
   const enabled = isPredatorTypeEnabled(definition.code, settings)
   const data = character.data
-  const report = validatePredatorType(definition, { clan: characterText(data.cla).trim() || null, bloodPotency: Number(data['potencia-de-sangue'] ?? 0), isThinBlood: data.creationType === 'THIN_BLOOD' || data.isThinBlood === true, enabled, creationType: data.creationType, overrides: campaignPredatorOverrides(character.campaignId) })
+  const report = validatePredatorType(definition, { clan: characterText(data.cla).trim() || null, bloodPotency: Number(data['potencia-de-sangue'] ?? 0), isThinBlood: data.creationType === 'THIN_BLOOD' || data.isThinBlood === true, enabled, creationType: data.creationType, overrides: await campaignPredatorOverrides(character.campaignId) })
   const choiceIssues = validatePredatorChoices(definition, body.specialty, body.discipline, body.optionCodes)
   const issues = [...report.issues, ...choiceIssues]
   if (issues.some((issue) => issue.blocking)) return NextResponse.json({ error: 'A escolha possui restrições.', publicReport: { valid: false, issues } }, { status: 422 })

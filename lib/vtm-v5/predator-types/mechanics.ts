@@ -1,6 +1,7 @@
 import type { MechanicalOption, PredatorTypeCode } from './types'
 
-export type PredatorChoiceGroup = { code: string; totalDots: number; mode: 'ONE' | 'DISTRIBUTE'; options: readonly MechanicalOption[] }
+// Em PLAYER_DEFINED, totalDots é o limite superior, pois a fonte não fixa o custo.
+export type PredatorChoiceGroup = { code: string; totalDots: number; mode: 'ONE' | 'DISTRIBUTE' | 'PLAYER_DEFINED'; options: readonly MechanicalOption[] }
 const trait = (code: string, label: string, dots: number, kind: MechanicalOption['kind'] = 'MERIT'): MechanicalOption => ({ code, label, dots, kind })
 const group = (code: string, totalDots: number, mode: PredatorChoiceGroup['mode'], options: MechanicalOption[]): PredatorChoiceGroup => ({ code, totalDots, mode, options })
 
@@ -48,6 +49,7 @@ const fixed: Record<PredatorTypeCode, { merits?: [string, number][]; flaws?: [st
 }
 
 export const PREDATOR_CHOICE_GROUPS: Partial<Record<PredatorTypeCode, readonly PredatorChoiceGroup[]>> = {
+  ROADSIDE_KILLER: [group('PREY_EXCLUSION', 5, 'PLAYER_DEFINED', [trait('LOCAL_RESIDENTS', 'Exclusão de Presa: moradores locais', 5, 'FLAW')])],
   BLOOD_LEECH: [group('SECRET', 2, 'ONE', [trait('DIABLERIST', 'Segredo Sombrio: Diablerista', 2, 'FLAW'), trait('SHUNNED', 'Rejeitado', 2, 'FLAW')])],
   OSIRIS: [group('FOLLOWERS', 3, 'DISTRIBUTE', [trait('FAME', 'Fama', 3, 'BACKGROUND'), trait('HERD', 'Rebanho', 3, 'BACKGROUND')]), group('COSTS', 2, 'DISTRIBUTE', [trait('ENEMIES', 'Inimigos', 2, 'FLAW'), trait('MYTHIC', 'Defeitos Míticos', 2, 'FLAW')])],
   SCENE_QUEEN: [group('EXCLUSION', 1, 'ONE', [trait('DISLIKED', 'Influência: Malvisto', 1, 'FLAW'), trait('PREY', 'Exclusão de Presa: outra subcultura', 1, 'FLAW')])],
@@ -78,7 +80,7 @@ export function resolvePredatorChoices(code: PredatorTypeCode, values: readonly 
   const known = new Set<string>()
   for (const entry of groups) {
     const selected = values.filter(value => value.startsWith(`${entry.code}:`))
-    if (entry.mode === 'ONE' && selected.length !== 1) throw new Error(`Escolha uma opção de ${entry.code}.`)
+    if (entry.mode !== 'DISTRIBUTE' && selected.length !== 1) throw new Error(`Escolha uma opção de ${entry.code}.`)
     let total = 0
     const selectedOptions = new Set<string>()
     for (const value of selected) {
@@ -91,7 +93,7 @@ export function resolvePredatorChoices(code: PredatorTypeCode, values: readonly 
       known.add(value)
       resolved.push({ ...option, dots })
     }
-    if (total !== entry.totalDots) throw new Error(`Distribua exatamente ${entry.totalDots} ponto(s) em ${entry.code}.`)
+    if (entry.mode !== 'PLAYER_DEFINED' && total !== entry.totalDots) throw new Error(`Distribua exatamente ${entry.totalDots} ponto(s) em ${entry.code}.`)
   }
   if (values.some(value => !known.has(value))) throw new Error('Opção mecânica desconhecida.')
   return resolved

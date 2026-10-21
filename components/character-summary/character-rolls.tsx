@@ -5,13 +5,17 @@ import useSWR from 'swr'
 import { RollHistory } from './roll-history'
 import type { RollMode } from '@/lib/character-roll-history'
 import type { Specialty } from '@/lib/vtm-v5/specialties'
+import { CLAN_CONDITION_LABELS, type ClanCondition, type ClanRollContext, type ClanModifiers } from '@/lib/vtm-v5/clan-mechanics'
 
-type RollData = { attributes: Record<string, number>; skills: Record<string, number>; specialties: Specialty[]; canUseSpecialties: boolean; canRollSecret: boolean; revision: number; status: string }
-type RollCommand = { mode?: RollMode; hiddenDifficulty?: boolean; attribute: string; skillId: string; difficulty: number; specialtyId?: string; visibility: 'PUBLIC' | 'SECRET'; reason: string; expectedRevision: number; idempotencyKey: string }
-type RollResponse = { ok: boolean; pool: number; specialtyBonus: number; visibility: 'PUBLIC' | 'SECRET'; revision: number; result: { normalDice: number[]; hungerDice: number[]; difficulty: number; successes: number; success: boolean; outcome: 'SUCCESS' | 'CRITICAL' | 'MESSY_CRITICAL' | 'FAILURE' | 'BESTIAL_FAILURE' } }
+type RollData = { attributes: Record<string, number>; skills: Record<string, number>; specialties: Specialty[]; canUseSpecialties: boolean; canRollSecret: boolean; clanCode?: string; clanConditions?: ClanCondition[]; revision: number; status: string }
+type RollCommand = { mode?: RollMode; hiddenDifficulty?: boolean; clanContext?: ClanRollContext; attribute: string; skillId: string; difficulty: number; specialtyId?: string; visibility: 'PUBLIC' | 'SECRET'; reason: string; expectedRevision: number; idempotencyKey: string }
+type RollResponse = { ok: boolean; pool: number; specialtyBonus: number; clanModifiers?: ClanModifiers; visibility: 'PUBLIC' | 'SECRET'; revision: number; result: { normalDice: number[]; hungerDice: number[]; difficulty: number; successes: number; success: boolean; outcome: 'SUCCESS' | 'CRITICAL' | 'MESSY_CRITICAL' | 'FAILURE' | 'BESTIAL_FAILURE' } }
 const attributeNames: Record<string, string> = { forca: 'Força', destreza: 'Destreza', vigor: 'Vigor', carisma: 'Carisma', manipulacao: 'Manipulação', compostura: 'Compostura', inteligencia: 'Inteligência', raciocinio: 'Raciocínio', determinacao: 'Determinação' }
 const skillNames: Record<string, string> = { 'armas-brancas': 'Armas brancas', 'armas-de-fogo': 'Armas de fogo', atletismo: 'Atletismo', briga: 'Briga', conducao: 'Condução', furtividade: 'Furtividade', ladroagem: 'Ladroagem', oficios: 'Ofícios', sobrevivencia: 'Sobrevivência', 'empatia-com-animais': 'Empatia com animais', etiqueta: 'Etiqueta', intimidacao: 'Intimidação', lideranca: 'Liderança', manha: 'Manha', performance: 'Performance', persuasao: 'Persuasão', sagacidade: 'Sagacidade', subterfugio: 'Subterfúgio', ciencia: 'Ciência', academicos: 'Erudição', financas: 'Finanças', investigacao: 'Investigação', medicina: 'Medicina', ocultismo: 'Ocultismo', percepcao: 'Percepção', politica: 'Política', tecnologia: 'Tecnologia' }
 const outcomeNames: Record<RollResponse['result']['outcome'], string> = { SUCCESS: 'Sucesso', CRITICAL: 'Sucesso crítico', MESSY_CRITICAL: 'Crítico bagunçado', FAILURE: 'Falha', BESTIAL_FAILURE: 'Falha bestial' }
+const rollReason = (mode: RollMode, attribute: string, skill: string) => mode === 'TEST'
+  ? `Teste de ${attributeNames[attribute] ?? attribute} + ${skillNames[skill] ?? skill}.`
+  : `Teste de ${({ CHECK: 'check', WILLPOWER: 'Força de Vontade', HUMANITY: 'Humanidade', TAKING_HALF: 'Taking Half', AUTOMATIC: 'vitória automática' } as const)[mode]}.`
 
 async function fetchRollData(url: string): Promise<RollData> {
   const response = await fetch(url)
@@ -34,6 +38,8 @@ function RollPanel({ characterId }: Readonly<{ characterId: string }>) {
   const [difficulty, setDifficulty] = useState('1')
   const [mode, setMode] = useState<RollMode>('TEST')
   const [hiddenDifficulty, setHiddenDifficulty] = useState(false)
+  const [communication, setCommunication] = useState(false)
+  const [pursuingCompulsion, setPursuingCompulsion] = useState(false)
   const [visibility, setVisibility] = useState<'PUBLIC' | 'SECRET'>('PUBLIC')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
@@ -48,6 +54,8 @@ function RollPanel({ characterId }: Readonly<{ characterId: string }>) {
   const selectedSpecialty = specialties.find(entry => entry.id === specialtyId)
   const disabled = busy || retryCommand !== null
   const usesTraits = ['TEST', 'TAKING_HALF', 'AUTOMATIC'].includes(mode)
+  const canUseCommunication = data?.canRollSecret && data.clanCode === 'LASOMBRA' && mode === 'TEST' && selectedSkill === 'tecnologia'
+  const canPursueCompulsion = data?.canRollSecret && mode !== 'CHECK' && data.clanConditions?.includes('COMPULSION_PENALTY') && !['BANU_HAQIM', 'LASOMBRA'].includes(data.clanCode ?? '')
   const validDifficulty = mode === 'CHECK' || Number.isInteger(Number(difficulty)) && Number(difficulty) >= 1 && Number(difficulty) <= 50
 
   async function execute(command: RollCommand) {
@@ -79,7 +87,8 @@ function RollPanel({ characterId }: Readonly<{ characterId: string }>) {
   function submit(event: React.FormEvent) {
     event.preventDefault()
     if (!data || disabled || data.status !== 'APPROVED' || !selectedAttribute || (!selectedSkill && !['CHECK', 'WILLPOWER', 'HUMANITY'].includes(mode)) || !validDifficulty) return
-    void execute({ mode, ...(data.canRollSecret ? { hiddenDifficulty } : {}), attribute: selectedAttribute, skillId: selectedSkill, difficulty: mode === 'CHECK' ? 1 : Number(difficulty), ...(selectedSpecialty ? { specialtyId: selectedSpecialty.id } : {}), visibility: data.canRollSecret ? visibility : 'PUBLIC', reason: mode === 'TEST' ? `Teste de ${attributeNames[selectedAttribute] ?? selectedAttribute} + ${skillNames[selectedSkill] ?? selectedSkill}.` : `Teste de ${mode === 'CHECK' ? 'check' : mode === 'WILLPOWER' ? 'Força de Vontade' : mode === 'HUMANITY' ? 'Humanidade' : mode === 'TAKING_HALF' ? 'Taking Half' : 'vitória automática'}.`, expectedRevision: data.revision, idempotencyKey: crypto.randomUUID() })
+    const clanContext = { ...(canUseCommunication && communication ? { communication: true } : {}), ...(canPursueCompulsion && pursuingCompulsion ? { pursuingCompulsion: true } : {}) }
+    void execute({ mode, ...(data.canRollSecret ? { hiddenDifficulty } : {}), ...(Object.keys(clanContext).length ? { clanContext } : {}), attribute: selectedAttribute, skillId: selectedSkill, difficulty: mode === 'CHECK' ? 1 : Number(difficulty), ...(selectedSpecialty ? { specialtyId: selectedSpecialty.id } : {}), visibility: data.canRollSecret ? visibility : 'PUBLIC', reason: rollReason(mode, selectedAttribute, selectedSkill), expectedRevision: data.revision, idempotencyKey: crypto.randomUUID() })
   }
 
   return <section className="border border-border bg-card p-5 sm:p-6" aria-labelledby={`${fieldId}-title`} aria-busy={busy || isLoading}>
@@ -100,11 +109,15 @@ function RollPanel({ characterId }: Readonly<{ characterId: string }>) {
         {data.canRollSecret && <label className="flex flex-col gap-2 text-sm" htmlFor={`${fieldId}-visibility`}>Visibilidade<select id={`${fieldId}-visibility`} className="select min-h-10 w-full" disabled={disabled} value={visibility} onChange={event => setVisibility(event.target.value as 'PUBLIC' | 'SECRET')}><option value="PUBLIC">Pública</option><option value="SECRET">Secreta — somente Narrador</option></select></label>}
       </div>
       <p className="text-xs text-muted-foreground">{data.canUseSpecialties ? 'Escolha uma especialidade aplicável: o bônus é de no máximo +1 dado.' : 'A aplicação de uma especialidade exige confirmação do Narrador e concede no máximo +1 dado.'}</p>
+      {Boolean(data.clanConditions?.length) && <p className="text-sm text-muted-foreground">Condições confirmadas: {data.clanConditions!.map(condition => CLAN_CONDITION_LABELS[condition]).join(' · ')}. Penalidades calculadas pelo servidor; check de Sangue não recebe modificadores. Exceções narrativas são conduzidas pelo Narrador.</p>}
+      {canUseCommunication && <label className="flex items-start gap-2 text-sm"><input type="checkbox" disabled={disabled} checked={communication} onChange={event => setCommunication(event.target.checked)} />Confirmar comunicação tecnológica Lasombra: dificuldade 2 + Gravidade da Perdição, calculada pelo servidor</label>}
+      {canPursueCompulsion && <label className="flex items-start gap-2 text-sm"><input type="checkbox" disabled={disabled} checked={pursuingCompulsion} onChange={event => setPursuingCompulsion(event.target.checked)} />Confirmar que esta ação atende ao objetivo da compulsão, dispensando sua penalidade nesta rolagem</label>}
       <button type="submit" className="button-primary min-h-10 sm:self-start" disabled={disabled || Boolean(loadError) || data.status !== 'APPROVED' || !selectedAttribute || (!selectedSkill && !['CHECK', 'WILLPOWER', 'HUMANITY'].includes(mode)) || !validDifficulty}>{busy ? 'Rolando…' : 'Rolar dados'}</button>
     </form>}
     {error && <p role="alert" className="mt-4 text-sm text-primary">{error}</p>}
     {retryCommand && !busy && <button type="button" className="button-ghost mt-3 min-h-10" onClick={() => void execute(retryCommand)}>Tentar novamente a mesma rolagem</button>}
     {busy && <output className="block mt-4 text-sm text-muted-foreground">Registrando rolagem…</output>}
+    {result?.clanModifiers && <p className="mt-4 text-sm">{result.clanModifiers.labels.join(' · ')} · Penalidade de clã: −{result.clanModifiers.dicePenalty} dado(s).</p>}
     {result && <output className="block mt-5 border-t border-border pt-5" aria-live="polite"><h3 className="font-serif text-xl">{outcomeNames[result.result.outcome]}</h3><span className="block mt-2 text-sm">{result.result.successes} sucesso(s) · Dificuldade {result.result.difficulty} · {result.pool} dado(s){result.specialtyBonus > 0 ? ' · Especialidade +1' : ''}</span><span className="block mt-2 text-xs text-muted-foreground">{result.visibility === 'SECRET' ? 'Rolagem secreta — somente Narrador' : 'Rolagem pública'}</span><dl className="mt-4 grid gap-3 sm:grid-cols-2"><div><dt className="text-sm">Dados normais</dt><dd className="mt-1 font-mono text-sm">{result.result.normalDice.join(' · ') || 'Nenhum'}</dd></div><div><dt className="text-sm">Dados de Fome</dt><dd className="mt-1 font-mono text-sm">{result.result.hungerDice.join(' · ') || 'Nenhum'}</dd></div></dl></output>}
     <RollHistory characterId={characterId} />
   </section>

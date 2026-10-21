@@ -26,39 +26,13 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - Manter `requirements.md`, `design.md` e `tasks.md` sincronizados com as decisões e o estado real da implementação.
 - Atualizar o status da tarefa para `in_progress` antes de editar código e para `completed` somente após as validações previstas.
 
-## Preparação do banco de desenvolvimento
+## Persistência e banco de dados
 
-- **Obrigatoriamente**, antes de iniciar a implementação de uma nova SPEC, reinicializar exclusivamente o banco em memória utilizado para desenvolvimento/testes (`lib/dev-db.ts` e providers globais relacionados).
-- A limpeza deve ocorrer **uma única vez no início da implementação da SPEC**, não antes de cada tarefa individual.
-- Antes do reset, confirmar ambiente não produtivo e que a operação atua apenas no provider em memória do processo de testes, sem conexão ou comandos contra PostgreSQL.
-- **Nunca executar limpeza em bancos de produção, homologação compartilhada ou ambientes não identificados.**
-- Caso não seja possível confirmar o ambiente, interromper a operação e solicitar confirmação.
-- Utilizar preferencialmente os scripts de preparação em memória já existentes no projeto. A existência de DATABASE_URL não autoriza reset de banco externo; utilizar processo isolado sem essa conexão para preparar memória.
-- É permitido recriar estruturas e relacionamentos do provider em memória para adequá-los à SPEC.
-- Não implementar migrações de compatibilidade ou backfill de dados legados para o provider descartável em memória. Essa regra não dispensa preservação de dados nem autoriza alterações destrutivas em PostgreSQL persistente.
-- Após a limpeza em memória, inicializar o modelo atualizado e executar os seeds necessários para disponibilizar dados de teste.
-- O schema SQL de `lib/db.ts` é referência de paridade, não alvo do reset obrigatório. Aplicação de schema, migração, seed ou limpeza em banco persistente exige tarefa e autorização específicas, destino validado e procedimento seguro; nunca reutilizar a preparação da SPEC para apagar dados externos.
-- Validar a integridade do banco, as relações entre entidades e os dados mínimos exigidos pelos testes.
-- Registrar a limpeza, a atualização do schema e a execução dos seeds no `CHANGELOG.md`.
-- Antes de iniciar a implementação, registrar no `tasks.md` a conclusão da preparação do banco.
-
-### Ordem obrigatória de execução
-
-1. Ler a SPEC e suas dependências.
-2. Validar que o processo é de desenvolvimento/testes e usa exclusivamente o provider em memória.
-3. Limpar uma única vez os dados de teste em memória, sem acessar PostgreSQL.
-4. Inicializar o modelo em memória atualizado e executar os seeds necessários.
-5. Validar a integridade do banco.
-6. Registrar a preparação no `tasks.md`.
-7. Atualizar a primeira tarefa de desenvolvimento para `in_progress`.
-8. Iniciar a implementação da SPEC.
-
-### Restrições
-
-- A limpeza em memória não substitui testes de integridade ou regressão. Dev atual utiliza somente memória e não exige DATABASE_URL ou integração PostgreSQL para sua entrega. Conexão/provider e testes SQL ficam no backlog `.codex/backlog/integracao-postgresql.md`; tornam-se obrigatórios ao entregar persistência externa, em ambiente de testes identificado, sem reset automático externo. Não declarar caminhos SQL existentes prontos para produção antes dessa validação.
-- Não remover dados de autenticação, configurações ou recursos externos sem verificar se pertencem ao ambiente descartável.
-- Se o reset falhar, não iniciar o desenvolvimento até corrigir a preparação do ambiente.
-- Esta política deverá ser revista antes da disponibilização do aplicativo em produção ou da utilização de dados que precisem ser preservados.
+- A aplicação usa PostgreSQL como armazenamento persistente; configure `DATABASE_URL` para executar fluxos que acessam dados.
+- Nunca executar limpeza em bancos de produção, homologação compartilhada ou ambientes não identificados. Caso não seja possível confirmar o destino, interromper a operação e solicitar confirmação.
+- Aplicar schema/migrações, executar seeds ou limpar dados persistentes exige escopo e autorização específicos, destino de desenvolvimento/testes validado e procedimento seguro. Nunca reutilizar dados reais para testes.
+- Validar integridade, relações e isolamento dos dados nos testes pertinentes. Registrar alterações de schema e seeds no `CHANGELOG.md`.
+- Antes de iniciar uma SPEC que altere persistência, registrar no `tasks.md` o destino de teste e a estratégia de migração/rollback. Não limpar automaticamente bancos persistentes.
 
 ## Validação de Segurança da Aplicação
 

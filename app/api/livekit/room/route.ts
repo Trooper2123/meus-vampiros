@@ -7,7 +7,7 @@ import { getCampaignCall } from '@/lib/campaign-calls'
 import { notesActor, notesBody } from '@/lib/notes-http'
 
 async function roomResponse(campaignId: string, user: { sub: string; name?: string | null; email?: string | null }, hostOnly = false) {
-  const status = getCampaignCall(user.sub, campaignId)
+  const status = await getCampaignCall(user.sub, campaignId)
   if (hostOnly && !status.canSummon) throw new CharacterCommandError(403, 'Somente o Narrador atual pode preparar a sala.')
   if (!status.canSummon && !status.active) throw new CharacterCommandError(403, 'Aguarde a convocação do Narrador.')
   let room = await getLiveKitRoom(campaignId)
@@ -17,7 +17,7 @@ async function roomResponse(campaignId: string, user: { sub: string; name?: stri
   }
   if (!room) throw new CharacterCommandError(409, 'O Narrador ainda precisa preparar a sala virtual.')
   const token = await generateLiveKitToken({ identity: user.sub, name: user.name ?? user.email, roomName: room.roomName, isHost: status.canSummon })
-  const current = getCampaignCall(user.sub, campaignId)
+  const current = await getCampaignCall(user.sub, campaignId)
   if (current.canSummon !== status.canSummon || (!current.canSummon && !current.active)) throw new CharacterCommandError(403, 'A convocação ou sua participação foi alterada.')
   return NextResponse.json({ roomName: room.roomName, roomUrl: room.roomUrl, isHost: current.canSummon, token }, { headers: { 'Cache-Control': 'private, no-store', Vary: 'Cookie' } })
 }

@@ -3,17 +3,6 @@ import type { DisciplineAcquisition } from './vtm-v5/discipline-access'
 import { xpAcquisitions, validateDisciplineAllocation } from './discipline-allocation'
 import { sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
-import {
-  devGetCharactersForUser,
-  devGetCharactersForCampaign,
-  devGetCharacterById,
-  devGetCharacterAccessRecord,
-  devCreateCharacter,
-  devUpdateCharacterXp,
-  devUpdateCharacterStatus,
-  devDeleteCharacter,
-  devAppendCharacterLedgerEvent,
-} from '@/lib/dev-db'
 import { CREATION_ADJUSTMENTS } from '@/lib/vtm-v5/presets'
 import type { CharacterVisibility, CreationType } from '@/lib/vtm-v5/types'
 import { applySecondaryAttributes } from '@/lib/vtm-v5/secondary-attributes'
@@ -29,7 +18,6 @@ import { validateInvitedClan } from './campaign-invitations'
 import { projectCreationGrants } from './vtm-v5/creation-grants'
 import type { Specialty } from '@/lib/vtm-v5/specialties'
 
-const isDev = process.env.NODE_ENV !== 'production' && !process.env.DATABASE_URL
 
 /**
  * Converte o formato legado de disciplinas (objeto nomeado) para o formato atual (array).
@@ -76,7 +64,6 @@ export type CharacterSummary = {
 }
 
 export async function getCharactersForUser(userId: string): Promise<CharacterSummary[]> {
-  if (isDev) return devGetCharactersForUser(userId)
 
   const result = await db.execute<{
     id: string
@@ -122,7 +109,6 @@ export async function getCharactersForUser(userId: string): Promise<CharacterSum
 }
 
 export async function getCharactersForCampaign(campaignId: string) {
-  if (isDev) return devGetCharactersForCampaign(campaignId)
 
   const result = await db.execute<{
     id: string
@@ -153,7 +139,6 @@ export async function getCharactersForCampaign(campaignId: string) {
 }
 
 export async function updateCharacterXp(characterId: string, totalXp: number) {
-  if (isDev) return devUpdateCharacterXp(characterId, totalXp)
 
   await db.execute(sql`
     UPDATE characters
@@ -164,16 +149,6 @@ export async function updateCharacterXp(characterId: string, totalXp: number) {
 }
 
 export async function getCharacterById(id: string, userId: string) {
-  if (isDev) {
-    const character = devGetCharacterById(id, userId)
-    const stored = devGetCharacterAccessRecord(id)
-    if (character && stored?.gameState && Object.keys(stored.gameState).length) {
-      const state = readSessionState(character.data, stored.gameState)
-      character.data = { ...character.data, fome: state.hunger, humanidade: state.humanity, vitalidade: state.healthCurrent, vontade: state.willpowerCurrent, healthDamage: state.healthDamage, willpowerDamage: state.willpowerDamage }
-    }
-    return character ? { ...character, creationGrants: projectCreationGrants(stored?.gameState ?? {}) } : null
-  }
-
   const result = await db.execute<{ id: string; name: string; status: string; character_type: string; data: unknown; campaign_id: string | null; total_xp: number; spent_xp: number; revision: number; game_state: Record<string, unknown> }>(sql`
     SELECT id, name, status, character_type, data, campaign_id, total_xp, spent_xp, revision, game_state FROM characters WHERE id = ${id}::uuid AND user_id = ${userId}
   `)
@@ -198,23 +173,10 @@ export async function getCharacterAccessRecord(id: string) {
 }
 
 export async function saveCharacterValidation(id: string, report: unknown) {
-  if (isDev) {
-    const character = devGetCharacterAccessRecord(id)
-    if (character) {
-      character.validationReport = report
-      character.validatedAt = new Date()
-    }
-    return
-  }
   await db.execute(sql`UPDATE characters SET validation_report = ${JSON.stringify(report)}::jsonb, validated_at = NOW() WHERE id = ${id}::uuid`)
 }
 
 export async function setCharacterStatus(id: string, status: string) {
-  if (isDev) {
-    const character = global.__devDb?.characters.find((entry) => entry.id === id)
-    if (character) { character.status = status; character.updatedAt = new Date() }
-    return
-  }
   await db.execute(sql`UPDATE characters SET status = ${status}, updated_at = NOW() WHERE id = ${id}::uuid`)
 }
 
@@ -233,16 +195,6 @@ export async function createCharacter(
   payload = { ...payload, data: applySecondaryAttributes(payload.data ?? {}, resourceSource) }
   const initialXp = CREATION_ADJUSTMENTS[(payload.data?.creationType ?? 'FLEDGLING') as CreationType]?.initialXp ?? 0
   const initialState = { ...readSessionState(payload.data ?? {}, resourceSource ? { healthDamage: resourceSource.healthDamage, willpowerDamage: resourceSource.willpowerDamage } : {}), ...allocationState, ...(policyConsent ? { policyConsent } : {}) }
-  if (isDev) {
-    const character = devCreateCharacter(userId, payload)
-    character.totalXp = character.characterType === 'PLAYER_VAMPIRE' ? initialXp : 0
-    character.gameState = character.characterType === 'PLAYER_VAMPIRE' ? { ...initialState } : {}
-    const creationType = (payload.data?.creationType ?? 'FLEDGLING') as CreationType
-    const adjustment = CREATION_ADJUSTMENTS[creationType] ?? CREATION_ADJUSTMENTS.FLEDGLING
-    devAppendCharacterLedgerEvent(character.id, 'INITIAL_ADJUSTMENT', 'RULE_ENGINE', { creationType, ...adjustment, secondaryAttributes: payload.data?.secondaryAttributes }, userId)
-    return character
-  }
-
   const { name, data, campaignId } = payload
   const result = await db.execute<{ id: string }>(sql`
     INSERT INTO characters (user_id, created_by_user_id, character_type, name, concept, clan, generation, data, game_state, total_xp, campaign_id, status, visibility)
@@ -259,7 +211,6 @@ export async function createCharacter(
 }
 
 export async function appendCharacterLedgerEvent(characterId: string, eventType: string, origin: string, payload: Record<string, unknown>, createdByUserId: string) {
-  if (isDev) return devAppendCharacterLedgerEvent(characterId, eventType, origin, payload, createdByUserId)
   await db.execute(sql`
     INSERT INTO character_ledger_events (character_id, event_type, origin, payload, created_by_user_id)
     VALUES (${characterId}::uuid, ${eventType}, ${origin}, ${JSON.stringify(payload)}::jsonb, ${createdByUserId})
@@ -268,7 +219,6 @@ export async function appendCharacterLedgerEvent(characterId: string, eventType:
 }
 
 export async function updateCharacterStatus(id: string, userId: string, status: string) {
-  if (isDev) return devUpdateCharacterStatus(id, userId, status)
 
   await db.execute(sql`
     UPDATE characters
@@ -279,7 +229,6 @@ export async function updateCharacterStatus(id: string, userId: string, status: 
 }
 
 export async function deleteCharacter(id: string, userId: string) {
-  if (isDev) return devDeleteCharacter(id, userId)
 
   await db.execute(sql`
     DELETE FROM characters WHERE id = ${id}::uuid AND user_id = ${userId}
@@ -294,10 +243,10 @@ export async function updateCharacter(
 ) {
   const previous = await getCharacterById(id, userId)
   if (!previous) return null
-  return runCharacterCommand(userId, id, { key: randomUUID(), type: 'CHARACTER_EDITED', expectedRevision: payload.expectedRevision ?? previous.revision, payload }, character => character.ownerId === userId, character => {
+  return runCharacterCommand(userId, id, { key: randomUUID(), type: 'CHARACTER_EDITED', expectedRevision: payload.expectedRevision ?? previous.revision, payload }, character => character.ownerId === userId, async character => {
     if (['ARCHIVED', 'DISABLED'].includes(character.status)) throw new CharacterCommandError(409, 'Esta ficha precisa ser reativada pelo Narrador antes da edição.')
     if (payload.campaignId !== undefined && payload.campaignId !== character.campaignId) throw new CharacterCommandError(409, 'A alteração do vínculo exige aprovação da mesa.')
-    if (payload.data) applyCharacterDataEdit(character, payload.data)
+    if (payload.data) await applyCharacterDataEdit(character, payload.data)
     if (payload.name !== undefined) {
       character.name = payload.name
       if ('nome' in character.data) character.data.nome = payload.name
@@ -325,10 +274,10 @@ export async function duplicateCharacter(id: string, userId: string) {
   return createCharacter(userId, { name: `${original.name} — Cópia`, campaignId: null, data }, data, { creationEffects: effects, specialties, disciplineAcquisitions: xpAcquisitions(source).map(({ id: acquisitionId, disciplineId, source: acquisitionSource, fromLevel, targetLevel, xpCost }) => ({ id: acquisitionId, disciplineId, source: acquisitionSource, fromLevel, targetLevel, xpCost })) })
 }
 
-function applyCharacterDataEdit(character: CommandCharacter, incoming: Record<string, unknown>) {
+async function applyCharacterDataEdit(character: CommandCharacter, incoming: Record<string, unknown>) {
   const mechanicalFields = new Set(['forca', 'destreza', 'vigor', 'carisma', 'manipulacao', 'compostura', 'inteligencia', 'raciocinio', 'determinacao', 'cla', 'geracao', 'characterType', 'creationType', 'disciplinas', 'vantagens', 'defeitos', 'retainer', 'npc', 'potencia-de-sangue', 'isCaitiff', 'isThinBlood'])
 
-  assertEditableCharacterFields(incoming,character)
+  await assertEditableCharacterFields(incoming,character)
   const changedMechanics = Object.entries(incoming).some(([field, value]) => (mechanicalFields.has(field) || /^habilidade-/iu.test(field) || field.startsWith('convicoes-')) && JSON.stringify(value) !== JSON.stringify(character.data[field]))
   if (changedMechanics && character.status !== 'DRAFT') character.status = 'DRAFT'
   let mergedData: Record<string, unknown>
@@ -345,11 +294,11 @@ function applyCharacterDataEdit(character: CommandCharacter, incoming: Record<st
   delete character.data['experiencia-gasta']
 }
 
-function assertEditableCharacterFields(incoming: Record<string,unknown>,character: CommandCharacter) {
+async function assertEditableCharacterFields(incoming: Record<string,unknown>,character: CommandCharacter) {
 if(incoming.characterType!==undefined&&incoming.characterType!==character.characterType) throw new CharacterCommandError(422,'O tipo da ficha não pode ser alterado.')
 for(const field of ['gameState','disciplineAccessGrants','disciplineAcquisitions']) if(Object.hasOwn(incoming,field)) throw new CharacterCommandError(422,'Autorizações e aquisições exigem o comando específico.')
 assertBloodPotencyInput(incoming,character.data)
-if(character.campaignId&&global.__devDb?.campaigns.find(campaign => campaign.id===character.campaignId)?.creationPolicy) validateInvitedClan(character.campaignId,incoming)
+if(character.campaignId) await validateInvitedClan(character.campaignId,incoming)
 if(character.data.clanRulesVersion||character.data.predatorEffectsVersion) {
 for(const field of ['cla','clanCode','clanSelection','clanRulesVersion','isCaitiff','isThinBlood','creationType','creationAdvantageDots','creationFlawDots']) {
 if(Object.hasOwn(incoming,field)&&JSON.stringify(incoming[field])!==JSON.stringify(character.data[field])) throw new CharacterCommandError(422,'Altere o clã pelo seletor específico, não pela edição geral.')

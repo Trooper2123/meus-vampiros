@@ -19,7 +19,8 @@ async function validatePersistedCharacter(id: string, userId: string) {
   const isOwner = character.userId === userId
   const isMaster = Boolean(character.campaignId && await canManageCampaign(userId, character.campaignId))
   if (!isOwner && !isMaster) return { response: NextResponse.json({ error: 'Acesso negado.' }, { status: 403 }) }
-  const report = validateCharacter(normalizeCharacterRulesInput({ ...character.data, characterType: character.characterType }, projectCreationGrants(character.gameState), xpAcquisitions(character)), campaignPredatorOverrides(character.campaignId).map(rule => rule.ruleCode), !character.campaignId)
+  const overrides = await campaignPredatorOverrides(character.campaignId)
+  const report = validateCharacter(normalizeCharacterRulesInput({ ...character.data, characterType: character.characterType }, projectCreationGrants(character.gameState), xpAcquisitions(character)), overrides.map(rule => rule.ruleCode), !character.campaignId)
   try { validateDisciplineAllocation(character, true) }
   catch (error) { report.valid = false; report.errors.push({ code: 'DISCIPLINE_ACCESS', field: 'disciplines', message: error instanceof CharacterCommandError ? error.message : 'Revise as origens das Disciplinas.' }) }
   await saveCharacterValidation(id, report)

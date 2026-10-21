@@ -16,9 +16,9 @@ describe('catálogo de pesquisa do Narrador', () => {
   it('semeia conteúdos e habilidades com identificadores únicos e estáveis', () => {
     const catalog = { entries: DISCIPLINE_RESEARCH, skills: SKILL_CATALOG, disciplines: DISCIPLINES }
     expect(catalog.skills).toHaveLength(27)
-    expect(catalog.entries).toHaveLength(372)
-    expect(Object.fromEntries(['Poder', 'Ritual', 'Cerimônia', 'Fórmula'].map(type => [type, catalog.entries.filter(entry => entry.type === type).length]))).toEqual({ Poder: 221, Ritual: 102, Cerimônia: 16, Fórmula: 33 })
-    expect(new Set(catalog.entries.map(entry => entry.id)).size).toBe(372)
+    expect(catalog.entries).toHaveLength(376)
+    expect(Object.fromEntries(['Poder', 'Ritual', 'Cerimônia', 'Fórmula'].map(type => [type, catalog.entries.filter(entry => entry.type === type).length]))).toEqual({ Poder: 222, Ritual: 102, Cerimônia: 19, Fórmula: 33 })
+    expect(new Set(catalog.entries.map(entry => entry.id)).size).toBe(376)
     expect(catalog.entries.every(entry => catalog.disciplines.some(discipline => discipline.id === entry.disciplineId))).toBe(true)
     expect(catalog.entries.every(entry => entry.skillIds.every(id => catalog.skills.some(skill => skill.id === id)))).toBe(true)
   })
