@@ -2,6 +2,15 @@
 
 Registro cronológico de todas as alterações relevantes implementadas no projeto.
 
+## [2026-10-21 19:31 BRT] — fix - Seletor de habilidades para rolagem
+
+**Tipo:** fix
+**Arquivos principais:** `components/character-summary/character-rolls.tsx`, `tests/character-rolls-ui.test.ts`
+
+- O seletor de habilidades da rolagem exibe somente habilidades com pelo menos um ponto atribuído.
+- Validação: teste de interface da rolagem aprovado; ESLint do componente sem erros.
+
+
 ## 2026-10-21 02:24 BRT - fix - Predações sem mesa não exigem habilitação do Narrador
 - Arquivos principais: `app/api/predator-types/route.ts`, `app/api/characters/[id]/predator-type/route.ts`, `lib/predator-types.ts`, testes das rotas e serviços de predação.
 - Fichas independentes podem consultar e aplicar tipos de predação de qualquer fonte sem habilitação de uma mesa. Fichas vinculadas continuam respeitando a configuração do Narrador.
