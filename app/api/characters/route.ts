@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getSessionOrDev } from '@/lib/auth0'
-import { getCharacterById, createCharacter, updateCharacter, getCharactersForCampaign, normalizeDisciplines } from '@/lib/characters'
+import { getCharacterById, getCharacterAccessRecord, createCharacter, updateCharacter, getCharactersForCampaign, normalizeDisciplines } from '@/lib/characters'
 import { getCampaignById, hasMasterAccess } from '@/lib/campaigns'
 import { ensureAllTables } from '@/lib/db'
 import { canManageCampaign } from '@/lib/auth/authorization'
@@ -8,7 +8,7 @@ import { isUserInCampaign } from '@/lib/availability'
 import { canCreateCharacterType, CHARACTER_TYPES, CREATION_TYPES, type CharacterType, type CreationType } from '@/lib/vtm-v5/types'
 import { grantCharacterXp } from '@/lib/character-xp'
 import { CharacterCommandError } from '@/lib/character-commands'
-import { campaignRequiresInvitation, invitedCampaign, validateInvitedClan } from '@/lib/campaign-invitations'
+import { campaignRequiresInvitation, getCampaignForJoining, validateInvitedClan } from '@/lib/campaign-invitations'
 import { notesActor } from '@/lib/notes-http'
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -104,8 +104,8 @@ async function acceptCreationInvitation(request: Request, userId: string, invita
   if (await notesActor(request, true) !== userId) throw new CharacterCommandError(403, 'Sessão alterada. Tente novamente.')
   if (!invitation || typeof invitation !== 'object' || Array.isArray(invitation)) throw new InvalidPayload()
   const fields = invitation as Record<string, unknown>
-  if (fields.accepted !== true || Object.keys(fields).some(key => !['campaignId', 'token', 'accepted'].includes(key))) throw new InvalidPayload()
-  const campaign = await invitedCampaign(fields.campaignId, fields.token)
+  if (Object.keys(fields).length !== 1 || typeof fields.campaignId !== 'string') throw new InvalidPayload()
+  const campaign = await getCampaignForJoining(fields.campaignId)
   if (requestedCampaignId && requestedCampaignId !== campaign.id) throw new InvalidPayload()
   if (data?.characterType && data.characterType !== 'PLAYER_VAMPIRE') throw new InvalidPayload()
   await validateInvitedClan(campaign.id, data ?? {})
@@ -153,9 +153,14 @@ export async function PATCH(request: Request) {
     if (!session?.user?.sub) return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
     const body = await request.json().catch(() => { throw new InvalidPayload() })
     if (!body || typeof body !== 'object' || Array.isArray(body)) throw new InvalidPayload()
-    const { characterId, amount, reason, idempotencyKey } = body
-    if (typeof characterId !== 'string' || !UUID_PATTERN.test(characterId) || typeof idempotencyKey !== 'string' || !UUID_PATTERN.test(idempotencyKey) || !Number.isSafeInteger(amount) || amount <= 0 || amount > 10000 || typeof reason !== 'string' || !reason.trim() || reason.length > 500 || body.totalXp !== undefined) throw new InvalidPayload()
+    const { characterId, amount, reason, idempotencyKey, sessionId } = body
+    if (typeof characterId !== 'string' || !UUID_PATTERN.test(characterId) || typeof idempotencyKey !== 'string' || !UUID_PATTERN.test(idempotencyKey) || !Number.isSafeInteger(amount) || amount <= 0 || amount > 10000 || typeof reason !== 'string' || !reason.trim() || reason.length > 500 || body.totalXp !== undefined || (sessionId !== undefined && (typeof sessionId !== 'string' || !UUID_PATTERN.test(sessionId))) || Object.keys(body).some(key => !['characterId', 'amount', 'reason', 'idempotencyKey', 'sessionId'].includes(key))) throw new InvalidPayload()
     await ensureAllTables()
+    if (sessionId) {
+      const character = await getCharacterAccessRecord(characterId)
+      if (!character?.campaignId) throw new CharacterCommandError(403, 'Ficha fora desta mesa.')
+      await (await import('@/lib/game-sessions')).assertGameSessionManager(session.user.sub, sessionId, character.campaignId)
+    }
     const result = await grantCharacterXp(session.user.sub, characterId, amount, reason, idempotencyKey)
     return NextResponse.json(result)
   } catch (error) {

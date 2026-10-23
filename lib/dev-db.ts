@@ -45,7 +45,7 @@ export type DevCampaign = {
   id: string
   masterUserId: string
   enabledClanCodes?: string[]
-  creationPolicy?: { exceptionCodes: string[]; inviteHash: string }
+  creationPolicy?: { exceptionCodes: string[]; inviteHash?: string }
   name: string
   theme: string | null
   principios: string | null
@@ -79,6 +79,19 @@ export type DevCharacterLedgerEvent = {
   createdAt: Date
 }
 
+export type DevGameSession = {
+  id: string
+  campaignId: string
+  startedBy: string
+  status: 'ACTIVE' | 'CLOSED'
+  startedAt: string
+  endedAt: string | null
+  revision: number
+  startKey: string
+  chronicleNightIds: string[]
+  closeKeys: Map<string, { actorId: string; revision: number }>
+}
+
 // ─── Singleton store ───────────────────────────────────────────────────────────
 
 type DevStore = {
@@ -91,6 +104,7 @@ type DevStore = {
   campaigns: DevCampaign[]
   possessions: DevPossession[]
   characterLedgerEvents: DevCharacterLedgerEvent[]
+  gameSessions?: DevGameSession[]
 }
 
 declare global {
@@ -261,7 +275,7 @@ function seed(): DevStore {
     character.revision = 0
     character.gameState = character.characterType === 'PLAYER_VAMPIRE' ? readSessionState(character.data, {}) : {}
   }
-  return { characters, campaigns, possessions, characterLedgerEvents: [], disciplineContents: DISCIPLINE_CONTENTS, disciplineCatalog: DISCIPLINES, clanDisciplines: CLAN_DISCIPLINES, disciplineResearchCatalog: DISCIPLINE_RESEARCH, skillCatalog: SKILL_CATALOG }
+  return { characters, campaigns, possessions, characterLedgerEvents: [], gameSessions: [], disciplineContents: DISCIPLINE_CONTENTS, disciplineCatalog: DISCIPLINES, clanDisciplines: CLAN_DISCIPLINES, disciplineResearchCatalog: DISCIPLINE_RESEARCH, skillCatalog: SKILL_CATALOG }
 }
 
 export function devGetMasterResearchCatalog() {
@@ -273,6 +287,7 @@ function getStore(): DevStore {
   if (!global.__devDb) {
     global.__devDb = seed()
   }
+  global.__devDb.gameSessions ??= []
   return global.__devDb
 }
 
@@ -481,6 +496,59 @@ export function devIsUserInCampaign(campaignId: string, userId: string): boolean
   const store = getStore()
   const campaign = store.campaigns.find(entry => entry.id === campaignId)
   return Boolean(campaign && (campaign.masterUserId === userId || store.characters.some(character => character.campaignId === campaignId && character.userId === userId)))
+}
+
+export function devGetGameSessionAccess(campaignId: string, userId: string) {
+  const store = getStore()
+  const campaign = store.campaigns.find(entry => entry.id === campaignId)
+  if (!campaign) return null
+  const isMaster = campaign.masterUserId === userId
+  return {
+    isMaster,
+    isMember: isMaster || store.characters.some(character => character.campaignId === campaignId && character.userId === userId),
+  }
+}
+
+export function devGetGameSessionCharacters(campaignId: string, userId: string, isMaster: boolean) {
+  return getStore().characters
+    .filter(character => character.campaignId === campaignId && character.status === 'APPROVED' && character.characterType === 'PLAYER_VAMPIRE' && (isMaster || character.userId === userId))
+    .map(({ id, name }) => ({ id, name }))
+    .sort((a, b) => a.name.localeCompare(b.name))
+}
+
+export function devGetGameSession(id: string) {
+  return getStore().gameSessions?.find(session => session.id === id) ?? null
+}
+
+export function devGetActiveGameSession(campaignId: string) {
+  return getStore().gameSessions?.find(session => session.campaignId === campaignId && session.status === 'ACTIVE') ?? null
+}
+
+export function devStartGameSession(campaignId: string, actorId: string, key: string, chronicleNightIds: string[]) {
+  const store = getStore()
+  const sessions = store.gameSessions ?? (store.gameSessions = [])
+  const existing = sessions.find(session => session.campaignId === campaignId && session.status === 'ACTIVE')
+  if (existing) {
+    if (existing.startedBy === actorId && existing.startKey === key && JSON.stringify(existing.chronicleNightIds) === JSON.stringify(chronicleNightIds)) return existing
+    return null
+  }
+  const session: DevGameSession = { id: randomUUID(), campaignId, startedBy: actorId, status: 'ACTIVE', startedAt: new Date().toISOString(), endedAt: null, revision: 1, startKey: key, chronicleNightIds: [...chronicleNightIds], closeKeys: new Map() }
+  sessions.push(session)
+  return session
+}
+
+export function devCloseGameSession(id: string, actorId: string, key: string, expectedRevision: number) {
+  const session = devGetGameSession(id)
+  if (!session) return null
+  const replay = session.closeKeys.get(key)
+  if (replay) return replay.actorId === actorId && replay.revision === expectedRevision ? session : null
+  if (session.status === 'CLOSED') return session
+  if (session.revision !== expectedRevision) return null
+  session.status = 'CLOSED'
+  session.endedAt = new Date().toISOString()
+  session.revision += 1
+  session.closeKeys.set(key, { actorId, revision: expectedRevision })
+  return session
 }
 
 export function devCreateCampaign(

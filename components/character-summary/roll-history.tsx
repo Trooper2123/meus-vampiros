@@ -82,7 +82,7 @@ export function RollHistory({ characterId }: Readonly<{ characterId: string }>) 
         const fields = new FormData(event.currentTarget)
         void send(`${endpoint}/${roll.id}/adjudications`, { kind: fields.get('kind'), note: fields.get('note'), shared: fields.get('shared') === 'on' })
       }}><label className="sheet-field"><span>Decisão do Narrador</span><select name="kind" className="select" disabled={busy || retry}><option value="COMPLICATION">Registrar complicação</option><option value="NARRATIVE_FAILURE">Resolver Messy Critical como falha narrativa</option><option value="OFFER_COST">Oferecer vitória a custo</option></select></label><label className="sheet-field"><span>Decisão e justificativa</span><textarea name="note" className="input" required maxLength={1000} disabled={busy || retry} /></label><label className="flex items-center gap-2 text-sm"><input name="shared" type="checkbox" disabled={busy || retry} />Compartilhar esta decisão com o jogador (ofertas são compartilhadas)</label><button type="submit" className="button-ghost self-start" disabled={busy || retry}>Registrar decisão</button></form>}
-      <div className="mt-4 flex flex-wrap gap-3">{roll.sources.map(source => <a key={source.id} className="text-xs underline" href={source.href} target="_blank" rel="noopener noreferrer">{source.book} · {source.edition} · livro {source.printed} · PDF {source.pdf}</a>)}</div>
+      <div className="mt-4 flex flex-wrap gap-3">{roll.sources.map(source => <p key={source.id} className="text-xs text-muted-foreground">{source.book} · {source.edition} · livro {source.printed} · PDF {source.pdf} · arquivo não disponível nesta etapa</p>)}</div>
     </details>)}</div>
   </section>
 }

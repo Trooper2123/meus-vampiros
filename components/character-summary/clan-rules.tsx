@@ -10,7 +10,7 @@ function RuleDetails({ label, rule }: Readonly<{ label: string; rule: ClanRule }
     <p className="text-sm leading-6">{rule.description}</p>
     <ul className="flex list-disc flex-col gap-2 pl-5 text-sm leading-6">{rule.mechanics.rules.map(text => <li key={text}>{text}</li>)}</ul>
     {rule.mechanics.endsWhen && <p className="text-sm text-muted-foreground">Término: {rule.mechanics.endsWhen}</p>}
-    <a className="text-xs underline" href={source.href} target="_blank" rel="noopener noreferrer">{source.book} · {source.edition} · livro p. {source.printed} · PDF p. {source.pdf} · seção {rule.section}</a>
+    <p className="text-xs text-muted-foreground">{source.book} · {source.edition} · livro p. {source.printed} · PDF p. {source.pdf} · seção {rule.section} · arquivo não disponível nesta etapa</p>
   </div>
 }
 

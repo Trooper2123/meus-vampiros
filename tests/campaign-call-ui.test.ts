@@ -5,6 +5,7 @@ import { expect, it, vi } from 'vitest'
 import { LiveKitRoomLink } from '@/components/livekit/livekit-room-link'
 
 vi.mock('@/components/livekit/livekit-room', () => ({ LiveKitRoom: () => null }))
+vi.mock('@/components/livekit/call-rolls', () => ({ CallRolls: () => createElement('div', null, 'Painel de rolagens') }))
 const campaignId = '11111111-1111-4111-8111-111111111111'
 function render(active: boolean | undefined, canSummon = false, master = false, error?: Error) {
   const endpoint = `/api/campaigns/${campaignId}/call`
@@ -17,7 +18,12 @@ it('oculta todo o card do jogador sem convocação', () => {
 it('habilita entrada após convocação', () => {
   const html = render(true)
   expect(html).toContain('Entrar na sessão da mesa')
+  expect(html).toContain('Painel de rolagens')
   expect(html).not.toContain('disabled=""')
+})
+it('apresenta rolagens mesmo antes da conexão de vídeo', () => {
+  const html = render(true)
+  expect(html).toContain('Painel de rolagens')
 })
 it('Narrador recebe controles pela capacidade do servidor', () => {
   expect(render(false, true)).toContain('Convocar jogadores')

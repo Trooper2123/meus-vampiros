@@ -28,8 +28,12 @@ export async function POST(request: Request, context: Context) {
     if (!session?.user?.sub) return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
     const { id } = await context.params
     const body = await request.json().catch(() => null)
-    if (!uuid.test(id) || !validateNightRequest(body)) return NextResponse.json({ error: 'Seleção, data ou confirmação inválida.' }, { status: 400 })
+    if (!uuid.test(id) || !body || (body.sessionId !== undefined && (typeof body.sessionId !== 'string' || !uuid.test(body.sessionId)))) return NextResponse.json({ error: 'Seleção, data ou confirmação inválida.' }, { status: 400 })
+    const { sessionId, ...nightRequest } = body
+    if (!validateNightRequest(nightRequest)) return NextResponse.json({ error: 'Seleção, data ou confirmação inválida.' }, { status: 400 })
     await ensureAllTables()
-    return NextResponse.json(await startChronicleNight(session.user.sub, id, body))
+    if (sessionId) await (await import('@/lib/game-sessions')).assertGameSessionManager(session.user.sub, sessionId, id)
+    const result = await startChronicleNight(session.user.sub, id, nightRequest)
+    return NextResponse.json(result)
   } catch (error) { return failure(error) }
 }

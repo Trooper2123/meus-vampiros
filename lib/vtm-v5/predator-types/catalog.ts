@@ -33,6 +33,8 @@ entries.push({
 
 export const PREDATOR_TYPES: readonly PredatorTypeDefinition[] = Object.freeze(entries.map((entry) => Object.freeze({
   ...entry,
+  name: entry.originalName ?? entry.name,
+  aliases: entry.originalName && entry.originalName !== entry.name ? [entry.name] : [],
   ...predatorMechanics(entry.code),
   optional: entry.source !== 'COREBOOK',
   enabledByDefault: entry.source === 'COREBOOK',

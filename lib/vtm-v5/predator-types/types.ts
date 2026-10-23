@@ -28,6 +28,7 @@ export type PredatorTypeDefinition = {
   code: PredatorTypeCode
   name: string
   originalName?: string
+  aliases?: readonly string[]
   sourceReference?: string
   rulesText?: string
   baseCode?: PredatorTypeCode
@@ -56,6 +57,7 @@ export type PredatorTypeOverride = { ruleCode: string; justification: string; cr
 export type PlayerPredatorTypeDto = {
   code: PredatorTypeCode
   name: string
+  aliases: string[]
   summary: string
   feedingStyle: string
   predatorRoll: string

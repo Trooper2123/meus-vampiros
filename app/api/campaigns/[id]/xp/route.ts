@@ -14,9 +14,10 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     if (!session?.user?.sub) return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
     const { id } = await context.params
     const body = await request.json().catch(() => null)
-    if (!UUID_PATTERN.test(id) || !body || !Array.isArray(body.characterIds) || !body.characterIds.length || body.characterIds.length > 100 || body.characterIds.some((characterId: unknown) => typeof characterId !== 'string' || !UUID_PATTERN.test(characterId)) || new Set(body.characterIds).size !== body.characterIds.length || !Number.isSafeInteger(body.amount) || body.amount <= 0 || body.amount > 10000 || typeof body.reason !== 'string' || !body.reason.trim() || body.reason.length > 500 || typeof body.idempotencyKey !== 'string' || !UUID_PATTERN.test(body.idempotencyKey)) return NextResponse.json({ error: 'Concessão inválida.' }, { status: 400 })
+    if (!UUID_PATTERN.test(id) || !body || !Array.isArray(body.characterIds) || !body.characterIds.length || body.characterIds.length > 100 || body.characterIds.some((characterId: unknown) => typeof characterId !== 'string' || !UUID_PATTERN.test(characterId)) || new Set(body.characterIds).size !== body.characterIds.length || !Number.isSafeInteger(body.amount) || body.amount <= 0 || body.amount > 10000 || typeof body.reason !== 'string' || !body.reason.trim() || body.reason.length > 500 || typeof body.idempotencyKey !== 'string' || !UUID_PATTERN.test(body.idempotencyKey) || (body.sessionId !== undefined && (typeof body.sessionId !== 'string' || !UUID_PATTERN.test(body.sessionId))) || Object.keys(body).some(key => !['characterIds', 'amount', 'reason', 'idempotencyKey', 'sessionId'].includes(key))) return NextResponse.json({ error: 'Concessão inválida.' }, { status: 400 })
     await ensureAllTables()
     if (!(await canManageCampaign(session.user.sub, id))) return NextResponse.json({ error: 'Acesso negado.' }, { status: 403 })
+    if (body.sessionId) await (await import('@/lib/game-sessions')).assertGameSessionManager(session.user.sub, body.sessionId, id)
     for (const characterId of body.characterIds as string[]) {
       const character = await getCharacterAccessRecord(characterId)
       if (character?.campaignId !== id) return NextResponse.json({ error: 'A seleção contém ficha não autorizada.' }, { status: 403 })

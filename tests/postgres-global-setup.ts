@@ -1,5 +1,6 @@
-import { ensureAllTables, pool } from '../lib/db'
+import { ensureAllTables, pool } from '@/lib/db'
 import { Pool } from 'pg'
+import { readFile } from 'node:fs/promises'
 
 export default async function setup() {
   const testDatabaseUrl = process.env.DATABASE_URL
@@ -12,6 +13,7 @@ export default async function setup() {
   try {
     await schemaPool.query('CREATE SCHEMA IF NOT EXISTS meus_vampiros_test')
     await ensureAllTables()
+    await schemaPool.query(await readFile(new URL('../migrations/20261023_npcs_sheet_narrative.sql', import.meta.url), 'utf8'))
   } finally {
     await schemaPool.end()
     await pool?.end()

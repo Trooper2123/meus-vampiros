@@ -1,5 +1,5 @@
 import { CharacterCommandError, runCharacterCommand } from '@/lib/character-commands'
-import { campaignPredatorOverrides, invitedCampaign, validateInvitedClan } from '@/lib/campaign-invitations'
+import { campaignPredatorOverrides, getCampaignForJoining, validateInvitedClan } from '@/lib/campaign-invitations'
 import { notesActor, notesBody, notesId, notesResponse } from '@/lib/notes-http'
 import { getPredatorTypeSettings, isPredatorTypeEnabled } from '@/lib/predator-types'
 import { normalizePredatorType, PREDATOR_TYPE_BY_CODE, validatePredatorType } from '@/lib/vtm-v5/predator-types'
@@ -13,8 +13,8 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     if (Object.keys(body).some(key => !['invitation', 'expectedRevision', 'idempotencyKey'].includes(key)) || !Number.isSafeInteger(body.expectedRevision) || Number(body.expectedRevision) < 0) throw new CharacterCommandError(400, 'Dados de vínculo inválidos.')
     const key = notesId(String(body.idempotencyKey))
     const invitation = body.invitation as Record<string, unknown> | null
-    if (!invitation || typeof invitation !== 'object' || Array.isArray(invitation) || invitation.accepted !== true || Object.keys(invitation).some(key => !['campaignId', 'token', 'accepted'].includes(key))) throw new CharacterCommandError(400, 'Aceite um convite válido.')
-    const campaign = await invitedCampaign(invitation.campaignId, invitation.token)
+    if (!invitation || typeof invitation !== 'object' || Array.isArray(invitation) || Object.keys(invitation).length !== 1 || typeof invitation.campaignId !== 'string') throw new CharacterCommandError(400, 'Informe o ID da mesa e prossiga para vincular a ficha.')
+    const campaign = await getCampaignForJoining(invitation.campaignId)
     const settings = await getPredatorTypeSettings(campaign.id)
     const result = await runCharacterCommand(actorId, id, { key, type: 'CAMPAIGN_LINKED', expectedRevision: Number(body.expectedRevision), payload: { campaignId: campaign.id } }, character => character.ownerId === actorId, async character => {
       if (character.campaignId || character.characterType !== 'PLAYER_VAMPIRE' || ['ARCHIVED', 'DISABLED'].includes(character.status)) throw new CharacterCommandError(409, 'Somente fichas independentes de jogador podem ser vinculadas.')

@@ -1,16 +1,16 @@
 ﻿export const DISCIPLINES = [
-  { id: 'ANIMALISM', name: 'Animalismo', aliases: ['Animalism'] },
-  { id: 'AUSPEX', name: 'Auspícios', aliases: ['Auspex'] },
-  { id: 'BLOOD_SORCERY', name: 'Feitiçaria de Sangue', aliases: ['Blood Sorcery'] },
-  { id: 'CELERITY', name: 'Rapidez', aliases: ['Celerity'] },
-  { id: 'DOMINATE', name: 'Dominação', aliases: ['Dominate'] },
+  { id: 'ANIMALISM', name: 'Animalism', aliases: ['Animalismo'] },
+  { id: 'AUSPEX', name: 'Auspex', aliases: ['Auspícios'] },
+  { id: 'BLOOD_SORCERY', name: 'Blood Sorcery', aliases: ['Feitiçaria de Sangue'] },
+  { id: 'CELERITY', name: 'Celerity', aliases: ['Rapidez'] },
+  { id: 'DOMINATE', name: 'Dominate', aliases: ['Dominação'] },
   { id: 'FORTITUDE', name: 'Fortitude', aliases: [] },
-  { id: 'OBFUSCATE', name: 'Ofuscação', aliases: ['Obfuscate'] },
-  { id: 'OBLIVION', name: 'Oblívio', aliases: ['Oblivion'] },
-  { id: 'POTENCE', name: 'Potência', aliases: ['Potence'] },
-  { id: 'PRESENCE', name: 'Presença', aliases: ['Presence'] },
-  { id: 'PROTEAN', name: 'Proteanismo', aliases: ['Metamorfose', 'Metamerfose', 'Protean'] },
-  { id: 'THIN_BLOOD_ALCHEMY', name: 'Alquimia de Sangue-Ralo', aliases: ['Thin-Blood Alchemy', 'Alquimia de Sangue-Fraco'] },
+  { id: 'OBFUSCATE', name: 'Obfuscate', aliases: ['Ofuscação'] },
+  { id: 'OBLIVION', name: 'Oblivion', aliases: ['Oblívio'] },
+  { id: 'POTENCE', name: 'Potence', aliases: ['Potência'] },
+  { id: 'PRESENCE', name: 'Presence', aliases: ['Presença'] },
+  { id: 'PROTEAN', name: 'Protean', aliases: ['Proteanism', 'Proteanismo', 'Metamorfose', 'Metamerfose'] },
+  { id: 'THIN_BLOOD_ALCHEMY', name: 'Thin-Blood Alchemy', aliases: ['Alquimia de Sangue-Ralo', 'Alquimia de Sangue-Fraco'] },
 ] as const
 export type DisciplineId = typeof DISCIPLINES[number]['id']
 export const CLAN_DISCIPLINES: Readonly<Record<string, readonly DisciplineId[]>> = {

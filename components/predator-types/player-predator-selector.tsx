@@ -26,7 +26,7 @@ export function PlayerPredatorSelector({ characterId, selectedCode, onApplied, o
   const [submitting, setSubmitting] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const types = useMemo(() => data?.predatorTypes ?? [], [data?.predatorTypes])
-  const filtered = useMemo(() => types.filter((entry) => (source === 'ALL' || entry.source === source) && `${entry.name} ${entry.summary} ${entry.feedingStyle}`.toLocaleLowerCase('pt-BR').includes(query.toLocaleLowerCase('pt-BR'))), [types, query, source])
+  const filtered = useMemo(() => types.filter((entry) => (source === 'ALL' || entry.source === source) && `${entry.name} ${entry.aliases.join(' ')} ${entry.summary} ${entry.feedingStyle}`.toLocaleLowerCase('pt-BR').includes(query.toLocaleLowerCase('pt-BR'))), [types, query, source])
   const selected = draftSelected === undefined ? data?.selectedCode ?? selectedCode ?? null : draftSelected
   const selectedType = types.find((entry) => entry.code === selected) ?? null
   const catalogExpanded = draftCatalogExpanded ?? !selectedType
