@@ -4,7 +4,7 @@ import { createCampaign, getCampaignsForMaster, hasMasterAccess } from '@/lib/ca
 import { db, ensureAllTables } from '@/lib/db'
 import { sql } from 'drizzle-orm'
 import { CharacterCommandError } from '@/lib/character-commands'
-import { createCampaignInvitation, validateCampaignExceptions } from '@/lib/campaign-invitations'
+import { createCampaignPolicy, validateCampaignExceptions } from '@/lib/campaign-invitations'
 import { CLANS } from '@/lib/vtm-v5/clans'
 import { PREDATOR_TYPE_CODES, PREDATOR_TYPES, type PredatorTypeCode } from '@/lib/vtm-v5/predator-types'
 import { savePredatorTypeSettings } from '@/lib/predator-types'
@@ -45,16 +45,16 @@ export async function POST(request: Request) {
     `)
     await savePredatorTypeSettings(campaign.id, { enabledSources: ['COREBOOK'], enabledCodes: enabledPredatorCodes as PredatorTypeCode[], disabledCodes: PREDATOR_TYPE_CODES.filter(code => !enabledPredatorCodes.includes(code)) }, user.sub)
 
-    const inviteToken = await createCampaignInvitation(user.sub, campaign.id, exceptionCodes)
-    return NextResponse.json({ campaign, inviteToken }, { status: 201, headers: { 'Cache-Control': 'private, no-store', Vary: 'Cookie' } })
+    await createCampaignPolicy(user.sub, campaign.id, exceptionCodes)
+    return NextResponse.json({ campaign }, { status: 201, headers: { 'Cache-Control': 'private, no-store', Vary: 'Cookie' } })
   } catch (error) {
     return NextResponse.json({ error: error instanceof CharacterCommandError ? error.message : 'Não foi possível criar a mesa.' }, { status: error instanceof CharacterCommandError ? error.status : 500 })
   }
 }
 
-function readCampaignPolicy(body: Record<string, unknown>) {
+export function readCampaignPolicy(body: Record<string, unknown>) {
     const enabledClanCodes = body.enabledClanCodes ?? CLANS.map(clan => clan.code)
-    const enabledPredatorCodes = body.enabledPredatorCodes ?? PREDATOR_TYPE_CODES.slice(0, 10)
+    const enabledPredatorCodes = body.enabledPredatorCodes ?? PREDATOR_TYPE_CODES
     const exceptionCodes = validateCampaignExceptions(body.exceptionCodes ?? [])
     if (!Array.isArray(enabledClanCodes) || enabledClanCodes.length > CLANS.length || new Set(enabledClanCodes).size !== enabledClanCodes.length || enabledClanCodes.some(code => !CLANS.some(clan => clan.code === code)) || !Array.isArray(enabledPredatorCodes) || enabledPredatorCodes.length > PREDATOR_TYPE_CODES.length || new Set(enabledPredatorCodes).size !== enabledPredatorCodes.length || enabledPredatorCodes.some(code => !PREDATOR_TYPE_CODES.includes(code))) throw new CharacterCommandError(400, 'Clãs ou predações inválidos.')
 

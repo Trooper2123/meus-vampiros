@@ -36,7 +36,7 @@ it.each(references)('completa %s com mecânicas e edição/páginas verificadas 
   }
   expect(clan.bane).toBe(clan.baneRule!.description)
   expect(clan.compulsion).toBe(clan.compulsionRule!.description)
-  expect(publicRuleSource(sourceId)).toMatchObject({ printed, pdf, href: `/api/rule-sources/${sourceId}#page=${pdf}` })
+  expect(publicRuleSource(sourceId)).toMatchObject({ printed, pdf, available: false })
   expect(publicRuleSource(sourceId)).not.toHaveProperty('file')
   expect(existsSync(join(process.cwd(), 'docs/books', RULE_SOURCES[sourceId].file))).toBe(true)
   expect(publicClan(clan)).not.toHaveProperty('guidance')
@@ -77,8 +77,8 @@ it.each(references)('mostra regras e referências autenticadas de %s na ficha e 
   const summary = wrap({ '/api/characters/fixture/clan': { revision: 0, selection: { code }, clans: [clan], conditionOptions: ['COMPULSION_PENALTY'], conditions: [], canManageConditions: false } }, createElement(CharacterClanSummary, { characterId: 'fixture' }))
   const campaign = wrap({ '/api/campaigns/fixture/clans': { clans: [clan] } }, createElement(CampaignClans, { campaignId: 'fixture' }))
   for (const html of [summary, campaign]) {
-    expect(html).toContain(`href="${publicRuleSource(sourceId).href}"`)
-    expect(html).toContain('rel="noopener noreferrer"')
+    expect(html).toContain('arquivo não disponível nesta etapa')
+    expect(html).not.toContain('/api/rule-sources/')
     expect(html).toContain(clan.compulsionRule!.originalName)
     expect(html).not.toContain('Revise os gatilhos')
     expect(html).not.toContain('Consultar a referência')

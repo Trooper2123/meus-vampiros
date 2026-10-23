@@ -79,11 +79,14 @@ function RoomPanel({ campaignId, master, campaignName }: Readonly<{ campaignId: 
       {status?.canSummon && <button type="button" className="button-ghost" disabled={loading} onClick={() => void summon()}>{status.active ? 'Encerrar convocação' : 'Convocar jogadores'}</button>}
       {!joined && <button type="button" className="button-primary inline-flex items-center gap-2" onClick={() => void enterRoom()} disabled={loading || !canEnter}><Video className="size-4" aria-hidden="true" />{roomLabel}</button>}
       <button type="button" className="button-ghost inline-flex items-center gap-2" onClick={async () => {
-        try { await navigator.clipboard.writeText(`${window.location.origin}/characters`); setCopied(true); window.setTimeout(() => setCopied(false), 1800) }
+        try { await navigator.clipboard.writeText(`${window.location.origin}/campaigns/${campaignId}/session`); setCopied(true); window.setTimeout(() => setCopied(false), 1800) }
         catch { setError('Não foi possível copiar o link.') }
-      }}><Copy className="size-4" aria-hidden="true" />{copied ? <><Check className="size-4" aria-hidden="true" /> Link copiado</> : 'Copiar link para participantes'}</button>
+      }}><Copy className="size-4" aria-hidden="true" />{copied ? <><Check className="size-4" aria-hidden="true" /> Link copiado</> : 'Copiar link da chamada'}</button>
     </div>
-    {joined && canEnter && room && <div className="mt-6"><LiveKitRoom token={room.token} serverUrl={room.roomUrl} onDisconnected={() => { setJoined(false); setRoom(null) }} /><CallRolls campaignId={campaignId} /></div>}
+    {canEnter && <div className={joined && room ? 'mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(20rem,0.85fr)]' : 'mt-6'}>
+      {joined && room && <LiveKitRoom token={room.token} serverUrl={room.roomUrl} onDisconnected={() => { setJoined(false); setRoom(null) }} />}
+      <CallRolls campaignId={campaignId} />
+    </div>}
     {status?.canSummon && <p className="mt-3 text-xs text-muted-foreground">Prepare a sala entrando como host. Encerrar a convocação bloqueia novas entradas, mas não revoga tokens já emitidos.</p>}
   </section>
 }

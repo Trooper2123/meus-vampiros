@@ -293,6 +293,39 @@ export async function ensureAllTables() {
       payload JSONB NOT NULL
     );
   `)
+  await ensureGameSessionsTables()
+}
+
+export async function ensureGameSessionsTables() {
+  if (!pool) throw new Error('DATABASE_URL não configurada.')
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS game_sessions (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      campaign_id UUID NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+      started_by_user_id TEXT NOT NULL,
+      start_idempotency_key UUID NOT NULL,
+      status TEXT NOT NULL CHECK (status IN ('ACTIVE', 'CLOSED')),
+      started_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      ended_at TIMESTAMPTZ,
+      revision INTEGER NOT NULL DEFAULT 1,
+      UNIQUE (campaign_id, started_by_user_id, start_idempotency_key)
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS game_sessions_one_active_per_campaign_idx
+      ON game_sessions (campaign_id) WHERE status = 'ACTIVE';
+    CREATE TABLE IF NOT EXISTS game_session_nights (
+      session_id UUID NOT NULL REFERENCES game_sessions(id) ON DELETE CASCADE,
+      chronicle_night_id UUID NOT NULL REFERENCES chronicle_nights(id) ON DELETE RESTRICT,
+      PRIMARY KEY (session_id, chronicle_night_id)
+    );
+    CREATE TABLE IF NOT EXISTS game_session_close_operations (
+      idempotency_key UUID PRIMARY KEY,
+      session_id UUID NOT NULL REFERENCES game_sessions(id) ON DELETE CASCADE,
+      actor_user_id TEXT NOT NULL,
+      expected_revision INTEGER NOT NULL,
+      resulting_revision INTEGER NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+  `)
 }
 
 // ─── Tipos para as novas tabelas ─────────────────────────────────────────────

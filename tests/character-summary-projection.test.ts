@@ -20,3 +20,7 @@ it('não retorna projeção sem acesso', async () => {
   get.mockResolvedValue(null)
   expect(await getCharacterSummaryData('id', 'outsider')).toBeNull()
 })
+it('projeta o nome canônico inglês para uma predação legada em português', async () => {
+  get.mockResolvedValue({ id: 'id', characterType: 'PLAYER_VAMPIRE', name: 'Helena', campaignId: null, data: { predador: 'Ensacador (variante Oblívio)' } })
+  expect((await getCharacterSummaryData('id', 'master'))?.predator).toBe('Bagger (Oblivion)')
+})

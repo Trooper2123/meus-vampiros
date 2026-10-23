@@ -3,6 +3,7 @@ import { sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { createTestCampaign, createTestCharacter, preparePostgresTest } from './postgres-test-helpers'
 import { getCallRollCharacters } from '@/lib/call-roll-characters'
+import { setCampaignCall } from '@/lib/campaign-calls'
 
 beforeEach(preparePostgresTest)
 
@@ -19,6 +20,8 @@ it('jogador recebe somente fichas próprias aprovadas e Narrador recebe as ficha
   await create('roll-player', campaign.id, 'draft').then(character => db.execute(sql`UPDATE characters SET status = 'DRAFT' WHERE id = ${character.id}::uuid`))
   await create('roll-player', otherCampaign.id, 'outside')
   await create('roll-narrator', campaign.id, 'npc', 'HUMAN_NPC')
+  await expect(getCallRollCharacters('roll-player', campaign.id)).rejects.toThrow('Aguarde')
+  await setCampaignCall('roll-narrator', campaign.id, { active: true })
 
   expect(await getCallRollCharacters('roll-player', campaign.id)).toEqual({ characters: [{ id: owned.id, name: 'owned' }] })
   expect((await getCallRollCharacters('roll-narrator', campaign.id)).characters.map(entry => entry.id)).toEqual([another.id, owned.id])

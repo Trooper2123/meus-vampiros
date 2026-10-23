@@ -38,13 +38,12 @@ it('recusa identificadores manipulados e decisões malformadas', async () => {
   expect((await reroll(request({}), { params: Promise.resolve({ id: '../foreign', rollId }) })).status).toBe(400)
 })
 
-it('serve somente fontes cadastradas a usuário autenticado, sem caminho do computador', async () => {
+it('não serve PDFs enquanto não houver concessões explícitas e confirmação de direitos', async () => {
   session.mockResolvedValue(null)
   expect((await source(new Request('http://localhost'), { params: Promise.resolve({ id: 'CORE-DICE' }) })).status).toBe(401)
   session.mockResolvedValue({ user: { sub: 'owner' } })
   for (const id of ['__proto__', '../../.env']) expect((await source(new Request('http://localhost'), { params: Promise.resolve({ id }) })).status).toBe(404)
   const response = await source(new Request('http://localhost'), { params: Promise.resolve({ id: 'CORE-DICE' }) })
-  expect(response.headers.get('content-type')).toBe('application/pdf')
-  expect(response.headers.get('cache-control')).toBe('private, no-store')
-  expect(await response.text()).toBe('PDF')
+  expect(response.status).toBe(404)
+  expect(await response.json()).toMatchObject({ error: 'O arquivo não está disponível nesta etapa.' })
 })

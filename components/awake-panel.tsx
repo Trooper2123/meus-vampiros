@@ -18,7 +18,7 @@ async function fetchPanel(url: string): Promise<PanelData> {
   return body
 }
 
-export function AwakePanel({ campaignId }: Readonly<{ campaignId: string }>) {
+export function AwakePanel({ campaignId, sessionId }: Readonly<{ campaignId: string; sessionId?: string }>) {
   const url = `/api/campaigns/${campaignId}/nights/awake`
   const { data, error, isLoading, mutate } = useSWR<PanelData>(url, fetchPanel)
   const { mutate: refreshCache } = useSWRConfig()
@@ -41,7 +41,7 @@ export function AwakePanel({ campaignId }: Readonly<{ campaignId: string }>) {
     }
     setProcessing(true)
     try {
-      const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(pending.current) })
+      const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...pending.current, ...(sessionId ? { sessionId } : {}) }) })
       const body = await response.json().catch(() => null)
       if (!response.ok) {
         if (response.status >= 500) {

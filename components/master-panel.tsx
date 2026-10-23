@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
 import useSWR from 'swr'
@@ -22,9 +22,9 @@ const fetcher = (url: string) => fetch(url).then((response) => response.json())
 function MasterReminderItem({ campaign }: Readonly<{ campaign: CampaignSummary }>) {
   const { data } = useSWR<ReminderData>(`/api/campaign-availability?campaignId=${campaign.id}`, fetcher)
   const suggested = (data?.entries ?? []).filter((entry) => entry.suggested).sort((a, b) => a.date.localeCompare(b.date))[0]
-  if (!suggested) return <p className="mt-2 text-sm text-muted-foreground">Aguardando sugestão de data.</p>
-  const confirmed = (data?.entries ?? []).filter((entry) => entry.date === suggested.date && entry.status === 'disponível').length
-  return <Link href={`/campaigns/${campaign.id}`} className="block text-sm hover:text-primary"><p className="mt-2 font-mono text-xs uppercase text-primary">{new Intl.DateTimeFormat('pt-BR', { dateStyle: 'medium' }).format(new Date(`${suggested.date}T12:00:00`))}</p><p className="mt-2 inline-flex items-center gap-1.5 text-xs text-muted-foreground"><Users className="size-3.5" aria-hidden="true" /> {confirmed} confirmação{confirmed === 1 ? '' : 'ões'}</p></Link>
+  if (!suggested) return <p className="mt-2 text-sm text-muted-foreground">Aguardando sugestÃ£o de data.</p>
+  const confirmed = (data?.entries ?? []).filter((entry) => entry.date === suggested.date && entry.status === 'disponÃ­vel').length
+  return <Link href={`/campaigns/${campaign.id}`} className="block text-sm hover:text-primary"><p className="mt-2 font-mono text-xs uppercase text-primary">{new Intl.DateTimeFormat('pt-BR', { dateStyle: 'medium' }).format(new Date(`${suggested.date}T12:00:00`))}</p><p className="mt-2 inline-flex items-center gap-1.5 text-xs text-muted-foreground"><Users className="size-3.5" aria-hidden="true" /> {confirmed} confirmaÃ§Ã£o{confirmed === 1 ? '' : 'Ãµes'}</p></Link>
 }
 
 
@@ -33,25 +33,14 @@ function formatDate(value: string | null) {
   return new Intl.DateTimeFormat('pt-BR', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(value))
 }
 
-function CopyId({ id }: Readonly<{ id: string }>) {
+function CopyCampaignId({ id }: Readonly<{ id: string }>) {
   const [copied, setCopied] = useState(false)
-  return (
-    <button
-      type="button"
-      className="copy-id"
-      onClick={async () => {
-        await navigator.clipboard.writeText(id)
-        setCopied(true)
-        window.setTimeout(() => setCopied(false), 1800)
-      }}
-      aria-label="Copiar identificador da mesa"
-    >
-      <span>{copied ? 'Copiado' : 'Copiar ID'}</span><span className="sr-only">{id}</span>
-      {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
-    </button>
-  )
+  return <button type="button" className="copy-id" aria-label="Copiar identificador da mesa" onClick={async () => {
+    await navigator.clipboard.writeText(id)
+    setCopied(true)
+    window.setTimeout(() => setCopied(false), 1800)
+  }}><span>{copied ? 'ID copiado' : 'Copiar ID'}</span><span className="sr-only">{id}</span>{copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}</button>
 }
-
 export function NewCampaignForm({ onCreated }: Readonly<{ onCreated: (campaign: CampaignSummary) => void }>) {
   const [name, setName] = useState('')
   const [theme, setTheme] = useState('')
@@ -74,7 +63,7 @@ export function NewCampaignForm({ onCreated }: Readonly<{ onCreated: (campaign: 
     setSubmitting(false)
     if (!response.ok) {
       const body = await response.json().catch(() => ({}))
-      setError(body.error ?? 'Não foi possível criar a mesa.')
+      setError(body.error ?? 'NÃ£o foi possÃ­vel criar a mesa.')
       return
     }
     const { campaign } = await response.json()
@@ -91,8 +80,8 @@ export function NewCampaignForm({ onCreated }: Readonly<{ onCreated: (campaign: 
     <form onSubmit={handleSubmit} className="new-campaign-form">
       <div className="sheet-grid sheet-grid-2">
         <label className="sheet-field"><span>Nome da campanha</span><input required value={name} onChange={(event) => setName(event.target.value)} placeholder="Ex.: Sombras de Chicago" /></label>
-        <label className="sheet-field"><span>Tema principal</span><input value={theme} onChange={(event) => setTheme(event.target.value)} placeholder="Ex.: Política e traição" /></label>
-        <label className="sheet-field span-2"><span>Princípios da crônica</span><textarea rows={3} value={principios} onChange={(event) => setPrincipios(event.target.value)} placeholder="Leis, limites e pactos da mesa" /></label>
+        <label className="sheet-field"><span>Tema principal</span><input value={theme} onChange={(event) => setTheme(event.target.value)} placeholder="Ex.: PolÃ­tica e traiÃ§Ã£o" /></label>
+        <label className="sheet-field span-2"><span>PrincÃ­pios da crÃ´nica</span><textarea rows={3} value={principios} onChange={(event) => setPrincipios(event.target.value)} placeholder="Leis, limites e pactos da mesa" /></label>
         <label className="sheet-field"><span>Status</span>
           <select className="select" value={status} onChange={(event) => setStatus(event.target.value)}>
             <option value="Ativa">Ativa</option>
@@ -100,10 +89,10 @@ export function NewCampaignForm({ onCreated }: Readonly<{ onCreated: (campaign: 
             <option value="Encerrada">Encerrada</option>
           </select>
         </label>
-        <label className="sheet-field"><span>Último encontro</span><input type="date" value={lastSessionAt} onChange={(event) => setLastSessionAt(event.target.value)} /></label>
+        <label className="sheet-field"><span>Ãšltimo encontro</span><input type="date" value={lastSessionAt} onChange={(event) => setLastSessionAt(event.target.value)} /></label>
       </div>
       {error && <p className="mt-3 text-sm text-primary">{error}</p>}
-      {createdId && <p className="mt-3 text-sm text-muted-foreground">Mesa criada. Compartilhe o identificador com os jogadores: <CopyId id={createdId} /></p>}
+      {createdId && <p className="mt-3 text-sm text-muted-foreground">Mesa criada. Compartilhe o ID da mesa para os jogadores vincularem suas fichas: <CopyCampaignId id={createdId} /></p>}
       <button type="submit" disabled={submitting} className="button-primary mt-4 inline-flex items-center gap-2">
         <Plus className="size-4" /> {submitting ? 'Criando...' : 'Criar mesa'}
       </button>
@@ -121,10 +110,10 @@ export function MasterPanel({ initialCampaigns }: Readonly<{ initialCampaigns: C
     {campaign.theme && <p className="mt-3 text-sm text-muted-foreground">{campaign.theme}</p>}
     <div className="mt-5 grid gap-5 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,2fr)]">
       <div><p className="eyebrow">Participantes</p><p className="mt-2 text-sm">{campaign.playerCount} jogadores</p></div>
-      <div><p className="eyebrow">Última sessão</p><p className="mt-2 text-sm">{formatDate(campaign.lastSessionAt)}</p></div>
-      <div><p className="eyebrow">Próxima sessão</p><MasterReminderItem campaign={campaign} /></div>
+      <div><p className="eyebrow">Ãšltima sessÃ£o</p><p className="mt-2 text-sm">{formatDate(campaign.lastSessionAt)}</p></div>
+      <div><p className="eyebrow">PrÃ³xima sessÃ£o</p><MasterReminderItem campaign={campaign} /></div>
     </div>
-    <div className="mt-5 flex flex-wrap items-center gap-3"><Link href={`/campaigns/${campaign.id}`} className="button-primary">Gerenciar mesa</Link><CopyId id={campaign.id} /></div>
+    <div className="mt-5 flex flex-wrap items-center gap-3"><Link href={`/campaigns/${campaign.id}`} className="button-primary">Gerenciar mesa</Link><CopyCampaignId id={campaign.id} /></div>
   </section>)}</div>
 }
 
@@ -149,11 +138,11 @@ type CampaignCharacter = {
   totalXp?: number | string
 }
 
-export function CampaignPossessionsManager({ campaignId }: Readonly<{ campaignId: string }>) {
+export function CampaignPossessionsManager({ campaignId, sessionId }: Readonly<{ campaignId: string; sessionId?: string }>) {
   const { data: charData, mutate: mutateCharacters } = useSWR<{ characters: CampaignCharacter[] }>(`/api/characters?campaignId=${campaignId}`, fetcher)
   const { data: possData, error: possessionsError, mutate: mutatePossessions } = useSWR<{ possessions: Possession[] }>(`/api/possessions?campaignId=${campaignId}`, async url => {
     const response = await fetch(url)
-    if (!response.ok) throw new Error('Não foi possível carregar os pertences.')
+    if (!response.ok) throw new Error('NÃ£o foi possÃ­vel carregar os pertences.')
     return response.json()
   }, { refreshInterval: 15000 })
 
@@ -169,7 +158,7 @@ export function CampaignPossessionsManager({ campaignId }: Readonly<{ campaignId
   const [xpToAdd, setXpToAdd] = useState('2')
   const [updatingXp, setUpdatingXp] = useState(false)
   const [feedback, setFeedback] = useState('')
-  const [xpReason, setXpReason] = useState('Concessão do narrador')
+  const [xpReason, setXpReason] = useState('ConcessÃ£o do narrador')
   const [xpRetry, setXpRetry] = useState<{ characterIds: string[]; amount: number; reason: string; idempotencyKey: string } | null>(null)
   const [singleXpRetry, setSingleXpRetry] = useState<Record<string, { amount: number; reason: string; idempotencyKey: string }>>({})
 
@@ -182,18 +171,18 @@ export function CampaignPossessionsManager({ campaignId }: Readonly<{ campaignId
       const response = await fetch('/api/characters', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ characterId: character.id, ...operation }),
+        body: JSON.stringify({ characterId: character.id, ...operation, ...(sessionId ? { sessionId } : {}) }),
       })
       if (!response.ok) {
         const body = await response.json().catch(() => ({}))
-        setFeedback(`${character.name}: ${body.error ?? 'Falha na concessão. Tente novamente para repetir a mesma operação.'}`)
+        setFeedback(`${character.name}: ${body.error ?? 'Falha na concessÃ£o. Tente novamente para repetir a mesma operaÃ§Ã£o.'}`)
         return
       }
       setSingleXpRetry((current) => { const next = { ...current }; delete next[character.id]; return next })
       setFeedback(`${character.name}: XP concedido.`)
       await mutateCharacters(undefined, { revalidate: true })
     } catch {
-      setFeedback(`${character.name}: falha de conexão. Tente novamente para repetir a mesma operação.`)
+      setFeedback(`${character.name}: falha de conexÃ£o. Tente novamente para repetir a mesma operaÃ§Ã£o.`)
     } finally {
       setUpdatingXp(false)
     }
@@ -210,15 +199,15 @@ export function CampaignPossessionsManager({ campaignId }: Readonly<{ campaignId
       const response = await fetch(`/api/campaigns/${campaignId}/xp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(operation),
+        body: JSON.stringify({ ...operation, ...(sessionId ? { sessionId } : {}) }),
       })
       const body = await response.json().catch(() => null)
-      if (!response.ok) throw new Error(body?.error ?? 'Falha na concessão de XP.')
-      setFeedback((body?.results ?? []).map((result: { characterId: string; ok: boolean; error?: string }) => `${characters.find((character) => character.id === result.characterId)?.name ?? result.characterId}: ${result.ok ? 'XP concedido' : result.error ?? 'falha'}`).join(' · '))
+      if (!response.ok) throw new Error(body?.error ?? 'Falha na concessÃ£o de XP.')
+      setFeedback((body?.results ?? []).map((result: { characterId: string; ok: boolean; error?: string }) => `${characters.find((character) => character.id === result.characterId)?.name ?? result.characterId}: ${result.ok ? 'XP concedido' : result.error ?? 'falha'}`).join(' Â· '))
       if (body?.complete) setXpRetry(null)
       await mutateCharacters(undefined, { revalidate: true })
     } catch (error) {
-      setFeedback(error instanceof Error ? error.message : 'Falha de conexão. Tente novamente para repetir a mesma operação.')
+      setFeedback(error instanceof Error ? error.message : 'Falha de conexÃ£o. Tente novamente para repetir a mesma operaÃ§Ã£o.')
     } finally {
       setUpdatingXp(false)
     }
@@ -233,8 +222,8 @@ export function CampaignPossessionsManager({ campaignId }: Readonly<{ campaignId
       })
       if (!response.ok) { const body = await response.json().catch(() => null); throw new Error(body?.error ?? 'Falha ao revisar o pertence.') }
       await mutatePossessions()
-      setFeedback('Revisão do pertence salva.')
-    } catch (error) { setFeedback(error instanceof Error ? error.message : 'Falha de conexão ao revisar o pertence.') }
+      setFeedback('RevisÃ£o do pertence salva.')
+    } catch (error) { setFeedback(error instanceof Error ? error.message : 'Falha de conexÃ£o ao revisar o pertence.') }
   }
 
   async function grantMasterItem(event: React.FormEvent) {
@@ -259,7 +248,7 @@ export function CampaignPossessionsManager({ campaignId }: Readonly<{ campaignId
     setNewItemDesc('')
     await mutatePossessions()
     setFeedback('Pertence concedido.')
-    } catch (error) { setFeedback(error instanceof Error ? error.message : 'Falha de conexão. Os campos foram preservados.') }
+    } catch (error) { setFeedback(error instanceof Error ? error.message : 'Falha de conexÃ£o. Os campos foram preservados.') }
     finally { setGranting(false) }
   }
 
@@ -270,22 +259,22 @@ export function CampaignPossessionsManager({ campaignId }: Readonly<{ campaignId
     <div className="border border-[#6b3436] bg-[#131316] p-6 flex flex-col gap-6">
       <div className="flex items-center justify-between border-b border-border pb-3">
         <div>
-          <h3 className="font-serif text-lg uppercase text-[#f3c7b7]">Revisão e Gestão da Mesa</h3>
-          <p className="text-xs text-muted-foreground mt-0.5">Gerencie os personagens, atribua experiência (XP) e aprove os pertences da crônica.</p>
+          <h3 className="font-serif text-lg uppercase text-[#f3c7b7]">RevisÃ£o e GestÃ£o da Mesa</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">Gerencie os personagens, atribua experiÃªncia (XP) e aprove os pertences da crÃ´nica.</p>
         </div>
         <span className="eyebrow text-xs">Painel do Narrador</span>
       </div>
 
       {feedback && <output className="block text-sm text-muted-foreground">{feedback}</output>}
       {possessionsError && <p role="alert">{possessionsError.message}</p>}
-      <label className="flex flex-col gap-2 text-sm">Motivo da concessão de XP<input className="input" value={xpReason} maxLength={500} onChange={(event) => setXpReason(event.target.value)} required /></label>
-      {xpRetry && <p className="text-xs text-muted-foreground">Há uma concessão incompleta. Reenviar usa a mesma operação, sem duplicar XP.</p>}
+      <label className="flex flex-col gap-2 text-sm">Motivo da concessÃ£o de XP<input className="input" value={xpReason} maxLength={500} onChange={(event) => setXpReason(event.target.value)} required /></label>
+      {xpRetry && <p className="text-xs text-muted-foreground">HÃ¡ uma concessÃ£o incompleta. Reenviar usa a mesma operaÃ§Ã£o, sem duplicar XP.</p>}
       {/* Atribuir XP a Toda a Mesa */}
       {characters.length > 0 && (
         <form onSubmit={handleGrantXpToAll} className="border border-[#45362a] bg-[#1a1410] p-4 flex flex-wrap items-center justify-between gap-4">
           <div>
-            <p className="text-xs font-mono font-semibold uppercase text-[#e5a07e]">Atribuir XP Geral da Sessão</p>
-            <p className="text-[11px] text-muted-foreground">Conceda experiência simultaneamente para todos os personagens da mesa.</p>
+            <p className="text-xs font-mono font-semibold uppercase text-[#e5a07e]">Atribuir XP Geral da SessÃ£o</p>
+            <p className="text-[11px] text-muted-foreground">Conceda experiÃªncia simultaneamente para todos os personagens da mesa.</p>
           </div>
           <div className="flex items-center gap-2">
             <input
@@ -307,9 +296,9 @@ export function CampaignPossessionsManager({ campaignId }: Readonly<{ campaignId
         </form>
       )}
 
-      {/* Seção de Personagens com XP */}
+      {/* SeÃ§Ã£o de Personagens com XP */}
       <div className="flex flex-col gap-3">
-        <h4 className="font-mono text-xs uppercase text-muted-foreground tracking-wider">Personagens Vinculados e Experiência (XP)</h4>
+        <h4 className="font-mono text-xs uppercase text-muted-foreground tracking-wider">Personagens Vinculados e ExperiÃªncia (XP)</h4>
         {characters.length === 0 ? (
           <p className="text-xs text-muted-foreground italic">Nenhum personagem vinculado a esta mesa ainda.</p>
         ) : (
@@ -342,7 +331,7 @@ export function CampaignPossessionsManager({ campaignId }: Readonly<{ campaignId
                   >
                     <p className="text-xs font-semibold">{char.name}</p>
                     <p className="text-[10px] text-muted-foreground mt-0.5">
-                      {char.clan ?? 'Clã não definido'} • {char.concept ?? 'Sem conceito'}
+                      {char.clan ?? 'ClÃ£ nÃ£o definido'} â€¢ {char.concept ?? 'Sem conceito'}
                     </p>
                   </button>
                   <Link href={`/characters/${char.id}/summary`} className="button-ghost mt-2 text-xs">Ver ficha resumida</Link>
@@ -378,10 +367,10 @@ export function CampaignPossessionsManager({ campaignId }: Readonly<{ campaignId
         )}
       </div>
 
-      {/* Painel de Revisão de Pertences */}
+      {/* Painel de RevisÃ£o de Pertences */}
       {pendingPossessions.length > 0 && <div className="flex flex-col gap-4 border-t border-border pt-4">
         <h4 className="font-mono text-xs uppercase text-[#d47776] tracking-wider">
-          Painel de Revisão de Pertences {selectedCharacterId ? `(${characters.find(c => c.id === selectedCharacterId)?.name ?? 'Personagem'})` : '(Todos)'}
+          Painel de RevisÃ£o de Pertences {selectedCharacterId ? `(${characters.find(c => c.id === selectedCharacterId)?.name ?? 'Personagem'})` : '(Todos)'}
         </h4>
 
         {filteredPossessions.length === 0 ? (
@@ -396,7 +385,7 @@ export function CampaignPossessionsManager({ campaignId }: Readonly<{ campaignId
                     <div>
                       <span className="font-semibold text-sm">{item.label}</span>
                       <span className="ml-3 text-xs text-muted-foreground font-mono">
-                        [{ownerChar?.name ?? 'Personagem'}] — ({item.origin === 'master' ? 'Concedido pelo Mestre' : 'Solicitado pelo Jogador'})
+                        [{ownerChar?.name ?? 'Personagem'}] â€” ({item.origin === 'master' ? 'Concedido pelo Mestre' : 'Solicitado pelo Jogador'})
                       </span>
                     </div>
                     {item.status === 'aprovado' && <span className="status active"><span className="status-dot" /> Aprovado</span>}
@@ -409,12 +398,12 @@ export function CampaignPossessionsManager({ campaignId }: Readonly<{ campaignId
                   {item.origin === 'player' && (
                     <div className="mt-2 border-t border-border pt-3 flex flex-col gap-2">
                       <label className="sheet-field">
-                        <span>Comentário do Narrador</span>
+                        <span>ComentÃ¡rio do Narrador</span>
                         <textarea
                           rows={2}
                           value={comments[item.id] ?? item.masterComment ?? ''}
                           onChange={(e) => setComments({ ...comments, [item.id]: e.target.value })}
-                          placeholder="Digite seu comentário de avaliação..."
+                          placeholder="Digite seu comentÃ¡rio de avaliaÃ§Ã£o..."
                         />
                       </label>
                       <div className="flex justify-end gap-2 mt-1">
@@ -447,7 +436,7 @@ export function CampaignPossessionsManager({ campaignId }: Readonly<{ campaignId
         <h4 className="font-mono text-xs uppercase text-[#9ac59b] tracking-wider">Conceder Item Restrito a um Personagem</h4>
         <div className="sheet-grid sheet-grid-2">
           <label className="sheet-field">
-            <span>Personagem Destinatário</span>
+            <span>Personagem DestinatÃ¡rio</span>
             <select
               required
               className="select"
@@ -457,7 +446,7 @@ export function CampaignPossessionsManager({ campaignId }: Readonly<{ campaignId
               <option value="">Selecione um personagem...</option>
               {characters.map((c) => (
                 <option key={c.id} value={c.id}>
-                  {c.name} ({c.clan ?? 'Sem clã'})
+                  {c.name} ({c.clan ?? 'Sem clÃ£'})
                 </option>
               ))}
             </select>
@@ -468,16 +457,16 @@ export function CampaignPossessionsManager({ campaignId }: Readonly<{ campaignId
               required
               value={newItemLabel}
               onChange={(e) => setNewItemLabel(e.target.value)}
-              placeholder="Ex.: Chave do Refúgio, Grimório Antigo"
+              placeholder="Ex.: Chave do RefÃºgio, GrimÃ³rio Antigo"
             />
           </label>
           <label className="sheet-field span-2">
-            <span>Descrição / Notas do Mestre</span>
+            <span>DescriÃ§Ã£o / Notas do Mestre</span>
             <textarea
               rows={2}
               value={newItemDesc}
               onChange={(e) => setNewItemDesc(e.target.value)}
-              placeholder="Efeito restrito, contexto de história ou permissões do item"
+              placeholder="Efeito restrito, contexto de histÃ³ria ou permissÃµes do item"
             />
           </label>
         </div>

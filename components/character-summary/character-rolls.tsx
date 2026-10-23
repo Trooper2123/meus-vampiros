@@ -8,7 +8,7 @@ import type { Specialty } from '@/lib/vtm-v5/specialties'
 import { CLAN_CONDITION_LABELS, type ClanCondition, type ClanRollContext, type ClanModifiers } from '@/lib/vtm-v5/clan-mechanics'
 
 type RollData = { attributes: Record<string, number>; skills: Record<string, number>; specialties: Specialty[]; canUseSpecialties: boolean; canRollSecret: boolean; clanCode?: string; clanConditions?: ClanCondition[]; revision: number; status: string }
-type RollCommand = { mode?: RollMode; hiddenDifficulty?: boolean; clanContext?: ClanRollContext; attribute: string; skillId: string; difficulty: number; specialtyId?: string; visibility: 'PUBLIC' | 'SECRET'; reason: string; expectedRevision: number; idempotencyKey: string }
+type RollCommand = { mode?: RollMode; hiddenDifficulty?: boolean; clanContext?: ClanRollContext; attribute: string; skillId: string; difficulty: number; specialtyId?: string; visibility: 'PUBLIC' | 'SECRET'; reason: string; expectedRevision: number; idempotencyKey: string; sessionId?: string }
 type RollResponse = { ok: boolean; pool: number; specialtyBonus: number; clanModifiers?: ClanModifiers; visibility: 'PUBLIC' | 'SECRET'; revision: number; result: { normalDice: number[]; hungerDice: number[]; difficulty: number; successes: number; success: boolean; outcome: 'SUCCESS' | 'CRITICAL' | 'MESSY_CRITICAL' | 'FAILURE' | 'BESTIAL_FAILURE' } }
 const attributeNames: Record<string, string> = { forca: 'Força', destreza: 'Destreza', vigor: 'Vigor', carisma: 'Carisma', manipulacao: 'Manipulação', compostura: 'Compostura', inteligencia: 'Inteligência', raciocinio: 'Raciocínio', determinacao: 'Determinação' }
 const skillNames: Record<string, string> = { 'armas-brancas': 'Armas brancas', 'armas-de-fogo': 'Armas de fogo', atletismo: 'Atletismo', briga: 'Briga', conducao: 'Condução', furtividade: 'Furtividade', ladroagem: 'Ladroagem', oficios: 'Ofícios', sobrevivencia: 'Sobrevivência', 'empatia-com-animais': 'Empatia com animais', etiqueta: 'Etiqueta', intimidacao: 'Intimidação', lideranca: 'Liderança', manha: 'Manha', performance: 'Performance', persuasao: 'Persuasão', sagacidade: 'Sagacidade', subterfugio: 'Subterfúgio', ciencia: 'Ciência', academicos: 'Erudição', financas: 'Finanças', investigacao: 'Investigação', medicina: 'Medicina', ocultismo: 'Ocultismo', percepcao: 'Percepção', politica: 'Política', tecnologia: 'Tecnologia' }
@@ -24,11 +24,11 @@ async function fetchRollData(url: string): Promise<RollData> {
   return body
 }
 
-export function CharacterRolls({ characterId }: Readonly<{ characterId: string }>) {
-  return <RollPanel key={characterId} characterId={characterId} />
+export function CharacterRolls({ characterId, sessionId }: Readonly<{ characterId: string; sessionId?: string }>) {
+  return <RollPanel key={`${characterId}:${sessionId ?? ''}`} characterId={characterId} sessionId={sessionId} />
 }
 
-function RollPanel({ characterId }: Readonly<{ characterId: string }>) {
+function RollPanel({ characterId, sessionId }: Readonly<{ characterId: string; sessionId?: string }>) {
   const fieldId = useId()
   const endpoint = `/api/characters/${characterId}/rolls`
   const { data, error: loadError, isLoading, mutate } = useSWR<RollData>(endpoint, fetchRollData)
@@ -88,7 +88,7 @@ function RollPanel({ characterId }: Readonly<{ characterId: string }>) {
     event.preventDefault()
     if (!data || disabled || data.status !== 'APPROVED' || !selectedAttribute || (!selectedSkill && !['CHECK', 'WILLPOWER', 'HUMANITY'].includes(mode)) || !validDifficulty) return
     const clanContext = { ...(canUseCommunication && communication ? { communication: true } : {}), ...(canPursueCompulsion && pursuingCompulsion ? { pursuingCompulsion: true } : {}) }
-    void execute({ mode, ...(data.canRollSecret ? { hiddenDifficulty } : {}), ...(Object.keys(clanContext).length ? { clanContext } : {}), attribute: selectedAttribute, skillId: selectedSkill, difficulty: mode === 'CHECK' ? 1 : Number(difficulty), ...(selectedSpecialty ? { specialtyId: selectedSpecialty.id } : {}), visibility: data.canRollSecret ? visibility : 'PUBLIC', reason: rollReason(mode, selectedAttribute, selectedSkill), expectedRevision: data.revision, idempotencyKey: crypto.randomUUID() })
+    void execute({ mode, ...(data.canRollSecret ? { hiddenDifficulty } : {}), ...(Object.keys(clanContext).length ? { clanContext } : {}), attribute: selectedAttribute, skillId: selectedSkill, difficulty: mode === 'CHECK' ? 1 : Number(difficulty), ...(selectedSpecialty ? { specialtyId: selectedSpecialty.id } : {}), visibility: data.canRollSecret ? visibility : 'PUBLIC', reason: rollReason(mode, selectedAttribute, selectedSkill), expectedRevision: data.revision, idempotencyKey: crypto.randomUUID(), ...(sessionId ? { sessionId } : {}) })
   }
 
   return <section className="border border-border bg-card p-5 sm:p-6" aria-labelledby={`${fieldId}-title`} aria-busy={busy || isLoading}>

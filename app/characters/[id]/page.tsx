@@ -5,6 +5,7 @@ import { getSessionOrDev } from '@/lib/auth0'
 import { CharacterSummaryClient } from './character-summary-client'
 import Link from 'next/link'
 import { BookOpen, Edit, FileText } from 'lucide-react'
+import { SheetMediaPanel } from '@/components/sheet-media-panel'
 
 export default async function CharacterPage({
   params,
@@ -47,6 +48,7 @@ export default async function CharacterPage({
         </div>
 
         {/* Conteúdo da Ficha */}
+        <section className="mb-6 flex flex-col gap-4"><SheetMediaPanel compact subjectType="CHARACTER" subjectId={id}/><Link className="button-ghost self-start" href={`/characters/${id}/narrative`}>Perfil, relações e mídias</Link></section>
         <CharacterSummaryClient data={characterData} />
         
         {/* Botão para editar ficha completa */}

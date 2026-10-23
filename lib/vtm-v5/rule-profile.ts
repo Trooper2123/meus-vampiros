@@ -20,5 +20,5 @@ export const RULE_SOURCES = {
 export type RuleSourceId = keyof typeof RULE_SOURCES
 export function publicRuleSource(id: RuleSourceId) {
   const source = RULE_SOURCES[id]
-  return { id, book: source.book, edition: source.edition, printed: source.printed, pdf: source.pdf, href: `/api/rule-sources/${id}#page=${source.pdf}` }
+  return { id, book: source.book, edition: source.edition, printed: source.printed, pdf: source.pdf, available: false as const }
 }

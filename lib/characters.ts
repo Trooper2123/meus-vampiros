@@ -185,7 +185,8 @@ export async function createCharacter(
   payload: { name?: string; data?: Record<string, unknown>; campaignId?: string | null; visibility?: CharacterVisibility },
   resourceSource?: Record<string, unknown>,
   creationState?: { creationEffects: CreationEffect[]; specialties: Specialty[]; disciplineAcquisitions?: DisciplineAcquisition[] },
-  policyConsent?: { campaignId: string; acceptedAt: string; acceptedBy: string }
+  policyConsent?: { campaignId: string; acceptedAt: string; acceptedBy: string },
+  executor: Pick<typeof db, 'execute'> = db,
 ) {
   const candidateData = normalizeDisciplines(payload.data ?? {})
   const allocationState: Record<string, unknown> = creationState ? structuredClone(creationState) : {}
@@ -196,7 +197,7 @@ export async function createCharacter(
   const initialXp = CREATION_ADJUSTMENTS[(payload.data?.creationType ?? 'FLEDGLING') as CreationType]?.initialXp ?? 0
   const initialState = { ...readSessionState(payload.data ?? {}, resourceSource ? { healthDamage: resourceSource.healthDamage, willpowerDamage: resourceSource.willpowerDamage } : {}), ...allocationState, ...(policyConsent ? { policyConsent } : {}) }
   const { name, data, campaignId } = payload
-  const result = await db.execute<{ id: string }>(sql`
+  const result = await executor.execute<{ id: string }>(sql`
     INSERT INTO characters (user_id, created_by_user_id, character_type, name, concept, clan, generation, data, game_state, total_xp, campaign_id, status, visibility)
     VALUES (${userId}, ${userId}, ${data?.characterType ?? 'PLAYER_VAMPIRE'}, ${name}, ${data?.conceito ?? null}, ${data?.cla ?? null}, ${data?.geracao ?? null}, ${JSON.stringify(data ?? {})}::jsonb, ${JSON.stringify((data?.characterType ?? 'PLAYER_VAMPIRE') === 'PLAYER_VAMPIRE' ? initialState : {})}::jsonb, ${(data?.characterType ?? 'PLAYER_VAMPIRE') === 'PLAYER_VAMPIRE' ? initialXp : 0}, ${campaignId ?? null}::uuid, 'DRAFT', ${payload.visibility ?? 'PLAYER_VISIBLE'})
     RETURNING id
@@ -205,13 +206,13 @@ export async function createCharacter(
   if (id) {
     const creationType = (data?.creationType ?? 'FLEDGLING') as CreationType
     const adjustment = CREATION_ADJUSTMENTS[creationType] ?? CREATION_ADJUSTMENTS.FLEDGLING
-    await appendCharacterLedgerEvent(id, 'INITIAL_ADJUSTMENT', 'RULE_ENGINE', { creationType, ...adjustment, secondaryAttributes: data?.secondaryAttributes }, userId)
+    await appendCharacterLedgerEvent(id, 'INITIAL_ADJUSTMENT', 'RULE_ENGINE', { creationType, ...adjustment, secondaryAttributes: data?.secondaryAttributes }, userId, executor)
   }
   return { id }
 }
 
-export async function appendCharacterLedgerEvent(characterId: string, eventType: string, origin: string, payload: Record<string, unknown>, createdByUserId: string) {
-  await db.execute(sql`
+export async function appendCharacterLedgerEvent(characterId: string, eventType: string, origin: string, payload: Record<string, unknown>, createdByUserId: string, executor: Pick<typeof db, 'execute'> = db) {
+  await executor.execute(sql`
     INSERT INTO character_ledger_events (character_id, event_type, origin, payload, created_by_user_id)
     VALUES (${characterId}::uuid, ${eventType}, ${origin}, ${JSON.stringify(payload)}::jsonb, ${createdByUserId})
   `)

@@ -32,8 +32,9 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
     if (!session?.user?.sub) return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
     const { id } = await context.params
     const body = await request.json().catch(() => null)
-    if (!UUID_PATTERN.test(id) || !body || !body.changes || typeof body.changes !== 'object' || Array.isArray(body.changes) || typeof body.reason !== 'string' || !Number.isSafeInteger(body.expectedRevision) || typeof body.idempotencyKey !== 'string' || !UUID_PATTERN.test(body.idempotencyKey)) return NextResponse.json({ error: 'Alteração inválida.' }, { status: 400 })
+    if (!UUID_PATTERN.test(id) || !body || !body.changes || typeof body.changes !== 'object' || Array.isArray(body.changes) || typeof body.reason !== 'string' || !Number.isSafeInteger(body.expectedRevision) || typeof body.idempotencyKey !== 'string' || !UUID_PATTERN.test(body.idempotencyKey) || (body.sessionId !== undefined && (typeof body.sessionId !== 'string' || !UUID_PATTERN.test(body.sessionId))) || Object.keys(body).some(key => !['changes', 'reason', 'expectedRevision', 'idempotencyKey', 'sessionId'].includes(key))) return NextResponse.json({ error: 'Alteração inválida.' }, { status: 400 })
     await ensureAllTables()
+    if (body.sessionId) await (await import('@/lib/game-sessions')).assertGameSessionCharacter(session.user.sub, body.sessionId, id)
     const result = await changeCharacterResources(session.user.sub, id, body.changes, body.reason, body.expectedRevision, body.idempotencyKey)
     const character = await getCommandCharacter(id)
     if (character?.masterId !== session.user.sub && result.state) {
