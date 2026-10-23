@@ -1,4 +1,14 @@
+## [2026-10-23 19:28 BRT] — feat - Perfil narrativo acessível pela página da campanha
+
+**Tipo:** feat  
+**Arquivos principais:** `app/campaigns/[id]/page.tsx`, `components/game-session/session-workspace.tsx`
+
+- Narrador pode acessar o perfil narrativo de cada personagem participante diretamente da página da campanha, através do link "Perfil narrativo desta mesa" dentro do `<details>` de cada ficha.
+- Corrigido erro TS18047 em `session-workspace.tsx`: `data.session` tipado corretamente com `!` após guard e IIFE para `s.id`/`s.revision`.
+- A spec `spec-evolucao-fichas-notas-relacionamentos-midias.md` (Fases 1–3) estava implementada no backend e na maioria dos componentes; esta entrega fecha o gap de navegação da Fase 1 (RF-010).
+
 ## [2026-10-23 00:44 BRT] — fix - Vínculo reutilizável pelo ID da mesa
+
 
 **Tipo:** fix
 **Arquivos principais:** `components/campaign-creation-gate.tsx`, `components/master-panel.tsx`, `app/api/campaign-invitations/route.ts`, `app/api/characters/route.ts`, `app/api/characters/[id]/campaign/route.ts`, `lib/campaign-invitations.ts` e testes de vínculo.

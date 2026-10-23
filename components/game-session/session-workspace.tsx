@@ -27,7 +27,7 @@ export function CampaignSessionWorkspace({ campaignId, actorId }: Readonly<{ cam
 
   useEffect(() => {
     const sessionId = data?.session?.id
-    if (!sessionId || data.session.status !== 'ACTIVE') return
+    if (!sessionId || data.session!.status !== 'ACTIVE') return
     const timer = window.setInterval(() => {
       void Promise.allSettled([...(manage ? [refresh(`/api/campaigns/${campaignId}/nights/awake`)] : []), ...(data?.characters ?? []).flatMap(character => [refresh(`/api/characters/${character.id}/resources`), refresh(`/api/characters/${character.id}/rolls`)])])
     }, 5000)
@@ -47,7 +47,7 @@ export function CampaignSessionWorkspace({ campaignId, actorId }: Readonly<{ cam
   }
 
   return <div className="flex flex-col gap-6">
-    <header className="border border-border bg-card p-5"><p className="eyebrow">Modo sessão</p><h1 className="mt-2 font-serif text-3xl">Mesa em andamento</h1><p className="mt-2 text-sm text-muted-foreground">Recursos e rolagens usam os comandos oficiais da ficha. A sala de vídeo é opcional.</p>{feedback && <p role="status" className="mt-3 text-sm text-muted-foreground">{feedback}</p>}{error && <p role="alert" className="mt-3 text-sm text-primary">{error.message}</p>}{!data?.session && manage && <button className="button-primary mt-4 min-h-10" onClick={() => void command('POST', url, { idempotencyKey: crypto.randomUUID() })}>Iniciar sessão</button>}{data?.session?.status === 'ACTIVE' && manage && <button className="button-ghost mt-4 min-h-10" onClick={() => void command('PATCH', `/api/sessions/${data.session.id}`, { idempotencyKey: crypto.randomUUID(), expectedRevision: data.session.revision })}>Encerrar sessão</button>}</header>
+    <header className="border border-border bg-card p-5"><p className="eyebrow">Modo sessão</p><h1 className="mt-2 font-serif text-3xl">Mesa em andamento</h1><p className="mt-2 text-sm text-muted-foreground">Recursos e rolagens usam os comandos oficiais da ficha. A sala de vídeo é opcional.</p>{feedback && <p role="status" className="mt-3 text-sm text-muted-foreground">{feedback}</p>}{error && <p role="alert" className="mt-3 text-sm text-primary">{error.message}</p>}{!data?.session && manage && <button className="button-primary mt-4 min-h-10" onClick={() => void command('POST', url, { idempotencyKey: crypto.randomUUID() })}>Iniciar sessão</button>}{data?.session?.status === 'ACTIVE' && manage && (() => { const s = data.session!; return <button className="button-ghost mt-4 min-h-10" onClick={() => void command('PATCH', `/api/sessions/${s.id}`, { idempotencyKey: crypto.randomUUID(), expectedRevision: s.revision })}>Encerrar sessão</button> })()}</header>
     <details className="border border-border bg-card p-5"><summary className="cursor-pointer font-serif text-xl">Videochamada</summary><div className="mt-5"><LiveKitRoomLink campaignId={campaignId} master={manage} /></div></details>
     {npcSessionId&&<NpcSessionPanel sessionId={npcSessionId} campaignId={campaignId}/>}
     {data?.session?.status === 'ACTIVE' && <>
