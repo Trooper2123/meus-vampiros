@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({ getSessionOrDev: vi.fn(), getCharacterAccessRecord: vi.fn(), appendCharacterLedgerEvent: vi.fn(), canManageCampaign: vi.fn(), isUserInCampaign: vi.fn(), getPredatorTypeSettings: vi.fn(), persistPredatorTypeData: vi.fn() }))
 vi.mock('@/lib/auth0', () => ({ getSessionOrDev: mocks.getSessionOrDev }))
+vi.mock('@/lib/campaign-invitations', () => ({ campaignPredatorOverrides: vi.fn().mockResolvedValue([]) }))
 vi.mock('@/lib/auth/authorization', () => ({ canManageCampaign: mocks.canManageCampaign }))
 vi.mock('@/lib/availability', () => ({ isUserInCampaign: mocks.isUserInCampaign }))
 vi.mock('@/lib/characters', () => ({ getCharacterAccessRecord: mocks.getCharacterAccessRecord, appendCharacterLedgerEvent: mocks.appendCharacterLedgerEvent }))
@@ -22,6 +23,13 @@ describe('rotas públicas de tipos de predação', () => {
   it('exige autenticação no catálogo', async () => {
     mocks.getSessionOrDev.mockResolvedValue(null)
     expect((await GET(new Request('http://localhost/api/predator-types'))).status).toBe(401)
+  })
+  it('mantém predações desabilitadas visíveis com motivo e confirmação bloqueada', async () => {
+    mocks.getPredatorTypeSettings.mockResolvedValue({ ...settings, disabledCodes: ['CONFIDANT'] })
+    mocks.getCharacterAccessRecord.mockResolvedValue({ id: '11111111-1111-4111-8111-111111111111', userId: 'auth0|owner', campaignId: '22222222-2222-4222-8222-222222222222', status: 'DRAFT', data: { cla: 'Malkavian' } })
+    const response = await GET(new Request('http://localhost/api/predator-types?characterId=11111111-1111-4111-8111-111111111111'))
+    const body = await response.json()
+    expect(body.predatorTypes.find((entry: { code: string }) => entry.code === 'CONFIDANT')).toMatchObject({ selectable: false, publicWarnings: [expect.objectContaining({ blocking: true, code: 'PREDATOR_TYPE_DISABLED_FOR_CAMPAIGN' })] })
   })
 
   it('permite consultar e escolher tipos sem habilitação de Narrador em ficha independente', async () => {

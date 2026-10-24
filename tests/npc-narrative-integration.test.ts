@@ -6,7 +6,7 @@ vi.mock('@/lib/auth0',()=>({getSessionOrDev:auth}))
 import { sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { preparePostgresTest,createTestCampaign,createTestCharacter } from './postgres-test-helpers'
-import { createNpc,getNpc,changeNpc } from '@/lib/npc-store'
+import { createNpc,getNpc,changeNpc,listNpcs } from '@/lib/npc-store'
 import { NPC_TEMPLATES } from '@/lib/npc-domain'
 import { getSessionNpcs,sessionNpcCommand } from '@/lib/npc-sessions'
 import { startGameSession } from '@/lib/game-sessions'
@@ -45,6 +45,19 @@ it('CRUD é idempotente, revisionado e não permite vínculo em outra mesa',asyn
   await expect(changeNpc(master,own.id,{action:'LINK',campaignId:other,expectedRevision:0,idempotencyKey:key()})).rejects.toMatchObject({status:403})
   await changeNpc(master,own.id,{action:'EDIT',data:{...own.data,name:'Revisado'},expectedRevision:0,idempotencyKey:key()})
   await expect(changeNpc(master,own.id,{action:'EDIT',data:own.data,expectedRevision:0,idempotencyKey:key()})).rejects.toMatchObject({status:409})
+})
+it('catálogo ordena por nome e ameaça, filtra a mesa e sinaliza sessão ativa',async()=>{
+  const own=await npc()
+  await addInstance(own.id,'detetive')
+  const otherCampaign=(await createTestCampaign(master)).id
+  const other=await createNpc(master,{data:{...NPC_TEMPLATES[0].data,name:'Alfa',threatLevel:7},campaignId:otherCampaign,idempotencyKey:key()})
+  const byName=await listNpcs(master,{sort:'name'})
+  expect(byName.npcs.map(n=>n.id)).toEqual([other.id,own.id])
+  expect(byName.npcs.find(n=>n.id===own.id)?.inSession).toBe(true)
+  expect((await listNpcs(master,{sort:'threat'})).npcs.map(n=>n.id)).toEqual([other.id,own.id])
+  expect((await listNpcs(master,{campaignId,sort:'recent'})).npcs.map(n=>n.id)).toEqual([own.id])
+  await expect(listNpcs(master,{sort:'name; DROP TABLE npc_definitions'})).rejects.toMatchObject({status:422})
+  await expect(listNpcs(player,{campaignId})).rejects.toMatchObject({status:403})
 })
 it('conversão tem prévia e confirmação; cópia não recebe estado de campanha',async()=>{
   const own=await npc()

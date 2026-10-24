@@ -14,7 +14,7 @@ vi.mock('@/lib/campaigns', () => ({
 vi.mock('@/lib/characters', () => ({
   createCharacter: mocks.createCharacter,
   deleteCharacter: vi.fn(),
-  getCharacterById: vi.fn(),
+  getCharacterById: vi.fn(), getCharacterForViewer: vi.fn(),
   getCharactersForCampaign: vi.fn(),
   normalizeDisciplines: vi.fn(),
   updateCharacter: vi.fn(),

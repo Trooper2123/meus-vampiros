@@ -43,7 +43,7 @@ export function validateNpc(input: unknown): NpcData {
   const standard = value.standardPools == null ? null : npcObject(value.standardPools)
   if (standard) npcKeys(standard, ['physical','social','mental'])
   if (sheetType === 'INTERMEDIATE' && !standard) npcFail(422, 'Informe os três pools padrão.')
-  if (!Array.isArray(value.exceptionalPools ?? []) || (value.exceptionalPools as unknown[] | undefined)?.length! > 50 || !Array.isArray(value.specialAbilities ?? []) || (value.specialAbilities as unknown[] | undefined)?.length! > 30) npcFail(422, 'Quantidade de pools ou poderes inválida.')
+  if (!Array.isArray(value.exceptionalPools ?? []) || ((value.exceptionalPools as unknown[] | undefined)?.length ?? 0) > 50 || !Array.isArray(value.specialAbilities ?? []) || ((value.specialAbilities as unknown[] | undefined)?.length ?? 0) > 30) npcFail(422, 'Quantidade de pools ou poderes inválida.')
   const seen = new Set<string>()
   const exceptionalPools = ((value.exceptionalPools ?? []) as unknown[]).map(entry => {
     const pool = npcObject(entry); npcKeys(pool, ['id','skillCode','customName','dicePool','description'])

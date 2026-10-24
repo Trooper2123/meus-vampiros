@@ -1,3 +1,27 @@
+## [2026-10-24 01:04 BRT] — fix - Predação fora do clã e edição de habilidades
+
+**Tipo:** fix
+
+**Arquivos principais:** `lib/vtm-v5/predator-types/validation.ts`, `lib/predator-types.ts`, `lib/characters.ts`, `lib/character-commands.ts`, `app/api/predator-types/route.ts`, `app/api/characters/route.ts`, `app/api/characters/[id]/predator-type/route.ts`, `app/api/characters/[id]/status/route.ts`, `app/characters/character-form-client.tsx`, `components/character-form/skills-step.tsx`, `components/predator-types/player-predator-selector.tsx`, `app/campaigns/[id]/page.tsx` e testes de predação/edição.
+
+- Disciplinas de predação são comparadas por identidade canônica, aceitando nomes em inglês e português. Confidant concede Presence ou Oblivion a Malkavian sem exigir que pertençam ao clã. Restrições específicas de predação permanecem validadas.
+- Predações desabilitadas pela mesa continuam consultáveis com motivo; confirmação e erros da API explicam as restrições. Seleção salva restaura a Disciplina por identidade.
+- Distribuição base e limites do formulário excluem pontos de habilidade concedidos pela predação; envio para revisão usa as concessões persistidas. Habilidades exibem origem e permitem zerar pontos manuais no rascunho inicial, preservando concessões.
+- Segurança: após envio/finalização, redução de habilidades exige o mestre atual da própria mesa no servidor. Marcador protegido em `gameState` mantém a restrição após retorno a rascunho. Mestre pode abrir a edição pela página da mesa; terceiros e narradores de outras mesas não recebem acesso. Revisões, auditoria, limites e proteção das concessões são preservados, sem mudança de schema.
+- Validações: 324 testes em 11 arquivos, mais 44 testes de regressão NPC/narrativa/predação em cinco arquivos, aprovados no PostgreSQL local isolado. Tipos, build, auditoria de produção e lint aprovados (zero erros/seis avisos anteriores; lint exclui backup gerado e documentação local). QA visual não executado. Suíte integral não repetida: execução anterior já tinha falhas legadas; revisão global continua pendente.
+
+## [2026-10-24 00:52 BRT] — feat - Filtros de NPCs e ordenação narrativa
+
+**Tipo:** feat | fix
+
+**Arquivos principais:** `components/npcs/npc-catalogue.tsx`, `components/sheet-narrative-tabs.tsx`, `lib/npc-domain.ts`, `tests/npc-domain-v2.test.ts`, `tests/npc-narrative-navigation.test.ts`, `tests/npc-narrative-integration.test.ts`, `pnpm-workspace.yaml`, `pnpm-lock.yaml`.
+
+- Catálogo permite filtrar por mesa e ordenar por atualização, nome ou ameaça; mostra NPCs em sessão ativa. O contexto de campanha permanece fixo nas listagens da mesa e consultas gerais omitem o UUID vazio.
+- Abas narrativas permitem ordenar os registros por atualização crescente ou decrescente, preservando busca, arquivo e permissões existentes. A ordenação considera os até 200 registros retornados pelo serviço atual.
+- Segurança: override específico de `@vercel/cli-config>zod` para 4.6.7 remove a versão vulnerável transitiva usada pelo Vercel Blob (GHSA-mrhx-c7xc-m3w5). Sem mudança de schema ou storage externo.
+- Corrigidas duas expressões opcionais no validador de NPCs apontadas pelo lint, preservando os limites de pools/poderes, com regressão para formatos e tamanhos inválidos.
+- Validação: 28 testes focados aprovados com PostgreSQL local isolado e storage em memória, mais dez testes do domínio aprovados após inclusão da nova regressão (29 casos únicos no recorte); TypeScript, build após atualização e auditoria de produção aprovados. Lint geral do código sem erros/seis avisos, excluindo backup gerado `.next-backup-*/**` e documentação local `.codex/**`; comando padrão percorreu o backup e foi interrompido. Suíte integral: 889 aprovações e 265 falhas em 100 arquivos, incluindo oito snapshots divergentes; conclusão integral das specs bloqueada. QA visual/responsivo e Blob real pendentes.
+
 ## [2026-10-23 19:28 BRT] — feat - Perfil narrativo acessível pela página da campanha
 
 **Tipo:** feat  

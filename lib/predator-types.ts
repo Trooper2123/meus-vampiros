@@ -114,5 +114,5 @@ const definition=PREDATOR_TYPE_BY_CODE.get(data.predatorTypeCode as PredatorType
 const settings=await getPredatorTypeSettings(character.campaignId)
 if(!definition||(character.campaignId&&!isPredatorTypeEnabled(definition.code,settings))) throw new CharacterCommandError(422,'Tipo de predação não permitido pela configuração atual.')
 const report=validatePredatorType(definition,{ clan: characterText(character.data.cla)||null,bloodPotency: Number(character.data['potencia-de-sangue']??0),isThinBlood: character.data.creationType==='THIN_BLOOD'||character.data.isThinBlood===true,enabled: true,creationType: character.data.creationType,overrides: await campaignPredatorOverrides(character.campaignId) })
-if(!report.valid) throw new CharacterCommandError(422,'A ficha possui restrições para este tipo de predação.')
+if(!report.valid) throw new CharacterCommandError(422,report.issues.filter(issue => issue.blocking).map(issue => issue.message).join(' '))
 }

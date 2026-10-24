@@ -10,7 +10,7 @@ import { projectIndependentCharacter } from '@/lib/character-duplicate'
 import { getCommandCharacter, runCharacterCommand, CharacterCommandError, type CommandCharacter } from '@/lib/character-commands'
 import { randomUUID } from 'node:crypto'
 import { readSessionState, type SessionState } from '@/lib/vtm-v5/session-state'
-import { mergeCharacterSkills } from '@/lib/vtm-v5/skills'
+import { mergeCharacterSkills, validateCharacterSkills } from '@/lib/vtm-v5/skills'
 import { creationEffects, validateCreationEffects, type CreationEffect } from '@/lib/creation-effects'
 import { characterSpecialties } from '@/lib/character-specialties'
 import { assertBloodPotencyInput } from './character-blood-potency'
@@ -164,7 +164,8 @@ export async function getCharacterById(id: string, userId: string) {
 export async function getCharacterForViewer(id: string, viewerId: string) {
   const access = await getCommandCharacter(id)
   if (!access || (access.ownerId !== viewerId && access.masterId !== viewerId)) return null
-  return getCharacterById(id, access.ownerId)
+  const character = await getCharacterById(id, access.ownerId)
+  return character ? { ...character, canReduceSkills: access.masterId === viewerId || access.status === 'DRAFT' && access.gameState.skillDistributionFinalized !== true } : null
 }
 
 export async function getCharacterAccessRecord(id: string) {
@@ -242,12 +243,12 @@ export async function updateCharacter(
   userId: string,
   payload: { name?: string; data?: Record<string, unknown>; campaignId?: string | null; expectedRevision?: number }
 ) {
-  const previous = await getCharacterById(id, userId)
+  const previous = await getCharacterForViewer(id, userId)
   if (!previous) return null
-  return runCharacterCommand(userId, id, { key: randomUUID(), type: 'CHARACTER_EDITED', expectedRevision: payload.expectedRevision ?? previous.revision, payload }, character => character.ownerId === userId, async character => {
+  return runCharacterCommand(userId, id, { key: randomUUID(), type: 'CHARACTER_EDITED', expectedRevision: payload.expectedRevision ?? previous.revision, payload }, character => character.ownerId === userId || character.masterId === userId, async character => {
     if (['ARCHIVED', 'DISABLED'].includes(character.status)) throw new CharacterCommandError(409, 'Esta ficha precisa ser reativada pelo Narrador antes da edição.')
     if (payload.campaignId !== undefined && payload.campaignId !== character.campaignId) throw new CharacterCommandError(409, 'A alteração do vínculo exige aprovação da mesa.')
-    if (payload.data) await applyCharacterDataEdit(character, payload.data)
+    if (payload.data) await applyCharacterDataEdit(character, payload.data, userId)
     if (payload.name !== undefined) {
       character.name = payload.name
       if ('nome' in character.data) character.data.nome = payload.name
@@ -275,15 +276,18 @@ export async function duplicateCharacter(id: string, userId: string) {
   return createCharacter(userId, { name: `${original.name} — Cópia`, campaignId: null, data }, data, { creationEffects: effects, specialties, disciplineAcquisitions: xpAcquisitions(source).map(({ id: acquisitionId, disciplineId, source: acquisitionSource, fromLevel, targetLevel, xpCost }) => ({ id: acquisitionId, disciplineId, source: acquisitionSource, fromLevel, targetLevel, xpCost })) })
 }
 
-async function applyCharacterDataEdit(character: CommandCharacter, incoming: Record<string, unknown>) {
+async function applyCharacterDataEdit(character: CommandCharacter, incoming: Record<string, unknown>, actorId: string) {
   const mechanicalFields = new Set(['forca', 'destreza', 'vigor', 'carisma', 'manipulacao', 'compostura', 'inteligencia', 'raciocinio', 'determinacao', 'cla', 'geracao', 'characterType', 'creationType', 'disciplinas', 'vantagens', 'defeitos', 'retainer', 'npc', 'potencia-de-sangue', 'isCaitiff', 'isThinBlood'])
 
   await assertEditableCharacterFields(incoming,character)
   const changedMechanics = Object.entries(incoming).some(([field, value]) => (mechanicalFields.has(field) || /^habilidade-/iu.test(field) || field.startsWith('convicoes-')) && JSON.stringify(value) !== JSON.stringify(character.data[field]))
-  if (changedMechanics && character.status !== 'DRAFT') character.status = 'DRAFT'
   let mergedData: Record<string, unknown>
   try { mergedData = mergeCharacterSkills(character.data, incoming) }
   catch { throw new CharacterCommandError(422, 'Habilidades ou pontos inválidos.') }
+  const previousSkills = validateCharacterSkills(character.data).skills
+  const nextSkills = validateCharacterSkills(mergedData).skills
+  if (character.masterId !== actorId && (character.status !== 'DRAFT' || character.gameState.skillDistributionFinalized === true) && Object.keys(previousSkills).some(id => nextSkills[id] < previousSkills[id])) throw new CharacterCommandError(403, 'Após finalizar a distribuição, somente o Mestre desta mesa pode reduzir habilidades.')
+  if (changedMechanics && character.status !== 'DRAFT') character.status = 'DRAFT'
   character.data = applySecondaryAttributes(mergedData, character.data)
   if (!character.campaignId) {
     character.gameState.creationEffects = creationEffects(character).filter(effect => effect.kind !== 'DISCIPLINE' || effect.origin !== 'CLAN')

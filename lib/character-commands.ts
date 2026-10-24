@@ -77,7 +77,9 @@ export async function runCharacterCommand(
     if (saved) return replay({ actorId: saved.actor_user_id, hash: saved.request_hash, result: saved.result }, actorId, hash)
     checkRevision(character, command)
     const before = { totalXp: character.totalXp, spentXp: character.spentXp, revision: character.revision, gameState: structuredClone(character.gameState) }
+    if (character.status !== 'DRAFT') character.gameState.skillDistributionFinalized = true
     const result = { ...await apply(character), revision: character.revision + 1 }
+    if (character.status !== 'DRAFT') character.gameState.skillDistributionFinalized = true
     await transaction.execute(sql`UPDATE characters SET campaign_id = ${character.campaignId}::uuid, name = ${character.name}, concept = ${typeof character.data.conceito === 'string' ? character.data.conceito : null}, clan = ${typeof character.data.cla === 'string' ? character.data.cla : null}, generation = ${character.data.geracao === undefined ? null : characterText(character.data.geracao)}, character_type = ${character.characterType}, data = ${JSON.stringify(character.data)}::jsonb, game_state = ${JSON.stringify(character.gameState)}::jsonb, status = ${character.status}, total_xp = ${character.totalXp}, spent_xp = ${character.spentXp}, revision = revision + 1, updated_at = NOW() WHERE id = ${characterId}::uuid`)
     if (character.validationUpdated) await transaction.execute(sql`UPDATE characters SET validation_report = ${JSON.stringify(character.validationReport)}::jsonb, validated_at = NOW() WHERE id = ${characterId}::uuid`)
     await transaction.execute(sql`INSERT INTO character_commands (character_id, command_key, actor_user_id, request_hash, result) VALUES (${characterId}::uuid, ${command.key}, ${actorId}, ${hash}, ${JSON.stringify(result)}::jsonb)`)

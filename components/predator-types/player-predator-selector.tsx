@@ -4,6 +4,7 @@ import { useId, useMemo, useRef, useState } from 'react'
 import useSWR from 'swr'
 import type { PlayerPredatorTypeDto, PredatorTypeSelection } from '@/lib/vtm-v5/predator-types'
 import { PREDATOR_SOURCE_LABELS, PREDATOR_TYPE_SOURCES, type PredatorTypeSource } from '@/lib/vtm-v5/predator-types/types'
+import { disciplineDefinition } from '@/lib/vtm-v5/disciplines'
 
 const fetcher = (url: string) => fetch(url).then(async (response) => {
   const body = await response.json()
@@ -32,7 +33,7 @@ export function PlayerPredatorSelector({ characterId, selectedCode, onApplied, o
   const catalogExpanded = draftCatalogExpanded ?? !selectedType
   const savedSelection = data?.selection?.code === selected ? data.selection : null
   const specialty = draftSpecialty ?? savedSelection?.specialty ?? ''
-  const discipline = draftDiscipline ?? savedSelection?.discipline ?? ''
+  const discipline = disciplineDefinition(draftDiscipline ?? savedSelection?.discipline)?.name ?? draftDiscipline ?? savedSelection?.discipline ?? ''
   const savedChoices = Object.fromEntries((savedSelection?.optionCodes ?? []).flatMap(value => {
     const match = /^([^:]+):([^:]+):([1-5])$/.exec(value)
     return match ? [[`${match[1]}:${match[2]}`, Number(match[3])]] : []
@@ -105,6 +106,7 @@ export function PlayerPredatorSelector({ characterId, selectedCode, onApplied, o
     </fieldset>)}
     {selectedType && <div className="mt-4 flex flex-col gap-2 text-sm"><p className="text-muted-foreground">{selectedType.rulesText}</p>{selectedType.sourceReference && <p className="text-xs text-muted-foreground">Fonte: {selectedType.sourceReference}</p>}{selectedType.publicWarnings.map(warning => <p key={warning.code} className="text-primary">{warning.message}</p>)}</div>}
     {selectedType && <button type="button" className="button-primary mt-4" disabled={submitting || !selectedType?.selectable || !specialty || !discipline} onClick={() => void confirmSelection()}>{submitting ? 'Aplicando...' : 'Confirmar escolha'}</button>}
+    {selectedType && !submitting && <p className="mt-2 text-sm text-muted-foreground">{!selectedType.selectable ? `Predação indisponível: ${selectedType.publicWarnings.filter(warning => warning.blocking).map(warning => warning.message).join(' ') || 'A configuração atual não permite esta escolha.'}` : !specialty || !discipline ? 'Escolha a especialidade e a Disciplina para confirmar. A Disciplina de predação pode ser de fora do clã.' : 'A Disciplina concedida pela predação não precisa pertencer ao clã.'}</p>}
     {message && (message.includes('aplicado') ? <output className="mt-4 block text-sm text-muted-foreground" aria-live="polite">{message}</output> : <p className="mt-4 text-sm text-muted-foreground" role="alert">{message}</p>)}
   </section>
 }

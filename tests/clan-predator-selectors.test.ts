@@ -49,6 +49,13 @@ describe('projeções renderizadas dos seletores', () => {
     expect(html).not.toContain('hidden=""')
     expect(html).not.toContain('Confirmar escolha')
   })
+  it('restaura a Disciplina da predação por identidade e explica a escolha fora do clã', () => {
+    const entry = PREDATOR_TYPES.find(type => type.code === 'CONFIDANT')!
+    const html = renderToStaticMarkup(createElement(SWRConfig, { value: { provider: () => new Map(), revalidateOnMount: false, fallback: { [`/api/predator-types?characterId=${characterId}`]: { predatorTypes: [toPlayerPredatorTypeDto(entry)], selectedCode: entry.code, selection: { code: entry.code, specialty: entry.specialtyOptions[0], discipline: 'Presença', optionCodes: [] } } } } }, createElement(PlayerPredatorSelector, { characterId })))
+    expect(html).toContain('<option selected="">Presence</option>')
+    expect(html).toContain('A Disciplina concedida pela predação não precisa pertencer ao clã.')
+    expect(html).not.toMatch(/disabled=""[^>]*>Confirmar escolha/)
+  })
   it('identifica fontes, referências e consulta bloqueada sem permitir confirmação', () => {
     const entry = PREDATOR_TYPES.find(type => type.code === 'ROADSIDE_KILLER')!
     const predatorTypes = [toPlayerPredatorTypeDto(entry, [{ code: 'PREDATOR_RULESET_UNSUPPORTED', message: 'Pontuação do defeito pendente.', blocking: true }], false)]

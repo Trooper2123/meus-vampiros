@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getSessionOrDev } from '@/lib/auth0'
-import { getCharacterById, getCharacterAccessRecord, createCharacter, updateCharacter, getCharactersForCampaign, normalizeDisciplines } from '@/lib/characters'
+import { getCharacterById, getCharacterForViewer, getCharacterAccessRecord, createCharacter, updateCharacter, getCharactersForCampaign, normalizeDisciplines } from '@/lib/characters'
 import { getCampaignById, hasMasterAccess } from '@/lib/campaigns'
 import { ensureAllTables } from '@/lib/db'
 import { canManageCampaign } from '@/lib/auth/authorization'
@@ -67,12 +67,12 @@ export async function GET(request: Request) {
     }
     const id = searchParams.get('id')
     if (!id || !UUID_PATTERN.test(id)) return NextResponse.json({ error: 'Ficha inválida.' }, { status: 400 })
-    const character = await getCharacterById(id, session.user.sub)
+    const character = await getCharacterForViewer(id, session.user.sub)
     if (!character) return NextResponse.json({ error: 'Ficha não encontrada.' }, { status: 404 })
     const campaign = character.campaignId && !character.campaign ? await getCampaignById(character.campaignId) : character.campaign ?? null
     const publicData = { ...normalizeDisciplines(character.data as Record<string, unknown>) }
     for (const field of ['masterOverride', 'predatorTypeOverrides', 'predatorTypeOverride', 'predatorTypeRelationshipRequirements', 'masterNotes', 'narratorNotes']) delete publicData[field]
-    return NextResponse.json({ character: { id: character.id, name: character.name, status: character.status, characterType: character.characterType, revision: character.revision, data: publicData, campaignId: character.campaignId, creationGrants: character.creationGrants }, campaign })
+    return NextResponse.json({ character: { id: character.id, name: character.name, status: character.status, characterType: character.characterType, revision: character.revision, data: publicData, campaignId: character.campaignId, creationGrants: character.creationGrants, canReduceSkills: character.canReduceSkills }, campaign })
   } catch (error) {
     return errorResponse(error, 'Não foi possível carregar a ficha.')
   }
@@ -119,7 +119,7 @@ export async function PUT(request: Request) {
     const { id, name, data, campaignId, expectedRevision } = await readPayload(request)
     if (!id) return NextResponse.json({ error: 'Ficha inválida.' }, { status: 400 })
     await ensureAllTables()
-    const original = await getCharacterById(id, session.user.sub)
+    const original = await getCharacterForViewer(id, session.user.sub)
     if (!original) return NextResponse.json({ error: 'Acesso negado.' }, { status: 403 })
     if (campaignId !== undefined && campaignId !== original.campaignId) return NextResponse.json({ error: 'A alteração do vínculo aguarda o fluxo de aprovação da mesa.' }, { status: 409 })
     if (!Number.isSafeInteger(expectedRevision) || expectedRevision < 0) return NextResponse.json({ error: 'Recarregue a ficha antes de editar.' }, { status: 409 })

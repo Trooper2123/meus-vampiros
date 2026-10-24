@@ -30,7 +30,7 @@ export async function GET(request: Request) {
   const bloodPotency = Number(data['potencia-de-sangue'] ?? 0)
   const isThinBlood = data.creationType === 'THIN_BLOOD' || data.isThinBlood === true
   const overrides = await campaignPredatorOverrides(campaignId)
-  const predatorTypes = PREDATOR_TYPES.filter((definition) => !campaignId || isPredatorTypeEnabled(definition.code, settings)).map((definition) => {
+  const predatorTypes = PREDATOR_TYPES.map((definition) => {
     const enabled = !campaignId || isPredatorTypeEnabled(definition.code, settings)
     const report = validatePredatorType(definition, { clan, bloodPotency, isThinBlood, creationType: data.creationType, enabled, overrides })
     return toPlayerPredatorTypeDto(definition, report.issues, report.valid)

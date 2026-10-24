@@ -8,6 +8,7 @@ import { CharacterCommandError, runCharacterCommand } from '@/lib/character-comm
 import { normalizeCharacterRulesInput } from '@/lib/vtm-v5/normalize'
 import { canTransitionCharacterStatus, validateCharacter } from '@/lib/vtm-v5/validation'
 import { readSessionState } from '@/lib/vtm-v5/session-state'
+import { projectCreationGrants } from '@/lib/vtm-v5/creation-grants'
 import { CHARACTER_STATUSES, type CharacterStatus } from '@/lib/vtm-v5/types'
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
@@ -27,7 +28,7 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
       if (!character.campaignId && nextStatus === 'PENDING_REVIEW') throw new CharacterCommandError(409, 'Uma ficha independente não precisa de revisão do narrador.')
       const state = readSessionState(character.data, character.gameState)
       if (body.status === 'PENDING_REVIEW' || body.status === 'APPROVED') validateDisciplineAllocation(character, true)
-      const report = validateCharacter(normalizeCharacterRulesInput({ ...character.data, humanidade: state.humanity, characterType: character.characterType }, undefined, xpAcquisitions(character)), (await campaignPredatorOverrides(character.campaignId)).map(rule => rule.ruleCode), !character.campaignId)
+      const report = validateCharacter(normalizeCharacterRulesInput({ ...character.data, humanidade: state.humanity, characterType: character.characterType }, projectCreationGrants(character.gameState), xpAcquisitions(character)), (await campaignPredatorOverrides(character.campaignId)).map(rule => rule.ruleCode), !character.campaignId)
       const independentApproval = !character.campaignId && isOwner && character.status === 'DRAFT' && nextStatus === 'APPROVED' && report.valid
       if (!independentApproval && !canTransitionCharacterStatus(character.status as CharacterStatus, nextStatus, isMaster, report.valid)) throw new CharacterCommandError(report.valid ? 409 : 422, report.valid ? 'Transição de status não permitida.' : 'Corrija os erros da ficha antes de enviá-la.')
       character.status = nextStatus

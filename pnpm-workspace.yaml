@@ -19,3 +19,4 @@ minimumReleaseAgeExclude:
   - '@aws-sdk/token-providers@3.1150.0'
 overrides:
   hono: 4.12.25
+  '@vercel/cli-config>zod': 4.6.7
