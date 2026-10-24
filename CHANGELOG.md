@@ -1,3 +1,13 @@
+## [2026-10-24 17:19 BRT] — feat - Unificar NPCs da campanha
+
+**Tipo:** feat
+
+**Arquivos principais:** `app/campaigns/[id]/page.tsx`, `tests/campaign-layout-order.test.ts`.
+
+- A página da campanha agora tem uma seção NPCs da mesa com o catálogo filtrado pela própria campanha, resumos existentes e criação contextual de fichas.
+- A criação e consulta continuam nas rotas autorizadas do catálogo de NPCs; não foi criada nova API nem copiado estado entre mesas.
+- Validação: testes focados e TypeScript serão registrados após a execução desta etapa; sem alteração de persistência.
+
 ## [2026-10-24 17:13 BRT] — refactor - Organizar entrada da campanha e ações da sessão
 
 **Tipo:** refactor | fix
@@ -1373,3 +1383,4 @@ Cada entrada deve incluir data, horÃ¡rio (BRT), tipo e resumo do que foi feito
 
 ## 2026-10-17 22:55 BRT â€” chore
 - PotÃªncia do Sangue: preparaÃ§Ã£o Ãºnica em processo de testes isolado (`scripts/prepare-v5-development.mjs`), provider/schema em memÃ³ria atual, seeds e integridade aprovados (8 fichas/3 mesas); nenhum PostgreSQL acessado.
+- Validação: 3 testes de organização do catálogo passaram, TypeScript e build aprovados. Vitest encerrou com aviso de timeout de dois servidores, após informar saída 0.
