@@ -2,6 +2,7 @@ import { ArchiveHeader } from '@/components/archive-header'
 import { CampaignTools } from '@/components/campaign-calendar/campaign-tools'
 import { CharacterSummary } from '@/components/character-summary/character-summary'
 import { CampaignPossessionsManager } from '@/components/master-panel'
+import { NpcCatalogue } from '@/components/npcs/npc-catalogue'
 import { getCharacterSummaryData } from '@/lib/character-summary'
 import { getCharactersForCampaign } from '@/lib/characters'
 import { getCampaignsForMaster } from '@/lib/campaigns'
@@ -44,6 +45,13 @@ export default async function CampaignDetailPage({ params }: Readonly<{ params: 
 
           <CampaignTools campaignId={campaign.id} master />
           <CampaignPossessionsManager campaignId={campaign.id} />
+
+          <section className="border border-border bg-card p-5" aria-labelledby="campaign-npcs-title">
+            <p className="eyebrow">Personagens do Narrador</p>
+            <h2 id="campaign-npcs-title" className="mt-2 font-serif text-2xl">NPCs da mesa</h2>
+            <p className="mb-5 mt-2 text-sm text-muted-foreground">Consulte as fichas vinculadas a esta mesa ou crie um NPC diretamente nela.</p>
+            <NpcCatalogue campaignId={campaign.id} />
+          </section>
 
           <section className="border border-border bg-card p-5" aria-labelledby="participants-title">
             <p className="eyebrow">Gestão de participantes</p>
