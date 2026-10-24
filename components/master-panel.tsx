@@ -268,17 +268,16 @@ export function CampaignPossessionsManager({ campaignId, sessionId }: Readonly<{
       <div className="flex items-center justify-between border-b border-border pb-3">
         <div>
           <h3 className="font-serif text-lg uppercase text-foreground">Revisão e Gestão da Mesa</h3>
-          <p className="text-xs text-muted-foreground mt-0.5">Gerencie os personagens, atribua experiência (XP) e aprove os pertences da crônica.</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Gerencie os personagens e aprove os pertences da crônica.</p>
         </div>
         <span className="eyebrow text-xs">Painel do Narrador</span>
       </div>
 
       {feedback && <output className="block text-sm text-muted-foreground">{feedback}</output>}
       {possessionsError && <p role="alert">{possessionsError.message}</p>}
-      <label className="flex flex-col gap-2 text-sm">Motivo da concessão de XP<input className="input" value={xpReason} maxLength={500} onChange={(event) => setXpReason(event.target.value)} required /></label>
-      {xpRetry && <p className="text-xs text-muted-foreground">Há uma concessão incompleta. Reenviar usa a mesma operação, sem duplicar XP.</p>}
-      {/* Atribuir XP a Toda a Mesa */}
-      {characters.length > 0 && (
+      {sessionId && <label className="flex flex-col gap-2 text-sm">Motivo da concessão de XP<input className="input" value={xpReason} maxLength={500} onChange={(event) => setXpReason(event.target.value)} required /></label>}
+      {sessionId && xpRetry && <p className="text-xs text-muted-foreground">Há uma concessão incompleta. Reenviar usa a mesma operação, sem duplicar XP.</p>}
+      {sessionId && characters.length > 0 && (
         <form onSubmit={handleGrantXpToAll} className="border border-border bg-card p-4 flex flex-wrap items-center justify-between gap-4">
           <div>
             <p className="text-xs font-mono font-semibold uppercase text-foreground">Atribuir XP Geral da Sessão</p>
@@ -306,7 +305,7 @@ export function CampaignPossessionsManager({ campaignId, sessionId }: Readonly<{
 
       {/* Seção de Personagens com XP */}
       <div className="flex flex-col gap-3">
-        <h4 className="font-mono text-xs uppercase text-muted-foreground tracking-wider">Personagens Vinculados e Experiência (XP)</h4>
+        <h4 className="font-mono text-xs uppercase text-muted-foreground tracking-wider">{sessionId ? 'Personagens vinculados e experiência (XP)' : 'Personagens vinculados'}</h4>
         {characters.length === 0 ? (
           <p className="text-xs text-muted-foreground italic">Nenhum personagem vinculado a esta mesa ainda.</p>
         ) : (
@@ -344,7 +343,7 @@ export function CampaignPossessionsManager({ campaignId, sessionId }: Readonly<{
                   </button>
                   <Link href={`/characters/${char.id}/summary`} className="button-ghost mt-2 text-xs">Ver ficha resumida</Link>
 
-                  <div className="mt-3 pt-2 border-t border-border/60 flex items-center justify-between gap-2 text-[11px]">
+                  {sessionId && <div className="mt-3 pt-2 border-t border-border/60 flex items-center justify-between gap-2 text-[11px]">
                     <div className="flex flex-col">
                       <span className="font-mono text-muted-foreground text-[9px] uppercase">XP Total</span>
                       <span className="font-mono font-semibold text-foreground">{total} XP <span className="text-[9px] text-muted-foreground">({available} livre)</span></span>
@@ -367,7 +366,7 @@ export function CampaignPossessionsManager({ campaignId, sessionId }: Readonly<{
                         +2
                       </button>
                     </div>
-                  </div>
+                  </div>}
                 </div>
               )
             })}

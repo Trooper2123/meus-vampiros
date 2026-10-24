@@ -1,3 +1,13 @@
+## [2026-10-24 17:13 BRT] — refactor - Organizar entrada da campanha e ações da sessão
+
+**Tipo:** refactor | fix
+
+**Arquivos principais:** `app/campaigns/[id]/page.tsx`, `components/campaign-calendar/campaign-tools.tsx`, `components/master-panel.tsx`, `tests/campaign-layout-order.test.ts`, `tests/campaign-management-ui.test.ts`.
+
+- Página da campanha deixa de exibir cards de Crônica/Despertar e configuração de Potência do Sangue. O painel de calendário não inclui mais videochamada; ela continua disponível no menu do modo sessão.
+- Atribuição individual e geral de XP, incluindo valores e motivo, aparece somente no modo de uma sessão ativa. Links de pesquisa de habilidades e vantagens/defeitos ficam na página da campanha.
+- Validação desta etapa: 9 testes focados aprovados, TypeScript, build e lint dos arquivos da aplicação aprovados. Vitest reportou timeout ao encerrar servidores de teste, mas os testes fecharam com saída 0; a suíte global mantém falhas legadas já documentadas.
+
 ## [2026-10-24 16:43 BRT] — feat - Persistir e encaminhar pertences sem duplicação
 
 **Tipo:** feat | fix

@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import { DateAvailabilityCalendar } from '@/components/date-availability-calendar'
-import { LiveKitRoomLink } from '@/components/livekit/livekit-room-link'
 import type { CampaignCalendarConfig } from '@/lib/types/campaign-event'
 import { CampaignCalendarSettings } from './campaign-calendar-settings'
 import { CampaignCalendarToggle } from './campaign-calendar-toggle'
@@ -32,6 +31,5 @@ export function CampaignTools({ campaignId, master }: Readonly<{ campaignId: str
     {status.scheduling && <details className="border border-border bg-card p-5"><summary className="archive-disclosure"><span><span className="eyebrow block mb-3">Próximo encontro</span><span className="font-serif text-2xl">Disponibilidade</span></span><span className="archive-expand">Expandir</span><span className="archive-collapse">Recolher</span></summary><div className="mt-5"><DateAvailabilityCalendar campaignId={campaignId} master={master} /></div></details>}
     {status.event && <details className="border border-border bg-card p-5"><summary className="cursor-pointer font-serif text-2xl">Calendário de eventos</summary><div className="mt-5"><CampaignEventCalendar campaignId={campaignId} master={master} config={status.eventConfig} /></div></details>}
     {master && <details className="border border-border bg-card p-5"><summary className="cursor-pointer text-sm">Configurar calendários da mesa</summary><section className="mt-5" aria-labelledby="calendar-settings-title"><p className="eyebrow">Configurações</p><h2 id="calendar-settings-title" className="mt-2 font-serif text-2xl">Calendários da mesa</h2><div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2"><CampaignCalendarToggle campaignId={campaignId} calendar="scheduling" label="Calendário de marcação" initialEnabled={status.scheduling} onChange={(enabled) => setStatus((current) => current ? { ...current, scheduling: enabled } : current)} /><CampaignCalendarToggle campaignId={campaignId} calendar="event" label="Calendário de eventos" initialEnabled={status.event} onChange={(enabled) => setStatus((current) => current ? { ...current, event: enabled } : current)} /></div>{status.event && <div className="mt-4"><CampaignCalendarSettings campaignId={campaignId} config={status.eventConfig} onChange={(eventConfig) => setStatus((current) => current ? { ...current, eventConfig } : current)} /></div>}</section></details>}
-    <LiveKitRoomLink campaignId={campaignId} master={master} />
   </div>
 }

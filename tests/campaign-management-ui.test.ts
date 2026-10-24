@@ -9,11 +9,11 @@ vi.mock('@auth0/nextjs-auth0/client', () => ({ useUser: () => ({ user: null, isL
 
 const campaignId = '11111111-1111-4111-8111-111111111111'
 const characterId = '22222222-2222-4222-8222-222222222222'
-function render(statuses: string[]) {
+function render(statuses: string[], sessionId?: string) {
   return renderToStaticMarkup(createElement(SWRConfig, { value: { provider: () => new Map(), revalidateOnMount: false, fallback: {
     [`/api/characters?campaignId=${campaignId}`]: { characters: [{ id: characterId, name: 'Participante', totalXp: 3, spentXp: 0 }] },
     [`/api/possessions?campaignId=${campaignId}`]: { possessions: statuses.map((status, index) => ({ id: `item-${index}`, characterId, label: `Pertence ${index}`, status, origin: 'player' })) },
-  } } }, createElement(CampaignPossessionsManager, { campaignId })))
+  } } }, createElement(CampaignPossessionsManager, { campaignId, ...(sessionId ? { sessionId } : {}) })))
 }
 
 describe('gestão contextual da mesa', () => {
@@ -29,6 +29,10 @@ describe('gestão contextual da mesa', () => {
     expect(html).toContain('Pertence 1')
     expect(html).not.toContain('Pertence 0')
     expect(html).not.toContain('Pertence 2')
+  })
+  it('mostra atribuição de XP somente no modo de uma sessão ativa', () => {
+    expect(render([])).not.toContain('Conceder XP')
+    expect(render([], '33333333-3333-4333-8333-333333333333')).toContain('Atribuir XP Geral da Sessão')
   })
   it('destaca acesso modal e preservação de rascunho sem navegar', () => {
     const html = renderToStaticMarkup(createElement(CampaignNotesDialog, { campaignId, actorId: 'dev|local' }))
