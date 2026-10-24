@@ -1,3 +1,26 @@
+## [2026-10-24 16:22 BRT] — docs - Validar pendências do resumo de implementação
+
+**Tipo:** docs
+
+**Arquivos principais:** `codex/specs/resumo-implementacao.md`, `CHANGELOG.md`.
+
+- Confrontado o resumo histórico com código, APIs, specs e evidências atuais. Separadas entregas já existentes (vínculo, exclusão lógica, sessões SQL, rerrolagem, Disciplinas por XP, catálogos ampliados e permissões de recursos) das pendências funcionais e dos gates ainda bloqueados. Registro de 13/10 preservado em seção histórica recolhível; sem promover tarefas automaticamente.
+- Confirmadas lacunas de desvínculo, encaminhamento/idempotência de pertences, motor avançado/progressão restante e validação dos serviços externos. Identificadas referências documentais ausentes e checklists antigos a reconciliar. Sem alteração de código, schema, permissões ou produção nesta revisão.
+- Validação executada: 148 testes aprovados/35 falhas em nove arquivos. As 35 falhas estão nas suítes legadas de dados (21), Disciplinas (12) e pertences (2), com fixtures em memória/provider SQL indisponível. Vínculo, exclusão, catálogos e NPC/narrativa passaram. Log em `tmp/resumo-implementacao-validacao.log`; nenhuma limpeza de dados. Evidências anteriores de tipos/lint/build/auditoria e suíte global foram identificadas como históricas da mesma sessão, sem alegar reexecução.
+
+## [2026-10-24 16:12 BRT] — fix - Completar persistência e isolamento do modo sessão
+
+**Tipo:** fix | docs | chore
+
+**Arquivos principais:** `lib/game-sessions.ts`, `components/game-session/session-workspace.tsx`, `tests/game-sessions.test.ts`, `tests/game-session-workspace.test.ts`, `tests/game-session-storage.test.ts`, `tests/game-session-commands-ui.test.ts`, `eslint.config.js`, `README.md`.
+
+- Modo sessão exige PostgreSQL em qualquer ambiente e responde 503 sem configuração/provider, eliminando o fallback silencioso para partidas voláteis. Testes de domínio/rotas usam fixtures no PostgreSQL local isolado, sem limpeza de dados.
+- Workspace separa o cache por usuário/mesa e desmonta sala, fichas, notas e ferramentas quando a consulta autorizada falha. Mostra carregamento antes do snapshot e relê o estado após conflito. Permissões continuam verificadas no servidor em cada consulta/comando.
+- Início/encerramento bloqueiam envios simultâneos e preservam a chave de idempotência após falha de rede ou resposta inválida. Encerramento passa a ler `result.session.id`, preservando o acesso autorizado aos NPCs da sessão encerrada.
+- ESLint ignora backups gerados `.next-backup-*` e documentação local `.codex`. README documenta configuração, migração existente e rollback conservador para produção; nenhuma migração nova, seed ou alteração de produção executada. Integração autorizada somente no schema local `meus_vampiros_test`.
+- Validações: 97 testes focados em 11 arquivos aprovados; revalidação final de três arquivos de UI/storage com 11 testes aprovada. TypeScript, build, lint global (zero erros/cinco avisos anteriores), auditoria completa (zero vulnerabilidades) e diff-check aprovados; scan de padrões de segredo sem ocorrências no escopo. Revisão `pre-commit-review` registrada localmente.
+- Bloqueio: suíte global falha em 264 de 1.200 testes, distribuídos por 30 arquivos legados, com fixtures em memória/providers nulos entre as causas. A SPEC permanece `blocked` até o gate obrigatório passar. QA visual, Auth0/LiveKit/Vercel reais e implantação em produção não executados.
+
 ## [2026-10-24 01:18 BRT] — feat - Exclusão lógica de personagens pelo proprietário
 
 **Tipo:** feat

@@ -1,7 +1,6 @@
 import { sql } from 'drizzle-orm'
 import { CharacterCommandError } from '@/lib/character-commands'
 import { db } from '@/lib/db'
-import { devCloseGameSession, devGetActiveGameSession, devGetGameSession, devGetGameSessionAccess, devGetGameSessionCharacters, devStartGameSession } from '@/lib/dev-db'
 
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
@@ -17,13 +16,12 @@ type SessionRecord = {
 }
 
 function requireStorage() {
-  if (!process.env.DATABASE_URL && process.env.NODE_ENV === 'production') {
+  if (!process.env.DATABASE_URL || !db) {
     throw new CharacterCommandError(503, 'O modo sessão requer PostgreSQL configurado.')
   }
 }
 
 async function getAccess(campaignId: string, actorId: string) {
-  if (!process.env.DATABASE_URL) return devGetGameSessionAccess(campaignId, actorId)
   const result = await db.execute<{ is_master: boolean; is_member: boolean }>(sql`
     SELECT c.master_user_id = ${actorId} AS is_master,
       (c.master_user_id = ${actorId} OR EXISTS (SELECT 1 FROM characters ch WHERE ch.campaign_id = c.id AND ch.user_id = ${actorId})) AS is_member
@@ -34,7 +32,6 @@ async function getAccess(campaignId: string, actorId: string) {
 }
 
 async function getCharacters(campaignId: string, actorId: string, isMaster: boolean) {
-  if (!process.env.DATABASE_URL) return devGetGameSessionCharacters(campaignId, actorId, isMaster)
   const result = await db.execute<{ id: string; name: string }>(sql`
     SELECT id, name FROM characters
     WHERE campaign_id = ${campaignId}::uuid AND character_type = 'PLAYER_VAMPIRE' AND status = 'APPROVED'
@@ -152,7 +149,7 @@ export async function getCampaignGameSession(actorId: string, campaignId: string
   const access = await getAccess(campaignId, actorId)
   if (!access) throw new CharacterCommandError(404, 'Mesa não encontrada.')
   if (!access.isMember) throw new CharacterCommandError(403, 'Acesso negado.')
-  const active = process.env.DATABASE_URL ? await readActiveSession(campaignId) : devGetActiveGameSession(campaignId)
+  const active = await readActiveSession(campaignId)
   return { session: active ? sessionProjection(active) : null, canManage: access.isMaster, characters: active ? await getCharacters(campaignId, actorId, access.isMaster) : [] }
 }
 
@@ -166,10 +163,7 @@ export async function startGameSession(actorId: string, campaignId: string, inpu
   if (!access) throw new CharacterCommandError(404, 'Mesa não encontrada.')
   if (!access.isMaster) throw new CharacterCommandError(403, 'Somente o Narrador atual pode iniciar a sessão.')
   const chronicleNightIds = validateChronicleNights(value.chronicleNightIds)
-  if (!process.env.DATABASE_URL && chronicleNightIds.length) throw new CharacterCommandError(400, 'Vínculos de noite exigem noites registradas no banco da mesa.')
-  const session = process.env.DATABASE_URL
-    ? await startPersistentSession(campaignId, actorId, key, chronicleNightIds)
-    : devStartGameSession(campaignId, actorId, key, chronicleNightIds)
+  const session = await startPersistentSession(campaignId, actorId, key, chronicleNightIds)
   if (!session) throw new CharacterCommandError(409, 'Já existe uma sessão ativa nesta mesa ou a chave já foi usada com outros dados.')
   return sessionProjection(session)
 }
@@ -177,7 +171,7 @@ export async function startGameSession(actorId: string, campaignId: string, inpu
 export async function getGameSession(actorId: string, sessionId: string) {
   requireStorage()
   requireUuid(sessionId)
-  const session = process.env.DATABASE_URL ? await readSession(sessionId) : devGetGameSession(sessionId)
+  const session = await readSession(sessionId)
   if (!session) throw new CharacterCommandError(404, 'Sessão não encontrada.')
   const access = await getAccess(session.campaignId, actorId)
   if (!access?.isMember) throw new CharacterCommandError(403, 'Acesso negado.')
@@ -225,14 +219,12 @@ export async function closeGameSession(actorId: string, sessionId: string, input
   const value = input as { idempotencyKey?: unknown; expectedRevision?: unknown }
   const key = requireKey(value.idempotencyKey)
   if (!Number.isSafeInteger(value.expectedRevision) || Number(value.expectedRevision) < 1) throw new CharacterCommandError(400, 'Revisão inválida.')
-  const session = process.env.DATABASE_URL ? await readSession(sessionId) : devGetGameSession(sessionId)
+  const session = await readSession(sessionId)
   if (!session) throw new CharacterCommandError(404, 'Sessão não encontrada.')
   const access = await getAccess(session.campaignId, actorId)
   if (!access?.isMember) throw new CharacterCommandError(403, 'Acesso negado.')
   if (!access.isMaster) throw new CharacterCommandError(403, 'Somente o Narrador atual pode encerrar a sessão.')
-  const closed = process.env.DATABASE_URL
-    ? await closePersistentSession(sessionId, actorId, key, Number(value.expectedRevision))
-    : devCloseGameSession(sessionId, actorId, key, Number(value.expectedRevision))
+  const closed = await closePersistentSession(sessionId, actorId, key, Number(value.expectedRevision))
   if (!closed) throw new CharacterCommandError(session.status === 'ACTIVE' ? 409 : 403, 'A sessão mudou ou a chave já foi usada. Atualize o estado antes de tentar novamente.')
   return sessionProjection(closed)
 }
