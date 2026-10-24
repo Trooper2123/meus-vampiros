@@ -37,7 +37,7 @@ export async function requireNpcCampaign(actorId: string, campaignId: string, ex
 async function validateDomitor(actorId: string, data: NpcData, executor: Pick<typeof db,'execute'>, campaignId?: string) {
   if (!data.domitorCharacterId) return
   npcId(data.domitorCharacterId)
-  const row = await executor.execute(sql`SELECT ch.id FROM characters ch LEFT JOIN campaigns c ON c.id=ch.campaign_id WHERE ch.id=${data.domitorCharacterId}::uuid AND ch.character_type IN ('PLAYER_VAMPIRE','VAMPIRE_NPC') AND (ch.user_id=${actorId} OR c.master_user_id=${actorId}) AND (${campaignId ?? null}::uuid IS NULL OR ch.campaign_id=${campaignId ?? null}::uuid)`)
+  const row = await executor.execute(sql`SELECT ch.id FROM characters ch LEFT JOIN campaigns c ON c.id=ch.campaign_id WHERE ch.id=${data.domitorCharacterId}::uuid AND ch.status<>'DELETED' AND ch.character_type IN ('PLAYER_VAMPIRE','VAMPIRE_NPC') AND (ch.user_id=${actorId} OR c.master_user_id=${actorId}) AND (${campaignId ?? null}::uuid IS NULL OR ch.campaign_id=${campaignId ?? null}::uuid)`)
   if (!row.rows.length || data.creatureType !== 'GHOUL') npcFail(422,'Domitor indisponível ou de outra mesa.')
 }
 async function fullCharacter(actorId: string, data: NpcData, tx: NpcTx, originalId?: string | null) {
@@ -62,7 +62,7 @@ export async function getNpc(actorId: string, id: string) {
   const links = await db.execute<{id:string;campaign_id:string;name:string;role_override:string|null;location:string;notes:string;revision:number;revealed_fields:string[]}>(sql`SELECT cn.*,c.name FROM campaign_npcs cn JOIN campaigns c ON c.id=cn.campaign_id WHERE cn.npc_id=${id}::uuid AND c.master_user_id=${actorId}`)
   return {id:row.id,data:{...row.payload,name:full?.name??row.name},characterId:row.character_id,templateId:row.template_id,isTemplate:row.is_template,status:row.status,revision:row.revision,warnings:npcWarnings(row.payload),campaigns:links.rows,updatedAt:row.updated_at,history:history.rows,experience:full?{total:Number(full.total_xp),spent:Number(full.spent_xp),revision:full.revision}:null}
 }
-export async function npcDomitors(actorId:string){const rows=await db.execute<{id:string;name:string;campaign_id:string|null}>(sql`SELECT ch.id,ch.name,ch.campaign_id FROM characters ch LEFT JOIN campaigns c ON c.id=ch.campaign_id WHERE ch.character_type IN ('PLAYER_VAMPIRE','VAMPIRE_NPC') AND (ch.user_id=${actorId} OR c.master_user_id=${actorId}) ORDER BY ch.name LIMIT 200`);return rows.rows}
+export async function npcDomitors(actorId:string){const rows=await db.execute<{id:string;name:string;campaign_id:string|null}>(sql`SELECT ch.id,ch.name,ch.campaign_id FROM characters ch LEFT JOIN campaigns c ON c.id=ch.campaign_id WHERE ch.status<>'DELETED' AND ch.character_type IN ('PLAYER_VAMPIRE','VAMPIRE_NPC') AND (ch.user_id=${actorId} OR c.master_user_id=${actorId}) ORDER BY ch.name LIMIT 200`);return rows.rows}
 export async function listNpcs(actorId: string, options: Record<string,string> = {}) {
   npcKeys(options,['campaignId','query','creatureType','role','sheetType','threatLevel','status','page','sort'])
   const page = options.page === undefined ? 1 : npcInteger(Number(options.page),1,100000)

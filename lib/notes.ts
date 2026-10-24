@@ -27,7 +27,7 @@ async function canRead(value: Note, actorId: string) {
 async function canEdit(value: Note, actorId: string) { return value.visibility === 'NARRATOR_ONLY' ? isNarrator(value.campaignId, actorId) : value.authorUserId === actorId }
 async function target(actorId: string, link: NoteLink): Promise<{ campaignId: string | null; label: string } | null> {
   if (link.targetType === 'CHARACTER' || link.targetType === 'NPC') {
-    const result = await db.execute<{ id: string; user_id: string; campaign_id: string | null; master_user_id: string | null; character_type: string; visibility: string; name: string }>(sql`SELECT ch.id, ch.user_id, ch.campaign_id, c.master_user_id, ch.character_type, ch.visibility, ch.name FROM characters ch LEFT JOIN campaigns c ON c.id = ch.campaign_id WHERE ch.id = ${link.targetId}::uuid`)
+    const result = await db.execute<{ id: string; user_id: string; campaign_id: string | null; master_user_id: string | null; character_type: string; visibility: string; name: string }>(sql`SELECT ch.id, ch.user_id, ch.campaign_id, c.master_user_id, ch.character_type, ch.visibility, ch.name FROM characters ch LEFT JOIN campaigns c ON c.id = ch.campaign_id WHERE ch.id = ${link.targetId}::uuid AND ch.status <> 'DELETED'`)
     const row = result.rows[0]
     if (!row) return null
     const npc = ['HUMAN_NPC', 'VAMPIRE_NPC'].includes(row.character_type)

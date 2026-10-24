@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getSessionOrDev } from '@/lib/auth0'
-import { getCharacterById, getCharacterForViewer, getCharacterAccessRecord, createCharacter, updateCharacter, getCharactersForCampaign, normalizeDisciplines } from '@/lib/characters'
+import { getCharacterForViewer, getCharacterAccessRecord, createCharacter, updateCharacter, deleteCharacter, getCharactersForCampaign, normalizeDisciplines } from '@/lib/characters'
 import { getCampaignById, hasMasterAccess } from '@/lib/campaigns'
 import { ensureAllTables } from '@/lib/db'
 import { canManageCampaign } from '@/lib/auth/authorization'
@@ -9,7 +9,7 @@ import { canCreateCharacterType, CHARACTER_TYPES, CREATION_TYPES, type Character
 import { grantCharacterXp } from '@/lib/character-xp'
 import { CharacterCommandError } from '@/lib/character-commands'
 import { campaignRequiresInvitation, getCampaignForJoining, validateInvitedClan } from '@/lib/campaign-invitations'
-import { notesActor } from '@/lib/notes-http'
+import { notesActor, notesBody, notesResponse } from '@/lib/notes-http'
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const PROTECTED_FIELDS = ['disciplineAcquisitions', 'disciplineAccessGrants', 'gameState', 'masterOverride', 'predatorDisciplineBonus', 'predatorEffectsVersion', 'clanCode', 'clanSelection', 'clanRulesVersion', 'creationAdvantageDots', 'creationFlawDots', 'predatorTypeCode', 'predador', 'predatorTypeOverrides', 'predatorTypeOverride', 'predatorTypeSelection', 'predatorTypeRelationshipRequirements', 'predatorTypeBaseHumanity', 'predatorTypeBaseBloodPotency']
@@ -135,13 +135,11 @@ export async function PUT(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    const session = await getSessionOrDev()
-    if (!session?.user?.sub) return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
-    const { id } = await readPayload(request)
-    if (!id) return NextResponse.json({ error: 'Ficha inválida.' }, { status: 400 })
+    const actorId = await notesActor(request, true)
+    const body = await notesBody(request)
+    if (typeof body.id !== 'string' || Object.keys(body).some(key => !['id', 'confirmed', 'confirmationName', 'expectedRevision', 'idempotencyKey'].includes(key))) return notesResponse({ error: 'Pedido de exclusão inválido.' }, 400)
     await ensureAllTables()
-    if (!(await getCharacterById(id, session.user.sub))) return NextResponse.json({ error: 'Acesso negado.' }, { status: 403 })
-    return NextResponse.json({ error: 'A exclusão aguarda a política de retenção e a verificação de sessões ativas.' }, { status: 409 })
+    return notesResponse(await deleteCharacter(body.id, actorId, { confirmed: body.confirmed as boolean, confirmationName: body.confirmationName as string, expectedRevision: body.expectedRevision as number, idempotencyKey: body.idempotencyKey as string }))
   } catch (error) {
     return errorResponse(error, 'Não foi possível excluir a ficha.')
   }

@@ -19,7 +19,7 @@ export async function subjectAccess(actorId:string,campaignId:string,type:unknow
   const subjectId=npcId(id),campaign=await narrativeCampaignAccess(actorId,campaignId)
   let ownerId:string,label:string
   if(type==='CHARACTER') {
-    const rows=await db.execute<{ user_id:string; name:string; campaign_id:string|null;character_type:string;visibility:string }>(sql`SELECT user_id,name,campaign_id,character_type,visibility FROM characters WHERE id=${subjectId}::uuid`)
+    const rows=await db.execute<{ user_id:string; name:string; campaign_id:string|null;character_type:string;visibility:string }>(sql`SELECT user_id,name,campaign_id,character_type,visibility FROM characters WHERE id=${subjectId}::uuid AND status<>'DELETED'`)
     const row=rows.rows[0]
     if(!row || row.campaign_id!==campaignId) return npcFail(404,'A ficha não pertence a esta mesa.')
     if(row.character_type!=='PLAYER_VAMPIRE'&&row.visibility!=='PLAYER_VISIBLE'&&row.user_id!==actorId&&!campaign.isNarrator)return npcFail(404,'Ficha não disponível.')
@@ -64,7 +64,7 @@ export async function ensureSheetContext(actorId:string,campaignId:string,type:S
 export async function globalSubjectAccess(actorId:string,type:unknown,id:unknown,write=false) {
   const subjectId=npcId(id)
   if(type==='CHARACTER') {
-    const rows=await db.execute<{user_id:string;campaign_id:string|null;character_type:string;visibility:string}>(sql`SELECT user_id,campaign_id,character_type,visibility FROM characters WHERE id=${subjectId}::uuid`)
+    const rows=await db.execute<{user_id:string;campaign_id:string|null;character_type:string;visibility:string}>(sql`SELECT user_id,campaign_id,character_type,visibility FROM characters WHERE id=${subjectId}::uuid AND status<>'DELETED'`)
     const row=rows.rows[0]
     if(!row)return npcFail(404,'Ficha não encontrada.')
     if(row.user_id===actorId)return {ownerId:row.user_id,isOwner:true,isNarrator:false,campaignIds:row.campaign_id?[row.campaign_id]:[]}

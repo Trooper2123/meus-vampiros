@@ -1,3 +1,16 @@
+## [2026-10-24 01:18 BRT] — feat - Exclusão lógica de personagens pelo proprietário
+
+**Tipo:** feat
+
+**Arquivos principais:** `app/api/characters/route.ts`, `app/characters/page.tsx`, `components/delete-character-button.tsx`, `lib/characters.ts`, `lib/character-commands.ts`, `lib/notes.ts`, `lib/npc-store.ts`, `lib/sheet-access.ts`, `tests/character-deletion.test.ts`, `tests/delete-character-button.test.ts`, `tests/campaign-summary-access.test.ts`.
+
+- Proprietário pode excluir logicamente sua ficha de jogador pela listagem, após digitar o nome exato e confirmar no diálogo. Cancelar recebe foco inicial; erros são apresentados sem remover a ficha da interface.
+- API exige autenticação, propriedade dentro da transação, confirmação, UUIDs, revisão e chave de idempotência; rejeita origem cruzada. Narrador sem propriedade e terceiros não podem excluir. NPCs permanecem no gerenciamento próprio.
+- Exclusão é bloqueada durante sessão ativa ou convocação da mesa. Lock exclusivo da campanha serializa com início de sessão/convocação. Reenvio com a mesma chave não duplica o registro de exclusão.
+- Status interno `DELETED` e metadados protegidos preservam ficha, histórico, referências, notas, relações, pertences e arquivos. Vínculo operacional de campanha é encerrado, com campanha anterior registrada; excluir a última ficha revoga a participação derivada dela. Listas, comandos, vínculos de notas, candidatos a domitor e mídia privada deixam de disponibilizar a ficha. Notas independentes seguem suas permissões originais; não há restauração pela interface ou pelo endpoint de status.
+- Sem alteração de schema, migração, seed ou exclusão física. Testes do resumo compartilhado foram adaptados do provider em memória ao PostgreSQL isolado vigente.
+- Validação: 68 testes pertinentes em sete arquivos aprovados, incluindo 22 casos de exclusão/diálogo, conservação de referências, revogação de mídia e concorrência real de locks. Tipos, build, lint (zero erros/seis avisos anteriores) e auditoria de produção aprovados. QA visual manual e Auth0/Blob reais não executados; suíte global não repetida, com falhas legadas anteriormente registradas.
+
 ## [2026-10-24 01:04 BRT] — fix - Predação fora do clã e edição de habilidades
 
 **Tipo:** fix

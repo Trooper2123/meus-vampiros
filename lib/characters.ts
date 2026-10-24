@@ -48,6 +48,7 @@ export function normalizeDisciplines(data: Record<string, unknown>): Record<stri
 
 export type CharacterSummary = {
   id: string
+  revision: number
   characterType?: string
   name: string
   concept: string | null
@@ -67,6 +68,7 @@ export async function getCharactersForUser(userId: string): Promise<CharacterSum
 
   const result = await db.execute<{
     id: string
+    revision: number
     name: string
     concept: string | null
     clan: string | null
@@ -81,17 +83,18 @@ export async function getCharactersForUser(userId: string): Promise<CharacterSum
     spent_xp: string | null
     total_xp: string | null
   }>(sql`
-    SELECT ch.id, ch.character_type, ch.name, ch.concept, ch.clan, ch.generation, ch.status, ch.updated_at,
+    SELECT ch.id, ch.revision, ch.character_type, ch.name, ch.concept, ch.clan, ch.generation, ch.status, ch.updated_at,
            ch.campaign_id, c.name AS campaign_name, c.theme AS campaign_theme, c.principios AS campaign_principios,
            ch.spent_xp, ch.total_xp
     FROM characters ch
     LEFT JOIN campaigns c ON c.id = ch.campaign_id
-    WHERE ch.user_id = ${userId}
+    WHERE ch.user_id = ${userId} AND ch.status <> 'DELETED'
     ORDER BY ch.updated_at DESC
   `)
 
   return result.rows.map((character) => ({
     id: character.id,
+    revision: character.revision,
     characterType: character.character_type,
     name: character.name,
     concept: character.concept,
@@ -121,7 +124,7 @@ export async function getCharactersForCampaign(campaignId: string) {
   }>(sql`
     SELECT id, name, concept, clan, generation, spent_xp, total_xp
     FROM characters
-    WHERE campaign_id = ${campaignId}::uuid
+    WHERE campaign_id = ${campaignId}::uuid AND status <> 'DELETED'
     ORDER BY name ASC
   `)
 
@@ -150,7 +153,7 @@ export async function updateCharacterXp(characterId: string, totalXp: number) {
 
 export async function getCharacterById(id: string, userId: string) {
   const result = await db.execute<{ id: string; name: string; status: string; character_type: string; data: unknown; campaign_id: string | null; total_xp: number; spent_xp: number; revision: number; game_state: Record<string, unknown> }>(sql`
-    SELECT id, name, status, character_type, data, campaign_id, total_xp, spent_xp, revision, game_state FROM characters WHERE id = ${id}::uuid AND user_id = ${userId}
+    SELECT id, name, status, character_type, data, campaign_id, total_xp, spent_xp, revision, game_state FROM characters WHERE id = ${id}::uuid AND user_id = ${userId} AND status <> 'DELETED'
   `)
   const row = result.rows[0]
   if (!row) return null
@@ -225,17 +228,25 @@ export async function updateCharacterStatus(id: string, userId: string, status: 
   await db.execute(sql`
     UPDATE characters
     SET status = ${status}, updated_at = NOW()
-    WHERE id = ${id}::uuid AND user_id = ${userId}
+    WHERE id = ${id}::uuid AND user_id = ${userId} AND status <> 'DELETED'
   `)
   return { ok: true }
 }
 
-export async function deleteCharacter(id: string, userId: string) {
-
-  await db.execute(sql`
-    DELETE FROM characters WHERE id = ${id}::uuid AND user_id = ${userId}
-  `)
-  return { ok: true }
+export async function deleteCharacter(id: string, userId: string, input: { confirmed: boolean; confirmationName: string; expectedRevision: number; idempotencyKey: string }) {
+  if (!/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(id) || !/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(input.idempotencyKey) || !Number.isSafeInteger(input.expectedRevision) || input.expectedRevision < 0 || input.confirmed !== true || typeof input.confirmationName !== 'string' || input.confirmationName.length > 200) throw new CharacterCommandError(400, 'Confirme a exclusão com o nome da ficha e uma revisão válida.')
+  return runCharacterCommand(userId, id, { key: input.idempotencyKey, type: 'CHARACTER_DELETED', expectedRevision: input.expectedRevision, payload: input }, character => character.ownerId === userId, async (character, transaction) => {
+    if (input.confirmationName !== character.name) throw new CharacterCommandError(422, 'Digite exatamente o nome da ficha para confirmar a exclusão.')
+    if (character.characterType !== 'PLAYER_VAMPIRE') throw new CharacterCommandError(409, 'Exclua NPCs pelo gerenciamento de NPCs da mesa.')
+    if (character.campaignId) {
+      const active = await transaction.execute(sql`SELECT id FROM game_sessions WHERE campaign_id = ${character.campaignId}::uuid AND status = 'ACTIVE' UNION ALL SELECT id FROM campaigns WHERE id = ${character.campaignId}::uuid AND call_active LIMIT 1`)
+      if (active.rows.length) throw new CharacterCommandError(409, 'Encerre a sessão ativa ou a convocação desta mesa antes de excluir a ficha.')
+    }
+    character.gameState.deletion = { deletedAt: new Date().toISOString(), deletedBy: userId, previousCampaignId: character.campaignId, previousStatus: character.status }
+    character.status = 'DELETED'
+    character.campaignId = null
+    return { ok: true, deleted: true }
+  })
 }
 
 export async function updateCharacter(
