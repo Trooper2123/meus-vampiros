@@ -9,12 +9,10 @@ import {
 import { ensureAllTables } from '@/lib/db'
 import { canManageCampaign, canManagePossession } from '@/lib/auth/authorization'
 import { getCharacterAccessRecord } from '@/lib/characters'
+import { CharacterCommandError } from '@/lib/character-commands'
+import { notesActor, notesBody, notesResponse } from '@/lib/notes-http'
 
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
-async function readBody(request: Request) {
-  const body = await request.json().catch(() => null)
-  return body && typeof body === 'object' && !Array.isArray(body) ? body : null
-}
 async function itemAccess(userId: string, characterId: string) {
   const character = await getCharacterAccessRecord(characterId)
   const master = !!character?.campaignId && await canManageCampaign(userId, character.campaignId)
@@ -44,7 +42,7 @@ export async function GET(request: Request) {
         return NextResponse.json({ error: 'Proibido' }, { status: 403 })
       }
       const possessions = await getPossessionsForCharacter(characterId)
-      return NextResponse.json({ possessions })
+      return notesResponse({ possessions })
     }
 
     if (campaignId) {
@@ -53,7 +51,7 @@ export async function GET(request: Request) {
       }
       const possessions = await getPossessionsForCampaign(campaignId)
       const accessible = await Promise.all(possessions.map(async (item) => (await getCharacterAccessRecord(item.characterId))?.campaignId === campaignId ? item : null))
-      return NextResponse.json({ possessions: accessible.filter((item) => item !== null) })
+      return notesResponse({ possessions: accessible.filter((item) => item !== null) })
     }
 
     return NextResponse.json({ error: 'Parâmetro characterId ou campaignId é obrigatório.' }, { status: 400 })
@@ -64,61 +62,54 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const user = await getAuthenticatedUser()
-    if (!user?.sub) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+    const actorId = await notesActor(request, true)
 
-    const body = await readBody(request)
-    if (!body) return NextResponse.json({ error: 'JSON inválido.' }, { status: 400 })
-    const { characterId, label, description, origin, campaignId } = body
+    const body = await notesBody(request)
+    const { characterId, label, description, origin, campaignId, idempotencyKey } = body
+    if (Object.keys(body).some(key => !['characterId', 'label', 'description', 'origin', 'campaignId', 'idempotencyKey'].includes(key)) || typeof idempotencyKey !== 'string' || !uuid.test(idempotencyKey)) return notesResponse({ error: 'Chave ou campos do pertence inválidos.' }, 400)
 
     if (typeof characterId !== 'string' || !uuid.test(characterId)) {
       return NextResponse.json({ error: 'characterId é obrigatório.' }, { status: 400 })
     }
-    if (typeof label !== 'string' || !label.trim() || label.length > 200 || (description != null && (typeof description !== 'string' || description.length > 2000)) || (origin != null && !['player', 'master'].includes(origin)) || (campaignId != null && (typeof campaignId !== 'string' || !uuid.test(campaignId)))) {
+    if (typeof label !== 'string' || !label.trim() || label.length > 200 || (description != null && (typeof description !== 'string' || description.length > 2000)) || (origin != null && origin !== 'player' && origin !== 'master') || (campaignId != null && (typeof campaignId !== 'string' || !uuid.test(campaignId)))) {
       return NextResponse.json({ error: 'Nome do pertence é obrigatório.' }, { status: 400 })
     }
 
     await ensureAllTables()
-    const access = await itemAccess(user.sub, characterId)
-    if (!access.allowed || (origin === 'master' && !access.master) || (campaignId != null && campaignId !== access.character?.campaignId)) {
-      return NextResponse.json({ error: 'Proibido' }, { status: 403 })
-    }
-
-    const possession = await createPossession(characterId, {
+    const result = await createPossession(actorId, characterId, {
       label: label.trim(),
       description: typeof description === 'string' ? description.trim() : null,
-      origin: access.master && (origin === 'master' || access.character?.userId !== user.sub) ? 'master' : 'player',
-      campaignId: access.character?.campaignId ?? null,
+      origin: origin === 'master' ? 'master' : 'player',
+      campaignId: typeof campaignId === 'string' ? campaignId : undefined,
+      idempotencyKey,
     })
 
-    return NextResponse.json({ possession }, { status: 201 })
-  } catch {
-    return NextResponse.json({ error: 'Não foi possível criar o pertence.' }, { status: 500 })
+    return notesResponse(result, 201)
+  } catch (error) {
+    return notesResponse({ error: error instanceof CharacterCommandError ? error.message : 'Não foi possível criar o pertence.' }, error instanceof CharacterCommandError ? error.status : 500)
   }
 }
 
 export async function PUT(request: Request) {
   try {
-    const user = await getAuthenticatedUser()
-    if (!user?.sub) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
+    const actorId = await notesActor(request, true)
 
-    const body = await readBody(request)
-    if (!body) return NextResponse.json({ error: 'JSON inválido.' }, { status: 400 })
+    const body = await notesBody(request)
     const { id, status, masterComment } = body
 
     if (typeof id !== 'string' || !uuid.test(id) || (masterComment != null && (typeof masterComment !== 'string' || masterComment.length > 2000))) {
       return NextResponse.json({ error: 'id do pertence é obrigatório.' }, { status: 400 })
     }
-    if (!['pendente', 'aprovado', 'reprovado'].includes(status)) {
+    if (status !== 'pendente' && status !== 'aprovado' && status !== 'reprovado') {
       return NextResponse.json({ error: 'Status inválido.' }, { status: 400 })
     }
 
     await ensureAllTables()
-    if (!(await canManagePossession(user.sub, id))) {
+    if (!(await canManagePossession(actorId, id))) {
       return NextResponse.json({ error: 'Proibido' }, { status: 403 })
     }
 
-    const possession = await updatePossessionStatus(id, {
+    const possession = await updatePossessionStatus(actorId, id, {
       status,
       masterComment: typeof masterComment === 'string' ? masterComment.trim() : null,
     })
@@ -128,7 +119,7 @@ export async function PUT(request: Request) {
     }
 
     return NextResponse.json({ possession })
-  } catch {
-    return NextResponse.json({ error: 'Não foi possível atualizar o pertence.' }, { status: 500 })
+  } catch (error) {
+    return notesResponse({ error: error instanceof CharacterCommandError ? error.message : 'Não foi possível atualizar o pertence.' }, error instanceof CharacterCommandError ? error.status : 500)
   }
 }

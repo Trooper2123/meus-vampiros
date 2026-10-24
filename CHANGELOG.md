@@ -1,3 +1,16 @@
+## [2026-10-24 16:43 BRT] — feat - Persistir e encaminhar pertences sem duplicação
+
+**Tipo:** feat | fix
+
+**Arquivos principais:** `lib/possessions.ts`, `lib/character-commands.ts`, `app/api/possessions/route.ts`, `app/api/characters/[id]/campaign/route.ts`, `app/characters/character-form-client.tsx`, `components/master-panel.tsx`, `tests/possessions-routes.test.ts`, `tests/possession-form-ui.test.ts`, `codex/specs/resumo-implementacao.md`.
+
+- Criação/proposta/concessão de pertences exige UUID de idempotência e reutiliza o comando transacional/ledger existente. Autoridade, campanha, origem e aprovação são derivados no servidor sob lock da ficha; chave repetida não duplica item/autoria. Como pertence tem tabela própria, criação não altera dados/status/revisão da ficha nem invalida edição aberta. Demais comandos preservam incremento de revisão.
+- Formulários do jogador e Narrador conservam a chave após perda de resposta e bloqueiam cliques concorrentes. Rascunhos sem ficha são persistidos ao salvar; falha conserva os não confirmados para reenvio, sem bloquear retry por revisão artificial. Campos somente são limpos após confirmação do servidor.
+- Vínculo encaminha itens sem campanha como propostas pendentes na mesma transação da ficha; limpa comentários privados e não copia itens históricos de outra mesa. Revisão de pertence revalida a autoridade no UPDATE SQL. POST/PUT usam proteção de origem/JSON/limites; leituras autorizadas usam cache privado/no-store.
+- Corrigida codificação dos textos do painel do Narrador; trechos de pertences alterados usam tokens de cor existentes. Sem nova dependência, tabela, migração ou limpeza; apenas fixtures no PostgreSQL local isolado autorizado. Itens antigos somente em `data.pertences` não foram migrados automaticamente.
+- Validação: 67 testes pertinentes em seis arquivos aprovados, incluindo concorrência, reenvio com resposta perdida, 401/403, BOLA, forja, SQL parametrizado, revogação, isolamento entre mesas e rollback de item/comando/ledger antes do commit. TypeScript, build, lint (zero erros/cinco avisos anteriores), audit completo (zero vulnerabilidades), diff-check e scan de padrões de segredo aprovados.
+- Suíte global repetida: 262 falhas/956 aprovados (1.218 testes; 29 arquivos com falhas), incluindo 11 snapshots legados divergentes. SPEC permanece blocked para conclusão integral, sem exceção de segurança. QA visual/serviços externos reais e produção não executados. Commit do trabalho anterior solicitado pelo usuário: `ce1bba6`, sem push; esta continuação permanece disponível para revisão.
+
 ## [2026-10-24 16:22 BRT] — docs - Validar pendências do resumo de implementação
 
 **Tipo:** docs

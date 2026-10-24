@@ -4,6 +4,7 @@ import { notesActor, notesBody, notesId, notesResponse } from '@/lib/notes-http'
 import { getPredatorTypeSettings, isPredatorTypeEnabled } from '@/lib/predator-types'
 import { normalizePredatorType, PREDATOR_TYPE_BY_CODE, validatePredatorType } from '@/lib/vtm-v5/predator-types'
 import { characterText } from '@/lib/vtm-v5/text'
+import { sql } from 'drizzle-orm'
 
 export async function POST(request: Request, context: { params: Promise<{ id: string }> }) {
   try {
@@ -16,7 +17,7 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     if (!invitation || typeof invitation !== 'object' || Array.isArray(invitation) || Object.keys(invitation).length !== 1 || typeof invitation.campaignId !== 'string') throw new CharacterCommandError(400, 'Informe o ID da mesa e prossiga para vincular a ficha.')
     const campaign = await getCampaignForJoining(invitation.campaignId)
     const settings = await getPredatorTypeSettings(campaign.id)
-    const result = await runCharacterCommand(actorId, id, { key, type: 'CAMPAIGN_LINKED', expectedRevision: Number(body.expectedRevision), payload: { campaignId: campaign.id } }, character => character.ownerId === actorId, async character => {
+    const result = await runCharacterCommand(actorId, id, { key, type: 'CAMPAIGN_LINKED', expectedRevision: Number(body.expectedRevision), payload: { campaignId: campaign.id } }, character => character.ownerId === actorId, async (character, transaction) => {
       if (character.campaignId || character.characterType !== 'PLAYER_VAMPIRE' || ['ARCHIVED', 'DISABLED'].includes(character.status)) throw new CharacterCommandError(409, 'Somente fichas independentes de jogador podem ser vinculadas.')
       await validateInvitedClan(campaign.id, character.data)
       const rawPredator = character.data.predatorTypeCode ?? character.data.predador
@@ -29,6 +30,7 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
       character.campaignId = campaign.id
       character.status = 'DRAFT'
       character.gameState.policyConsent = { campaignId: campaign.id, acceptedAt: new Date().toISOString(), acceptedBy: actorId }
+      await transaction.execute(sql`UPDATE character_possessions SET campaign_id = ${campaign.id}::uuid, origin = 'player', status = 'pendente', master_comment = NULL, updated_at = NOW() WHERE character_id = ${id}::uuid AND campaign_id IS NULL`)
       return { ok: true, campaignId: campaign.id }
     })
     return notesResponse(result)

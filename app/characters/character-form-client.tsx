@@ -141,6 +141,8 @@ export default function CharacterFormClient({
   const [gmItems, setGmItems] = useState<PossessionItem[]>([])
   const [possessionFeedback, setPossessionFeedback] = useState('')
   const [addingPossession, setAddingPossession] = useState(false)
+  const possessionKeys = useRef<Record<string, string>>({})
+  const sendingPossession = useRef(false)
   const [newPossessionLabel, setNewPossessionLabel] = useState('')
   const [newPossessionDesc, setNewPossessionDesc] = useState('')
   const router = useRouter()
@@ -174,19 +176,24 @@ export default function CharacterFormClient({
   const [retainer, setRetainer] = useState({ controlMethod: 'VITAE', isGhoul: true, domitorCharacterId: '', storedVitaeJustification: '', disciplineLevel: 1, bondStrength: 1 })
 
   const handleAddPossession = async () => {
-    if (!newPossessionLabel.trim()) return
+    if (sendingPossession.current || saving || !newPossessionLabel.trim()) return
     const label = newPossessionLabel.trim()
     const description = newPossessionDesc.trim() || undefined
     if (characterId) {
+      sendingPossession.current = true
       setAddingPossession(true)
+      const operation = JSON.stringify([characterId, label, description])
+      possessionKeys.current[operation] ??= crypto.randomUUID()
       try {
         const response = await fetch('/api/possessions', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ characterId, label, description, origin: 'player' }),
+          body: JSON.stringify({ characterId, label, description, origin: 'player', idempotencyKey: possessionKeys.current[operation] }),
         })
         const result = await response.json().catch(() => null)
         if (!response.ok) throw new Error(result?.error ?? 'Não foi possível enviar o pertence.')
+        if (!result?.possession?.id || !Number.isSafeInteger(result.revision)) throw new Error('Resposta inválida. Tente novamente para confirmar o mesmo pertence.')
+        delete possessionKeys.current[operation]
         await mutatePossessions()
         setNewPossessionLabel('')
         setNewPossessionDesc('')
@@ -194,6 +201,7 @@ export default function CharacterFormClient({
       } catch (error) {
         setPossessionFeedback(error instanceof Error ? error.message : 'Falha ao enviar. O texto foi preservado para tentar novamente.')
       } finally {
+        sendingPossession.current = false
         setAddingPossession(false)
       }
       return
@@ -496,6 +504,13 @@ export default function CharacterFormClient({
     if (savedCharacterId) {
       try {
         const savedUrl = `/api/characters?id=${savedCharacterId}`
+        for (const draft of possessions.filter(item => !item.id)) {
+          const response = await fetch('/api/possessions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ characterId: savedCharacterId, label: draft.label, description: draft.description, origin: 'player', idempotencyKey: draft.clientKey }) })
+          const result = await response.json().catch(() => null)
+          if (!response.ok || !result?.possession?.id || !Number.isSafeInteger(result.revision)) throw new Error(result?.error ?? 'A ficha foi salva, mas há pertences não confirmados. Salve novamente para reenviar os mesmos rascunhos.')
+          setPossessions(current => current.map(item => item.clientKey === draft.clientKey ? result.possession : item))
+        }
+        await mutateCache(`/api/possessions?characterId=${savedCharacterId}`)
         const refreshed = characterId
           ? await mutateCharacter()
           : await mutateCache(savedUrl, fetcher(savedUrl), { revalidate: false })
@@ -503,7 +518,7 @@ export default function CharacterFormClient({
         setCharacterStatus(refreshed.character.status)
       } catch {
         setSaving(false)
-        setValidationError('A ficha foi salva, mas não foi possível atualizar sua revisão. Recarregue a página antes de editar novamente.')
+        setValidationError('A ficha foi salva, mas não foi possível confirmar a atualização dos dados e pertences. Seus rascunhos foram preservados; tente salvar novamente.')
         return null
       }
     }
@@ -621,7 +636,7 @@ export default function CharacterFormClient({
           {activeTab === 'disciplinas' && incompatibleDisciplines.length > 0 && <p role="alert" className="mb-4 text-sm text-primary">Escolhas incompatíveis: {incompatibleDisciplines.map(row => row.name).join(', ')}. Corrija as escolhas antes de concluir.</p>}
           {activeTab === 'disciplinas' && <DisciplinesStep disciplines={disciplines} setDisciplines={setDisciplines} confirmingDiscipline={confirmingDiscipline} setConfirmingDiscipline={setConfirmingDiscipline} availableDisciplines={availableDisciplines} handleDisciplineLevelChange={handleDisciplineLevelChange} addDiscipline={addDiscipline} creationGrants={(characterData?.character?.creationGrants ?? []).filter(grant => !independent || grant.origin !== 'CLAN' || grant.kind !== 'DISCIPLINE')} />}
           {activeTab === 'recursos' && <ResourcesStep characterType={characterType} displayedResources={displayedResources} setResources={setResources} convictions={convictions} setConvictions={setConvictions} principios={characterData?.campaign?.principios} showMissingPrinciples={!characterId || Boolean(characterData)} secondaryAttributes={secondaryAttributes} />}
-          {activeTab === 'vantagens' && <SheetSection title="Vantagens e Defeitos" eyebrow="VII / o que soma e o que custa"><p className="mb-5 text-xs text-muted-foreground">Clique no nome ou na descrição para pesquisar no catálogo ou criar um registro personalizado.</p><TraitsEditor merits={merits} flaws={flaws} setMerits={setMerits} setFlaws={setFlaws} grants={characterData?.character?.creationGrants ?? []} /><div className="mt-10 border-t border-border pt-8"><div className="blood-heading mb-4"><h3>Pertences e Posses</h3></div><p className="mb-6 text-xs text-muted-foreground">{characterData?.campaign ? 'Cadastre itens e equipamentos. Pertences submetidos aguardam aprovação do mestre. Itens concedidos pelo mestre são somente leitura.' : 'Cadastre itens e equipamentos. Fichas sem mesa não precisam de aprovação dos pertences.'}</p><div className="sheet-grid sheet-grid-2 gap-6"><div className="flex flex-col gap-4"><h4 className="font-mono text-xs uppercase tracking-wider text-[#d47776]">Seus Pertences</h4><div className="flex flex-col gap-3 border border-border bg-[#101013] p-4"><p className="text-[10px] font-mono font-semibold uppercase tracking-wider text-muted-foreground">Adicionar Novo Pertence</p>{possessionFeedback && <output className="block text-xs text-muted-foreground">{possessionFeedback}</output>}<label className="sheet-field"><span>Item / Equipamento</span><input value={newPossessionLabel} onChange={(e) => setNewPossessionLabel(e.target.value)} placeholder="Ex.: Carro Sedan, Armamento, Celular Seguro" /></label><label className="sheet-field"><span>Descrição (opcional)</span><input value={newPossessionDesc} onChange={(e) => setNewPossessionDesc(e.target.value)} placeholder="Detalhes do item ou localização" /></label><button type="button" onClick={handleAddPossession} disabled={addingPossession || !newPossessionLabel.trim()} className="button-ghost mt-1 inline-flex items-center gap-2 self-start"><Plus className="size-4" /> Adicionar pertence</button></div><div className="mt-2 flex flex-col gap-3">{possessions.length === 0 ? <p className="text-xs italic text-muted-foreground">Nenhum pertence cadastrado.</p> : possessions.map((item, index) => <div key={item.id ?? item.clientKey} className="flex flex-col gap-2 border border-border bg-[#151519] p-3.5"><input type="hidden" name={`pertence-${index}-label`} value={item.label} /><input type="hidden" name={`pertence-${index}-description`} value={item.description ?? ''} /><input type="hidden" name={`pertence-${index}-status`} value={item.status} /><div className="flex items-center justify-between gap-3"><span className="text-sm font-semibold">{item.label}</span>{item.status === 'aprovado' && <span className="status active"><span className="status-dot" /> Aprovado</span>}{item.status === 'reprovado' && <span className="status risk"><span className="status-dot" /> Reprovado</span>}{!item.id && <span className="status">Rascunho em memória</span>}{item.id && item.status === 'pendente' && <span className="status" style={{ borderColor: '#8a7332', color: '#e5c069' }}><span className="status-dot" /> Pendente</span>}</div>{item.description && <p className="text-xs text-muted-foreground">{item.description}</p>}{item.masterComment && <div className="mt-1 border-t border-border/50 pt-2 text-xs text-[#d77a75]"><span className="font-semibold">Comentário do Mestre:</span> {item.masterComment}</div>}</div>)}</div></div><div className="flex flex-col gap-4"><h4 className="font-mono text-xs uppercase tracking-wider text-[#9ac59b]">Concedidos pelo Mestre</h4><div className="flex flex-col gap-3">{gmItems.length === 0 ? <div className="border border-dashed border-border p-4 text-center"><p className="text-xs italic text-muted-foreground">Nenhum item foi concedido pelo mestre ainda.</p></div> : gmItems.map((item, index) => <div key={item.id} className="flex flex-col gap-2 border border-[#456649]/40 bg-[#142016]/40 p-3.5"><input type="hidden" name={`gm-item-${index}-label`} value={item.label} /><input type="hidden" name={`gm-item-${index}-description`} value={item.description ?? ''} /><div className="flex items-center justify-between gap-3"><span className="text-sm font-semibold text-[#b5d9b7]">{item.label}</span><span className="status active"><span className="status-dot" /> Concedido pelo Mestre</span></div>{item.description && <p className="text-xs text-muted-foreground">{item.description}</p>}{item.masterComment && <div className="mt-1 border-t border-[#456649]/30 pt-2 text-xs text-[#9ac59b]"><span className="font-semibold">Nota do Mestre:</span> {item.masterComment}</div>}</div>)}</div></div></div></div></SheetSection>}
+          {activeTab === 'vantagens' && <SheetSection title="Vantagens e Defeitos" eyebrow="VII / o que soma e o que custa"><p className="mb-5 text-xs text-muted-foreground">Clique no nome ou na descrição para pesquisar no catálogo ou criar um registro personalizado.</p><TraitsEditor merits={merits} flaws={flaws} setMerits={setMerits} setFlaws={setFlaws} grants={characterData?.character?.creationGrants ?? []} /><div className="mt-10 border-t border-border pt-8"><div className="blood-heading mb-4"><h3>Pertences e Posses</h3></div><p className="mb-6 text-xs text-muted-foreground">{characterData?.campaign ? 'Cadastre itens e equipamentos. Pertences submetidos aguardam aprovação do mestre. Itens concedidos pelo mestre são somente leitura.' : 'Cadastre itens e equipamentos. Fichas sem mesa não precisam de aprovação dos pertences.'}</p><div className="sheet-grid sheet-grid-2 gap-6"><div className="flex flex-col gap-4"><h4 className="font-mono text-xs uppercase tracking-wider text-foreground">Seus Pertences</h4><div className="flex flex-col gap-3 border border-border bg-card p-4"><p className="text-[10px] font-mono font-semibold uppercase tracking-wider text-muted-foreground">Adicionar Novo Pertence</p>{possessionFeedback && <output className="block text-xs text-muted-foreground">{possessionFeedback}</output>}<label className="sheet-field"><span>Item / Equipamento</span><input value={newPossessionLabel} onChange={(e) => setNewPossessionLabel(e.target.value)} placeholder="Ex.: Carro Sedan, Armamento, Celular Seguro" /></label><label className="sheet-field"><span>Descrição (opcional)</span><input value={newPossessionDesc} onChange={(e) => setNewPossessionDesc(e.target.value)} placeholder="Detalhes do item ou localização" /></label><button type="button" onClick={handleAddPossession} disabled={saving || addingPossession || !newPossessionLabel.trim()} className="button-ghost mt-1 inline-flex items-center gap-2 self-start"><Plus className="size-4" /> Adicionar pertence</button></div><div className="mt-2 flex flex-col gap-3">{possessions.length === 0 ? <p className="text-xs italic text-muted-foreground">Nenhum pertence cadastrado.</p> : possessions.map((item, index) => <div key={item.id ?? item.clientKey} className="flex flex-col gap-2 border border-border bg-card p-3.5"><input type="hidden" name={`pertence-${index}-label`} value={item.label} /><input type="hidden" name={`pertence-${index}-description`} value={item.description ?? ''} /><input type="hidden" name={`pertence-${index}-status`} value={item.status} /><div className="flex items-center justify-between gap-3"><span className="text-sm font-semibold">{item.label}</span>{item.status === 'aprovado' && <span className="status active"><span className="status-dot" /> Aprovado</span>}{item.status === 'reprovado' && <span className="status risk"><span className="status-dot" /> Reprovado</span>}{!item.id && <span className="status">Rascunho em memória</span>}{item.id && item.status === 'pendente' && <span className="status" ><span className="status-dot" /> Pendente</span>}</div>{item.description && <p className="text-xs text-muted-foreground">{item.description}</p>}{item.masterComment && <div className="mt-1 border-t border-border/50 pt-2 text-xs text-foreground"><span className="font-semibold">Comentário do Mestre:</span> {item.masterComment}</div>}</div>)}</div></div><div className="flex flex-col gap-4"><h4 className="font-mono text-xs uppercase tracking-wider text-foreground">Concedidos pelo Mestre</h4><div className="flex flex-col gap-3">{gmItems.length === 0 ? <div className="border border-dashed border-border p-4 text-center"><p className="text-xs italic text-muted-foreground">Nenhum item foi concedido pelo mestre ainda.</p></div> : gmItems.map((item, index) => <div key={item.id} className="flex flex-col gap-2 border border-border/40 bg-card/40 p-3.5"><input type="hidden" name={`gm-item-${index}-label`} value={item.label} /><input type="hidden" name={`gm-item-${index}-description`} value={item.description ?? ''} /><div className="flex items-center justify-between gap-3"><span className="text-sm font-semibold text-foreground">{item.label}</span><span className="status active"><span className="status-dot" /> Concedido pelo Mestre</span></div>{item.description && <p className="text-xs text-muted-foreground">{item.description}</p>}{item.masterComment && <div className="mt-1 border-t border-border/30 pt-2 text-xs text-foreground"><span className="font-semibold">Nota do Mestre:</span> {item.masterComment}</div>}</div>)}</div></div></div></div></SheetSection>}
           {activeTab === 'historico' && <HistoryStep historico={historico} notas={notas} setHistorico={setHistorico} setNotas={setNotas} />}
         </div>
         {activeTab === 'habilidades' && characterType === 'PLAYER_VAMPIRE' && characterId && <CharacterSpecialties characterId={characterId} draftSkills={skills} characterRevision={characterData?.character?.revision} onBeforeSubmit={() => saveDraft()} onChange={() => { void mutateCharacter() }} />}
