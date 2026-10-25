@@ -12,7 +12,7 @@ import { SheetMediaPanel } from '@/components/sheet-media-panel'
 export async function npcJson(url: string, body?: object, method = 'POST') {
   const response = await fetch(url, body ? { method, headers: { 'content-type': 'application/json' }, body: JSON.stringify(body), cache: 'no-store' } : { cache: 'no-store' })
   const result = await response.json()
-  if (!response.ok) throw Error(result.error ?? 'Não foi possível carregar o NPC.')
+  if (!response.ok) { throw new Error(result.error ?? 'Não foi possível carregar o NPC.') }
   return result
 }
 
@@ -203,7 +203,7 @@ export function NpcCatalogue({ campaignId }: Readonly<{ campaignId?: string }>) 
   const [message, setMessage] = useState('')
   const [busy, setBusy] = useState(false)
   const params = new URLSearchParams({ ...filters, page: String(filters.page), ...(campaignId ? { campaignId } : {}) } as Record<string, string>)
-  if (!params.get('campaignId')) params.delete('campaignId')
+  if (!params.get('campaignId')) { params.delete('campaignId') }
   const { data, error, mutate } = useSWR<Catalogue>(`/api/npcs?${params}`, npcJson, { revalidateOnFocus: false })
   function filter(key: string, value: string) { setFilters(current => ({ ...current, [key]: value, page: 1 })) }
   async function change(id: string, revision: number, action: string) {
@@ -232,7 +232,7 @@ export function NpcCatalogue({ campaignId }: Readonly<{ campaignId?: string }>) 
       </div>
 
       {error && <p role="alert" className="text-sm text-primary">{error.message}</p>}
-      {message && <p role="status" className="text-sm text-muted-foreground">{message}</p>}
+      {message && <output  className="block text-sm text-muted-foreground">{message}</output>}
 
       {/* Cards */}
       <div className="grid gap-4 lg:grid-cols-2">

@@ -14,7 +14,7 @@ import { HistoryStep } from '@/components/character-form/history-step'
 import { CreationHint, Field, SheetSection } from '@/components/character-form/form-controls'
 import { dots } from '@/components/character-form/dot-track'
 import { mentalSkills, physicalSkills, socialSkills, type QuickSkillMode } from '@/components/character-form/skill-options'
-import { createEmptyPower } from '@/components/character-form/discipline-fields'
+import { createEmptyPower, type DisciplinePower } from '@/components/character-form/discipline-fields'
 
 import Link from 'next/link'
 import { CampaignCreationGate, type AcceptedCampaignInvitation } from '@/components/campaign-creation-gate'
@@ -99,12 +99,12 @@ function CampaignLink({ characterId, onBeforeSubmit, onCampaignChange }: Readonl
   return <section className="mb-6 border border-border bg-card p-5" aria-label="Vincular ficha independente à mesa">
     <h2 className="font-serif text-xl">Incluir vínculo de mesa</h2>
     <CampaignCreationGate compact onReady={async invitation => {
-      if (!invitation) return
-      if (!(await onBeforeSubmit())) throw new Error('Salve a ficha antes de vincular a mesa.')
+      if (!invitation) { return }
+      if (!(await onBeforeSubmit())) { throw new Error('Salve a ficha antes de vincular a mesa.') }
       const current = await fetcher('/api/characters?id=' + characterId)
       const response = await fetch('/api/characters/' + characterId + '/campaign', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ invitation, expectedRevision: current.character.revision, idempotencyKey: crypto.randomUUID() }) })
       const body = await response.json()
-      if (!response.ok) throw new Error(body.error ?? 'Não foi possível vincular a mesa.')
+      if (!response.ok) { throw new Error(body.error ?? 'Não foi possível vincular a mesa.') }
       await onCampaignChange()
     }} />
   </section>
@@ -176,7 +176,7 @@ export default function CharacterFormClient({
   const [retainer, setRetainer] = useState({ controlMethod: 'VITAE', isGhoul: true, domitorCharacterId: '', storedVitaeJustification: '', disciplineLevel: 1, bondStrength: 1 })
 
   const handleAddPossession = async () => {
-    if (sendingPossession.current || saving || !newPossessionLabel.trim()) return
+    if (sendingPossession.current || saving || !newPossessionLabel.trim()) { return }
     const label = newPossessionLabel.trim()
     const description = newPossessionDesc.trim() || undefined
     if (characterId) {
@@ -191,8 +191,8 @@ export default function CharacterFormClient({
           body: JSON.stringify({ characterId, label, description, origin: 'player', idempotencyKey: possessionKeys.current[operation] }),
         })
         const result = await response.json().catch(() => null)
-        if (!response.ok) throw new Error(result?.error ?? 'Não foi possível enviar o pertence.')
-        if (!result?.possession?.id || !Number.isSafeInteger(result.revision)) throw new Error('Resposta inválida. Tente novamente para confirmar o mesmo pertence.')
+        if (!response.ok) { throw new Error(result?.error ?? 'Não foi possível enviar o pertence.') }
+        if (!result?.possession?.id || !Number.isSafeInteger(result.revision)) { throw new Error('Resposta inválida. Tente novamente para confirmar o mesmo pertence.') }
         delete possessionKeys.current[operation]
         await mutatePossessions()
         setNewPossessionLabel('')
@@ -230,7 +230,18 @@ export default function CharacterFormClient({
 
   useEffect(() => {
     if (characterData?.character?.data) {
-      const data = characterData.character.data
+      function restoreCharacterDisciplines(data: Record<string,unknown>,characterData: { character?: { id: string; revision: number; name: string; status: CharacterStatus; characterType: CharacterType; campaignId?: string|null; creationGrants?: CreationGrant[]; canReduceSkills?: boolean; data: Record<string,unknown> }; campaign?: { principios: string|null }|null }) {
+  if(Array.isArray(data['disciplinas'])) {
+    const loadedDisciplines=(data['disciplinas'] as Array<{ id?: string; name?: string; level?: number; powers?: DisciplinePower[]} >).map(d => ({
+      id: d.id||crypto.randomUUID(),
+      name: d.name||'',
+      level: Number(d.level)||0,
+      powers: fillDisciplinePowerSlots(Array.isArray(d.powers)? d.powers:[],Number(d.level)||0,createEmptyPower)
+    }))
+    setDisciplines(arrangeDisciplineEditor(loadedDisciplines,characterData.character?.creationGrants??[],{ id: crypto.randomUUID(),name: '',level: 0,powers: [] }))
+  }
+}
+const data = characterData.character.data
       setCharacterType(characterData.character.characterType ?? 'PLAYER_VAMPIRE')
       setCreationType((data.creationType as CreationType) ?? 'FLEDGLING')
       setEntryMode(data.entryMode === 'EXISTING' ? 'EXISTING' : 'ASSISTED')
@@ -272,15 +283,7 @@ export default function CharacterFormClient({
       for (const skill of [...physicalSkills, ...socialSkills, ...mentalSkills]) loadedSkills[skill] = validatedSkills.skills[normalizeSkillId(skill)] ?? 0
       setSkills(loadedSkills)
       // Carregar disciplinas
-      if (Array.isArray(data['disciplinas'])) {
-        const loadedDisciplines = (data['disciplinas'] as Array<{ id?: string; name?: string; level?: number; powers?: any[] }>).map(d => ({
-          id: d.id || crypto.randomUUID(),
-          name: d.name || '',
-          level: Number(d.level) || 0,
-          powers: fillDisciplinePowerSlots(Array.isArray(d.powers) ? d.powers : [], Number(d.level) || 0, createEmptyPower)
-        }))
-        setDisciplines(arrangeDisciplineEditor(loadedDisciplines, characterData.character.creationGrants ?? [], { id: crypto.randomUUID(), name: '', level: 0, powers: [] }))
-      }
+      restoreCharacterDisciplines(data,characterData)
       // Carregar recursos
       setResources({
         humanidade: Number(data['humanidade']) || 0,
@@ -376,20 +379,20 @@ export default function CharacterFormClient({
 
   const setSkill = (name: string, value: number) => setSkills((current) => {
     const grants = creationGrants.filter(grant => grant.kind === 'SKILL' && grant.id === normalizeSkillId(name)).reduce((sum, grant) => sum + grant.dots, 0)
-    if (value < grants || !canReduceSkills && value < (current[name] ?? 0)) return current
+    if (value < grants || !canReduceSkills && value < (current[name] ?? 0)) { return current }
     const next = { ...current, [name]: value }
     return (independent && entryMode === 'EXISTING') || value <= (current[name] ?? 0) || fitsDistribution(Object.values(manualSkillValues(next, creationGrants)), selectedSkillDistribution) ? next : current
   })
 
   const handleDisciplineLevelChange = (index: number, nextLevel: number) => {
     setDisciplines((current) => current.map((d, i) => {
-      if (i !== index) return d
+      if (i !== index) { return d }
       const granted = (characterData?.character?.creationGrants ?? []).filter(grant => grant.kind === 'DISCIPLINE' && grant.id === d.id && (!independent || grant.origin !== 'CLAN')).reduce((total, grant) => total + grant.dots, 0)
-      if (nextLevel < granted) return d
-      if (!independent && characterType === 'PLAYER_VAMPIRE' && nextLevel > d.level && !initialDisciplineOptions.some(name => normalizeDiscipline(name) === normalizeDiscipline(d.name))) return d
-      if (!independent && characterType === 'PLAYER_VAMPIRE' && (characterData?.character?.creationGrants ?? []).some(grant => grant.kind === 'DISCIPLINE' && grant.origin === 'CLAN')) return d
+      if (nextLevel < granted) { return d }
+      if (!independent && characterType === 'PLAYER_VAMPIRE' && nextLevel > d.level && !initialDisciplineOptions.some(name => normalizeDiscipline(name) === normalizeDiscipline(d.name))) { return d }
+      if (!independent && characterType === 'PLAYER_VAMPIRE' && (characterData?.character?.creationGrants ?? []).some(grant => grant.kind === 'DISCIPLINE' && grant.origin === 'CLAN')) { return d }
       const otherDots = current.reduce((total, discipline, disciplineIndex) => total + (disciplineIndex === index ? 0 : discipline.level), 0)
-      if (!independent && characterType === 'PLAYER_VAMPIRE' && creationType !== 'THIN_BLOOD' && nextLevel > d.level && (otherDots + nextLevel > 3 + predatorDisciplineBonus || nextLevel > 2 + predatorDisciplineBonus)) return d
+      if (!independent && characterType === 'PLAYER_VAMPIRE' && creationType !== 'THIN_BLOOD' && nextLevel > d.level && (otherDots + nextLevel > 3 + predatorDisciplineBonus || nextLevel > 2 + predatorDisciplineBonus)) { return d }
       const trimmedPowers = [...(d.powers || [])].map(p => typeof p === 'string' ? { ...createEmptyPower(), name: p } : p)
       const adjustedPowers = trimmedPowers.slice(0, Math.max(nextLevel, 0))
       while (adjustedPowers.length < 5) adjustedPowers.push(createEmptyPower())
@@ -398,76 +401,79 @@ export default function CharacterFormClient({
   }
 
   async function saveDraft(redirectUrl?: string, acceptedInvitation?: AcceptedCampaignInvitation) {
-    if (!characterId && campaignInvitation === 'UNDECIDED' && !acceptedInvitation) return null
-    if (mode === 'edit' && (!characterId || !characterData?.character)) return null
+    function collectCharacterFormData() {
+  return {
+    ...characterData?.character?.data,
+    characterType,
+    creationType,
+    entryMode,
+    skillMode,
+    npc: { mode: characterType==='VAMPIRE_NPC'? 'POOLS':npcMode,difficulty: npcDifficulty,...npcPools },
+    retainer: { ...retainer,domitorCharacterId: retainer.domitorCharacterId||null },
+    // Identidade
+    nome: nome||'',
+    conceito: conceito||'',
+    cla: cla||'',
+    predador: predador||'',
+    geracao: geracao||'',
+    sire: sire||'',
+    'potencia-de-sangue': characterText(bloodPotency||0),
+    'idade-verdadeira': idadeVerdadeira||'',
+    'idade-aparente': idadeAparente||'',
+    'dados-de-vida': dadosVida||'',
+    'dados-da-morte': dadosMorte||'',
+
+    // Atributos
+    forca: characterText(attributes.forca||1),
+    destreza: characterText(attributes.destreza||1),
+    vigor: characterText(attributes.vigor||1),
+    carisma: characterText(attributes.carisma||1),
+    manipulacao: characterText(attributes.manipulacao||1),
+    compostura: characterText(attributes.compostura||1),
+    inteligencia: characterText(attributes.inteligencia||1),
+    raciocinio: characterText(attributes.raciocinio||1),
+    determinacao: characterText(attributes.determinacao||1),
+
+    // Habilidades
+    ...Object.fromEntries(Object.entries(skills).map(([key,value]) => [`habilidade-${key}`,characterText(value)])),
+
+    // Disciplinas
+    disciplinas: disciplines.map(d => ({
+      id: d.id,
+      name: d.name,
+      level: d.level,
+      powers: d.powers.map(p => (typeof p==='string'? { ...createEmptyPower(),name: p }:p))
+    })),
+
+    // Recursos
+    humanidade: characterText(displayedResources.humanidade),
+    vontade: characterText(displayedResources.vontade),
+    vitalidade: characterText(displayedResources.vitalidade),
+    fome: characterText(resources.fome||0),
+    'convicoes-pilar-1': convictions[0]?.pilar||'',
+    'convicoes-crenca-1': convictions[0]?.crenca||'',
+    'convicoes-pilar-2': convictions[1]?.pilar||'',
+    'convicoes-crenca-2': convictions[1]?.crenca||'',
+    'convicoes-pilar-3': convictions[2]?.pilar||'',
+    'convicoes-crenca-3': convictions[2]?.crenca||'',
+
+    // Vantagens e Defeitos
+    vantagens: merits.map(m => ({ id: m.id,name: m.name,level: m.level,description: m.description })),
+    defeitos: flaws.map(f => ({ id: f.id,name: f.name,level: f.level,description: f.description })),
+    pertences: possessions.map(p => ({ label: p.label,description: p.description,status: p.status })),
+
+    // Histórico
+    historico: formData['historico']||'',
+    notas: formData['notas']||'',
+  }
+}
+if (!characterId && campaignInvitation === 'UNDECIDED' && !acceptedInvitation) { return null }
+    if (mode === 'edit' && (!characterId || !characterData?.character)) { return null }
     setSaving(true)
     const formData = formRef.current ? Object.fromEntries(new FormData(formRef.current).entries()) : {}
 
     // Constrói o objeto data com todos os valores do estado e do formulário
-    const data = {
-      ...characterData?.character?.data,
-      characterType,
-      creationType,
-      entryMode,
-      skillMode,
-      npc: { mode: characterType === 'VAMPIRE_NPC' ? 'POOLS' : npcMode, difficulty: npcDifficulty, ...npcPools },
-      retainer: { ...retainer, domitorCharacterId: retainer.domitorCharacterId || null },
-      // Identidade
-      nome: nome || '',
-      conceito: conceito || '',
-      cla: cla || '',
-      predador: predador || '',
-      geracao: geracao || '',
-      sire: sire || '',
-      'potencia-de-sangue': characterText(bloodPotency || 0),
-      'idade-verdadeira': idadeVerdadeira || '',
-      'idade-aparente': idadeAparente || '',
-      'dados-de-vida': dadosVida || '',
-      'dados-da-morte': dadosMorte || '',
-
-      // Atributos
-      forca: characterText(attributes.forca || 1),
-      destreza: characterText(attributes.destreza || 1),
-      vigor: characterText(attributes.vigor || 1),
-      carisma: characterText(attributes.carisma || 1),
-      manipulacao: characterText(attributes.manipulacao || 1),
-      compostura: characterText(attributes.compostura || 1),
-      inteligencia: characterText(attributes.inteligencia || 1),
-      raciocinio: characterText(attributes.raciocinio || 1),
-      determinacao: characterText(attributes.determinacao || 1),
-
-      // Habilidades
-      ...Object.fromEntries(Object.entries(skills).map(([key, value]) => [`habilidade-${key}`, characterText(value)])),
-
-      // Disciplinas
-      disciplinas: disciplines.map(d => ({
-        id: d.id,
-        name: d.name,
-        level: d.level,
-        powers: d.powers.map(p => (typeof p === 'string' ? { ...createEmptyPower(), name: p } : p))
-      })),
-
-      // Recursos
-      humanidade: characterText(displayedResources.humanidade),
-      vontade: characterText(displayedResources.vontade),
-      vitalidade: characterText(displayedResources.vitalidade),
-      fome: characterText(resources.fome || 0),
-      'convicoes-pilar-1': convictions[0]?.pilar || '',
-      'convicoes-crenca-1': convictions[0]?.crenca || '',
-      'convicoes-pilar-2': convictions[1]?.pilar || '',
-      'convicoes-crenca-2': convictions[1]?.crenca || '',
-      'convicoes-pilar-3': convictions[2]?.pilar || '',
-      'convicoes-crenca-3': convictions[2]?.crenca || '',
-
-      // Vantagens e Defeitos
-      vantagens: merits.map(m => ({ id: m.id, name: m.name, level: m.level, description: m.description })),
-      defeitos: flaws.map(f => ({ id: f.id, name: f.name, level: f.level, description: f.description })),
-      pertences: possessions.map(p => ({ label: p.label, description: p.description, status: p.status })),
-
-      // Histórico
-      historico: formData['historico'] || '',
-      notas: formData['notas'] || '',
-    }
+    const data = collectCharacterFormData()
     let canonicalData: Record<string, unknown>
     try {
       canonicalData = serializeCharacterSkills(data, skills)
@@ -503,18 +509,21 @@ export default function CharacterFormClient({
     }
     if (savedCharacterId) {
       try {
-        const savedUrl = `/api/characters?id=${savedCharacterId}`
-        for (const draft of possessions.filter(item => !item.id)) {
-          const response = await fetch('/api/possessions', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ characterId: savedCharacterId, label: draft.label, description: draft.description, origin: 'player', idempotencyKey: draft.clientKey }) })
-          const result = await response.json().catch(() => null)
-          if (!response.ok || !result?.possession?.id || !Number.isSafeInteger(result.revision)) throw new Error(result?.error ?? 'A ficha foi salva, mas há pertences não confirmados. Salve novamente para reenviar os mesmos rascunhos.')
-          setPossessions(current => current.map(item => item.clientKey === draft.clientKey ? result.possession : item))
-        }
+        async function persistDraftPossessions(possessions: PossessionItem[],savedCharacterId: string) {
+  for(const draft of possessions.filter(item => !item.id)) {
+    const response=await fetch('/api/possessions',{ method: 'POST',headers: { 'Content-Type': 'application/json' },body: JSON.stringify({ characterId: savedCharacterId,label: draft.label,description: draft.description,origin: 'player',idempotencyKey: draft.clientKey }) })
+    const result=await response.json().catch(() => null)
+    if(!response.ok||!result?.possession?.id||!Number.isSafeInteger(result.revision)) { throw new Error(result?.error??'A ficha foi salva, mas há pertences não confirmados. Salve novamente para reenviar os mesmos rascunhos.') }
+    setPossessions(current => current.map(item => item.clientKey===draft.clientKey? result.possession:item))
+  }
+}
+const savedUrl = `/api/characters?id=${savedCharacterId}`
+        await persistDraftPossessions(possessions,savedCharacterId)
         await mutateCache(`/api/possessions?characterId=${savedCharacterId}`)
         const refreshed = characterId
           ? await mutateCharacter()
           : await mutateCache(savedUrl, fetcher(savedUrl), { revalidate: false })
-        if (!refreshed?.character || !Number.isSafeInteger(refreshed.character.revision)) throw new Error('Leitura da ficha inválida.')
+        if (!refreshed?.character || !Number.isSafeInteger(refreshed.character.revision)) { throw new Error('Leitura da ficha inválida.') }
         setCharacterStatus(refreshed.character.status)
       } catch {
         setSaving(false)
@@ -550,7 +559,7 @@ export default function CharacterFormClient({
     setValidating(true)
     try {
       const id = await saveDraft()
-      if (id) await validateSavedCharacter(id)
+      if (id) { await validateSavedCharacter(id) }
     } catch {
       setValidationError('Não foi possível salvar ou validar a ficha. Seus campos foram preservados; tente novamente.')
     } finally {
@@ -574,7 +583,7 @@ export default function CharacterFormClient({
     })
     const result = await response.json().catch(() => null)
     setSubmitting(false)
-    if (result?.report) setValidationReport(result.report as ValidationReport)
+    if (result?.report) { setValidationReport(result.report as ValidationReport) }
     if (!response.ok) {
       setValidationError(result?.error ?? 'Não foi possível enviar a ficha para revisão.')
       return
@@ -582,22 +591,22 @@ export default function CharacterFormClient({
     setCharacterStatus(characterData?.campaign ? 'PENDING_REVIEW' : 'APPROVED')
     try {
       const refreshed = await mutateCharacter()
-      if (!refreshed?.character || !Number.isSafeInteger(refreshed.character.revision)) throw new Error('Leitura da ficha inválida.')
+      if (!refreshed?.character || !Number.isSafeInteger(refreshed.character.revision)) { throw new Error('Leitura da ficha inválida.') }
     } catch {
       setValidationError('O status foi atualizado, mas não foi possível atualizar a revisão. Recarregue a página antes de editar novamente.')
     }
   }
 
   async function changeTab(tab: TabId) {
-    if (tab === activeTab || saving) return
+    if (tab === activeTab || saving) { return }
     const didSave = await saveDraft()
-    if (didSave) setActiveTab(tab)
+    if (didSave) { setActiveTab(tab) }
   }
 
-  if (mode === 'create' && !characterId && campaignInvitation === 'UNDECIDED') return <CampaignCreationGate onReady={async invitation => {
-    if (invitation && !(await saveDraft(undefined, invitation))) throw new Error('Não foi possível aceitar o convite e criar a ficha. Consulte novamente o convite e tente outra vez.')
+  if (mode === 'create' && !characterId && campaignInvitation === 'UNDECIDED') { return <CampaignCreationGate onReady={async invitation => {
+    if (invitation && !(await saveDraft(undefined, invitation))) { throw new Error('Não foi possível aceitar o convite e criar a ficha. Consulte novamente o convite e tente outra vez.') }
     setCampaignInvitation(null)
-  }} />
+  }} /> }
 
   const disciplineCreationHint=getDisciplineCreationHint(characterType,creationType,predatorDisciplineBonus,disciplinePointsRemaining)
   let submitLabel
@@ -670,6 +679,12 @@ export default function CharacterFormClient({
     <div className="sheet-watermark" aria-hidden="true"><Skull className="size-56" /></div>
   </main>
 }
+
+
+
+
+
+
 
 function getInitialDisciplineOptions(savedClan: { code?: string; caitiffDisciplines?: string[] }|undefined,cla: string,creationType: string) {
 const clanDefinition=CLANS.find(entry => entry.code===savedClan?.code||entry.name.toLocaleLowerCase('pt-BR')===cla.toLocaleLowerCase('pt-BR'))

@@ -12,16 +12,16 @@ export function noteUuid(value: unknown): value is string { return typeof value 
 function note(row: NoteRow): Note { return { id: row.id, authorUserId: row.author_user_id, campaignId: row.campaign_id, visibility: row.visibility, title: row.title, body: row.body, recipientUserIds: row.recipient_user_ids ?? [], links: row.links ?? [], revision: row.revision, createdAt: new Date(row.created_at).toISOString(), updatedAt: new Date(row.updated_at).toISOString() } }
 async function isMember(campaignId: string, userId: string) {
   const result = await db.execute<{ member: boolean }>(sql`SELECT EXISTS (SELECT 1 FROM campaigns WHERE id = ${campaignId}::uuid AND master_user_id = ${userId} UNION SELECT 1 FROM characters WHERE campaign_id = ${campaignId}::uuid AND user_id = ${userId}) AS member`)
-  return result.rows[0]?.member === true
+  return result.rows[0]?.member
 }
 async function isNarrator(campaignId: string | null, actorId: string) {
-  if (!campaignId) return false
+  if (!campaignId) { return false }
   const result = await db.execute<{ allowed: boolean }>(sql`SELECT EXISTS (SELECT 1 FROM campaigns WHERE id = ${campaignId}::uuid AND master_user_id = ${actorId}) AS allowed`)
-  return result.rows[0]?.allowed === true
+  return result.rows[0]?.allowed
 }
 async function canRead(value: Note, actorId: string) {
-  if (value.visibility === 'NARRATOR_ONLY') return isNarrator(value.campaignId, actorId)
-  if (value.authorUserId === actorId) return true
+  if (value.visibility === 'NARRATOR_ONLY') { return isNarrator(value.campaignId, actorId) }
+  if (value.authorUserId === actorId) { return true }
   return value.visibility === 'SHARED' && value.recipientUserIds.includes(actorId) && !!value.campaignId && await isMember(value.campaignId, actorId) && await isMember(value.campaignId, value.authorUserId)
 }
 async function canEdit(value: Note, actorId: string) { return value.visibility === 'NARRATOR_ONLY' ? isNarrator(value.campaignId, actorId) : value.authorUserId === actorId }
@@ -29,7 +29,7 @@ async function target(actorId: string, link: NoteLink): Promise<{ campaignId: st
   if (link.targetType === 'CHARACTER' || link.targetType === 'NPC') {
     const result = await db.execute<{ id: string; user_id: string; campaign_id: string | null; master_user_id: string | null; character_type: string; visibility: string; name: string }>(sql`SELECT ch.id, ch.user_id, ch.campaign_id, c.master_user_id, ch.character_type, ch.visibility, ch.name FROM characters ch LEFT JOIN campaigns c ON c.id = ch.campaign_id WHERE ch.id = ${link.targetId}::uuid AND ch.status <> 'DELETED'`)
     const row = result.rows[0]
-    if (!row) return null
+    if (!row) { return null }
     const npc = ['HUMAN_NPC', 'VAMPIRE_NPC'].includes(row.character_type)
     const allowed = row.user_id === actorId || row.master_user_id === actorId || npc && row.visibility === 'PLAYER_VISIBLE' && !!row.campaign_id && await isMember(row.campaign_id, actorId)
     return npc === (link.targetType === 'NPC') && allowed ? { campaignId: row.campaign_id, label: row.name } : null
@@ -50,56 +50,64 @@ async function project(value: Note, actorId: string, detail: boolean) {
   return { id: value.id, title: value.title, campaignId: value.campaignId, visibility: value.visibility, revision: value.revision, createdAt: value.createdAt, updatedAt: value.updatedAt, canEdit: editable, canDelete: editable, canShare, ...(detail ? { body: value.body, links, ...(editable ? { recipientUserIds: value.recipientUserIds } : {}) } : {}) }
 }
 function payload(input: unknown, update: boolean): Record<string, unknown> {
-  if (!input || typeof input !== 'object' || Array.isArray(input) || Buffer.byteLength(JSON.stringify(input), 'utf8') > 100000) fail(400, 'Dados da anotação inválidos.')
+  if (!input || typeof input !== 'object' || Array.isArray(input) || Buffer.byteLength(JSON.stringify(input), 'utf8') > 100000) { fail(400, 'Dados da anotação inválidos.') }
   const value = input as Record<string, unknown>
   const fields = new Set(['title', 'body', 'campaignId', 'visibility', 'recipientUserIds', 'links', update ? 'expectedRevision' : 'idempotencyKey'])
-  if (Object.keys(value).some(key => !fields.has(key))) fail(400, 'Campos de anotação não permitidos.')
-  if (update ? !Number.isSafeInteger(value.expectedRevision) || Number(value.expectedRevision) < 0 : !noteUuid(value.idempotencyKey)) fail(400, 'Revisão ou chave inválida.')
+  if (Object.keys(value).some(key => !fields.has(key))) { fail(400, 'Campos de anotação não permitidos.') }
+  if (update ? !Number.isSafeInteger(value.expectedRevision) || Number(value.expectedRevision) < 0 : !noteUuid(value.idempotencyKey)) { fail(400, 'Revisão ou chave inválida.') }
   return value
 }
 async function validate(value: Note, actorId: string, previous?: Note) {
-  if (typeof value.title !== 'string' || !value.title.trim() || value.title.trim().length > 120 || typeof value.body !== 'string' || value.body.length > 20000 || !['PRIVATE', 'SHARED', 'NARRATOR_ONLY'].includes(value.visibility) || value.campaignId !== null && !noteUuid(value.campaignId)) fail(422, 'Título, texto, mesa ou visibilidade inválidos.')
+  if (typeof value.title !== 'string' || !value.title.trim() || value.title.trim().length > 120 || typeof value.body !== 'string' || value.body.length > 20000 || !['PRIVATE', 'SHARED', 'NARRATOR_ONLY'].includes(value.visibility) || value.campaignId !== null && !noteUuid(value.campaignId)) { fail(422, 'Título, texto, mesa ou visibilidade inválidos.') }
   value.title = value.title.trim()
-  if (previous?.campaignId && previous.campaignId !== value.campaignId) fail(422, 'A mesa de uma anotação já contextualizada não pode ser alterada.')
-  if (value.campaignId && !await isMember(value.campaignId, actorId)) fail(403, 'Você não pertence a esta mesa.')
-  if (previous && (previous.visibility === 'NARRATOR_ONLY') !== (value.visibility === 'NARRATOR_ONLY')) fail(422, 'Anotações exclusivas não podem mudar de categoria.')
-  if (!Array.isArray(value.recipientUserIds) || value.recipientUserIds.length > 20 || value.recipientUserIds.some(user => typeof user !== 'string' || !user.trim() || user.length > 200) || new Set(value.recipientUserIds).size !== value.recipientUserIds.length) fail(422, 'Destinatários inválidos.')
-  if (value.visibility === 'PRIVATE') value.recipientUserIds = []
-  if (value.visibility === 'NARRATOR_ONLY' && (!await isNarrator(value.campaignId, actorId) || value.recipientUserIds.length)) fail(403, 'Somente o Narrador atual pode manter anotações exclusivas sem destinatários.')
+  if (previous?.campaignId && previous.campaignId !== value.campaignId) { fail(422, 'A mesa de uma anotação já contextualizada não pode ser alterada.') }
+  if (value.campaignId && !await isMember(value.campaignId, actorId)) { fail(403, 'Você não pertence a esta mesa.') }
+  if (previous && (previous.visibility === 'NARRATOR_ONLY') !== (value.visibility === 'NARRATOR_ONLY')) { fail(422, 'Anotações exclusivas não podem mudar de categoria.') }
+  if (!Array.isArray(value.recipientUserIds) || value.recipientUserIds.length > 20 || value.recipientUserIds.some(user => typeof user !== 'string' || !user.trim() || user.length > 200) || new Set(value.recipientUserIds).size !== value.recipientUserIds.length) { fail(422, 'Destinatários inválidos.') }
+  if (value.visibility === 'PRIVATE') { value.recipientUserIds = [] }
+  if (value.visibility === 'NARRATOR_ONLY' && (!await isNarrator(value.campaignId, actorId) || value.recipientUserIds.length)) { fail(403, 'Somente o Narrador atual pode manter anotações exclusivas sem destinatários.') }
   if (value.visibility === 'SHARED') {
-    const recipientsValid = value.campaignId && (await Promise.all(value.recipientUserIds.map(user => isMember(value.campaignId!, user)))).every(Boolean)
-    if (!value.campaignId || !await isMember(value.campaignId, actorId) || !recipientsValid || value.recipientUserIds.includes(value.authorUserId)) fail(422, 'Compartilhamento exige participantes atuais da mesma mesa.')
-    if (!value.recipientUserIds.length) { if (previous?.visibility !== 'SHARED') fail(422, 'Escolha ao menos um destinatário para compartilhar.'); value.visibility = 'PRIVATE' }
+    await validateNoteSharing(value,actorId,previous)
   }
-  if (!Array.isArray(value.links) || value.links.length > 20) fail(422, 'Vínculos inválidos.')
-  const seen = new Set<string>()
-  for (const link of value.links) {
-    if (!link || typeof link !== 'object' || Object.keys(link).some(key => !['targetType', 'targetId'].includes(key)) || !['CHARACTER', 'NPC', 'EVENT', 'SESSION'].includes(link.targetType) || !noteUuid(link.targetId)) fail(422, 'Vínculo inválido.')
-    const key = `${link.targetType}:${link.targetId}`
-    const resolved = await target(actorId, link)
-    if (!resolved || resolved.campaignId !== value.campaignId || seen.has(key)) fail(422, 'Vínculo indisponível, duplicado ou de outra mesa.')
+  if (!Array.isArray(value.links) || value.links.length > 20) { fail(422, 'Vínculos inválidos.') }
+  await validateNoteLinks(value,actorId)
+}
+const columns = sql`id, author_user_id, campaign_id, visibility, title, body, recipient_user_ids, links, revision, created_at, updated_at`
+async function validateNoteSharing(value: Note,actorId: string,previous: Note|undefined) {
+  const recipientsValid=value.campaignId&&(await Promise.all(value.recipientUserIds.map(user => isMember(value.campaignId!,user)))).every(Boolean)
+  if(!value.campaignId||!await isMember(value.campaignId,actorId)||!recipientsValid||value.recipientUserIds.includes(value.authorUserId)) { fail(422,'Compartilhamento exige participantes atuais da mesma mesa.')} 
+  if(!value.recipientUserIds.length) { if(previous?.visibility!=='SHARED') { fail(422,'Escolha ao menos um destinatário para compartilhar.')}  value.visibility='PRIVATE'} 
+}
+
+async function validateNoteLinks(value: Note,actorId: string) {
+  const seen=new Set<string>()
+  for(const link of value.links) {
+    if(!link||typeof link!=='object'||Object.keys(link).some(key => !['targetType','targetId'].includes(key))||!['CHARACTER','NPC','EVENT','SESSION'].includes(link.targetType)||!noteUuid(link.targetId)) { fail(422,'Vínculo inválido.')} 
+    const key=`${link.targetType}:${link.targetId}`
+    const resolved=await target(actorId,link)
+    if(!resolved||resolved.campaignId!==value.campaignId||seen.has(key)) { fail(422,'Vínculo indisponível, duplicado ou de outra mesa.')} 
     seen.add(key)
   }
 }
-const columns = sql`id, author_user_id, campaign_id, visibility, title, body, recipient_user_ids, links, revision, created_at, updated_at`
+
 async function getRow(id: string) { const result = await db.execute<NoteRow>(sql`SELECT ${columns} FROM notes WHERE id = ${id}::uuid`); return result.rows[0] ? note(result.rows[0]) : null }
 
 export async function getNote(actorId: string, id: string) {
   const value = noteUuid(id) ? await getRow(id) : null
-  if (!value || !await canRead(value, actorId)) fail(404, 'Anotação não encontrada.')
+  if (!value || !await canRead(value, actorId)) { fail(404, 'Anotação não encontrada.') }
   return project(value, actorId, true)
 }
 
 export async function listNotes(actorId: string, options: { campaignId?: string; page?: number; pageSize?: number; link?: NoteLink } = {}) {
   const page = options.page ?? 1, pageSize = options.pageSize ?? 20
-  if (!Number.isSafeInteger(page) || page < 1 || !Number.isSafeInteger(pageSize) || pageSize < 1 || pageSize > 50 || options.campaignId !== undefined && !noteUuid(options.campaignId)) fail(400, 'Filtros inválidos.')
-  if (options.link && (!noteUuid(options.link.targetId) || !['CHARACTER', 'NPC', 'EVENT', 'SESSION'].includes(options.link.targetType) || !await target(actorId, options.link))) fail(404, 'Contexto não encontrado.')
+  if (!Number.isSafeInteger(page) || page < 1 || !Number.isSafeInteger(pageSize) || pageSize < 1 || pageSize > 50 || options.campaignId !== undefined && !noteUuid(options.campaignId)) { fail(400, 'Filtros inválidos.') }
+  if (options.link && (!noteUuid(options.link.targetId) || !['CHARACTER', 'NPC', 'EVENT', 'SESSION'].includes(options.link.targetType) || !await target(actorId, options.link))) { fail(404, 'Contexto não encontrado.') }
   const result = await db.execute<NoteRow>(sql`SELECT ${columns} FROM notes WHERE campaign_id IS NOT DISTINCT FROM ${options.campaignId ?? null}::uuid OR ${options.campaignId ?? null}::uuid IS NULL ORDER BY updated_at DESC, id DESC`)
   const visible: Note[] = []
   for (const row of result.rows) {
     const value = note(row)
-    if (!await canRead(value, actorId)) continue
-    if (options.link && (!value.links.some(link => link.targetType === options.link!.targetType && link.targetId === options.link!.targetId) || (await target(actorId, options.link))?.campaignId !== value.campaignId)) continue
+    if (!await canRead(value, actorId)) { continue }
+    if (options.link && (!value.links.some(link => link.targetType === options.link!.targetType && link.targetId === options.link!.targetId) || (await target(actorId, options.link))?.campaignId !== value.campaignId)) { continue }
     visible.push(value)
   }
   return { notes: await Promise.all(visible.slice((page - 1) * pageSize, page * pageSize).map(value => project(value, actorId, false))), total: visible.length, page, pageSize }
@@ -110,7 +118,7 @@ export async function createNote(actorId: string, input: unknown) {
   const hash = createHash('sha256').update(JSON.stringify(Object.fromEntries(Object.entries(fields).sort(([a], [b]) => a.localeCompare(b))))).digest('hex')
   const requestId = String(idempotencyKey)
   const saved = await db.execute<{ request_hash: string; note_id: string }>(sql`SELECT request_hash, note_id FROM note_requests WHERE author_user_id = ${actorId} AND idempotency_key = ${requestId}::uuid`)
-  if (saved.rows[0]) { if (saved.rows[0].request_hash !== hash) fail(409, 'Chave já utilizada com outro conteúdo.'); return getNote(actorId, saved.rows[0].note_id) }
+  if (saved.rows[0]) { if (saved.rows[0].request_hash !== hash) { fail(409, 'Chave já utilizada com outro conteúdo.'); } return getNote(actorId, saved.rows[0].note_id) }
   const created = { title: '', campaignId: null, visibility: 'PRIVATE', body: '', recipientUserIds: [], links: [], ...structuredClone(fields), id: randomUUID(), authorUserId: actorId, revision: 0, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() } as Note
   await validate(created, actorId)
   const result = await db.transaction(async tx => {
@@ -122,29 +130,29 @@ export async function createNote(actorId: string, input: unknown) {
     await tx.execute(sql`INSERT INTO notes (id, author_user_id, campaign_id, visibility, title, body, recipient_user_ids, links) VALUES (${created.id}::uuid, ${actorId}, ${created.campaignId}::uuid, ${created.visibility}, ${created.title}, ${created.body}, ${JSON.stringify(created.recipientUserIds)}::jsonb, ${JSON.stringify(created.links)}::jsonb)`)
     return { request_hash: hash, note_id: created.id }
   })
-  if (result.request_hash !== hash) fail(409, 'Chave já utilizada com outro conteúdo.')
+  if (result.request_hash !== hash) { fail(409, 'Chave já utilizada com outro conteúdo.') }
   return getNote(actorId, result.note_id)
 }
 
 export async function updateNote(actorId: string, id: string, input: unknown) {
   const previous = noteUuid(id) ? await getRow(id) : null
-  if (!previous || !await canRead(previous, actorId)) fail(404, 'Anotação não encontrada.')
-  if (!await canEdit(previous, actorId)) fail(403, 'Esta anotação permite somente leitura.')
+  if (!previous || !await canRead(previous, actorId)) { fail(404, 'Anotação não encontrada.') }
+  if (!await canEdit(previous, actorId)) { fail(403, 'Esta anotação permite somente leitura.') }
   const { expectedRevision, ...fields } = payload(input, true)
-  if (expectedRevision !== previous.revision) fail(409, 'A anotação foi alterada. Recarregue antes de salvar.')
+  if (expectedRevision !== previous.revision) { fail(409, 'A anotação foi alterada. Recarregue antes de salvar.') }
   const value = { ...structuredClone(previous), ...structuredClone(fields), revision: previous.revision + 1, updatedAt: new Date().toISOString() } as Note
-  if (!Object.hasOwn(fields, 'links')) value.links = (await Promise.all(value.links.map(async link => await target(actorId, link) ? link : null))).filter((link): link is NoteLink => link !== null)
+  if (!Object.hasOwn(fields, 'links')) { value.links = (await Promise.all(value.links.map(async link => await target(actorId, link) ? link : null))).filter((link): link is NoteLink => link !== null) }
   await validate(value, actorId, previous)
   const result = await db.execute(sql`UPDATE notes SET visibility = ${value.visibility}, title = ${value.title}, body = ${value.body}, recipient_user_ids = ${JSON.stringify(value.recipientUserIds)}::jsonb, links = ${JSON.stringify(value.links)}::jsonb, revision = revision + 1, updated_at = now() WHERE id = ${id}::uuid AND revision = ${expectedRevision} AND (author_user_id = ${actorId} OR visibility = 'NARRATOR_ONLY' AND EXISTS (SELECT 1 FROM campaigns WHERE id = notes.campaign_id AND master_user_id = ${actorId})) RETURNING id`)
-  if (!result.rows.length) fail(409, 'A anotação foi alterada. Recarregue antes de salvar.')
+  if (!result.rows.length) { fail(409, 'A anotação foi alterada. Recarregue antes de salvar.') }
   return getNote(actorId, id)
 }
 
 export async function deleteNote(actorId: string, id: string, expectedRevision: unknown) {
-  if (!noteUuid(id)) fail(404, 'Anotação não encontrada.')
-  if (!Number.isSafeInteger(expectedRevision) || Number(expectedRevision) < 0) fail(400, 'Revisão inválida.')
+  if (!noteUuid(id)) { fail(404, 'Anotação não encontrada.') }
+  if (!Number.isSafeInteger(expectedRevision) || Number(expectedRevision) < 0) { fail(400, 'Revisão inválida.') }
   const result = await db.execute(sql`DELETE FROM notes WHERE id = ${id}::uuid AND revision = ${Number(expectedRevision)} AND (author_user_id = ${actorId} OR visibility = 'NARRATOR_ONLY' AND EXISTS (SELECT 1 FROM campaigns WHERE id = notes.campaign_id AND master_user_id = ${actorId})) RETURNING id`)
-  if (!result.rows.length) fail(404, 'Anotação não encontrada ou revisão inválida.')
+  if (!result.rows.length) { fail(404, 'Anotação não encontrada ou revisão inválida.') }
   return { ok: true }
 }
 

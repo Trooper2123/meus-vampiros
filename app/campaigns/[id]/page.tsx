@@ -1,6 +1,7 @@
 import { ArchiveHeader } from '@/components/archive-header'
 import { CampaignTools } from '@/components/campaign-calendar/campaign-tools'
 import { CharacterSummary } from '@/components/character-summary/character-summary'
+import { CampaignParticipantControls } from '@/components/campaign-participant-controls'
 import { CampaignPossessionsManager } from '@/components/master-panel'
 import { NpcCatalogue } from '@/components/npcs/npc-catalogue'
 import { getCharacterSummaryData } from '@/lib/character-summary'
@@ -61,6 +62,7 @@ export default async function CampaignDetailPage({ params }: Readonly<{ params: 
                 <details key={summary.id} className="border border-border p-4">
                   <summary className="cursor-pointer font-serif text-xl">{summary.name} · {summary.clan ?? 'Clã não definido'}</summary>
                   <div className="mt-4 flex flex-col gap-4">
+                    <CampaignParticipantControls characterId={summary.id} />
                     <Link className="button-ghost self-start" href={`/characters/${summary.id}/edit`}>Editar ficha e habilidades</Link>
                     <Link className="button-ghost self-start" href={`/characters/${summary.id}/narrative`}>Perfil narrativo desta mesa</Link>
                     <CharacterSummary data={summary} />

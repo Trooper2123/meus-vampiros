@@ -4,7 +4,7 @@ import console from 'node:console'
 import { devCreateCampaign, devCreateCharacter, devGetCampaignsForMaster } from '../lib/dev-db.ts'
 
 nextEnvironment.loadEnvConfig(process.cwd(), true, { info() {}, error() {} })
-if (process.env.NODE_ENV === 'production' || process.env.DATABASE_URL) throw new Error('Preparação restrita ao banco descartável em memória, sem conexão externa.')
+if (process.env.NODE_ENV === 'production' || process.env.DATABASE_URL) { throw new Error('Preparação restrita ao banco descartável em memória, sem conexão externa.') }
 
 globalThis.__devDb = undefined
 devGetCampaignsForMaster('dev|local')
@@ -24,6 +24,6 @@ for (const fixture of [
 }
 
 const store = globalThis.__devDb
-if (!store || !store.characters.every(character => !character.campaignId || store.campaigns.some(campaign => campaign.id === character.campaignId))) throw new Error('Falha de integridade das fichas/campanhas.')
-if (!store.possessions.every(item => store.characters.some(character => character.id === item.characterId))) throw new Error('Falha de integridade dos itens.')
+if (!store?.characters.every(character => !character.campaignId || store.campaigns.some(campaign => campaign.id === character.campaignId))) { throw new Error('Falha de integridade das fichas/campanhas.') }
+if (!store.possessions.every(item => store.characters.some(character => character.id === item.characterId))) { throw new Error('Falha de integridade dos itens.') }
 console.log(JSON.stringify({ environment: 'test-memory', reset: 'once-this-process', schema: 'current-in-memory-provider', characters: store.characters.length, campaigns: store.campaigns.length, integrity: 'ok', externalDatabaseModified: false, runningServerModified: false }))

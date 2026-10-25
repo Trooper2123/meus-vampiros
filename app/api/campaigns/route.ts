@@ -18,8 +18,8 @@ export async function GET() {
   try {
     await ensureAllTables()
     const user = await getAuthenticatedUser()
-    if (!user) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
-    if (!await hasMasterAccess(user)) return NextResponse.json({ campaigns: [], canCreate: false })
+    if (!user) { return NextResponse.json({ error: 'Não autorizado' }, { status: 401 }) }
+    if (!await hasMasterAccess(user)) { return NextResponse.json({ campaigns: [], canCreate: false }) }
     const campaigns = await getCampaignsForMaster(user.sub)
     return NextResponse.json({ campaigns, canCreate: true, clans: CLANS.map(({ code, name }) => ({ code, name })), predatorTypes: PREDATOR_TYPES.map(({ code, name, source }) => ({ code, name, source })) })
   } catch {
@@ -30,10 +30,10 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const user = await getAuthenticatedUser()
-    if (!user) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
-    if (!await hasMasterAccess(user)) return NextResponse.json({ error: 'Somente o Narrador pode criar uma mesa.' }, { status: 403 })
+    if (!user) { return NextResponse.json({ error: 'Não autorizado' }, { status: 401 }) }
+    if (!await hasMasterAccess(user)) { return NextResponse.json({ error: 'Somente o Narrador pode criar uma mesa.' }, { status: 403 }) }
     const body = await request.json().catch(() => null)
-    if (!body || typeof body !== 'object' || Array.isArray(body)) return NextResponse.json({ error: 'Dados da mesa inválidos.' }, { status: 400 })
+    if (!body || typeof body !== 'object' || Array.isArray(body)) { return NextResponse.json({ error: 'Dados da mesa inválidos.' }, { status: 400 }) }
     const { enabledClanCodes, enabledPredatorCodes, exceptionCodes } = readCampaignPolicy(body)
     const { name, theme, principios, averageXp, status, lastSessionAt, enableSchedulingCalendar } = readCampaignDetails(body)
     const campaign = await createCampaign(user.sub, { name, theme, principios, averageXp: Number.isFinite(averageXp) ? averageXp : null, status, lastSessionAt, enabledClanCodes })
@@ -56,16 +56,16 @@ export function readCampaignPolicy(body: Record<string, unknown>) {
     const enabledClanCodes = body.enabledClanCodes ?? CLANS.map(clan => clan.code)
     const enabledPredatorCodes = body.enabledPredatorCodes ?? PREDATOR_TYPE_CODES
     const exceptionCodes = validateCampaignExceptions(body.exceptionCodes ?? [])
-    if (!Array.isArray(enabledClanCodes) || enabledClanCodes.length > CLANS.length || new Set(enabledClanCodes).size !== enabledClanCodes.length || enabledClanCodes.some(code => !CLANS.some(clan => clan.code === code)) || !Array.isArray(enabledPredatorCodes) || enabledPredatorCodes.length > PREDATOR_TYPE_CODES.length || new Set(enabledPredatorCodes).size !== enabledPredatorCodes.length || enabledPredatorCodes.some(code => !PREDATOR_TYPE_CODES.includes(code))) throw new CharacterCommandError(400, 'Clãs ou predações inválidos.')
+    if (!Array.isArray(enabledClanCodes) || enabledClanCodes.length > CLANS.length || new Set(enabledClanCodes).size !== enabledClanCodes.length || enabledClanCodes.some(code => !CLANS.some(clan => clan.code === code)) || !Array.isArray(enabledPredatorCodes) || enabledPredatorCodes.length > PREDATOR_TYPE_CODES.length || new Set(enabledPredatorCodes).size !== enabledPredatorCodes.length || enabledPredatorCodes.some(code => !PREDATOR_TYPE_CODES.includes(code))) { throw new CharacterCommandError(400, 'Clãs ou predações inválidos.') }
 
   return { enabledClanCodes, enabledPredatorCodes, exceptionCodes }
 }
 
 function readCampaignDetails(body: Record<string, unknown>) {
-    const name = typeof body.name === 'string' && body.name.trim() ? body.name.trim() : null
-    if (!name || name.length > 200) throw new CharacterCommandError(400, 'Nome da campanha é obrigatório e deve ter até 200 caracteres.')
-    const theme = typeof body.theme === 'string' && body.theme.trim() ? body.theme.trim() : null
-    const principios = typeof body.principios === 'string' && body.principios.trim() ? body.principios.trim() : null
+    const name = campaignText(body.name) || null
+    if (!name || name.length > 200) { throw new CharacterCommandError(400, 'Nome da campanha é obrigatório e deve ter até 200 caracteres.') }
+    const theme = campaignText(body.theme) || null
+    const principios = campaignText(body.principios) || null
     let averageXpValue
     if (typeof body.averageXp === 'number' && Number.isFinite(body.averageXp)) {
       averageXpValue = Math.trunc(body.averageXp)
@@ -75,11 +75,13 @@ function readCampaignDetails(body: Record<string, unknown>) {
       averageXpValue = null
     }
     const averageXp = averageXpValue
-    const status = typeof body.status === 'string' && body.status.trim() ? body.status.trim() : 'Ativa'
-    const lastSessionAt = typeof body.lastSessionAt === 'string' && body.lastSessionAt.trim() ? body.lastSessionAt.trim() : null
+    const status = campaignText(body.status) || 'Ativa'
+    const lastSessionAt = campaignText(body.lastSessionAt) || null
     const enableSchedulingCalendar = typeof body.enableSchedulingCalendar === 'boolean' ? body.enableSchedulingCalendar : true
-    if (lastSessionAt && !Number.isFinite(new Date(lastSessionAt).getTime())) throw new CharacterCommandError(400, 'Data do último encontro inválida.')
+    if (lastSessionAt && !Number.isFinite(new Date(lastSessionAt).getTime())) { throw new CharacterCommandError(400, 'Data do último encontro inválida.') }
 
 
   return { name, theme, principios, averageXp, status, lastSessionAt, enableSchedulingCalendar }
 }
+
+function campaignText(value:unknown){return typeof value==='string'?value.trim():''}

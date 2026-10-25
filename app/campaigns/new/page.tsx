@@ -55,22 +55,22 @@ export default function NewCampaignPage() {
       try {
         const response = await fetch('/api/campaigns')
         const data = await response.json()
-        if (!response.ok) throw new Error(data.error ?? 'NÃ£o foi possÃ­vel consultar as regras da mesa.')
-        if (!mounted) return
+        if (!response.ok) { throw new Error(data.error ?? 'NÃ£o foi possÃ­vel consultar as regras da mesa.') }
+        if (!mounted) { return }
         setUserIsMaster(data.canCreate === true)
         setHasCampaigns(data.campaigns.length > 0)
         setClans(data.clans ?? [])
         setPredatorTypes(data.predatorTypes ?? [])
         setEnabledClanCodes((data.clans ?? []).map((entry: { code: string }) => entry.code))
         setEnabledPredatorCodes((data.predatorTypes ?? []).map((entry: { code: string }) => entry.code))
-      } catch (error_) { if (mounted) setError(error_ instanceof Error ? error_.message : 'NÃ£o foi possÃ­vel consultar as regras da mesa.') }
+      } catch (error_) { if (mounted) { setError(error_ instanceof Error ? error_.message : 'NÃ£o foi possÃ­vel consultar as regras da mesa.') } }
     }
     void checkAccess()
     return () => { mounted = false }
   }, [])
 
   function handleCancel() {
-    if (userIsMaster === null) return
+    if (userIsMaster === null) { return }
     if (userIsMaster) {
       if (hasCampaigns) {
         router.push('/campaigns')
@@ -203,7 +203,7 @@ export default function NewCampaignPage() {
               </label>
               <fieldset className="span-2 border border-border bg-card p-4"><legend>Quais clÃ£s serÃ£o permitidos?</legend><div className="mt-3 grid gap-2 sm:grid-cols-2">{clans.map(clan => <label key={clan.code} className="flex items-center gap-2 text-sm"><input type="checkbox" disabled={submitting} checked={enabledClanCodes.includes(clan.code)} onChange={event => setEnabledClanCodes(values => event.target.checked ? [...values, clan.code] : values.filter(code => code !== clan.code))} />{clan.name}</label>)}</div></fieldset>
               <fieldset className="span-2 border border-border bg-card p-4"><legend>Quais predaÃ§Ãµes serÃ£o permitidas?</legend><p className="mt-2 text-sm text-muted-foreground">ApÃ³s criar a campanha, os painÃ©is mostram somente os tipos usados pelas fichas vinculadas.</p><div className="mt-3 grid gap-2 sm:grid-cols-2">{predatorTypes.map(predator => <label key={predator.code} className="flex items-center gap-2 text-sm"><input type="checkbox" disabled={submitting} checked={enabledPredatorCodes.includes(predator.code)} onChange={event => setEnabledPredatorCodes(values => event.target.checked ? [...values, predator.code] : values.filter(code => code !== predator.code))} />{predator.name}{predator.source !== 'COREBOOK' ? ' (' + PREDATOR_SOURCE_LABELS[predator.source] + ')' : ''}</label>)}</div></fieldset>
-              <fieldset className="span-2 border border-border bg-card p-4"><legend>ExceÃ§Ãµes predefinidas de predaÃ§Ã£o</legend><label className="mt-3 flex items-center gap-2 text-sm"><input type="checkbox" checked={allowExceptions} disabled={submitting} onChange={event => { setAllowExceptions(event.target.checked); setExceptionCodes([]) }} />Permitir exceÃ§Ãµes de predaÃ§Ã£o nesta mesa</label>{allowExceptions && <div className="mt-3 flex flex-col gap-3">{CAMPAIGN_EXCEPTIONS.map(rule => <label key={rule.code} className="flex items-center gap-2 text-sm"><input type="checkbox" aria-label={rule.name} checked={exceptionCodes.includes(rule.code)} disabled={submitting} onChange={event => setExceptionCodes(values => event.target.checked ? [...values, rule.code] : values.filter(code => code !== rule.code))} />{rule.name}</label>)}</div>}<p className="mt-3 text-xs text-muted-foreground">Definidas somente ao criar a mesa. NÃ£o habilitam predaÃ§Ãµes bloqueadas, nÃ£o concedem pontos e nÃ£o dispensam as demais regras.</p></fieldset>
+              <fieldset className="span-2 border border-border bg-card p-4"><legend>ExceÃ§Ãµes predefinidas de predaÃ§Ã£o</legend><label className="mt-3 flex items-center gap-2 text-sm"><input type="checkbox" checked={allowExceptions} disabled={submitting} onChange={event => { setAllowExceptions(event.target.checked); setExceptionCodes([]) }} />Permitir exceÃ§Ãµes de predaÃ§Ã£o nesta mesa</label>{allowExceptions && <div className="mt-3 flex flex-col gap-3">{CAMPAIGN_EXCEPTIONS.map(rule => <label key={rule.code} className="flex items-center gap-2 text-sm"><input type="checkbox" aria-labelledby={`exception-${rule.code}`} checked={exceptionCodes.includes(rule.code)} disabled={submitting} onChange={event => setExceptionCodes(values => event.target.checked ? [...values, rule.code] : values.filter(code => code !== rule.code))} /><span id={`exception-${rule.code}`}>{rule.name}</span></label>)}</div>}<p className="mt-3 text-xs text-muted-foreground">Definidas somente ao criar a mesa. NÃ£o habilitam predaÃ§Ãµes bloqueadas, nÃ£o concedem pontos e nÃ£o dispensam as demais regras.</p></fieldset>
               <label className="span-2 flex cursor-pointer items-start gap-3 border border-border bg-card p-4">
                 <input
                   type="checkbox"

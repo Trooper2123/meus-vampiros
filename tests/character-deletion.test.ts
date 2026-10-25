@@ -100,7 +100,7 @@ it('revoga listagens, participação, leitura, edição, duplicação e restaura
   expect(await updateCharacter(id, owner, { name: 'Restaurar' })).toBeNull()
   expect((await GET(new Request(`http://localhost/api/characters?id=${id}`))).status).toBe(404)
   expect((await PUT(new Request('http://localhost', { method: 'PUT', body: JSON.stringify({ id, expectedRevision: 1, data: { status: 'DRAFT' } }) }))).status).toBe(403)
-  expect((await PATCH(new Request('http://localhost', { method: 'PATCH', body: JSON.stringify({ status: 'DRAFT', expectedRevision: 1 }) }), { params: Promise.resolve({ id }) })).status).toBe(404)
+  expect((await PATCH(new Request('http://localhost', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'DRAFT', expectedRevision: 1 }) }), { params: Promise.resolve({ id }) })).status).toBe(404)
   await expect(getCampaignGameSession(owner, campaignId)).rejects.toMatchObject({ status: 403 })
 })
 it('outra ficha própria mantém a participação autorizada na mesa', async () => {

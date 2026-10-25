@@ -1,3 +1,15 @@
+## [2026-10-25 00:14 BRT] — feat - Aprovação e condições dos participantes na gestão
+
+**Tipo:** feat | fix
+
+**Arquivos principais:** `components/campaign-participant-controls.tsx`, `app/campaigns/[id]/page.tsx`, `app/api/characters/[id]/condition/route.ts`, `app/api/characters/[id]/status/route.ts`, `lib/character-conditions.ts`, `components/game-session/session-workspace.tsx`, `components/awake-panel.tsx`, `lib/vtm-v5/awakening-explanation.ts` e testes pertinentes.
+
+- Gestão mostra estado da ficha e condição confirmados pelo servidor, aprova fichas pendentes pela validação existente e permite ao Narrador registrar/remover Empalado ou Torpor com motivo. Torpor exige causa explícita e captura Humanidade no servidor; não altera Fome, dano ou XP, não sobrepõe condições nem reverte morte definitiva.
+- Condição reutiliza transação, revisão, idempotência e ledger existentes. Revalida Narrador/vínculo sob lock inclusive no replay; rejeita jogador, terceiros, NPCs, campos forjados, IDs inválidos e origem cruzada. Aprovação também usa proteção de origem/JSON limitado. Controles bloqueiam cliques simultâneos, preservam envio após falha incerta e desaparecem se a reconsulta falhar.
+- Modo sessão oferece pesquisas ao Narrador e abre o resumo completo da ficha selecionada em nova guia, pela página que revalida acesso. Despertar explica falta de aprovação, tipo incompatível, morte definitiva, registro sem dado em Torpor e impedimento de agir quando Empalado, mantendo as regras existentes.
+- Validação: 87 testes em 11 arquivos aprovados, incluindo autorização/isolamento, autoria do ledger, reenvio, concorrência, conflitos, privacidade e aprovação válida. TypeScript e build aprovados; lint sem erros/cinco avisos anteriores; auditoria sem vulnerabilidades; scan de padrões de segredos sem achados. Revisão `pre-commit-review` registrada localmente. Testes apenas no PostgreSQL local/schema isolado `meus_vampiros_test`, sem limpeza ou nova migração.
+- Conclusão formal da SPEC permanece bloqueada pelas falhas globais anteriormente registradas (262 falhas/956 aprovados), sem alegar reexecução global nesta etapa. QA visual/responsividade e provedores externos reais pendentes; sem commit/push nesta retomada.
+
 ## [2026-10-24 17:19 BRT] — feat - Unificar NPCs da campanha
 
 **Tipo:** feat
@@ -6,7 +18,7 @@
 
 - A página da campanha agora tem uma seção NPCs da mesa com o catálogo filtrado pela própria campanha, resumos existentes e criação contextual de fichas.
 - A criação e consulta continuam nas rotas autorizadas do catálogo de NPCs; não foi criada nova API nem copiado estado entre mesas.
-- Validação: testes focados e TypeScript serão registrados após a execução desta etapa; sem alteração de persistência.
+- Validação registrada na retomada de 25/10: os três testes de layout/catálogo passaram no recorte de 87 testes; TypeScript e build aprovados. Sem alteração de persistência.
 
 ## [2026-10-24 17:13 BRT] — refactor - Organizar entrada da campanha e ações da sessão
 

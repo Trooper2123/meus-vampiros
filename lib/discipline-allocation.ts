@@ -26,14 +26,14 @@ export function disciplineContext(character: Pick<CommandCharacter, 'data' | 'ga
   }
 }
 export function disciplineRows(data: Record<string, unknown>): Record<string, unknown>[] {
-  if (data.disciplinas !== undefined && !Array.isArray(data.disciplinas)) throw new CharacterCommandError(422, 'Formato de Disciplinas inválido.')
+  if (data.disciplinas !== undefined && !Array.isArray(data.disciplinas)) { throw new CharacterCommandError(422, 'Formato de Disciplinas inválido.') }
   return (data.disciplinas ?? []) as Record<string, unknown>[]
 }
 export function xpAcquisitions(character: Pick<CommandCharacter, 'gameState'>): DisciplineAcquisition[] {
   return Array.isArray(character.gameState.disciplineAcquisitions) ? character.gameState.disciplineAcquisitions as DisciplineAcquisition[] : []
 }
 export function validateDisciplineAllocation(character: Pick<CommandCharacter, 'data' | 'gameState' | 'campaignId' | 'masterId' | 'characterType'>, complete = false) {
-  if (character.characterType !== 'PLAYER_VAMPIRE') return
+  if (character.characterType !== 'PLAYER_VAMPIRE') { return }
   const context = disciplineContext(character)
   const effects = (Array.isArray(character.gameState.creationEffects) ? character.gameState.creationEffects : []) as CreationEffect[]
   const clanEffects = effects.filter(effect => effect.origin === 'CLAN' && effect.kind === 'DISCIPLINE')
@@ -43,37 +43,41 @@ export function validateDisciplineAllocation(character: Pick<CommandCharacter, '
   const initial: number[] = []
   const manualAcquisitions: DisciplineAcquisition[] = []
   for (const row of rows) {
-    if (!row || typeof row !== 'object' || Array.isArray(row) || !Number.isSafeInteger(row.level) || Number(row.level) < 0 || Number(row.level) > 5) throw new CharacterCommandError(422, 'Nível de Disciplina inválido.')
-    if (!row.name && row.level === 0) continue
-    const definition=prepareDisciplineRow(row,ids,rowIds)
-    const predatorDots = effects.filter(effect => effect.origin === 'PREDATOR' && effect.kind === 'DISCIPLINE' && effect.id === row.id).reduce((sum, effect) => sum + effect.dots, 0)
-    const xpDots = xpAcquisitions(character).filter(entry => entry.disciplineId === definition.id && entry.source === 'XP').length
-    const clanDots = clanEffects.filter(effect => effect.id === row.id).reduce((sum, effect) => sum + effect.dots, 0)
-    const initialDots = Number(row.level) - predatorDots - xpDots
-    if (initialDots < 0 || (Boolean(character.campaignId) && clanEffects.length > 0 && initialDots !== clanDots)) throw new CharacterCommandError(422, 'Altere pontos pelos seletores de origem ou pela evolução com XP.')
-    if (initialDots > 0) {
-      const access = evaluateDisciplineAccess({ character: context, disciplineId: definition.id, acquisitionSource: 'CLAN', targetLevel: initialDots })
-      if (character.campaignId && !access.eligible) throw new CharacterCommandError(422, access.blockers[0].message)
-      initial.push(initialDots)
-      if (!clanEffects.length) manualAcquisitions.push({ id: `CLAN:${definition.id}`, disciplineId: definition.id, source: 'CLAN', fromLevel: 0, targetLevel: initialDots, xpCost: 0 })
-    }
+    if (!row || typeof row !== 'object' || Array.isArray(row) || !Number.isSafeInteger(row.level) || Number(row.level) < 0 || Number(row.level) > 5) { throw new CharacterCommandError(422, 'Nível de Disciplina inválido.') }
+    if (!row.name && row.level === 0) { continue }
+    validateInitialDisciplineDots(row,ids,rowIds,effects,character,clanEffects,context,initial,manualAcquisitions)
   }
   validatePurchasedDisciplineRows(character,rows)
-  if (character.campaignId && (initial.reduce((sum, dots) => sum + dots, 0) > 3 || initial.filter(dots => dots === 2).length > 1)) throw new CharacterCommandError(422, 'Distribua os pontos iniciais em 2+1, somente nas Disciplinas disponíveis.')
-  if (!clanEffects.length) character.gameState.disciplineAcquisitions = [...xpAcquisitions(character).filter(entry => entry.source !== 'CLAN'), ...manualAcquisitions]
-  if (complete && character.campaignId && context.clanCode !== 'THIN_BLOOD' && [...initial].sort((first, second) => first - second).join(',') !== '1,2') throw new CharacterCommandError(422, 'A distribuição inicial exige 2 pontos em uma Disciplina e 1 em outra.')
+  if (character.campaignId && (initial.reduce((sum, dots) => sum + dots, 0) > 3 || initial.filter(dots => dots === 2).length > 1)) { throw new CharacterCommandError(422, 'Distribua os pontos iniciais em 2+1, somente nas Disciplinas disponíveis.') }
+  if (!clanEffects.length) { character.gameState.disciplineAcquisitions = [...xpAcquisitions(character).filter(entry => entry.source !== 'CLAN'), ...manualAcquisitions] }
+  if (complete && character.campaignId && context.clanCode !== 'THIN_BLOOD' && [...initial].sort((first, second) => first - second).join(',') !== '1,2') { throw new CharacterCommandError(422, 'A distribuição inicial exige 2 pontos em uma Disciplina e 1 em outra.') }
 }
+function validateInitialDisciplineDots(row: Record<string,unknown>,ids: Set<string>,rowIds: Set<string>,effects: CreationEffect[],character: Pick<CommandCharacter,"data"|"gameState"|"campaignId"|"masterId"|"characterType">,clanEffects: CreationEffect[],context: DisciplineAccessCharacter,initial: number[],manualAcquisitions: DisciplineAcquisition[]) {
+  const definition=prepareDisciplineRow(row,ids,rowIds)
+  const predatorDots=effects.filter(effect => effect.origin==='PREDATOR'&&effect.kind==='DISCIPLINE'&&effect.id===row.id).reduce((sum,effect) => sum+effect.dots,0)
+  const xpDots=xpAcquisitions(character).filter(entry => entry.disciplineId===definition.id&&entry.source==='XP').length
+  const clanDots=clanEffects.filter(effect => effect.id===row.id).reduce((sum,effect) => sum+effect.dots,0)
+  const initialDots=Number(row.level)-predatorDots-xpDots
+  if(initialDots<0||(Boolean(character.campaignId)&&clanEffects.length>0&&initialDots!==clanDots)) { throw new CharacterCommandError(422,'Altere pontos pelos seletores de origem ou pela evolução com XP.') }
+  if(initialDots>0) {
+    const access=evaluateDisciplineAccess({ character: context,disciplineId: definition.id,acquisitionSource: 'CLAN',targetLevel: initialDots })
+    if(character.campaignId&&!access.eligible) { throw new CharacterCommandError(422,access.blockers[0].message) }
+    initial.push(initialDots)
+    if(!clanEffects.length) { manualAcquisitions.push({ id: `CLAN:${definition.id}`,disciplineId: definition.id,source: 'CLAN',fromLevel: 0,targetLevel: initialDots,xpCost: 0 }) }
+  }
+}
+
 function validatePurchasedDisciplineRows(character: Pick<CommandCharacter,"data"|"gameState"|"campaignId"|"masterId"|"characterType">,rows: Record<string,unknown>[]) {
 for(const acquisition of xpAcquisitions(character).filter(entry => entry.source==='XP')) {
-if(!rows.some(row => disciplineDefinition(row.disciplineId??row.name)?.id===acquisition.disciplineId&&Number(row.level)>=xpAcquisitions(character).filter(entry => entry.source==='XP'&&entry.disciplineId===acquisition.disciplineId).length)) throw new CharacterCommandError(422,'Pontos adquiridos com XP não podem ser removidos pela edição geral.')
+if(!rows.some(row => disciplineDefinition(row.disciplineId??row.name)?.id===acquisition.disciplineId&&Number(row.level)>=xpAcquisitions(character).filter(entry => entry.source==='XP'&&entry.disciplineId===acquisition.disciplineId).length)) { throw new CharacterCommandError(422,'Pontos adquiridos com XP não podem ser removidos pela edição geral.') }
 }
 }
 
 function prepareDisciplineRow(row: Record<string,unknown>,ids: Set<string>,rowIds: Set<string>) {
 const definition=disciplineDefinition(row.disciplineId??row.name)
-if(!definition||row.name&&disciplineDefinition(row.name)?.id!==definition.id||ids.has(definition.id)) throw new CharacterCommandError(422,'Disciplina desconhecida, duplicada ou identificador incompatível.')
+if(!definition||row.name&&disciplineDefinition(row.name)?.id!==definition.id||ids.has(definition.id)) { throw new CharacterCommandError(422,'Disciplina desconhecida, duplicada ou identificador incompatível.') }
 const rowId=typeof row.id==='string'&&row.id? row.id:`discipline:${definition.id}`
-if(rowIds.has(rowId)) throw new CharacterCommandError(422,'Identificador de Disciplina duplicado.')
+if(rowIds.has(rowId)) { throw new CharacterCommandError(422,'Identificador de Disciplina duplicado.') }
 rowIds.add(rowId)
 row.id=rowId
 ids.add(definition.id)

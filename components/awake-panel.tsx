@@ -5,6 +5,7 @@ import { NotesBacklinks } from '@/components/notes/notes-panel'
 import { useRef, useState } from 'react'
 import useSWR, { useSWRConfig } from 'swr'
 import type { NightRequest, NightResult } from '@/lib/chronicle-nights'
+import { awakeningExplanation } from '@/lib/vtm-v5/awakening-explanation'
 
 type AwakeCharacter = { id: string; name: string; hunger: number; condition: string; status: string; lastProcessedNight: number | null; eligible: boolean }
 type PanelData = { characters: AwakeCharacter[]; nights: NightResult[] }
@@ -92,7 +93,7 @@ export function AwakePanel({ campaignId, sessionId }: Readonly<{ campaignId: str
         <label className="flex max-w-sm flex-col gap-2 text-sm"><span>Data da crônica</span><input className="input" type="date" value={inGameDate} onChange={event => setInGameDate(event.target.value)} required disabled={processing || retrying} /></label>
         <fieldset className="flex flex-col gap-3"><legend className="mb-3 font-mono text-xs uppercase tracking-wider">Selecionar vampiros</legend>
           {!data.characters.length && <p className="empty-state text-sm">Nenhuma ficha está vinculada a esta mesa.</p>}
-          {data.characters.map(character => <label key={character.id} className="flex items-start gap-3 border border-border p-3 text-sm"><input className="mt-1 accent-primary" type="checkbox" aria-label={`Incluir ${character.name} no despertar`} checked={selected.includes(character.id)} disabled={!character.eligible || processing || retrying} onChange={event => setSelected(current => event.target.checked ? [...current, character.id] : current.filter(id => id !== character.id))} /><span><strong>{character.name}</strong><span className="mt-1 block text-xs text-muted-foreground">Fome {character.hunger} / 5 · Última noite: {character.lastProcessedNight ?? 'nenhuma'} · {conditions[character.condition] ?? 'Condição inválida'}{!character.eligible && ' · Ficha indisponível para despertar'}{character.eligible && character.hunger === 5 && ' · Risco de torpor em caso de falha'}</span></span></label>)}
+          {data.characters.map(character => <label key={character.id} className="flex items-start gap-3 border border-border p-3 text-sm"><input className="mt-1 accent-primary" type="checkbox" aria-label={`Incluir ${character.name} no despertar`} checked={selected.includes(character.id)} disabled={!character.eligible || processing || retrying} onChange={event => setSelected(current => event.target.checked ? [...current, character.id] : current.filter(id => id !== character.id))} /><span><strong>{character.name}</strong><span className="mt-1 block text-xs text-muted-foreground">Fome {character.hunger} / 5 · Última noite: {character.lastProcessedNight ?? 'nenhuma'} · {conditions[character.condition] ?? 'Condição inválida'}{awakeningExplanation(character) && ` · ${awakeningExplanation(character)}`}{character.eligible && character.condition !== 'TORPOR' && character.hunger === 5 && ' · Risco de torpor em caso de falha'}</span></span></label>)}
         </fieldset>
         <button className="button-primary self-start" type="submit" disabled={processing || (!retrying && !selected.length)}>{awakeLabel}</button>
       </form>

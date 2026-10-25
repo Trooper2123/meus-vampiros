@@ -2,7 +2,7 @@ import { validateDisciplineAllocation, xpAcquisitions } from '@/lib/discipline-a
 import { randomUUID } from 'node:crypto'
 import { campaignPredatorOverrides } from '@/lib/campaign-invitations'
 import { NextResponse } from 'next/server'
-import { getSessionOrDev } from '@/lib/auth0'
+import { notesActor, notesBody } from '@/lib/notes-http'
 import { ensureAllTables } from '@/lib/db'
 import { CharacterCommandError, runCharacterCommand } from '@/lib/character-commands'
 import { normalizeCharacterRulesInput } from '@/lib/vtm-v5/normalize'
@@ -15,15 +15,14 @@ const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{
 
 export async function PATCH(request: Request, context: { params: Promise<{ id: string }> }) {
   try {
-    const session = await getSessionOrDev()
-    if (!session?.user?.sub) return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 })
+    const actorId = await notesActor(request, true)
     const { id } = await context.params
-    const body = await request.json().catch(() => null)
-    if (!UUID_PATTERN.test(id) || !body || !CHARACTER_STATUSES.includes(body.status) || (body.expectedRevision !== undefined && (!Number.isSafeInteger(body.expectedRevision) || body.expectedRevision < 0)) || (body.idempotencyKey !== undefined && (typeof body.idempotencyKey !== 'string' || !UUID_PATTERN.test(body.idempotencyKey)))) return NextResponse.json({ error: 'Transição inválida.' }, { status: 400 })
+    const body = await notesBody(request)
+    if (!UUID_PATTERN.test(id) || !CHARACTER_STATUSES.includes(body.status as CharacterStatus) || (body.expectedRevision !== undefined && (!Number.isSafeInteger(body.expectedRevision) || Number(body.expectedRevision) < 0)) || (body.idempotencyKey !== undefined && (typeof body.idempotencyKey !== 'string' || !UUID_PATTERN.test(body.idempotencyKey)))) return NextResponse.json({ error: 'Transição inválida.' }, { status: 400 })
     await ensureAllTables()
-    const result = await runCharacterCommand(session.user.sub, id, { key: body.idempotencyKey ?? randomUUID(), type: 'STATUS_CHANGE', expectedRevision: body.expectedRevision, payload: { status: body.status } }, character => character.ownerId === session.user.sub || character.masterId === session.user.sub, async character => {
-      const isOwner = character.ownerId === session.user.sub
-      const isMaster = character.masterId === session.user.sub
+    const result = await runCharacterCommand(actorId, id, { key: body.idempotencyKey as string | undefined ?? randomUUID(), type: 'STATUS_CHANGE', expectedRevision: body.expectedRevision as number | undefined, payload: { status: body.status } }, character => character.ownerId === actorId || character.masterId === actorId, async character => {
+      const isOwner = character.ownerId === actorId
+      const isMaster = character.masterId === actorId
       const nextStatus = body.status as CharacterStatus
       if (!character.campaignId && nextStatus === 'PENDING_REVIEW') throw new CharacterCommandError(409, 'Uma ficha independente não precisa de revisão do narrador.')
       const state = readSessionState(character.data, character.gameState)

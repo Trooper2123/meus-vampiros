@@ -21,8 +21,7 @@ const entries: Entry[] = [
   { code: 'SIREN', name: 'Siren', source: 'COREBOOK', summary: 'Usa sedução e intimidade para caçar.', feedingStyle: 'Encontros românticos ou sexuais.', predatorRoll: 'Carisma + Subterfúgio', specialtyOptions: ['Persuasão (Sedução)', 'Subterfúgio (Sedução)'], disciplineOptions: ['Fortitude', 'Presença'], bonusOptions: [merit('BEAUTIFUL', 'Aparência: Bonito', 2)], flawsOrCosts: [flaw('REJECTED_LOVER', 'Inimigo: amante rejeitado', 1)], commonRisks: ['Conteúdo sensível', 'Relacionamentos'], relationshipRequirements: [relationship('ENEMY', 'Amante rejeitado ou parceiro ciumento')] },
 ]
 
-entries.push(...PREDATOR_SUPPLEMENTS)
-entries.push({
+entries.push(...PREDATOR_SUPPLEMENTS, {
   ...entries.find(entry => entry.code === 'BAGGER')!,
   code: 'BAGGER_COTBG_OBLIVION', baseCode: 'BAGGER', name: 'Ensacador (variante Oblívio)', originalName: 'Bagger (Oblivion)',
   source: 'COTBG_BACKER', sourceReference: 'Cults of the Blood Gods, Backer’s Copy, p. 150; PDF 151',

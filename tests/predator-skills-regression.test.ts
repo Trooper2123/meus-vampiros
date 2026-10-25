@@ -80,11 +80,19 @@ it('envia para revisão sem contar a concessão de predação na distribuição 
   const disciplines = character.data.disciplinas as { name: string; powers: string[] }[]
   disciplines.find(row => disciplineDefinition(row.name)?.id === 'PRESENCE')!.powers = ['Fascínio']
   await db.execute(sql`UPDATE characters SET data=${JSON.stringify(character.data)}::jsonb,game_state=${JSON.stringify(character.gameState)}::jsonb WHERE id=${id}::uuid`)
-  const response = await PATCH(new Request('http://localhost', { method: 'PATCH', body: JSON.stringify({ status: 'PENDING_REVIEW', expectedRevision: 0 }) }), { params: Promise.resolve({ id }) })
+  const response = await PATCH(new Request('http://localhost', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'PENDING_REVIEW', expectedRevision: 0 }) }), { params: Promise.resolve({ id }) })
   const result = await response.json()
   expect(result.report?.errors ?? result).toEqual([])
   expect(response.status).toBe(200)
   expect((await getCommandCharacter(id))?.gameState.skillDistributionFinalized).toBe(true)
+  auth.mockResolvedValue({ user: { sub: master } })
+  const approval = { status: 'APPROVED', expectedRevision: 1, idempotencyKey: randomUUID() }
+  const approve = () => PATCH(new Request('http://localhost', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(approval) }), { params: Promise.resolve({ id }) })
+  const approved = await approve()
+  expect(approved.status).toBe(200)
+  const approvedBody = await approved.json()
+  expect(approvedBody).toMatchObject({ status: 'APPROVED', revision: 2 })
+  expect(await (await approve()).json()).toEqual(approvedBody)
 })
 it('ficha finalizada bloqueia redução pelo dono e permite ao mestre atual', async () => {
   await db.execute(sql`UPDATE characters SET status='APPROVED' WHERE id=${id}::uuid`)
@@ -104,7 +112,7 @@ it('retornar a rascunho não reabre redução e cliente não remove o bloqueio',
 it('transição de status preserva bloqueio ao reabrir uma ficha já aprovada', async () => {
   await db.execute(sql`UPDATE characters SET status='APPROVED' WHERE id=${id}::uuid`)
   auth.mockResolvedValue({ user: { sub: master } })
-  const response = await PATCH(new Request('http://localhost', { method: 'PATCH', body: JSON.stringify({ status: 'DRAFT', expectedRevision: 0 }) }), { params: Promise.resolve({ id }) })
+  const response = await PATCH(new Request('http://localhost', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'DRAFT', expectedRevision: 0 }) }), { params: Promise.resolve({ id }) })
   expect(response.status).toBe(200)
   expect((await getCharacterForViewer(id, owner))?.canReduceSkills).toBe(false)
 })

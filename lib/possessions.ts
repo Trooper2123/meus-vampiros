@@ -1,6 +1,7 @@
 import { sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
 import { CharacterCommandError, runCharacterCommand } from '@/lib/character-commands'
+type PossessionStatus = 'pendente' | 'aprovado' | 'reprovado'
 export type Possession = {
   id: string
   characterId: string
@@ -8,7 +9,7 @@ export type Possession = {
   label: string
   description: string | null
   origin: 'player' | 'master'
-  status: 'pendente' | 'aprovado' | 'reprovado'
+  status: PossessionStatus
   masterComment: string | null
   createdAt: string
   updatedAt: string
@@ -22,7 +23,7 @@ export async function getPossessionsForCharacter(characterId: string): Promise<P
     label: string
     description: string | null
     origin: 'player' | 'master'
-    status: 'pendente' | 'aprovado' | 'reprovado'
+    status: PossessionStatus
     master_comment: string | null
     created_at: Date
     updated_at: Date
@@ -55,7 +56,7 @@ export async function getPossessionsForCampaign(campaignId: string): Promise<Pos
     label: string
     description: string | null
     origin: 'player' | 'master'
-    status: 'pendente' | 'aprovado' | 'reprovado'
+    status: PossessionStatus
     master_comment: string | null
     created_at: Date
     updated_at: Date
@@ -88,7 +89,7 @@ export async function createPossession(
   return runCharacterCommand(actorId, characterId, { key: input.idempotencyKey, type: 'POSSESSION_CREATED', payload: input },
     character => character.ownerId === actorId || character.masterId === actorId, async (character, transaction) => {
   const master = Boolean(character.campaignId && character.masterId === actorId)
-  if ((input.origin === 'master' && !master) || (input.campaignId != null && input.campaignId !== character.campaignId)) throw new CharacterCommandError(403, 'Pertence não autorizado nesta mesa.')
+  if ((input.origin === 'master' && !master) || (input.campaignId != null && input.campaignId !== character.campaignId)) { throw new CharacterCommandError(403, 'Pertence não autorizado nesta mesa.') }
   const origin = master && (input.origin === 'master' || character.ownerId !== actorId) ? 'master' : 'player'
   const result = await transaction.execute<{
     id: string
@@ -97,7 +98,7 @@ export async function createPossession(
     label: string
     description: string | null
     origin: 'player' | 'master'
-    status: 'pendente' | 'aprovado' | 'reprovado'
+    status: PossessionStatus
     master_comment: string | null
     created_at: Date
     updated_at: Date
@@ -128,7 +129,7 @@ export async function createPossession(
 export async function updatePossessionStatus(
   actorId: string,
   id: string,
-  input: { status: 'pendente' | 'aprovado' | 'reprovado'; masterComment?: string | null }
+  input: { status: PossessionStatus; masterComment?: string | null }
 ): Promise<Possession | null> {
   const result = await db.execute<{
     id: string
@@ -137,7 +138,7 @@ export async function updatePossessionStatus(
     label: string
     description: string | null
     origin: 'player' | 'master'
-    status: 'pendente' | 'aprovado' | 'reprovado'
+    status: PossessionStatus
     master_comment: string | null
     created_at: Date
     updated_at: Date
@@ -152,7 +153,7 @@ export async function updatePossessionStatus(
   `)
 
   const row = result.rows[0]
-  if (!row) return null
+  if (!row) { return null }
   return {
     id: row.id,
     characterId: row.character_id,

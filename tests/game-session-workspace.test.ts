@@ -24,6 +24,10 @@ function render(canManage: boolean, characters: Array<{ id: string; name: string
 it('player vê somente as fichas projetadas pelo servidor e usa recursos, rolagens, vídeo e P2', () => {
   const html = render(false, [{ id: 'own', name: 'Ficha autorizada' }])
   expect(html).toContain('Ficha autorizada')
+  expect(html).toContain('/characters/own/summary')
+  expect(html).toContain('Abrir resumo completo da ficha')
+  expect(html).not.toContain('/master/catalogo')
+  expect(html).not.toContain('/master/vantagens-defeitos')
   expect(html).toContain('Recursos own')
   expect(html).toContain('Rolagens own')
   expect(html).toContain('Sala de vídeo')
@@ -38,6 +42,9 @@ it('Narrador recebe ferramentas contextuais com sessão ativa', () => {
   expect(html).toContain('Encerrar sessão')
   expect(html).toContain('Despertar')
   expect(html).toContain('XP e pertences')
+  expect(html).toContain('/master/catalogo')
+  expect(html).toContain('/master/vantagens-defeitos')
+  expect(html).toContain('/characters/approved/summary')
 })
 
 it('mantém a chamada acessível mesmo antes do modo sessão ser iniciado', () => {

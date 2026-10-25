@@ -120,7 +120,7 @@ main > *:not(.noise) {
     font-weight: 600;
     letter-spacing: .08em;
     text-transform: uppercase;
-    transition: .2s ease;
+    transition: color .2s ease, background-color .2s ease, border-color .2s ease, box-shadow .2s ease;
 }
 
 .button-ghost {
@@ -1312,9 +1312,9 @@ button:disabled {
 
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
-        animation: none !important;
-        transition: none !important;
-        scroll-behavior: auto !important;
+        animation: none !important; /* NOSONAR: A preferência por movimento reduzido deve prevalecer sobre os seletores do tema. */
+        transition: none !important; /* NOSONAR: A preferência por movimento reduzido deve prevalecer sobre os seletores do tema. */
+        scroll-behavior: auto !important; /* NOSONAR: A preferência por movimento reduzido deve prevalecer sobre os seletores do tema. */
     }
 }
 
