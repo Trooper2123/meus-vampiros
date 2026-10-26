@@ -1,5 +1,5 @@
 import { expect, it } from 'vitest'
-import { awakeningExplanation } from '@/lib/vtm-v5/awakening-explanation'
+import { awakeningExplanation, nightStartBlockReason } from '@/lib/vtm-v5/awakening-explanation'
 
 it.each([
   [{ eligible: false, status: 'PENDING_REVIEW', condition: 'ACTIVE' }, 'aprovação ativa'],
@@ -12,4 +12,13 @@ it.each([
 })
 it('ficha ativa elegível não recebe aviso de bloqueio', () => {
   expect(awakeningExplanation({ eligible: true, status: 'APPROVED', condition: 'ACTIVE' })).toBeNull()
+})
+
+it('explica bloqueios e rejeita seleção obsoleta sem mudar a elegibilidade', () => {
+  const characters = [{ id: 'approved', eligible: true }, { id: 'pending', eligible: false }]
+  expect(nightStartBlockReason([], [], '')).toContain('Nenhuma ficha elegível')
+  expect(nightStartBlockReason([characters[1]], ['pending'], '2026-10-25')).toContain('Nenhuma ficha elegível')
+  expect(nightStartBlockReason(characters, [], '')).toContain('data da crônica')
+  expect(nightStartBlockReason(characters, ['pending', 'removed'], '2026-10-25')).toContain('Selecione')
+  expect(nightStartBlockReason(characters, ['approved'], '2026-10-25')).toBeNull()
 })

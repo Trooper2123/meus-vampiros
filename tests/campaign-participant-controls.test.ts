@@ -12,6 +12,7 @@ vi.mock('react', async original => ({
   useRef: (initial: unknown) => harness.refs[harness.ref++] ??= { current: initial },
 }))
 vi.mock('swr', () => ({ default: (url: string) => ({ data: url.includes('/resources') ? { state: { condition: harness.condition }, revision: harness.revision } : { character: { status: harness.status, revision: harness.revision } }, error: harness.error, mutate: async () => undefined }) }))
+vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: vi.fn() }) }))
 import { CampaignParticipantControls } from '@/components/campaign-participant-controls'
 
 type Element = ReactElement<{ children?: ReactNode; onClick?: () => Promise<void>; onChange?: (event: { target: { value: string } }) => void; disabled?: boolean; value?: string }>
@@ -64,4 +65,11 @@ it('oculta controles quando perde acesso e impede remoção de morte definitiva'
   expect(view().some(element => element.type === 'button')).toBe(false)
   harness.error = null; harness.condition = 'FINAL_DEATH'; harness.status = 'APPROVED'
   expect(view().some(element => element.type === 'button')).toBe(false)
+})
+
+it('oferece correções e rejeição apenas para ficha pendente, sem reaprová-la após aprovada', () => {
+  expect(button('Solicitar correções')).toBeTruthy()
+  expect(button('Rejeitar ficha')).toBeTruthy()
+  harness.status = 'APPROVED'
+  for (const label of ['Aprovar ficha', 'Solicitar correções', 'Rejeitar ficha']) expect(button(label)).toBeUndefined()
 })

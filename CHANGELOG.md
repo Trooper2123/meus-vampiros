@@ -1,3 +1,27 @@
+## [2026-10-25 22:23 BRT] — feat - Aprovação única e acompanhamento de XP da mesa
+
+**Tipo:** feat | fix
+
+**Arquivos principais:** `lib/campaign-approval.ts`, `lib/character-commands.ts`, `lib/xp-transactions.ts`, `lib/campaign-xp-history.ts`, `app/api/campaigns/[id]/xp-history/route.ts`, `app/api/characters/[id]/status/route.ts`, `lib/character-specialties.ts`, `lib/characters.ts`, `lib/predator-types.ts`, `app/campaigns/[id]/page.tsx`, `components/campaign-xp-history.tsx`, `components/campaign-participant-controls.tsx`, `components/character-summary/character-specialties.tsx`, `UI-GUIDE.md` e testes pertinentes.
+
+- Aprovação inicial passa a ser preservada por personagem/campanha nos comandos de edição/evolução e na reativação, sem transferi-la a campanha ainda não aprovada. Ajustes da política de predação preservam fichas aprovadas. Compras válidas de especialidades gastam XP e ficam ativas imediatamente; custos e pré-requisitos existentes de Disciplinas permanecem.
+- Movimentações XP_GRANTED/XP_SPENT/XP_ADJUSTED/XP_REFUNDED recebem metadados de característica, níveis quando existentes, custo efetivo e campanha no ledger já existente, atomicamente com saldo e idempotência. Sem nova tabela, schema ou migração; saldo inválido causa rollback, e estornos preservam eventos originais.
+- Painel expansível separa pendentes, aprovados e inativos; pendentes oferecem aprovação, correções e rejeição com confirmação. Histórico inclui contador de compras não visualizadas, filtros, paginação, leitura persistente e resumo individual com saldo confirmado e três últimas compras. NPCs e itens passam a seções expansíveis na ordem da SPEC.
+- API do histórico exige Narrador atual, valida filtros/IDs/origem/lotes e mantém leituras idempotentes sob locks. DTO não retorna notas privadas, game_state, e-mail ou identificadores de autenticação. Compras não são expostas ao Narrador de outra campanha após troca de vínculo.
+- Validação: 146 testes em 13 arquivos aprovados no recorte funcional/segurança, incluindo PostgreSQL local/schema isolado autorizado, concorrência, rollback, autorização, leitura, reativação e troca de campanha. Três suítes de XP/edição/especialidades migradas do provider em memória removido para PostgreSQL isolado. Lint sem erros/cinco avisos anteriores; auditoria sem vulnerabilidades; scan de padrões de segredos sem achados. TypeScript e build aprovados; revisão pré-commit focada sem achados bloqueantes, registrada na SPEC local.
+- Versionada também a migração já existente `migrations/20261023_npcs_sheet_narrative.sql`, dependência do setup de testes PostgreSQL. Sem alteração no SQL ou nova aplicação em bancos nesta preparação do commit.
+- Limites: detalhamento de XP inicia com os novos metadados; saldos legados são preservados sem inventar compras/campanhas antigas. Não foram criados novos mecanismos de compra de atributos, habilidades ou vantagens. QA visual/responsividade e regressão global não executados; suítes legadas fora do recorte ainda dependem do provider removido. Sem limpeza de banco.
+
+## [2026-10-25 21:13 BRT] — fix - Explicar bloqueios do início da noite
+
+**Tipo:** fix
+
+**Arquivos principais:** `components/awake-panel.tsx`, `lib/vtm-v5/awakening-explanation.ts`, `tests/awakening-explanation.test.ts`.
+
+- Início da noite informa junto ao botão quando falta data, seleção elegível ou fichas elegíveis, com associação acessível. Seleção obsoleta não habilita o botão; reenvio idempotente permanece disponível.
+- Revisão confirmou os acessos existentes: NPCs e gestão na campanha; vídeo, XP, despertar, pesquisas e resumo completo no modo sessão. Sem alteração de persistência, autorização ou regras de despertar.
+- Validação: 26 testes focados aprovados; TypeScript aprovado; lint sem erros/cinco avisos existentes; auditoria sem vulnerabilidades e scan dos arquivos alterados sem padrões de segredos. Build aprovado; revisão de segurança sem achados no ajuste, registrada na SPEC local. QA visual/responsividade e suíte global não executados nesta etapa.
+
 ## [2026-10-25 00:14 BRT] — feat - Aprovação e condições dos participantes na gestão
 
 **Tipo:** feat | fix

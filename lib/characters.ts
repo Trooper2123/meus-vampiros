@@ -121,8 +121,9 @@ export async function getCharactersForCampaign(campaignId: string) {
     generation: string | null
     spent_xp: string | null
     total_xp: string | null
+    status: string
   }>(sql`
-    SELECT id, name, concept, clan, generation, spent_xp, total_xp
+    SELECT id, name, concept, clan, generation, spent_xp, total_xp, status
     FROM characters
     WHERE campaign_id = ${campaignId}::uuid AND status <> 'DELETED'
     ORDER BY name ASC
@@ -134,7 +135,7 @@ export async function getCharactersForCampaign(campaignId: string) {
     concept: row.concept,
     clan: row.clan,
     generation: row.generation,
-    status: 'Ativo',
+    status: row.status,
     campaignId,
     spentXp: row.spent_xp ? Number.parseInt(row.spent_xp, 10) : 0,
     totalXp: row.total_xp ? Number.parseInt(row.total_xp, 10) : 0,

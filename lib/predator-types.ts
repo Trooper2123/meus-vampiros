@@ -61,7 +61,7 @@ export async function savePredatorTypeSettings(campaignId: string, settings: Pre
     ON CONFLICT (campaign_id) DO UPDATE SET enabled_sources = EXCLUDED.enabled_sources, enabled_codes = EXCLUDED.enabled_codes, disabled_codes = EXCLUDED.disabled_codes, updated_by_user_id = EXCLUDED.updated_by_user_id, updated_at = now()
   `)
     for (const character of affected.rows) {
-      await transaction.execute(sql`UPDATE characters SET status = 'DRAFT', revision = revision + 1, validation_report = NULL, validated_at = NULL, updated_at = now() WHERE id = ${character.id}::uuid`)
+      await transaction.execute(sql`UPDATE characters SET status = CASE WHEN status = 'APPROVED' THEN 'APPROVED' ELSE 'DRAFT' END, revision = revision + 1, validation_report = NULL, validated_at = NULL, updated_at = now() WHERE id = ${character.id}::uuid`)
       await transaction.execute(sql`INSERT INTO character_ledger_events (character_id, event_type, origin, payload, created_by_user_id) VALUES (${character.id}::uuid, 'PREDATOR_TYPE_SETTINGS_CHANGED', 'MASTER_ACTION', ${JSON.stringify({ campaignId, settings })}::jsonb, ${userId})`)
     }
   })

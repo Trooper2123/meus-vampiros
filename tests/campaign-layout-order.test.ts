@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 describe('ordem da gestão da mesa', () => {
   it('mantém entrada de sessão, pesquisas, ferramentas, revisões e participantes nessa ordem', () => {
     const source = readFileSync('app/campaigns/[id]/page.tsx', 'utf8')
-    const sections = ['Ficha da mesa', 'Abrir modo sessão', 'Anotações do Narrador', 'Pesquisa de habilidades', 'Pesquisa de vantagens e defeitos', '<CampaignTools', '<CampaignPossessionsManager', 'NPCs da mesa', '<NpcCatalogue', 'Fichas dos participantes']
+    const sections = ['Ficha da mesa', 'Abrir modo sessão', 'Anotações do Narrador', 'Pesquisa de habilidades', 'Pesquisa de vantagens e defeitos', '<CampaignTools', 'Gestão de NPCs', 'NPCs da mesa', '<NpcCatalogue', 'Visualização de personagens', 'Fichas dos participantes', '<CampaignXpHistory', 'Conceder itens restritos', '<CampaignPossessionsManager']
     const positions = sections.map(section => source.indexOf(section))
     expect(positions.every(position => position >= 0)).toBe(true)
     expect(positions).toEqual([...positions].sort((first, second) => first - second))

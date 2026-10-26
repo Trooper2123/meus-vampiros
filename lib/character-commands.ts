@@ -2,6 +2,8 @@ import { characterText } from '@/lib/vtm-v5/text'
 import { createHash } from 'node:crypto'
 import { sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
+import { hasCampaignApproval, rememberCampaignApproval } from './campaign-approval'
+import { xpTransactionForCommand } from './xp-transactions'
 
 export class CharacterCommandError extends Error {
   constructor(public readonly status: number, message: string) { super(message) }
@@ -80,15 +82,23 @@ export async function runCharacterCommand(
     if (character.status === 'DELETED') { throw new CharacterCommandError(404, 'Ficha não encontrada.') }
     checkRevision(character, command)
     const before = { totalXp: character.totalXp, spentXp: character.spentXp, revision: character.revision, gameState: structuredClone(character.gameState) }
+    rememberCampaignApproval(character, actorId)
     // Pertences têm persistência própria e não invalidam edições abertas da ficha.
     const changesCharacter = command.type !== 'POSSESSION_CREATED'
     if (changesCharacter && character.status !== 'DRAFT') { character.gameState.skillDistributionFinalized = true }
-    const result = { ...await apply(character, transaction), revision: character.revision + Number(changesCharacter) }
+    const applied = await apply(character, transaction)
+    if (hasCampaignApproval(character) && ['DRAFT', 'PENDING_REVIEW'].includes(character.status)) {
+      character.status = 'APPROVED'
+      if (typeof applied.status === 'string') applied.status = 'APPROVED'
+    }
+    rememberCampaignApproval(character, actorId)
+    const xpTransaction = xpTransactionForCommand(command.type, command.payload, before, character)
+    const result = { ...applied, revision: character.revision + Number(changesCharacter) }
     if (changesCharacter && character.status !== 'DRAFT') { character.gameState.skillDistributionFinalized = true }
     if (changesCharacter) { await transaction.execute(sql`UPDATE characters SET campaign_id = ${character.campaignId}::uuid, name = ${character.name}, concept = ${typeof character.data.conceito === 'string' ? character.data.conceito : null}, clan = ${typeof character.data.cla === 'string' ? character.data.cla : null}, generation = ${character.data.geracao === undefined ? null : characterText(character.data.geracao)}, character_type = ${character.characterType}, data = ${JSON.stringify(character.data)}::jsonb, game_state = ${JSON.stringify(character.gameState)}::jsonb, status = ${character.status}, total_xp = ${character.totalXp}, spent_xp = ${character.spentXp}, revision = revision + 1, updated_at = NOW() WHERE id = ${characterId}::uuid`) }
     if (character.validationUpdated) { await transaction.execute(sql`UPDATE characters SET validation_report = ${JSON.stringify(character.validationReport)}::jsonb, validated_at = NOW() WHERE id = ${characterId}::uuid`) }
     await transaction.execute(sql`INSERT INTO character_commands (character_id, command_key, actor_user_id, request_hash, result) VALUES (${characterId}::uuid, ${command.key}, ${actorId}, ${hash}, ${JSON.stringify(result)}::jsonb)`)
-    await transaction.execute(sql`INSERT INTO character_ledger_events (character_id, event_type, origin, payload, created_by_user_id) VALUES (${characterId}::uuid, ${command.type}, 'USER_ACTION', ${JSON.stringify({ commandKey: command.key, input: command.payload, before, after: result })}::jsonb, ${actorId})`)
+    await transaction.execute(sql`INSERT INTO character_ledger_events (character_id, event_type, origin, payload, created_by_user_id) VALUES (${characterId}::uuid, ${command.type}, 'USER_ACTION', ${JSON.stringify({ commandKey: command.key, campaignId: character.campaignId, input: command.payload, before, after: result, ...(xpTransaction ? { xpTransaction } : {}) })}::jsonb, ${actorId})`)
     return result
   })
 }

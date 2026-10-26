@@ -10,6 +10,7 @@ import { canTransitionCharacterStatus, validateCharacter } from '@/lib/vtm-v5/va
 import { readSessionState } from '@/lib/vtm-v5/session-state'
 import { projectCreationGrants } from '@/lib/vtm-v5/creation-grants'
 import { CHARACTER_STATUSES, type CharacterStatus } from '@/lib/vtm-v5/types'
+import { hasCampaignApproval } from '@/lib/campaign-approval'
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -24,6 +25,8 @@ export async function PATCH(request: Request, context: { params: Promise<{ id: s
       const isOwner = character.ownerId === actorId
       const isMaster = character.masterId === actorId
       const nextStatus = body.status as CharacterStatus
+      if (hasCampaignApproval(character) && ['PENDING_REVIEW', 'APPROVED'].includes(nextStatus)) throw new CharacterCommandError(409, 'A participação nesta mesa já foi aprovada.')
+      if (character.status === 'APPROVED' && nextStatus === 'DRAFT') throw new CharacterCommandError(409, 'Uma ficha aprovada não precisa de nova revisão.')
       if (!character.campaignId && nextStatus === 'PENDING_REVIEW') throw new CharacterCommandError(409, 'Uma ficha independente não precisa de revisão do narrador.')
       const state = readSessionState(character.data, character.gameState)
       if (body.status === 'PENDING_REVIEW' || body.status === 'APPROVED') validateDisciplineAllocation(character, true)

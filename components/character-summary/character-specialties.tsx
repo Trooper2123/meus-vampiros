@@ -181,7 +181,7 @@ current=await prepareSpecialtySkills(validation,hasUnsavedSkills,onBeforeSubmit,
         {message && <output aria-live="polite" className="block text-sm">{message}</output>}
         {error && <p role="alert" className="text-sm text-primary">{error}</p>}
         <div className="flex flex-col gap-3 sm:flex-row"><button type="button" className="button-primary min-h-10" disabled={disabled || !grant || !selectedSkill || !name.trim() || !reason.trim()} onClick={() => submit('GRANT')}>{busy ? 'Processando concessão…' : 'Usar concessão gratuita'}</button><button type="button" className="button-ghost min-h-10" disabled={disabled || Boolean(grant) || data.availableXp < 3 || !selectedSkill || !name.trim() || !reason.trim()} onClick={() => submit('PURCHASE')}>Comprar por 3 XP</button></div>
-        <p className="text-xs text-muted-foreground">{data.requiresApproval ? 'Escolhas personalizadas aguardam aprovação do Narrador. A compra reserva 3 XP até a decisão.' : 'Ficha sem mesa: especialidades válidas são concedidas automaticamente. A compra custa 3 XP.'}</p>
+        <p className="text-xs text-muted-foreground">Compras válidas custam 3 XP e ficam disponíveis imediatamente, sem nova aprovação. {data.requiresApproval && 'Escolhas gratuitas de criação permanecem sujeitas à revisão inicial da ficha.'}</p>
         {hasUnsavedSkills && <output className="block text-sm text-muted-foreground">A lista acompanha as habilidades em edição. Elas serão salvas e validadas antes de enviar a especialidade.</output>}
         {(!validation.valid || !data.skillValidation.valid) && <p role="alert" className="text-sm text-primary">Há habilidades desconhecidas, pontos inválidos ou aliases conflitantes. Revise e salve as habilidades da ficha.</p>}
       </div>}

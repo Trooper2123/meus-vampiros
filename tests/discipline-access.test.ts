@@ -186,7 +186,7 @@ it('bloqueia CSRF e formatos maliciosos sem criar histórico', async () => {
   expect(global.__devDb!.characterLedgerEvents).toHaveLength(0)
 })
 
-it('revogar exceção de distribuição reabre revisão sem apagar níveis nem devolver XP', async () => {
+it('revogar exceção de distribuição preserva aprovação, níveis e XP', async () => {
   await clan()
   await changeCharacterDiscipline('narrator', id, command({ kind: 'AUTHORIZE', acquisitionSource: 'CLAN', requirement: 'CLAN_ASSOCIATION', targetLevel: 1 }))
   await selectCharacterClan(id, 'player', { code: 'BRUJAH', disciplineDots: { Rapidez: 2, Dominação: 1 } }, stored().revision!, key())
@@ -194,7 +194,7 @@ it('revogar exceção de distribuição reabre revisão sem apagar níveis nem d
   const grant = (stored().gameState!.disciplineAccessGrants as { id: string }[])[0]
   const before = structuredClone(stored().data.disciplinas)
   await changeCharacterDiscipline('narrator', id, command({ kind: 'REVOKE', grantId: grant.id }))
-  expect(stored().status).toBe('DRAFT')
+  expect(stored().status).toBe('APPROVED')
   expect(stored().data.disciplinas).toEqual(before)
   expect(stored().spentXp).toBe(0)
 })

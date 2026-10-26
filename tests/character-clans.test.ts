@@ -68,7 +68,7 @@ describe('clã: comandos, origens e autorização em memória', () => {
     stored().status = 'APPROVED'
     await expect(selectCharacterClan(id, 'player', selection, 0, key)).rejects.toMatchObject({ status: 409 })
     await selectCharacterClan(id, 'narrator', selection, 0, key)
-    expect(stored().status).toBe('DRAFT')
+    expect(stored().status).toBe('APPROVED')
   })
 
   it('aplica exceções Caitiff/sangue-ralo e restrições cruzadas', async () => {
