@@ -9,9 +9,9 @@
 }
 
 .skillGroup h3 {
-  border-bottom: 1px solid #6b3436;
+  border-bottom: 1px solid var(--border-accent);
   padding-bottom: 8px;
-  color: #d47776;
+  color: var(--accent-text);
   font-family: var(--font-mono), monospace;
   font-size: 10px;
   font-weight: 600;
@@ -26,7 +26,7 @@
 
 .skillRow {
   min-width: 0;
-  border-bottom: 1px dotted #77716b66;
+  border-bottom: 1px dotted var(--border);
   padding: 4px 0 8px;
 }
 

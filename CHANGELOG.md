@@ -1,3 +1,41 @@
+## [2026-10-26 22:10 BRT] — style - Organizar seções do modo sessão
+
+**Tipo:** style
+
+**Arquivos principais:** components/game-session/session-workspace.tsx, tests/game-session-commands-ui.test.ts e UI-GUIDE.md.
+
+- Organiza as áreas em details/summary: Início da noite primeiro para Narrador, Anotações da mesa logo antes de Videochamada; demais áreas também recolhíveis, com títulos serifados.
+- Preserva condições de sessão ativa, visibilidade por papel, comandos, confirmação, revisão e idempotência. Não altera APIs, banco ou dados.
+- Adiciona testes de ordem, menus de jogador e estado anterior ao início da sessão. Inclui estado vazio para sessão sem fichas. Validação final: 20 testes focados aprovados em quatro arquivos (game-session-commands-ui, campaign-management-ui, notes-ui e npc-narrative-navigation); build e TypeScript aprovados; lint sem erros/cinco avisos preexistentes; npm audit sem vulnerabilidades; diff --check aprovado; scan de padrões de segredos no diff sem achados. Revisão de segurança/pré-commit de todos os ajustes visuais da conversa sem achados bloqueantes. QA visual/responsividade pendente no backlog local.
+
+## [2026-10-26 22:01 BRT] — style - Aplicar fonte serifada aos botões
+
+**Tipo:** style
+
+**Arquivos principais:** app/globals.css e UI-GUIDE.md.
+
+- Textos de botões nativos e links com aparência de botão passam a usar o token --font-serif, incluindo o componente Button compartilhado. Preserva tamanhos, cores, estados e comportamento. Regra registrada no guia visual.
+- Validação: revisão estática de CSS; sem alteração de lógica, autorização ou dados. QA visual não executado.
+
+## [2026-10-26 21:53 BRT] — style - Padronizar título das configurações de calendários
+
+**Tipo:** style
+
+**Arquivos principais:** components/campaign-calendar/campaign-tools.tsx.
+
+- Summary de Configurar calendários da mesa usa font-serif text-2xl, como o calendário de eventos adjacente. Sem alteração funcional.
+- Validação: inspeção do diff; QA visual não executado.
+
+## [2026-10-26 21:42 BRT] — style - Corrigir desvios do UI-GUIDE
+
+**Tipo:** style
+
+**Arquivos principais:** `app/campaigns/new/page.tsx`, `app/create-characters/skills.module.css`, `components/notes/notes-panel.tsx`, `components/npcs/npc-detail.tsx` e `app/characters/[id]/narrative/page.tsx`.
+
+- Substitui cores literais por tokens e espaçamento de notas por flex/gap. Diferencia exclusão de notas com a classe existente, preservando confirmação e altura mínima de 40px.
+- Padroniza o cabeçalho existente de NPC e adiciona hierarquia editorial ao perfil narrativo, sem duplicar h1; ações de NPC ficam após a divisória e empilhadas no celular.
+- Segurança: alteração apenas visual; verificações de acesso, confirmação de exclusão, payloads e persistência preservados. Validação: 7 testes focados aprovados (notes-ui e npc-narrative-navigation); TypeScript aprovado; lint sem erros e com cinco avisos preexistentes; build aprovado; npm audit sem vulnerabilidades; diff --check aprovado; scan de padrões de segredos sem achados no diff. Revisão de segurança/pré-commit sem achados bloqueantes neste recorte. QA visual/responsividade pendente no backlog local.
+
 ## [2026-10-25 22:23 BRT] — feat - Aprovação única e acompanhamento de XP da mesa
 
 **Tipo:** feat | fix

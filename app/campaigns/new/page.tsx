@@ -215,7 +215,7 @@ export default function NewCampaignPage() {
               </label>
             </div>
 
-            {error && <p className="mt-4 text-sm" style={{ color: '#e17b78' }}>{error}</p>}
+            {error && <p className="mt-4 text-sm" style={{ color: 'var(--accent-text)' }}>{error}</p>}
 
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <button

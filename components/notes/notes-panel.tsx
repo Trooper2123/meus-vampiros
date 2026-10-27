@@ -86,7 +86,7 @@ function NotesEditor({ link, initialCampaignId }: Readonly<{ link?: NoteLink; in
     <section className="border border-border bg-card p-5"><h2 className="font-serif text-xl">Suas anotações</h2><p className="mt-2 text-sm text-muted-foreground">Privadas por padrão, sem acesso implícito do Narrador.</p>
       <button type="button" className="button-ghost mt-4" disabled={busy} onClick={() => { if (!(title || body) || window.confirm('Descartar alterações não salvas?')) { reset() } }}>Nova anotação</button>
       {error && <p role="alert">{error.message}</p>}{!data && !error && <output>Carregando...</output>}{data?.total === 0 && <p className="empty-state mt-4">Nenhuma anotação disponível.</p>}
-      <ul className="mt-4 space-y-2">{data?.notes.map(note => {
+      <ul className="mt-4 flex flex-col gap-2">{data?.notes.map(note => {
         let visibilityLabel
         if (note.visibility === 'PRIVATE') {
           visibilityLabel = 'Privada'
@@ -107,7 +107,7 @@ function NotesEditor({ link, initialCampaignId }: Readonly<{ link?: NoteLink; in
       <label className="sheet-field"><span>Quem pode ler</span><select className="select" value={visibility} disabled={readOnly || current?.visibility === 'NARRATOR_ONLY'} onChange={event => { setVisibility(event.target.value); if (event.target.value !== 'SHARED') { setRecipients([]) } }}><option value="PRIVATE">Somente eu</option>{campaignId && <option value="SHARED">Destinatários escolhidos (somente leitura)</option>}{campaign?.isNarrator && (!current || current.visibility === 'NARRATOR_ONLY') && <option value="NARRATOR_ONLY">Somente o Narrador atual da mesa</option>}</select></label>
       {visibility === 'SHARED' && <fieldset><legend>Destinatários autorizados</legend>{campaign?.recipients.map(user => <label key={user} className="mt-2 flex gap-2 text-sm"><input type="checkbox" disabled={readOnly} checked={recipients.includes(user)} onChange={event => setRecipients(values => event.target.checked ? [...values, user] : values.filter(value => value !== user))} />{user}</label>)}</fieldset>}
       <fieldset><legend>Vínculos</legend><p className="mb-3 text-xs text-muted-foreground">Opcional: salve a anotação mesmo sem marcar vínculos.</p>{targets.map(target => <label key={`${target.targetType}:${target.targetId}`} className="mt-2 flex gap-2 text-sm"><input type="checkbox" disabled={readOnly} checked={links.some(link => link.targetId === target.targetId && link.targetType === target.targetType)} onChange={event => setLinks(values => event.target.checked ? [...values, { targetType: target.targetType, targetId: target.targetId }] : values.filter(link => link.targetId !== target.targetId))} />{target.label}</label>)}</fieldset>
-      <div className="flex flex-wrap gap-3"><button className="button-primary" type="submit" disabled={readOnly || !title.trim()}>Salvar</button>{current?.canDelete && <button className="button-ghost" type="button" disabled={busy} onClick={() => void save(true)}>Excluir</button>}</div>
+      <div className="flex flex-wrap gap-3"><button className="button-primary" type="submit" disabled={readOnly || !title.trim()}>Salvar</button>{current?.canDelete && <button className="action-delete" style={{ minHeight: 40, flex: 'none' }} type="button" disabled={busy} onClick={() => void save(true)}>Excluir</button>}</div>
       {message && <output className="block text-sm">{message}</output>}
     </form></section>
   </div>

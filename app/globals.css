@@ -1357,3 +1357,7 @@ main > .archive-header {
         grid-template-columns: repeat(5, minmax(0, 1fr));
     }
 }
+
+:is(button, [role="button"], [data-slot="button"], .button-primary, .button-ghost, .action-edit, .action-delete, .copy-id) {
+    font-family: var(--font-serif), Georgia, serif;
+}

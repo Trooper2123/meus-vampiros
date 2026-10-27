@@ -25,20 +25,39 @@ function elements(node: ReactNode): Element[] {
   const element = node as Element
   return [element, ...elements(element.props.children)]
 }
-function command() {
+function view() {
   const wrapper = CampaignSessionWorkspace({ campaignId: 'campaign', actorId: 'actor' })
   const child = wrapper.props.children as Element
   const view = (child.type as (props: object) => ReactNode)(child.props)
-  return elements(view).find(element => element.type === 'button')!.props.onClick as () => void
+  return elements(view)
 }
+function command() { return view().find(element => element.type === 'button')!.props.onClick as () => void }
 async function settled() { await vi.waitFor(() => expect(mocks.changed).toHaveBeenLastCalledWith(false)) }
 
 beforeEach(() => {
   vi.clearAllMocks()
   mocks.snapshot.session = null
+  mocks.snapshot.canManage = true
   vi.stubGlobal('window', { location: { href: 'http://localhost/campaigns/campaign/session' }, history: { state: null, replaceState: vi.fn() } })
 })
 afterEach(() => vi.unstubAllGlobals())
+
+it('organiza as seções em dropdown com início de noite, notas e vídeo nessa ordem', () => {
+  mocks.snapshot.session = { id: 'session', status: 'ACTIVE', revision: 1 }
+  const summaries = view().filter(element => element.type === 'summary')
+  expect(summaries.map(element => element.props.children)).toEqual(['Início da noite', 'Anotações da mesa', 'Videochamada', 'NPCs da sessão', 'Pesquisas da sessão', 'Ficha e rolagens', 'XP e pertences', 'Revelações da sessão'])
+  expect(view().some(element => element.type === 'p' && element.props.children === 'Nenhuma ficha disponível nesta sessão.')).toBe(true)
+})
+
+it('não oferece início de noite, pesquisas ou gestão de XP ao jogador', () => {
+  mocks.snapshot.session = { id: 'session', status: 'ACTIVE', revision: 1 }
+  mocks.snapshot.canManage = false
+  expect(view().filter(element => element.type === 'summary').map(element => element.props.children)).toEqual(['Anotações da mesa', 'Videochamada', 'NPCs da sessão', 'Ficha e rolagens', 'Revelações da sessão'])
+})
+
+it('mantém início de noite e notas indisponíveis antes de iniciar a sessão', () => {
+  expect(view().filter(element => element.type === 'summary').map(element => element.props.children)).toEqual(['Videochamada'])
+})
 
 it('bloqueia cliques concorrentes e conserva a chave após falha de rede', async () => {
   const fetcher = vi.fn().mockRejectedValueOnce(new Error('offline')).mockResolvedValueOnce(Response.json({ session: { id: 'session' } }))
