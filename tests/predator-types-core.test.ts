@@ -19,7 +19,7 @@ describe('catálogo de tipos de predação', () => {
 
   it('não inclui dados privados na projeção do jogador', () => {
     const dto = toPlayerPredatorTypeDto(PREDATOR_TYPE_BY_CODE.get('SIREN')!)
-    expect(Object.keys(dto).sort()).toEqual(['choiceGroups', 'code', 'disciplineOptions', 'feedingStyle', 'name', 'predatorRoll', 'publicWarnings', 'selectable', 'source', 'specialtyOptions', 'summary'])
+    expect(Object.keys(dto).sort()).toEqual(['aliases', 'choiceGroups', 'code', 'disciplineOptions', 'feedingStyle', 'name', 'predatorRoll', 'publicWarnings', 'selectable', 'source', 'specialtyOptions', 'summary'])
     expect(dto).not.toHaveProperty('commonRisks')
     expect(dto).not.toHaveProperty('validationNotes')
   })

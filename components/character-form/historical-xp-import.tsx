@@ -23,7 +23,7 @@ export function HistoricalXpImport({ characterId, revision, totalXp, spentXp, on
   const alreadyUsed = totalXp !== 0 || spentXp !== 0
 
   async function submit() {
-    if (!valid || pending) return
+    if (!valid || pending) { return }
     setPending(true)
     setMessage('')
     try {
@@ -36,7 +36,7 @@ export function HistoricalXpImport({ characterId, revision, totalXp, spentXp, on
         }),
       })
       const result = await response.json()
-      if (!response.ok) throw new Error(result.error ?? 'Falha na importação.')
+      if (!response.ok) { throw new Error(result.error ?? 'Falha na importação.') }
       await onImported({ totalXp: received, spentXp: consumed })
       setMessage('Experiência histórica importada com sucesso.')
     } catch (error) {
@@ -57,6 +57,6 @@ export function HistoricalXpImport({ characterId, revision, totalXp, spentXp, on
       <p className="mt-3 text-sm">XP restante: {valid ? received - consumed : '—'}</p>
       <button className="button-primary mt-4" type="button" disabled={!valid || pending} onClick={() => void submit()}>{pending ? 'Importando...' : 'Registrar XP histórico'}</button>
     </>}
-    {message && <p className="mt-3 text-sm" role="status">{message}</p>}
+    {message && <output className="block mt-3 text-sm" >{message}</output>}
   </section>
 }

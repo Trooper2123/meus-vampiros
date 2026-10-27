@@ -23,7 +23,7 @@ export function clanConditionOptions(data: Record<string, unknown>): ClanConditi
 export function readClanConditions(character: CharacterContext): ClanCondition[] {
   const stored = character.gameState.clanConditions as { clanCode?: string; campaignId?: string; active?: unknown } | undefined
   const clan = characterClan(character.data)
-  if (!character.campaignId || stored?.campaignId !== character.campaignId || !clan || stored.clanCode !== clan.code || !Array.isArray(stored.active)) return []
+  if (!character.campaignId || stored?.campaignId !== character.campaignId || !clan || stored.clanCode !== clan.code || !Array.isArray(stored.active)) { return [] }
   const allowed = clanConditionOptions(character.data)
   const active = stored.active
   return allowed.filter(condition => active.includes(condition))
@@ -38,9 +38,7 @@ export function clanRollAdjustment(character: CharacterContext, severity: number
   const active = readClanConditions(character)
   const modifiers: ClanModifiers | undefined = clan?.baneRule && clan.compulsionRule ? { clanCode: clan.code, dicePenalty: 0, labels: [], sourceIds: [] } : undefined
   let difficulty: number | undefined
-  if ((active.some(condition => condition !== 'COMPULSION_PENALTY') || context.communication) && (!Number.isSafeInteger(severity) || severity === null || severity < 0)) throw new Error('Gravidade da Perdição indisponível.')
-  if (context.communication && clan?.code !== 'LASOMBRA') throw new Error('Comunicação tecnológica exige Lasombra.')
-  if (context.pursuingCompulsion && (!active.includes('COMPULSION_PENALTY') || ['BANU_HAQIM', 'LASOMBRA'].includes(clan?.code ?? ''))) throw new Error('Esta compulsão não permite essa exceção por rolagem.')
+  assertClanRollContext(active,context,severity,clan)
   if (modifiers && clan) {
     if (active.includes('COMPULSION_PENALTY') && !context.pursuingCompulsion) {
       modifiers.dicePenalty += Number(clan.compulsionRule!.mechanics.dicePenalty)
@@ -64,4 +62,10 @@ export function clanRollAdjustment(character: CharacterContext, severity: number
     modifiers.sourceIds = [...new Set(modifiers.sourceIds)]
   }
   return { modifiers: modifiers?.labels.length ? modifiers : undefined, difficulty }
+}
+
+function assertClanRollContext(active: ("COMPULSION_PENALTY"|"BRIGHT_LIGHT"|"ELECTRONIC_DETECTION")[],context: ClanRollContext,severity: number|null,clan: ReturnType<typeof characterClan>) {
+  if((active.some(condition => condition!=='COMPULSION_PENALTY')||context.communication)&&(!Number.isSafeInteger(severity)||severity===null||severity<0)) { throw new Error('Gravidade da Perdição indisponível.') }
+  if(context.communication&&clan?.code!=='LASOMBRA') { throw new Error('Comunicação tecnológica exige Lasombra.') }
+  if(context.pursuingCompulsion&&(!active.includes('COMPULSION_PENALTY')||['BANU_HAQIM','LASOMBRA'].includes(clan?.code??''))) { throw new Error('Esta compulsão não permite essa exceção por rolagem.') }
 }

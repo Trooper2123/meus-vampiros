@@ -312,7 +312,7 @@ export function devGetCharactersForCampaign(campaignId: string) {
 export function devUpdateCharacterXp(characterId: string, totalXp: number) {
   const store = getStore()
   const character = store.characters.find((c) => c.id === characterId)
-  if (!character) return null
+  if (!character) { return null }
   character.totalXp = totalXp
   character.updatedAt = new Date()
   return character
@@ -347,7 +347,7 @@ export function devGetCharactersForUser(userId: string) {
 export function devGetCharacterById(id: string, userId: string) {
   const { characters, campaigns } = getStore()
   const c = characters.find((ch) => ch.id === id && ch.userId === userId)
-  if (!c) return null
+  if (!c) { return null }
   const campaign = c.campaignId ? campaigns.find((camp) => camp.id === c.campaignId) : null
   const state = c.gameState ?? {}
   return {
@@ -369,7 +369,7 @@ export function devCreateCharacter(
   payload: { name?: string; data?: Record<string, unknown>; campaignId?: string | null; visibility?: CharacterVisibility }
 ) {
   const store = getStore()
-  if (payload.campaignId && !store.campaigns.some(campaign => campaign.id === payload.campaignId)) throw new Error('Campanha inexistente.')
+  if (payload.campaignId && !store.campaigns.some(campaign => campaign.id === payload.campaignId)) { throw new Error('Campanha inexistente.') }
   const now = new Date()
   const character: DevCharacter = {
     id: randomUUID(),
@@ -398,13 +398,13 @@ export function devCreateCharacter(
 export function devUpdateCharacter(
   id: string,
   userId: string,
-  payload: { name?: string; data?: Record<string, unknown>; campaignId?: string | null | undefined }
+  payload: { name?: string; data?: Record<string, unknown>; campaignId?: string | null }
 ) {
   const store = getStore()
   const character = store.characters.find((c) => c.id === id && c.userId === userId)
-  if (!character) return null
+  if (!character) { return null }
 
-  if (payload.name !== undefined) character.name = payload.name
+  if (payload.name !== undefined) { character.name = payload.name }
   if (payload.data !== undefined) {
     character.data = payload.data
     character.characterType = characterText(payload.data.characterType ?? character.characterType ?? 'PLAYER_VAMPIRE')
@@ -412,7 +412,7 @@ export function devUpdateCharacter(
     character.clan = (payload.data.cla as string) ?? null
     character.generation = (payload.data.geracao as string) ?? null
   }
-  if (payload.campaignId !== undefined) character.campaignId = payload.campaignId
+  if (payload.campaignId !== undefined) { character.campaignId = payload.campaignId }
   character.updatedAt = new Date()
   return character
 }
@@ -420,14 +420,14 @@ export function devUpdateCharacter(
 export function devUpdateCharacterStatus(id: string, userId: string, status: string) {
   const store = getStore()
   const character = store.characters.find((c) => c.id === id && c.userId === userId)
-  if (!character) return null
+  if (!character) { return null }
   character.status = status
   character.updatedAt = new Date()
   return character
 }
 
 function removeNoteLinks(targetId: string, targetTypes: string[]) {
-  if (global.__notesMemory?.store !== global.__devDb) return
+  if (global.__notesMemory?.store !== global.__devDb) { return }
   for (const note of global.__notesMemory?.notes.values() ?? []) {
     const links = note.links.filter(link => link.targetId !== targetId || !targetTypes.includes(link.targetType))
     if (links.length !== note.links.length) { note.links = links; note.revision += 1; note.updatedAt = new Date().toISOString() }
@@ -437,14 +437,14 @@ function removeNoteLinks(targetId: string, targetTypes: string[]) {
 export function devDeleteCharacter(id: string, userId: string) {
   const store = getStore()
   const index = store.characters.findIndex((c) => c.id === id && c.userId === userId)
-  if (index === -1) return null
-  if (global.__chronicleNightMemory?.store === store && global.__chronicleNightMemory.nights.some(night => night.result.results.some(result => result.characterId === id))) throw new Error('A ficha possui registros de despertar.')
+  if (index === -1) { return null }
+  if (global.__chronicleNightMemory?.store === store && global.__chronicleNightMemory.nights.some(night => night.result.results.some(result => result.characterId === id))) { throw new Error('A ficha possui registros de despertar.') }
   store.characters.splice(index, 1)
   removeNoteLinks(id, ['CHARACTER', 'NPC'])
   store.possessions = store.possessions.filter(possession => possession.characterId !== id)
   store.characterLedgerEvents = store.characterLedgerEvents.filter(event => event.characterId !== id)
   if (global.__characterCommandMemory?.store === store) {
-    for (const key of global.__characterCommandMemory.commands.keys()) if (key.startsWith(`${id}:`)) global.__characterCommandMemory.commands.delete(key)
+    for (const key of global.__characterCommandMemory.commands.keys()) if (key.startsWith(`${id}:`)) { global.__characterCommandMemory.commands.delete(key) }
   }
   return { ok: true }
 }
@@ -455,7 +455,7 @@ export function devGetCharacterAccessRecord(id: string) {
 
 export function devAppendCharacterLedgerEvent(characterId: string, eventType: string, origin: string, payload: Record<string, unknown>, createdByUserId: string) {
   const store = getStore()
-  if (!store.characters.some(character => character.id === characterId)) throw new Error('Ficha inexistente.')
+  if (!store.characters.some(character => character.id === characterId)) { throw new Error('Ficha inexistente.') }
   const event: DevCharacterLedgerEvent = { id: randomUUID(), characterId, eventType, origin, payload: structuredClone(payload), createdByUserId, createdAt: new Date() }
   store.characterLedgerEvents.push(event)
   return event
@@ -482,7 +482,7 @@ export function devGetCampaignsForMaster(masterUserId: string) {
 
 export function devGetCampaignById(id: string) {
   const campaign = getStore().campaigns.find((c) => c.id === id)
-  if (!campaign) return null
+  if (!campaign) { return null }
   return {
     id: campaign.id,
     name: campaign.name,
@@ -501,7 +501,7 @@ export function devIsUserInCampaign(campaignId: string, userId: string): boolean
 export function devGetGameSessionAccess(campaignId: string, userId: string) {
   const store = getStore()
   const campaign = store.campaigns.find(entry => entry.id === campaignId)
-  if (!campaign) return null
+  if (!campaign) { return null }
   const isMaster = campaign.masterUserId === userId
   return {
     isMaster,
@@ -529,7 +529,7 @@ export function devStartGameSession(campaignId: string, actorId: string, key: st
   const sessions = store.gameSessions ?? (store.gameSessions = [])
   const existing = sessions.find(session => session.campaignId === campaignId && session.status === 'ACTIVE')
   if (existing) {
-    if (existing.startedBy === actorId && existing.startKey === key && JSON.stringify(existing.chronicleNightIds) === JSON.stringify(chronicleNightIds)) return existing
+    if (existing.startedBy === actorId && existing.startKey === key && JSON.stringify(existing.chronicleNightIds) === JSON.stringify(chronicleNightIds)) { return existing }
     return null
   }
   const session: DevGameSession = { id: randomUUID(), campaignId, startedBy: actorId, status: 'ACTIVE', startedAt: new Date().toISOString(), endedAt: null, revision: 1, startKey: key, chronicleNightIds: [...chronicleNightIds], closeKeys: new Map() }
@@ -539,11 +539,11 @@ export function devStartGameSession(campaignId: string, actorId: string, key: st
 
 export function devCloseGameSession(id: string, actorId: string, key: string, expectedRevision: number) {
   const session = devGetGameSession(id)
-  if (!session) return null
+  if (!session) { return null }
   const replay = session.closeKeys.get(key)
-  if (replay) return replay.actorId === actorId && replay.revision === expectedRevision ? session : null
-  if (session.status === 'CLOSED') return session
-  if (session.revision !== expectedRevision) return null
+  if (replay) { return replay.actorId === actorId && replay.revision === expectedRevision ? session : null }
+  if (session.status === 'CLOSED') { return session }
+  if (session.revision !== expectedRevision) { return null }
   session.status = 'CLOSED'
   session.endedAt = new Date().toISOString()
   session.revision += 1
@@ -600,8 +600,8 @@ export function devCreatePossession(
   input: { label: string; description?: string | null; origin?: 'player' | 'master'; campaignId?: string | null }
 ) {
   const store = getStore()
-  if (!store.characters.some(character => character.id === characterId)) throw new Error('Ficha inexistente.')
-  if (input.campaignId && !store.campaigns.some(campaign => campaign.id === input.campaignId)) throw new Error('Campanha inexistente.')
+  if (!store.characters.some(character => character.id === characterId)) { throw new Error('Ficha inexistente.') }
+  if (input.campaignId && !store.campaigns.some(campaign => campaign.id === input.campaignId)) { throw new Error('Campanha inexistente.') }
   const character = store.characters.find(entry => entry.id === characterId)!
   const now = new Date()
   const possession: DevPossession = {
@@ -626,9 +626,9 @@ export function devUpdatePossessionStatus(
 ) {
   const store = getStore()
   const possession = store.possessions.find((p) => p.id === id)
-  if (!possession) return null
+  if (!possession) { return null }
   possession.status = input.status
-  if (input.masterComment !== undefined) possession.masterComment = input.masterComment
+  if (input.masterComment !== undefined) { possession.masterComment = input.masterComment }
   possession.updatedAt = new Date()
   return possession
 }
@@ -672,7 +672,7 @@ function getCalendarStore() {
 export function devGetCampaignEventCalendarStatus(campaignId: string): { enabled: boolean } | null {
   const store = getCalendarStore()
   const enabled = store.eventCalendars[campaignId]
-  if (enabled === undefined) return null
+  if (enabled === undefined) { return null }
   return { enabled }
 }
 
@@ -685,7 +685,7 @@ export function devToggleCampaignEventCalendar(campaignId: string, enabled: bool
 export function devGetCampaignSchedulingCalendarStatus(campaignId: string): { enabled: boolean } | null {
   const store = getCalendarStore()
   const enabled = store.schedulingCalendars[campaignId]
-  if (enabled === undefined) return null
+  if (enabled === undefined) { return null }
   return { enabled }
 }
 
@@ -747,19 +747,19 @@ export function devUpdateCampaignEvent(
 ): void {
   const store = getCalendarStore()
   const event = store.events.find((e) => e.id === eventId)
-  if (!event) return
+  if (!event) { return }
 
-  if (data.title !== undefined) event.title = data.title
-  if (data.description !== undefined) event.description = data.description
-  if (data.eventDate !== undefined) event.eventDate = data.eventDate
-  if (data.eventTime !== undefined) event.eventTime = data.eventTime
-  if (data.visibility !== undefined) event.visibility = data.visibility
+  if (data.title !== undefined) { event.title = data.title }
+  if (data.description !== undefined) { event.description = data.description }
+  if (data.eventDate !== undefined) { event.eventDate = data.eventDate }
+  if (data.eventTime !== undefined) { event.eventTime = data.eventTime }
+  if (data.visibility !== undefined) { event.visibility = data.visibility }
 }
 
 export function devDeleteCampaignEvent(eventId: string): void {
   const store = getCalendarStore()
   const index = store.events.findIndex((e) => e.id === eventId)
-  if (index === -1) return
+  if (index === -1) { return }
   store.events.splice(index, 1)
   removeNoteLinks(eventId, ['EVENT'])
 }
@@ -767,7 +767,7 @@ export function devDeleteCampaignEvent(eventId: string): void {
 export function devGetLiveKitRoom(campaignId: string) {
   const store = getCalendarStore()
   const room = store.liveKitRooms[campaignId]
-  if (!room) return null
+  if (!room) { return null }
 
   const now = new Date()
   return {

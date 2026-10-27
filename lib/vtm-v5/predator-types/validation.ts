@@ -1,5 +1,6 @@
 import type { PredatorTypeDefinition, PredatorTypeIssue, PredatorValidationInput, PredatorValidationReport } from './types'
 import { resolvePredatorChoices } from './mechanics'
+import { disciplineDefinition } from '../disciplines'
 
 export function validatePredatorType(definition: PredatorTypeDefinition, input: PredatorValidationInput): PredatorValidationReport {
   const issues: PredatorTypeIssue[] = []
@@ -18,7 +19,8 @@ export function validatePredatorType(definition: PredatorTypeDefinition, input: 
 export function validatePredatorChoices(definition: PredatorTypeDefinition, specialty: unknown, discipline: unknown, optionCodes: unknown) {
   const issues: PredatorTypeIssue[] = []
   if (definition.specialtyOptions.length > 0 && (typeof specialty !== 'string' || !definition.specialtyOptions.includes(specialty))) issues.push({ code: 'PREDATOR_SPECIALTY_REQUIRED', message: 'Escolha uma especialidade válida.', blocking: true })
-  if (definition.disciplineOptions.length > 0 && (typeof discipline !== 'string' || !definition.disciplineOptions.includes(discipline))) issues.push({ code: 'PREDATOR_DISCIPLINE_REQUIRED', message: 'Escolha uma disciplina válida.', blocking: true })
+  const selectedDiscipline = disciplineDefinition(discipline)
+  if (definition.disciplineOptions.length > 0 && (!selectedDiscipline || !definition.disciplineOptions.some(option => disciplineDefinition(option)?.id === selectedDiscipline.id))) issues.push({ code: 'PREDATOR_DISCIPLINE_REQUIRED', message: 'Escolha uma disciplina válida para esta predação; ela não precisa pertencer ao clã.', blocking: true })
   try {
     if (!Array.isArray(optionCodes) || optionCodes.some(code => typeof code !== 'string')) throw new Error('Escolhas inválidas.')
     resolvePredatorChoices(definition.code, optionCodes)

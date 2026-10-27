@@ -9,7 +9,7 @@ const normalize = (value: string) => value.normalize('NFD').replace(/[\u0300-\u0
 export const DISCIPLINE_RESEARCH = rows.map(row => {
   const pools = normalize(`${row.pool} ${row.opposing_pool}`)
   const skillIds = SKILL_CATALOG.filter(skill => [skill.name, ...(skillAliases[skill.id] ?? [])].some(alias => {
-    const escaped = normalize(alias).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    const escaped = normalize(alias).replace(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`)
     return new RegExp(`(?:^|[^a-z0-9])${escaped}(?:$|[^a-z0-9])`, 'u').test(pools)
   })).map(skill => skill.id)
   return { ...row, skillIds }

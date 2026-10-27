@@ -34,13 +34,13 @@ const originNames: Record<Specialty['origin'], string> = { SKILL: 'Primeiro pont
 async function fetchSpecialties(url: string): Promise<SpecialtyData> {
   const response = await fetch(url, { cache: 'no-store' })
   const body = await response.json()
-  if (!response.ok) throw new Error(typeof body.error === 'string' ? body.error : 'Não foi possível carregar as especialidades.')
+  if (!response.ok) { throw new Error(typeof body.error === 'string' ? body.error : 'Não foi possível carregar as especialidades.') }
   return body
 }
 
 type SpecialtyPanelProps = { characterId: string; onChange?: () => void; draftSkills?: Record<string, number>; characterRevision?: number; onBeforeSubmit?: () => Promise<string | null> }
 
-export function CharacterSpecialties(props: SpecialtyPanelProps) {
+export function CharacterSpecialties(props: Readonly<SpecialtyPanelProps>) {
   return <SpecialtyPanel key={props.characterId} {...props} />
 }
 
@@ -78,11 +78,11 @@ function SpecialtyPanel({ characterId, onChange, draftSkills, characterRevision,
   const hasUnsavedSkills = Boolean(draftSkills && data && (!data.skillValidation.valid || JSON.stringify(validation.skills) !== JSON.stringify(validateSkillValues(data.skills).skills)))
 
   useEffect(() => {
-    if (characterRevision !== undefined && data?.revision !== undefined && characterRevision !== data.revision) void mutate().catch(() => setError('Não foi possível atualizar as habilidades salvas.'))
+    if (characterRevision !== undefined && data?.revision !== undefined && characterRevision !== data.revision) { void mutate().catch(() => setError('Não foi possível atualizar as habilidades salvas.')) }
   }, [characterRevision, data?.revision, mutate])
 
   async function execute(command: SpecialtyCommand) {
-    if (submitting.current) return
+    if (submitting.current) { return }
     submitting.current = true
     setBusy(true)
     setError('')
@@ -90,22 +90,25 @@ function SpecialtyPanel({ characterId, onChange, draftSkills, characterRevision,
     setLastApplied(null)
     setRetryCommand(command)
     try {
-      const response = await fetch(endpoint, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(command) })
+      function applySpecialtyFeedback(command: SpecialtyCommand,body: { specialties: Specialty[] }) {
+  if(command.kind==='GRANT'||command.kind==='PURCHASE') {
+    const applied=(body.specialties as Specialty[]).find(specialty => command.kind==='GRANT'? specialty.grantId===command.grantId:specialty.skillId===command.skillId&&specialty.name===command.name)
+    setLastApplied(applied??null)
+    if(!applied) { setMessage('Especialidade salva. Consulte a lista atualizada para verificar a aprovação.') }
+  } else setMessage(command.kind==='REJECT'? 'Especialidade rejeitada.':'Especialidade aprovada.')
+}
+const response = await fetch(endpoint, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(command) })
       const body = await response.json()
       if (!response.ok) {
-        if (response.status < 500) setRetryCommand(null)
-        if (response.status === 409) await mutate()
+        if (response.status < 500) { setRetryCommand(null) }
+        if (response.status === 409) { await mutate() }
         throw new Error(typeof body.error === 'string' ? body.error : 'Não foi possível salvar a especialidade.')
       }
-      if (body.ok !== true) throw new Error('Não foi possível confirmar a gravação. Tente novamente.')
+      if (body.ok !== true) { throw new Error('Não foi possível confirmar a gravação. Tente novamente.') }
       setRetryCommand(null)
-      if (command.kind === 'GRANT' || command.kind === 'PURCHASE') {
-        const applied = (body.specialties as Specialty[]).find(specialty => command.kind === 'GRANT' ? specialty.grantId === command.grantId : specialty.skillId === command.skillId && specialty.name === command.name)
-        setLastApplied(applied ?? null)
-        if (!applied) setMessage('Especialidade salva. Consulte a lista atualizada para verificar a aprovação.')
-      } else setMessage(command.kind === 'REJECT' ? 'Especialidade rejeitada.' : 'Especialidade aprovada.')
-      if (command.kind === 'GRANT' || command.kind === 'PURCHASE') setName('')
-      if (data) await mutate({ ...data, specialties: body.specialties, revision: body.revision, availableXp: body.availableXp }, { revalidate: false })
+      applySpecialtyFeedback(command,body)
+      if (command.kind === 'GRANT' || command.kind === 'PURCHASE') { setName('') }
+      if (data) { await mutate({ ...data, specialties: body.specialties, revision: body.revision, availableXp: body.availableXp }, { revalidate: false }) }
       onChange?.()
       await mutate().catch(() => setError('A especialidade foi salva, mas não foi possível atualizar a lista. Carregue novamente.'))
     } catch (error_) {
@@ -117,8 +120,8 @@ function SpecialtyPanel({ characterId, onChange, draftSkills, characterRevision,
   }
 
   async function submit(kind: SpecialtyCommand['kind'], specialtyId?: string) {
-    if (!data || disabled || preparing.current) return
-    if (kind === 'REJECT' && !window.confirm('Rejeitar esta especialidade? O servidor devolverá o XP da compra, quando aplicável.')) return
+    if (!data || disabled || preparing.current) { return }
+    if (kind === 'REJECT' && !window.confirm('Rejeitar esta especialidade? O servidor devolverá o XP da compra, quando aplicável.')) { return }
     preparing.current = true
     setBusy(true)
     setError('')
@@ -129,12 +132,16 @@ function SpecialtyPanel({ characterId, onChange, draftSkills, characterRevision,
     try {
       let current = data
       if (kind === 'GRANT' || kind === 'PURCHASE') {
-        if (!validation.valid) throw new Error('Revise os pontos das habilidades antes de continuar.')
-        if (hasUnsavedSkills && (!onBeforeSubmit || !await onBeforeSubmit())) throw new Error('Não foi possível salvar as habilidades. A especialidade não foi enviada.')
-        current = await fetchSpecialties(endpoint)
-        await mutate(current, { revalidate: false })
-        const allowed = kind === 'GRANT' ? current.eligibility.grants[grantId] ?? [] : current.eligibility.purchase
-        if (!current.skillValidation.valid || !allowed.some(option => option.skillId === selectedSkill)) throw new Error('Esta habilidade não está disponível para a seleção atual. Revise a ficha.')
+        async function prepareSpecialtySkills(validation: { valid: boolean; skills: Record<string,number>; issues: SkillValidationIssue[] },hasUnsavedSkills: boolean,onBeforeSubmit: (() => Promise<string|null>)|undefined,current: SpecialtyData,endpoint: string,kind: string,grantId: string,selectedSkill: string) {
+  if(!validation.valid) { throw new Error('Revise os pontos das habilidades antes de continuar.') }
+  if(hasUnsavedSkills&&(!onBeforeSubmit||!await onBeforeSubmit())) { throw new Error('Não foi possível salvar as habilidades. A especialidade não foi enviada.') }
+  current=await fetchSpecialties(endpoint)
+  await mutate(current,{ revalidate: false })
+  const allowed=kind==='GRANT'? current.eligibility.grants[grantId]??[]:current.eligibility.purchase
+  if(!current.skillValidation.valid||!allowed.some(option => option.skillId===selectedSkill)) { throw new Error('Esta habilidade não está disponível para a seleção atual. Revise a ficha.') }
+  return current
+}
+current=await prepareSpecialtySkills(validation,hasUnsavedSkills,onBeforeSubmit,current,endpoint,kind,grantId,selectedSkill)
       }
       const choice = specialtyId ? { specialtyId } : { skillId: selectedSkill, name: name.trim() }
       const grantChoice = !specialtyId && kind === 'GRANT' ? { grantId } : {}
@@ -174,7 +181,7 @@ function SpecialtyPanel({ characterId, onChange, draftSkills, characterRevision,
         {message && <output aria-live="polite" className="block text-sm">{message}</output>}
         {error && <p role="alert" className="text-sm text-primary">{error}</p>}
         <div className="flex flex-col gap-3 sm:flex-row"><button type="button" className="button-primary min-h-10" disabled={disabled || !grant || !selectedSkill || !name.trim() || !reason.trim()} onClick={() => submit('GRANT')}>{busy ? 'Processando concessão…' : 'Usar concessão gratuita'}</button><button type="button" className="button-ghost min-h-10" disabled={disabled || Boolean(grant) || data.availableXp < 3 || !selectedSkill || !name.trim() || !reason.trim()} onClick={() => submit('PURCHASE')}>Comprar por 3 XP</button></div>
-        <p className="text-xs text-muted-foreground">{data.requiresApproval ? 'Escolhas personalizadas aguardam aprovação do Narrador. A compra reserva 3 XP até a decisão.' : 'Ficha sem mesa: especialidades válidas são concedidas automaticamente. A compra custa 3 XP.'}</p>
+        <p className="text-xs text-muted-foreground">Compras válidas custam 3 XP e ficam disponíveis imediatamente, sem nova aprovação. {data.requiresApproval && 'Escolhas gratuitas de criação permanecem sujeitas à revisão inicial da ficha.'}</p>
         {hasUnsavedSkills && <output className="block text-sm text-muted-foreground">A lista acompanha as habilidades em edição. Elas serão salvas e validadas antes de enviar a especialidade.</output>}
         {(!validation.valid || !data.skillValidation.valid) && <p role="alert" className="text-sm text-primary">Há habilidades desconhecidas, pontos inválidos ou aliases conflitantes. Revise e salve as habilidades da ficha.</p>}
       </div>}
@@ -184,6 +191,10 @@ function SpecialtyPanel({ characterId, onChange, draftSkills, characterRevision,
     </section>
   )
 }
+
+
+
+
 
 export function SpecialtyAppliedFeedback({ specialty }: Readonly<{ specialty: Specialty }>) {
   const xpState = specialty.status === 'APPROVED' ? 'gastos' : 'reservados'

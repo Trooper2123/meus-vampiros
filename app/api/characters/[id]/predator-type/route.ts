@@ -47,7 +47,7 @@ export async function POST(request: Request, context: RouteContext<'/api/charact
   const report = validatePredatorType(definition, { clan: characterText(data.cla).trim() || null, bloodPotency: Number(data['potencia-de-sangue'] ?? 0), isThinBlood: data.creationType === 'THIN_BLOOD' || data.isThinBlood === true, enabled, creationType: data.creationType, overrides: await campaignPredatorOverrides(character.campaignId) })
   const choiceIssues = validatePredatorChoices(definition, body.specialty, body.discipline, body.optionCodes)
   const issues = [...report.issues, ...choiceIssues]
-  if (issues.some((issue) => issue.blocking)) return NextResponse.json({ error: 'A escolha possui restrições.', publicReport: { valid: false, issues } }, { status: 422 })
+  if (issues.some((issue) => issue.blocking)) return NextResponse.json({ error: issues.filter(issue => issue.blocking).map(issue => issue.message).join(' '), publicReport: { valid: false, issues } }, { status: 422 })
   const applied = applyPredatorTypeSelection(data, definition, { code: definition.code, specialty: String(body.specialty), discipline: String(body.discipline), optionCodes: body.optionCodes as string[] })
   const persisted = applied.changed || !data.predatorEffectsVersion ? await persistPredatorTypeData(id, applied.data, session.user.sub, { expectedRevision: character.revision, eventType: 'PREDATOR_TYPE_APPLIED', payload: { code: definition.code, selection: applied.selection, modifiers: applied.modifiers, relationshipRequirements: report.relationshipRequirements } }) : null
   const current = persisted ? null : await getCommandCharacter(id)

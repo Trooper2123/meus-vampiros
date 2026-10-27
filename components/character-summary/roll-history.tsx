@@ -14,7 +14,7 @@ const modeNames: Record<string, string> = { TEST: 'Atributo + habilidade', CHECK
 async function fetchHistory(url: string): Promise<History> {
   const response = await fetch(url)
   const data = await response.json()
-  if (!response.ok) throw new Error('Não foi possível carregar o histórico.')
+  if (!response.ok) { throw new Error('Não foi possível carregar o histórico.') }
   return data
 }
 
@@ -29,9 +29,9 @@ export function RollHistory({ characterId }: Readonly<{ characterId: string }>) 
   const inFlight = useRef(false)
 
   async function send(path?: string, body?: Record<string, unknown>) {
-    if (inFlight.current || !data) return
-    if (!pending.current && path && body) pending.current = { path, body: { ...body, expectedRevision: data.revision, idempotencyKey: crypto.randomUUID() } }
-    if (!pending.current) return
+    if (inFlight.current || !data) { return }
+    if (!pending.current && path && body) { pending.current = { path, body: { ...body, expectedRevision: data.revision, idempotencyKey: crypto.randomUUID() } } }
+    if (!pending.current) { return }
     inFlight.current = true
     setBusy(true)
     setMessage('')
@@ -40,10 +40,10 @@ export function RollHistory({ characterId }: Readonly<{ characterId: string }>) 
       const result = await response.json()
       if (!response.ok) {
         if (response.status < 500) { pending.current = null; setRetry(false) }
-        if (response.status === 409) await mutate()
+        if (response.status === 409) { await mutate() }
         throw new Error(result.error ?? 'Não foi possível confirmar a operação.')
       }
-      if (result.ok !== true) throw new Error('Operação não confirmada.')
+      if (result.ok !== true) { throw new Error('Operação não confirmada.') }
       pending.current = null
       setRetry(false)
       setSelection({ rollId: '', ids: [] })
@@ -55,7 +55,7 @@ export function RollHistory({ characterId }: Readonly<{ characterId: string }>) 
     } finally { inFlight.current = false; setBusy(false) }
   }
 
-  if (!data?.history?.length && !error) return null
+  if (!data?.history?.length && !error) { return null }
   return <section className="border border-border bg-card p-5" aria-label="Histórico de dados" aria-busy={busy}>
     <h2 className="font-serif text-xl">Histórico de dados</h2>
     <p className="mt-2 text-sm text-muted-foreground">Força de Vontade: uma ativação por teste, até três dados comuns, com 1 dano superficial. Os novos valores substituem os anteriores, mesmo quando forem menores.</p>
@@ -69,10 +69,7 @@ export function RollHistory({ characterId }: Readonly<{ characterId: string }>) 
       {roll.clanModifiers && <p className="mt-2 text-sm">{roll.clanModifiers.labels.join(' · ')} · Penalidade de clã: −{roll.clanModifiers.dicePenalty} dado(s).</p>}
       <fieldset className="mt-3 flex flex-wrap gap-2" disabled={busy || retry || !roll.canReroll}>
         <legend className="mb-2 text-xs">Selecionar dados comuns para rerrolar</legend>
-        {roll.dice.map(die => <label key={die.id} className="flex items-center gap-2 border border-border p-2 text-sm"><input type="checkbox" aria-label={`${die.type === 'NORMAL' ? 'Dado comum' : 'Dado de Fome'} ${die.id}, valor ${die.value}`} disabled={die.type !== 'NORMAL'} checked={selection.rollId === roll.id && selection.ids.includes(die.id)} onChange={() => setSelection(current => {
-          const ids = current.rollId === roll.id ? current.ids : []
-          return { rollId: roll.id, ids: ids.includes(die.id) ? ids.filter(id => id !== die.id) : ids.length < 3 ? [...ids, die.id] : ids }
-        })} />{die.type === 'HUNGER' ? 'Fome' : 'Comum'} {die.value}</label>)}
+        {roll.dice.map(die => <label key={die.id} className="flex items-center gap-2 border border-border p-2 text-sm"><input type="checkbox" aria-label={`${die.type === 'NORMAL' ? 'Dado comum' : 'Dado de Fome'} ${die.id}, valor ${die.value}`} disabled={die.type !== 'NORMAL'} checked={selection.rollId === roll.id && selection.ids.includes(die.id)} onChange={() => setSelection(current => toggleDieSelection(current,roll.id,die.id))} />{die.type === 'HUNGER' ? 'Fome' : 'Comum'} {die.value}</label>)}
       </fieldset>
       {roll.canReroll && <button type="button" className="button-ghost mt-3" disabled={busy || retry || selection.rollId !== roll.id || selection.ids.length === 0} onClick={() => void send(`${endpoint}/${roll.id}/reroll`, { dieIds: selection.ids })}>Gastar Vontade e rerrolar</button>}
       <details className="mt-4 text-sm"><summary className="cursor-pointer">Dados originais e revisões ({roll.revisions.length})</summary>{roll.revisions.map(revision => <p key={revision.number} className="mt-2 font-mono text-xs">Revisão {revision.number}: comuns [{revision.result.normalDice.join(', ')}], Fome [{revision.result.hungerDice.join(', ')}], {revision.result.successes} sucesso(s){revision.replacements?.map(change => ` · ${change.dieId}: ${change.before} → ${change.after}`).join('')}</p>)}</details>
@@ -85,4 +82,11 @@ export function RollHistory({ characterId }: Readonly<{ characterId: string }>) 
       <div className="mt-4 flex flex-wrap gap-3">{roll.sources.map(source => <p key={source.id} className="text-xs text-muted-foreground">{source.book} · {source.edition} · livro {source.printed} · PDF {source.pdf} · arquivo não disponível nesta etapa</p>)}</div>
     </details>)}</div>
   </section>
+}
+
+function toggleDieSelection(current:{rollId:string;ids:string[]},rollId:string,dieId:string){
+ const ids=current.rollId===rollId?current.ids:[]
+ if(ids.includes(dieId)){ return {rollId,ids:ids.filter(id=>id!==dieId)} }
+ if(ids.length<3){ return {rollId,ids:[...ids,dieId]} }
+ return {rollId,ids}
 }

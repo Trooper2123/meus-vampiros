@@ -1,3 +1,170 @@
+## [2026-10-26 22:10 BRT] — style - Organizar seções do modo sessão
+
+**Tipo:** style
+
+**Arquivos principais:** components/game-session/session-workspace.tsx, tests/game-session-commands-ui.test.ts e UI-GUIDE.md.
+
+- Organiza as áreas em details/summary: Início da noite primeiro para Narrador, Anotações da mesa logo antes de Videochamada; demais áreas também recolhíveis, com títulos serifados.
+- Preserva condições de sessão ativa, visibilidade por papel, comandos, confirmação, revisão e idempotência. Não altera APIs, banco ou dados.
+- Adiciona testes de ordem, menus de jogador e estado anterior ao início da sessão. Inclui estado vazio para sessão sem fichas. Validação final: 20 testes focados aprovados em quatro arquivos (game-session-commands-ui, campaign-management-ui, notes-ui e npc-narrative-navigation); build e TypeScript aprovados; lint sem erros/cinco avisos preexistentes; npm audit sem vulnerabilidades; diff --check aprovado; scan de padrões de segredos no diff sem achados. Revisão de segurança/pré-commit de todos os ajustes visuais da conversa sem achados bloqueantes. QA visual/responsividade pendente no backlog local.
+
+## [2026-10-26 22:01 BRT] — style - Aplicar fonte serifada aos botões
+
+**Tipo:** style
+
+**Arquivos principais:** app/globals.css e UI-GUIDE.md.
+
+- Textos de botões nativos e links com aparência de botão passam a usar o token --font-serif, incluindo o componente Button compartilhado. Preserva tamanhos, cores, estados e comportamento. Regra registrada no guia visual.
+- Validação: revisão estática de CSS; sem alteração de lógica, autorização ou dados. QA visual não executado.
+
+## [2026-10-26 21:53 BRT] — style - Padronizar título das configurações de calendários
+
+**Tipo:** style
+
+**Arquivos principais:** components/campaign-calendar/campaign-tools.tsx.
+
+- Summary de Configurar calendários da mesa usa font-serif text-2xl, como o calendário de eventos adjacente. Sem alteração funcional.
+- Validação: inspeção do diff; QA visual não executado.
+
+## [2026-10-26 21:42 BRT] — style - Corrigir desvios do UI-GUIDE
+
+**Tipo:** style
+
+**Arquivos principais:** `app/campaigns/new/page.tsx`, `app/create-characters/skills.module.css`, `components/notes/notes-panel.tsx`, `components/npcs/npc-detail.tsx` e `app/characters/[id]/narrative/page.tsx`.
+
+- Substitui cores literais por tokens e espaçamento de notas por flex/gap. Diferencia exclusão de notas com a classe existente, preservando confirmação e altura mínima de 40px.
+- Padroniza o cabeçalho existente de NPC e adiciona hierarquia editorial ao perfil narrativo, sem duplicar h1; ações de NPC ficam após a divisória e empilhadas no celular.
+- Segurança: alteração apenas visual; verificações de acesso, confirmação de exclusão, payloads e persistência preservados. Validação: 7 testes focados aprovados (notes-ui e npc-narrative-navigation); TypeScript aprovado; lint sem erros e com cinco avisos preexistentes; build aprovado; npm audit sem vulnerabilidades; diff --check aprovado; scan de padrões de segredos sem achados no diff. Revisão de segurança/pré-commit sem achados bloqueantes neste recorte. QA visual/responsividade pendente no backlog local.
+
+## [2026-10-25 22:23 BRT] — feat - Aprovação única e acompanhamento de XP da mesa
+
+**Tipo:** feat | fix
+
+**Arquivos principais:** `lib/campaign-approval.ts`, `lib/character-commands.ts`, `lib/xp-transactions.ts`, `lib/campaign-xp-history.ts`, `app/api/campaigns/[id]/xp-history/route.ts`, `app/api/characters/[id]/status/route.ts`, `lib/character-specialties.ts`, `lib/characters.ts`, `lib/predator-types.ts`, `app/campaigns/[id]/page.tsx`, `components/campaign-xp-history.tsx`, `components/campaign-participant-controls.tsx`, `components/character-summary/character-specialties.tsx`, `UI-GUIDE.md` e testes pertinentes.
+
+- Aprovação inicial passa a ser preservada por personagem/campanha nos comandos de edição/evolução e na reativação, sem transferi-la a campanha ainda não aprovada. Ajustes da política de predação preservam fichas aprovadas. Compras válidas de especialidades gastam XP e ficam ativas imediatamente; custos e pré-requisitos existentes de Disciplinas permanecem.
+- Movimentações XP_GRANTED/XP_SPENT/XP_ADJUSTED/XP_REFUNDED recebem metadados de característica, níveis quando existentes, custo efetivo e campanha no ledger já existente, atomicamente com saldo e idempotência. Sem nova tabela, schema ou migração; saldo inválido causa rollback, e estornos preservam eventos originais.
+- Painel expansível separa pendentes, aprovados e inativos; pendentes oferecem aprovação, correções e rejeição com confirmação. Histórico inclui contador de compras não visualizadas, filtros, paginação, leitura persistente e resumo individual com saldo confirmado e três últimas compras. NPCs e itens passam a seções expansíveis na ordem da SPEC.
+- API do histórico exige Narrador atual, valida filtros/IDs/origem/lotes e mantém leituras idempotentes sob locks. DTO não retorna notas privadas, game_state, e-mail ou identificadores de autenticação. Compras não são expostas ao Narrador de outra campanha após troca de vínculo.
+- Validação: 146 testes em 13 arquivos aprovados no recorte funcional/segurança, incluindo PostgreSQL local/schema isolado autorizado, concorrência, rollback, autorização, leitura, reativação e troca de campanha. Três suítes de XP/edição/especialidades migradas do provider em memória removido para PostgreSQL isolado. Lint sem erros/cinco avisos anteriores; auditoria sem vulnerabilidades; scan de padrões de segredos sem achados. TypeScript e build aprovados; revisão pré-commit focada sem achados bloqueantes, registrada na SPEC local.
+- Versionada também a migração já existente `migrations/20261023_npcs_sheet_narrative.sql`, dependência do setup de testes PostgreSQL. Sem alteração no SQL ou nova aplicação em bancos nesta preparação do commit.
+- Limites: detalhamento de XP inicia com os novos metadados; saldos legados são preservados sem inventar compras/campanhas antigas. Não foram criados novos mecanismos de compra de atributos, habilidades ou vantagens. QA visual/responsividade e regressão global não executados; suítes legadas fora do recorte ainda dependem do provider removido. Sem limpeza de banco.
+
+## [2026-10-25 21:13 BRT] — fix - Explicar bloqueios do início da noite
+
+**Tipo:** fix
+
+**Arquivos principais:** `components/awake-panel.tsx`, `lib/vtm-v5/awakening-explanation.ts`, `tests/awakening-explanation.test.ts`.
+
+- Início da noite informa junto ao botão quando falta data, seleção elegível ou fichas elegíveis, com associação acessível. Seleção obsoleta não habilita o botão; reenvio idempotente permanece disponível.
+- Revisão confirmou os acessos existentes: NPCs e gestão na campanha; vídeo, XP, despertar, pesquisas e resumo completo no modo sessão. Sem alteração de persistência, autorização ou regras de despertar.
+- Validação: 26 testes focados aprovados; TypeScript aprovado; lint sem erros/cinco avisos existentes; auditoria sem vulnerabilidades e scan dos arquivos alterados sem padrões de segredos. Build aprovado; revisão de segurança sem achados no ajuste, registrada na SPEC local. QA visual/responsividade e suíte global não executados nesta etapa.
+
+## [2026-10-25 00:14 BRT] — feat - Aprovação e condições dos participantes na gestão
+
+**Tipo:** feat | fix
+
+**Arquivos principais:** `components/campaign-participant-controls.tsx`, `app/campaigns/[id]/page.tsx`, `app/api/characters/[id]/condition/route.ts`, `app/api/characters/[id]/status/route.ts`, `lib/character-conditions.ts`, `components/game-session/session-workspace.tsx`, `components/awake-panel.tsx`, `lib/vtm-v5/awakening-explanation.ts` e testes pertinentes.
+
+- Gestão mostra estado da ficha e condição confirmados pelo servidor, aprova fichas pendentes pela validação existente e permite ao Narrador registrar/remover Empalado ou Torpor com motivo. Torpor exige causa explícita e captura Humanidade no servidor; não altera Fome, dano ou XP, não sobrepõe condições nem reverte morte definitiva.
+- Condição reutiliza transação, revisão, idempotência e ledger existentes. Revalida Narrador/vínculo sob lock inclusive no replay; rejeita jogador, terceiros, NPCs, campos forjados, IDs inválidos e origem cruzada. Aprovação também usa proteção de origem/JSON limitado. Controles bloqueiam cliques simultâneos, preservam envio após falha incerta e desaparecem se a reconsulta falhar.
+- Modo sessão oferece pesquisas ao Narrador e abre o resumo completo da ficha selecionada em nova guia, pela página que revalida acesso. Despertar explica falta de aprovação, tipo incompatível, morte definitiva, registro sem dado em Torpor e impedimento de agir quando Empalado, mantendo as regras existentes.
+- Validação: 87 testes em 11 arquivos aprovados, incluindo autorização/isolamento, autoria do ledger, reenvio, concorrência, conflitos, privacidade e aprovação válida. TypeScript e build aprovados; lint sem erros/cinco avisos anteriores; auditoria sem vulnerabilidades; scan de padrões de segredos sem achados. Revisão `pre-commit-review` registrada localmente. Testes apenas no PostgreSQL local/schema isolado `meus_vampiros_test`, sem limpeza ou nova migração.
+- Conclusão formal da SPEC permanece bloqueada pelas falhas globais anteriormente registradas (262 falhas/956 aprovados), sem alegar reexecução global nesta etapa. QA visual/responsividade e provedores externos reais pendentes; sem commit/push nesta retomada.
+
+## [2026-10-24 17:19 BRT] — feat - Unificar NPCs da campanha
+
+**Tipo:** feat
+
+**Arquivos principais:** `app/campaigns/[id]/page.tsx`, `tests/campaign-layout-order.test.ts`.
+
+- A página da campanha agora tem uma seção NPCs da mesa com o catálogo filtrado pela própria campanha, resumos existentes e criação contextual de fichas.
+- A criação e consulta continuam nas rotas autorizadas do catálogo de NPCs; não foi criada nova API nem copiado estado entre mesas.
+- Validação registrada na retomada de 25/10: os três testes de layout/catálogo passaram no recorte de 87 testes; TypeScript e build aprovados. Sem alteração de persistência.
+
+## [2026-10-24 17:13 BRT] — refactor - Organizar entrada da campanha e ações da sessão
+
+**Tipo:** refactor | fix
+
+**Arquivos principais:** `app/campaigns/[id]/page.tsx`, `components/campaign-calendar/campaign-tools.tsx`, `components/master-panel.tsx`, `tests/campaign-layout-order.test.ts`, `tests/campaign-management-ui.test.ts`.
+
+- Página da campanha deixa de exibir cards de Crônica/Despertar e configuração de Potência do Sangue. O painel de calendário não inclui mais videochamada; ela continua disponível no menu do modo sessão.
+- Atribuição individual e geral de XP, incluindo valores e motivo, aparece somente no modo de uma sessão ativa. Links de pesquisa de habilidades e vantagens/defeitos ficam na página da campanha.
+- Validação desta etapa: 9 testes focados aprovados, TypeScript, build e lint dos arquivos da aplicação aprovados. Vitest reportou timeout ao encerrar servidores de teste, mas os testes fecharam com saída 0; a suíte global mantém falhas legadas já documentadas.
+
+## [2026-10-24 16:43 BRT] — feat - Persistir e encaminhar pertences sem duplicação
+
+**Tipo:** feat | fix
+
+**Arquivos principais:** `lib/possessions.ts`, `lib/character-commands.ts`, `app/api/possessions/route.ts`, `app/api/characters/[id]/campaign/route.ts`, `app/characters/character-form-client.tsx`, `components/master-panel.tsx`, `tests/possessions-routes.test.ts`, `tests/possession-form-ui.test.ts`, `codex/specs/resumo-implementacao.md`.
+
+- Criação/proposta/concessão de pertences exige UUID de idempotência e reutiliza o comando transacional/ledger existente. Autoridade, campanha, origem e aprovação são derivados no servidor sob lock da ficha; chave repetida não duplica item/autoria. Como pertence tem tabela própria, criação não altera dados/status/revisão da ficha nem invalida edição aberta. Demais comandos preservam incremento de revisão.
+- Formulários do jogador e Narrador conservam a chave após perda de resposta e bloqueiam cliques concorrentes. Rascunhos sem ficha são persistidos ao salvar; falha conserva os não confirmados para reenvio, sem bloquear retry por revisão artificial. Campos somente são limpos após confirmação do servidor.
+- Vínculo encaminha itens sem campanha como propostas pendentes na mesma transação da ficha; limpa comentários privados e não copia itens históricos de outra mesa. Revisão de pertence revalida a autoridade no UPDATE SQL. POST/PUT usam proteção de origem/JSON/limites; leituras autorizadas usam cache privado/no-store.
+- Corrigida codificação dos textos do painel do Narrador; trechos de pertences alterados usam tokens de cor existentes. Sem nova dependência, tabela, migração ou limpeza; apenas fixtures no PostgreSQL local isolado autorizado. Itens antigos somente em `data.pertences` não foram migrados automaticamente.
+- Validação: 67 testes pertinentes em seis arquivos aprovados, incluindo concorrência, reenvio com resposta perdida, 401/403, BOLA, forja, SQL parametrizado, revogação, isolamento entre mesas e rollback de item/comando/ledger antes do commit. TypeScript, build, lint (zero erros/cinco avisos anteriores), audit completo (zero vulnerabilidades), diff-check e scan de padrões de segredo aprovados.
+- Suíte global repetida: 262 falhas/956 aprovados (1.218 testes; 29 arquivos com falhas), incluindo 11 snapshots legados divergentes. SPEC permanece blocked para conclusão integral, sem exceção de segurança. QA visual/serviços externos reais e produção não executados. Commit do trabalho anterior solicitado pelo usuário: `ce1bba6`, sem push; esta continuação permanece disponível para revisão.
+
+## [2026-10-24 16:22 BRT] — docs - Validar pendências do resumo de implementação
+
+**Tipo:** docs
+
+**Arquivos principais:** `codex/specs/resumo-implementacao.md`, `CHANGELOG.md`.
+
+- Confrontado o resumo histórico com código, APIs, specs e evidências atuais. Separadas entregas já existentes (vínculo, exclusão lógica, sessões SQL, rerrolagem, Disciplinas por XP, catálogos ampliados e permissões de recursos) das pendências funcionais e dos gates ainda bloqueados. Registro de 13/10 preservado em seção histórica recolhível; sem promover tarefas automaticamente.
+- Confirmadas lacunas de desvínculo, encaminhamento/idempotência de pertences, motor avançado/progressão restante e validação dos serviços externos. Identificadas referências documentais ausentes e checklists antigos a reconciliar. Sem alteração de código, schema, permissões ou produção nesta revisão.
+- Validação executada: 148 testes aprovados/35 falhas em nove arquivos. As 35 falhas estão nas suítes legadas de dados (21), Disciplinas (12) e pertences (2), com fixtures em memória/provider SQL indisponível. Vínculo, exclusão, catálogos e NPC/narrativa passaram. Log em `tmp/resumo-implementacao-validacao.log`; nenhuma limpeza de dados. Evidências anteriores de tipos/lint/build/auditoria e suíte global foram identificadas como históricas da mesma sessão, sem alegar reexecução.
+
+## [2026-10-24 16:12 BRT] — fix - Completar persistência e isolamento do modo sessão
+
+**Tipo:** fix | docs | chore
+
+**Arquivos principais:** `lib/game-sessions.ts`, `components/game-session/session-workspace.tsx`, `tests/game-sessions.test.ts`, `tests/game-session-workspace.test.ts`, `tests/game-session-storage.test.ts`, `tests/game-session-commands-ui.test.ts`, `eslint.config.js`, `README.md`.
+
+- Modo sessão exige PostgreSQL em qualquer ambiente e responde 503 sem configuração/provider, eliminando o fallback silencioso para partidas voláteis. Testes de domínio/rotas usam fixtures no PostgreSQL local isolado, sem limpeza de dados.
+- Workspace separa o cache por usuário/mesa e desmonta sala, fichas, notas e ferramentas quando a consulta autorizada falha. Mostra carregamento antes do snapshot e relê o estado após conflito. Permissões continuam verificadas no servidor em cada consulta/comando.
+- Início/encerramento bloqueiam envios simultâneos e preservam a chave de idempotência após falha de rede ou resposta inválida. Encerramento passa a ler `result.session.id`, preservando o acesso autorizado aos NPCs da sessão encerrada.
+- ESLint ignora backups gerados `.next-backup-*` e documentação local `.codex`. README documenta configuração, migração existente e rollback conservador para produção; nenhuma migração nova, seed ou alteração de produção executada. Integração autorizada somente no schema local `meus_vampiros_test`.
+- Validações: 97 testes focados em 11 arquivos aprovados; revalidação final de três arquivos de UI/storage com 11 testes aprovada. TypeScript, build, lint global (zero erros/cinco avisos anteriores), auditoria completa (zero vulnerabilidades) e diff-check aprovados; scan de padrões de segredo sem ocorrências no escopo. Revisão `pre-commit-review` registrada localmente.
+- Bloqueio: suíte global falha em 264 de 1.200 testes, distribuídos por 30 arquivos legados, com fixtures em memória/providers nulos entre as causas. A SPEC permanece `blocked` até o gate obrigatório passar. QA visual, Auth0/LiveKit/Vercel reais e implantação em produção não executados.
+
+## [2026-10-24 01:18 BRT] — feat - Exclusão lógica de personagens pelo proprietário
+
+**Tipo:** feat
+
+**Arquivos principais:** `app/api/characters/route.ts`, `app/characters/page.tsx`, `components/delete-character-button.tsx`, `lib/characters.ts`, `lib/character-commands.ts`, `lib/notes.ts`, `lib/npc-store.ts`, `lib/sheet-access.ts`, `tests/character-deletion.test.ts`, `tests/delete-character-button.test.ts`, `tests/campaign-summary-access.test.ts`.
+
+- Proprietário pode excluir logicamente sua ficha de jogador pela listagem, após digitar o nome exato e confirmar no diálogo. Cancelar recebe foco inicial; erros são apresentados sem remover a ficha da interface.
+- API exige autenticação, propriedade dentro da transação, confirmação, UUIDs, revisão e chave de idempotência; rejeita origem cruzada. Narrador sem propriedade e terceiros não podem excluir. NPCs permanecem no gerenciamento próprio.
+- Exclusão é bloqueada durante sessão ativa ou convocação da mesa. Lock exclusivo da campanha serializa com início de sessão/convocação. Reenvio com a mesma chave não duplica o registro de exclusão.
+- Status interno `DELETED` e metadados protegidos preservam ficha, histórico, referências, notas, relações, pertences e arquivos. Vínculo operacional de campanha é encerrado, com campanha anterior registrada; excluir a última ficha revoga a participação derivada dela. Listas, comandos, vínculos de notas, candidatos a domitor e mídia privada deixam de disponibilizar a ficha. Notas independentes seguem suas permissões originais; não há restauração pela interface ou pelo endpoint de status.
+- Sem alteração de schema, migração, seed ou exclusão física. Testes do resumo compartilhado foram adaptados do provider em memória ao PostgreSQL isolado vigente.
+- Validação: 68 testes pertinentes em sete arquivos aprovados, incluindo 22 casos de exclusão/diálogo, conservação de referências, revogação de mídia e concorrência real de locks. Tipos, build, lint (zero erros/seis avisos anteriores) e auditoria de produção aprovados. QA visual manual e Auth0/Blob reais não executados; suíte global não repetida, com falhas legadas anteriormente registradas.
+
+## [2026-10-24 01:04 BRT] — fix - Predação fora do clã e edição de habilidades
+
+**Tipo:** fix
+
+**Arquivos principais:** `lib/vtm-v5/predator-types/validation.ts`, `lib/predator-types.ts`, `lib/characters.ts`, `lib/character-commands.ts`, `app/api/predator-types/route.ts`, `app/api/characters/route.ts`, `app/api/characters/[id]/predator-type/route.ts`, `app/api/characters/[id]/status/route.ts`, `app/characters/character-form-client.tsx`, `components/character-form/skills-step.tsx`, `components/predator-types/player-predator-selector.tsx`, `app/campaigns/[id]/page.tsx` e testes de predação/edição.
+
+- Disciplinas de predação são comparadas por identidade canônica, aceitando nomes em inglês e português. Confidant concede Presence ou Oblivion a Malkavian sem exigir que pertençam ao clã. Restrições específicas de predação permanecem validadas.
+- Predações desabilitadas pela mesa continuam consultáveis com motivo; confirmação e erros da API explicam as restrições. Seleção salva restaura a Disciplina por identidade.
+- Distribuição base e limites do formulário excluem pontos de habilidade concedidos pela predação; envio para revisão usa as concessões persistidas. Habilidades exibem origem e permitem zerar pontos manuais no rascunho inicial, preservando concessões.
+- Segurança: após envio/finalização, redução de habilidades exige o mestre atual da própria mesa no servidor. Marcador protegido em `gameState` mantém a restrição após retorno a rascunho. Mestre pode abrir a edição pela página da mesa; terceiros e narradores de outras mesas não recebem acesso. Revisões, auditoria, limites e proteção das concessões são preservados, sem mudança de schema.
+- Validações: 324 testes em 11 arquivos, mais 44 testes de regressão NPC/narrativa/predação em cinco arquivos, aprovados no PostgreSQL local isolado. Tipos, build, auditoria de produção e lint aprovados (zero erros/seis avisos anteriores; lint exclui backup gerado e documentação local). QA visual não executado. Suíte integral não repetida: execução anterior já tinha falhas legadas; revisão global continua pendente.
+
+## [2026-10-24 00:52 BRT] — feat - Filtros de NPCs e ordenação narrativa
+
+**Tipo:** feat | fix
+
+**Arquivos principais:** `components/npcs/npc-catalogue.tsx`, `components/sheet-narrative-tabs.tsx`, `lib/npc-domain.ts`, `tests/npc-domain-v2.test.ts`, `tests/npc-narrative-navigation.test.ts`, `tests/npc-narrative-integration.test.ts`, `pnpm-workspace.yaml`, `pnpm-lock.yaml`.
+
+- Catálogo permite filtrar por mesa e ordenar por atualização, nome ou ameaça; mostra NPCs em sessão ativa. O contexto de campanha permanece fixo nas listagens da mesa e consultas gerais omitem o UUID vazio.
+- Abas narrativas permitem ordenar os registros por atualização crescente ou decrescente, preservando busca, arquivo e permissões existentes. A ordenação considera os até 200 registros retornados pelo serviço atual.
+- Segurança: override específico de `@vercel/cli-config>zod` para 4.6.7 remove a versão vulnerável transitiva usada pelo Vercel Blob (GHSA-mrhx-c7xc-m3w5). Sem mudança de schema ou storage externo.
+- Corrigidas duas expressões opcionais no validador de NPCs apontadas pelo lint, preservando os limites de pools/poderes, com regressão para formatos e tamanhos inválidos.
+- Validação: 28 testes focados aprovados com PostgreSQL local isolado e storage em memória, mais dez testes do domínio aprovados após inclusão da nova regressão (29 casos únicos no recorte); TypeScript, build após atualização e auditoria de produção aprovados. Lint geral do código sem erros/seis avisos, excluindo backup gerado `.next-backup-*/**` e documentação local `.codex/**`; comando padrão percorreu o backup e foi interrompido. Suíte integral: 889 aprovações e 265 falhas em 100 arquivos, incluindo oito snapshots divergentes; conclusão integral das specs bloqueada. QA visual/responsivo e Blob real pendentes.
+
 ## [2026-10-23 19:28 BRT] — feat - Perfil narrativo acessível pela página da campanha
 
 **Tipo:** feat  
@@ -1290,3 +1457,4 @@ Cada entrada deve incluir data, horÃ¡rio (BRT), tipo e resumo do que foi feito
 
 ## 2026-10-17 22:55 BRT â€” chore
 - PotÃªncia do Sangue: preparaÃ§Ã£o Ãºnica em processo de testes isolado (`scripts/prepare-v5-development.mjs`), provider/schema em memÃ³ria atual, seeds e integridade aprovados (8 fichas/3 mesas); nenhum PostgreSQL acessado.
+- Validação: 3 testes de organização do catálogo passaram, TypeScript e build aprovados. Vitest encerrou com aviso de timeout de dois servidores, após informar saída 0.

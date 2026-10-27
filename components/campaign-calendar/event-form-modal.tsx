@@ -28,9 +28,9 @@ export function EventFormModal({ event, config, submitting, error, onClose, onSu
 
   const fictional = config.mode !== 'real'
 
-  return <dialog ref={dialog} className={styles.modalPanel} aria-labelledby="event-form-title" onCancel={event => { event.preventDefault(); if (!submitting) onClose() }} onMouseDown={event => {
+  return <dialog ref={dialog} className={styles.modalPanel} aria-labelledby="event-form-title" onCancel={event => { event.preventDefault(); if (!submitting) { onClose() } }} onClick={event => {
     const bounds = event.currentTarget.getBoundingClientRect()
-    if (!submitting && event.target === event.currentTarget && (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom)) onClose()
+    if (!submitting && event.target === event.currentTarget && (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom)) { onClose() }
   }}><div className="flex items-start justify-between gap-4 border-b border-border pb-4"><div><p className="eyebrow">Calendário da crônica</p><h2 id="event-form-title" className="mt-2 font-serif text-2xl">{event ? 'Editar evento' : 'Criar evento'}</h2></div><button type="button" className="button-ghost" onClick={onClose} disabled={submitting} aria-label="Fechar formulário"><X className="size-4" aria-hidden="true" /></button></div>
     <form className="mt-6 flex flex-col gap-4" onSubmit={(submitEvent) => { submitEvent.preventDefault(); const monthIndex = availableMonths.indexOf(month) + 1; const weekdayIndex = availableWeekdays.indexOf(weekday) + 1; void onSubmit({ title: title.trim(), description: description.trim() || null, eventDate: fictional ? null : eventDate, eventTime: eventTime || null, fictionalYear: fictional ? Number(year) : null, fictionalMonth: fictional ? month : null, fictionalMonthIndex: fictional ? monthIndex : null, fictionalWeekday: fictional ? weekday : null, fictionalWeekdayIndex: fictional ? weekdayIndex : null, visibility }) }}>
       <label className="sheet-field"><span>Título</span><input autoFocus required maxLength={100} value={title} onChange={(inputEvent) => setTitle(inputEvent.target.value)} /></label>

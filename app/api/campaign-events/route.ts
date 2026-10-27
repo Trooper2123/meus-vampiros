@@ -16,7 +16,7 @@ function isValidDate(value: string): boolean {
 }
 
 function isValidTime(value: string | null): boolean {
-  if (value === null) return true
+  if (value === null) { return true }
   return /^([01]\d|2[0-3]):[0-5]\d$/.test(value)
 }
 
@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
     }
 
     const fieldsError = validateNewEventFields(body)
-    if (fieldsError) return fieldsError
+    if (fieldsError) { return fieldsError }
 
     // Check authorization - only master can create events
     if (!await canManageCampaign(session.user.sub, campaignId)) {
@@ -193,7 +193,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     const changes = readEventChanges(body)
-    if (changes instanceof NextResponse) return changes
+    if (changes instanceof NextResponse) { return changes }
     const updateData = changes
 
     // Check if there's anything to update
@@ -310,11 +310,7 @@ function readEventChanges({ title, description, eventDate, fictionalYear, fictio
       updateData.eventDate = eventDate
     }
 
-    if (fictionalYear !== undefined) updateData.fictionalYear = fictionalYear
-    if (fictionalMonth !== undefined) updateData.fictionalMonth = fictionalMonth?.trim() ?? null
-    if (fictionalMonthIndex !== undefined) updateData.fictionalMonthIndex = fictionalMonthIndex
-    if (fictionalWeekday !== undefined) updateData.fictionalWeekday = fictionalWeekday?.trim() ?? null
-    if (fictionalWeekdayIndex !== undefined) updateData.fictionalWeekdayIndex = fictionalWeekdayIndex
+    readFictionalEventChanges(fictionalYear,updateData,fictionalMonth,fictionalMonthIndex,fictionalWeekday,fictionalWeekdayIndex)
 
     if (eventTime !== undefined) {
       if (!isValidTime(eventTime)) {
@@ -332,4 +328,12 @@ function readEventChanges({ title, description, eventDate, fictionalYear, fictio
 
 
   return updateData
+}
+
+function readFictionalEventChanges(fictionalYear: number|null|undefined,updateData: Partial<EventFormData>,fictionalMonth: string|null|undefined,fictionalMonthIndex: number|null|undefined,fictionalWeekday: string|null|undefined,fictionalWeekdayIndex: number|null|undefined) {
+  if(fictionalYear!==undefined) { updateData.fictionalYear=fictionalYear }
+  if(fictionalMonth!==undefined) { updateData.fictionalMonth=fictionalMonth?.trim()??null }
+  if(fictionalMonthIndex!==undefined) { updateData.fictionalMonthIndex=fictionalMonthIndex }
+  if(fictionalWeekday!==undefined) { updateData.fictionalWeekday=fictionalWeekday?.trim()??null }
+  if(fictionalWeekdayIndex!==undefined) { updateData.fictionalWeekdayIndex=fictionalWeekdayIndex }
 }

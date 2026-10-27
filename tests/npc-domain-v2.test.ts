@@ -25,3 +25,9 @@ it('aceita pool personalizado acima da referência com alerta não bloqueante',(
   expect(npcPool(data,'physical','1').pool).toBe(9)
 })
 it('não substitui atributos reais de ficha completa pela ameaça',()=>expect(()=>npcPool(validateNpc({...simple,sheetType:'FULL'}),'physical')).toThrow('atributo'))
+it('rejeita coleções inválidas e acima do limite sem depender de valores opcionais',()=>{
+  for(const exceptionalPools of ['inválido',{},Array(51).fill({})])expect(()=>validateNpc({...simple,exceptionalPools})).toThrow('Quantidade')
+  for(const specialAbilities of ['inválido',{},Array(31).fill({})])expect(()=>validateNpc({...simple,specialAbilities})).toThrow('Quantidade')
+  expect(validateNpc(simple).exceptionalPools).toEqual([])
+  expect(validateNpc(simple).specialAbilities).toEqual([])
+})

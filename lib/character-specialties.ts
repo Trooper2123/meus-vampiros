@@ -84,7 +84,8 @@ function purchaseSpecialty(character: CommandCharacter, actorId: string, input: 
 
   if (!Number.isSafeInteger(character.totalXp) || !Number.isSafeInteger(character.spentXp) || character.totalXp < 0 || character.spentXp < 0 || character.spentXp > character.totalXp) throw new CharacterCommandError(422, 'Saldo de XP inconsistente.')
   calculateSpecialtyPurchase(character.totalXp - character.spentXp)
-  const specialty: Specialty = { id: randomUUID(), skillId: normalizeSpecialtySkillId(input.skillId!), name: normalizeSpecialtyName(input.name!), origin: 'XP', status: character.campaignId ? 'PENDING' : 'APPROVED', costXp: 3 }
+  if (['ARCHIVED', 'DISABLED'].includes(character.status)) throw new CharacterCommandError(422, 'Esta ficha não permite compras de especialidades.')
+  const specialty: Specialty = { id: randomUUID(), skillId: normalizeSpecialtySkillId(input.skillId!), name: normalizeSpecialtyName(input.name!), origin: 'XP', status: 'APPROVED', costXp: 3 }
   const errors = validateSpecialty(specialty, specialties, rules)
   if (errors.length) throw new CharacterCommandError(422, errors.join(' '))
   character.spentXp += 3

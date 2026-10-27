@@ -25,22 +25,24 @@ export const GENERATION_POTENCY_LIMITS: Record<number, readonly [number, number]
 }
 
 export function feedingRule(level: number) {
-  const animalAndBaggedMultiplier = level >= 3 ? 0 : (level === 2 ? 0.5 : 1)
+  let animalAndBaggedMultiplier = 1
+  if (level >= 3) { animalAndBaggedMultiplier = 0 }
+  else if (level === 2) { animalAndBaggedMultiplier = 0.5 }
   let humanReductionPenalty = 0
-  if (level === 10) humanReductionPenalty = 3
-  else if (level >= 6) humanReductionPenalty = 2
-  else if (level >= 4) humanReductionPenalty = 1
+  if (level === 10) { humanReductionPenalty = 3 }
+  else if (level >= 6) { humanReductionPenalty = 2 }
+  else if (level >= 4) { humanReductionPenalty = 1 }
   let minimumHungerWithoutKilling: number | null = null
-  if (level >= 8) minimumHungerWithoutKilling = 3
-  else if (level >= 5) minimumHungerWithoutKilling = 2
+  if (level >= 8) { minimumHungerWithoutKilling = 3 }
+  else if (level >= 5) { minimumHungerWithoutKilling = 2 }
   let code = `F${level}`
-  if (level <= 1) code = 'F0'
-  else if (level === 6 || level === 7) code = 'F6_7'
-  else if (level === 8 || level === 9) code = 'F8_9'
+  if (level <= 1) { code = 'F0' }
+  else if (level === 6 || level === 7) { code = 'F6_7' }
+  else if (level === 8 || level === 9) { code = 'F8_9' }
   let displayText = 'Sem penalidade adicional de Potência; as regras gerais de alimentação continuam aplicáveis.'
-  if (level === 2) displayText = 'Sangue animal e ensacado exigem o dobro da quantidade para saciar a mesma Fome.'
-  else if (level >= 3) displayText = 'Sangue animal e ensacado não saciam Fome.'
-  if (humanReductionPenalty) displayText += ` Sangue humano sacia ${humanReductionPenalty} ponto(s) a menos por humano.`
-  if (minimumHungerWithoutKilling) displayText += ` Somente drenar e matar um humano reduz Fome abaixo de ${minimumHungerWithoutKilling}.`
+  if (level === 2) { displayText = 'Sangue animal e ensacado exigem o dobro da quantidade para saciar a mesma Fome.' }
+  else if (level >= 3) { displayText = 'Sangue animal e ensacado não saciam Fome.' }
+  if (humanReductionPenalty) { displayText += ` Sangue humano sacia ${humanReductionPenalty} ponto(s) a menos por humano.` }
+  if (minimumHungerWithoutKilling) { displayText += ` Somente drenar e matar um humano reduz Fome abaixo de ${minimumHungerWithoutKilling}.` }
   return { code, params: { animalAndBaggedMultiplier, humanReductionPenalty, minimumHungerWithoutKilling }, displayText }
 }

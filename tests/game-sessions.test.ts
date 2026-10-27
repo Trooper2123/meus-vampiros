@@ -2,7 +2,6 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { sql } from 'drizzle-orm'
 import { db, ensureGameSessionsTables } from '@/lib/db'
 import { assertGameSessionCharacter } from '@/lib/game-sessions'
-import { devCreateCampaign, devCreateCharacter, devUpdateCharacterStatus } from '@/lib/dev-db'
 import { createTestCampaign, createTestCharacter, preparePostgresTest } from './postgres-test-helpers'
 
 const mocks = vi.hoisted(() => ({ actor: 'session-master' }))
@@ -22,19 +21,18 @@ const request = (method: string, body?: unknown) => new Request('http://localhos
 })
 
 async function setup() {
-  const campaign = devCreateCampaign('session-master', { name: 'Crônica A', theme: null, principios: null, averageXp: 0, status: 'Ativa', lastSessionAt: null })
-  const playerCharacter = devCreateCharacter('session-player', { name: 'Ficha da jogadora', campaignId: campaign.id, data: { privateNote: 'não projetar' } })
-  const otherCharacter = devCreateCharacter('other-player', { name: 'Ficha de terceiro', campaignId: campaign.id })
-  devUpdateCharacterStatus(playerCharacter.id, 'session-player', 'APPROVED')
-  devUpdateCharacterStatus(otherCharacter.id, 'other-player', 'APPROVED')
+  preparePostgresTest()
+  const campaign = await createTestCampaign('session-master', 'Crônica A')
+  const playerCharacter = await createTestCharacter('session-player', campaign.id, 'Ficha da jogadora', { privateNote: 'não projetar' })
+  const otherCharacter = await createTestCharacter('other-player', campaign.id, 'Ficha de terceiro')
+  await db.execute(sql`UPDATE characters SET status = 'APPROVED', character_type = 'PLAYER_VAMPIRE' WHERE id IN (${playerCharacter.id}::uuid, ${otherCharacter.id}::uuid)`)
   return { campaign, playerCharacter, otherCharacter }
 }
 
 describe('modo de sessão: autorização, projeção e idempotência', () => {
   beforeEach(() => {
-    vi.stubEnv('NODE_ENV', 'development')
-    vi.stubEnv('DATABASE_URL', '')
-    globalThis.__devDb = undefined
+    vi.stubEnv('NODE_ENV', 'test')
+    vi.stubEnv('DATABASE_URL', testDatabaseUrl ?? '')
     mocks.actor = 'session-master'
   })
 
@@ -74,10 +72,11 @@ describe('modo de sessão: autorização, projeção e idempotência', () => {
       startCampaignSession(request('POST', { idempotencyKey: crypto.randomUUID() }), context(campaign.id)),
     ])
     expect([first.status, second.status].sort()).toEqual([201, 409])
-    globalThis.__devDb!.gameSessions = []
-    expect((await startCampaignSession(request('POST', { idempotencyKey: crypto.randomUUID(), chronicleNightIds: [crypto.randomUUID()] }), context(campaign.id))).status).toBe(400)
+    const otherCampaign = await createTestCampaign('another-master')
+    expect((await startCampaignSession(request('POST', { idempotencyKey: crypto.randomUUID(), chronicleNightIds: [crypto.randomUUID()] }), context(otherCampaign.id))).status).toBe(403)
+    expect((await startCampaignSession(request('POST', { idempotencyKey: crypto.randomUUID(), chronicleNightIds: ['invalid'] }), context(campaign.id))).status).toBe(400)
     expect((await getCampaignSession(request('GET'), context(campaign.id))).status).toBe(200)
-    expect((await (await getCampaignSession(request('GET'), context(campaign.id))).json()).session).toBeNull()
+    expect((await (await getCampaignSession(request('GET'), context(campaign.id))).json()).session.status).toBe('ACTIVE')
   })
 
   it('só o Narrador atual encerra, com revisão e reenvio idempotentes', async () => {
@@ -114,19 +113,49 @@ describe('modo de sessão: autorização, projeção e idempotência', () => {
     expect((await patchResources(request('PATCH', resource), context(otherCharacter.id))).status).toBe(403)
   })
 
-  it('não revela sessões de outra mesa e rejeita operação fora do perfil de memória', async () => {
+  it('revalida participação em cada snapshot e bloqueia comandos após revogação', async () => {
+    const { campaign, playerCharacter } = await setup()
+    const { session } = await (await startCampaignSession(request('POST', { idempotencyKey: crypto.randomUUID() }), context(campaign.id))).json()
+    mocks.actor = 'session-player'
+    const snapshot = await getSession(request('GET'), context(session.id))
+    expect(snapshot.status).toBe(200)
+    expect(snapshot.headers.get('cache-control')).toBe('private, no-store')
+    await db.execute(sql`UPDATE characters SET campaign_id = NULL WHERE id = ${playerCharacter.id}::uuid`)
+    expect((await getCampaignSession(request('GET'), context(campaign.id))).status).toBe(403)
+    expect((await getSession(request('GET'), context(session.id))).status).toBe(403)
+    await expect(assertGameSessionCharacter(mocks.actor, session.id, playerCharacter.id)).rejects.toMatchObject({ status: 403 })
+  })
+
+  it('rejeita campos forjados, identificadores e origem cruzada sem criar sessão', async () => {
+    const { campaign } = await setup()
+    const valid = { idempotencyKey: crypto.randomUUID() }
+    for (const body of [{ ...valid, status: 'ACTIVE' }, { ...valid, revision: 50 }, { ...valid, startedBy: 'session-master' }, { idempotencyKey: 'invalid' }, { ...valid, chronicleNightIds: ["'); DROP TABLE campaigns; --"] }]) {
+      expect((await startCampaignSession(request('POST', body), context(campaign.id))).status).toBe(400)
+    }
+    const crossOrigin = new Request('http://localhost/api/sessions', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: 'https://other.example' }, body: JSON.stringify(valid) })
+    expect((await startCampaignSession(crossOrigin, context(campaign.id))).status).toBe(403)
+    expect((await (await getCampaignSession(request('GET'), context(campaign.id))).json()).session).toBeNull()
+  })
+
+  it('não revela sessões de outra mesa e exige PostgreSQL em qualquer ambiente', async () => {
     const { campaign } = await setup()
     const started = await startCampaignSession(request('POST', { idempotencyKey: crypto.randomUUID() }), context(campaign.id))
     const { session } = await started.json()
     mocks.actor = 'intruso'
     expect((await getSession(request('GET'), context(session.id))).status).toBe(403)
-    vi.stubEnv('NODE_ENV', 'production')
     mocks.actor = 'session-master'
-    expect((await getCampaignSession(request('GET'), context(campaign.id))).status).toBe(503)
+    vi.stubEnv('DATABASE_URL', '')
+    for (const environment of ['development', 'test', 'production']) {
+      vi.stubEnv('NODE_ENV', environment)
+      expect((await getCampaignSession(request('GET'), context(campaign.id))).status).toBe(503)
+      expect((await startCampaignSession(request('POST', { idempotencyKey: crypto.randomUUID() }), context(campaign.id))).status).toBe(503)
+      expect((await getSession(request('GET'), context(session.id))).status).toBe(503)
+      expect((await closeSession(request('PATCH', { idempotencyKey: crypto.randomUUID(), expectedRevision: 1 }), context(session.id))).status).toBe(503)
+    }
   })
 
   it('persiste sessões no PostgreSQL isolado com idempotência e revisão', async () => {
-    if (!testDatabaseUrl) return
+    if (!testDatabaseUrl) { return }
     vi.stubEnv('NODE_ENV', 'test')
     vi.stubEnv('DATABASE_URL', testDatabaseUrl)
     preparePostgresTest()

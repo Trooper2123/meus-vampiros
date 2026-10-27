@@ -34,7 +34,7 @@ function DotTrack({ total, value, onChange, color }: Readonly<{ total: number; v
           <button
             key={point}
             type="button"
-            className={`h-3 w-3 rounded-full transition-colors ${point <= value ? `bg-primary ${color}` : 'bg-muted'}`}
+            className={`h-3 w-3 rounded-full transition-colors ${point <= value ? 'bg-primary '+color : 'bg-muted'}`}
             aria-label={`Definir nível ${point}`}
             aria-pressed={point <= value}
             onClick={() => onChange(point === value ? point - 1 : point)}

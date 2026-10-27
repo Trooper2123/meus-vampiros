@@ -6,7 +6,7 @@ vi.mock('@/lib/db', () => ({ ensureAllTables: vi.fn() }))
 vi.mock('@/lib/campaigns', () => ({ hasMasterAccess: vi.fn().mockResolvedValue(false), getCampaignById: vi.fn() }))
 vi.mock('@/lib/auth/authorization', () => ({ canEditCharacter: vi.fn(), canManageCampaign: vi.fn() }))
 vi.mock('@/lib/availability', () => ({ isUserInCampaign: mocks.membership }))
-vi.mock('@/lib/characters', () => ({ getCharacterAccessRecord: mocks.access, duplicateCharacter: mocks.duplicate, getCharacterById: mocks.get, createCharacter: mocks.create, updateCharacter: mocks.update, getCharactersForCampaign: vi.fn(), updateCharacterXp: vi.fn(), normalizeDisciplines: vi.fn(), deleteCharacter: vi.fn() }))
+vi.mock('@/lib/characters', () => ({ getCharacterAccessRecord: mocks.access, duplicateCharacter: mocks.duplicate, getCharacterById: mocks.get, getCharacterForViewer: mocks.get, createCharacter: mocks.create, updateCharacter: mocks.update, getCharactersForCampaign: vi.fn(), updateCharacterXp: vi.fn(), normalizeDisciplines: vi.fn(), deleteCharacter: vi.fn() }))
 
 import { POST as duplicate } from '../app/api/characters/[id]/duplicate/route'
 import { GET, POST, PUT } from '@/app/api/characters/route'

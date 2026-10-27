@@ -12,11 +12,11 @@ import { SheetMediaPanel } from '@/components/sheet-media-panel'
 export async function npcJson(url: string, body?: object, method = 'POST') {
   const response = await fetch(url, body ? { method, headers: { 'content-type': 'application/json' }, body: JSON.stringify(body), cache: 'no-store' } : { cache: 'no-store' })
   const result = await response.json()
-  if (!response.ok) throw Error(result.error ?? 'Não foi possível carregar o NPC.')
+  if (!response.ok) { throw new Error(result.error ?? 'Não foi possível carregar o NPC.') }
   return result
 }
 
-type Catalogue = { npcs: { id: string; name: string; sheetType: NpcData['sheetType']; creatureType: keyof typeof NPC_CREATURES; role: keyof typeof NPC_ROLES; threatLevel: number | null; status: string; revision: number }[]; total: number; page: number; campaigns: { id: string; name: string }[]; domitors: { id: string; name: string; campaign_id: string | null }[] }
+type Catalogue = { npcs: { id: string; name: string; sheetType: NpcData['sheetType']; creatureType: keyof typeof NPC_CREATURES; role: keyof typeof NPC_ROLES; threatLevel: number | null; status: string; revision: number; inSession: boolean }[]; total: number; page: number; campaigns: { id: string; name: string }[]; domitors: { id: string; name: string; campaign_id: string | null }[] }
 const SHEET_TYPE_LABELS = { SIMPLE: 'Simples', INTERMEDIATE: 'Intermediária', FULL: 'Completa' } as const
 const SHEET_TYPE_DESCRIPTIONS = {
   SIMPLE: 'Figurantes e encontros rápidos. Apenas ameaça, criatura e papel.',
@@ -199,10 +199,11 @@ export function NewNpcForm({ campaignId }: Readonly<{ campaignId?: string }>) {
 }
 
 export function NpcCatalogue({ campaignId }: Readonly<{ campaignId?: string }>) {
-  const [filters, setFilters] = useState({ query: '', creatureType: '', role: '', sheetType: '', threatLevel: '', status: 'ACTIVE', page: 1 })
+  const [filters, setFilters] = useState({ query: '', creatureType: '', role: '', sheetType: '', threatLevel: '', status: 'ACTIVE', sort: 'recent', campaignId: '', page: 1 })
   const [message, setMessage] = useState('')
   const [busy, setBusy] = useState(false)
   const params = new URLSearchParams({ ...filters, page: String(filters.page), ...(campaignId ? { campaignId } : {}) } as Record<string, string>)
+  if (!params.get('campaignId')) { params.delete('campaignId') }
   const { data, error, mutate } = useSWR<Catalogue>(`/api/npcs?${params}`, npcJson, { revalidateOnFocus: false })
   function filter(key: string, value: string) { setFilters(current => ({ ...current, [key]: value, page: 1 })) }
   async function change(id: string, revision: number, action: string) {
@@ -220,6 +221,8 @@ export function NpcCatalogue({ campaignId }: Readonly<{ campaignId?: string }>) 
 
       {/* Filtros */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {!campaignId && <label className="sheet-field"><span>Mesa</span><select className="select" value={filters.campaignId} onChange={e => filter('campaignId', e.target.value)}><option value="">Todas as minhas mesas</option>{data?.campaigns.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>}
+        <label className="sheet-field"><span>Ordenar NPCs</span><select className="select" value={filters.sort} onChange={e => filter('sort', e.target.value)}><option value="recent">Atualizados recentemente</option><option value="name">Nome</option><option value="threat">Maior ameaça</option></select></label>
         <label className="sheet-field"><span>Pesquisar NPCs</span><input maxLength={120} value={filters.query} onChange={e => filter('query', e.target.value)} /></label>
         <label className="sheet-field"><span>Criatura</span><select className="select" value={filters.creatureType} onChange={e => filter('creatureType', e.target.value)}><option value="">Todas</option>{Object.entries(NPC_CREATURES).map(([code, label]) => <option key={code} value={code}>{label}</option>)}</select></label>
         <label className="sheet-field"><span>Papel</span><select className="select" value={filters.role} onChange={e => filter('role', e.target.value)}><option value="">Todos</option>{Object.entries(NPC_ROLES).map(([code, label]) => <option key={code} value={code}>{label}</option>)}</select></label>
@@ -229,7 +232,7 @@ export function NpcCatalogue({ campaignId }: Readonly<{ campaignId?: string }>) 
       </div>
 
       {error && <p role="alert" className="text-sm text-primary">{error.message}</p>}
-      {message && <p role="status" className="text-sm text-muted-foreground">{message}</p>}
+      {message && <output  className="block text-sm text-muted-foreground">{message}</output>}
 
       {/* Cards */}
       <div className="grid gap-4 lg:grid-cols-2">
@@ -244,6 +247,7 @@ export function NpcCatalogue({ campaignId }: Readonly<{ campaignId?: string }>) 
                 <h2 className="font-serif text-2xl">{npc.name}</h2>
                 <p className="text-sm text-muted-foreground">{NPC_CREATURES[npc.creatureType]} · {NPC_ROLES[npc.role]}</p>
                 <p className="text-sm text-muted-foreground">{SHEET_TYPE_LABELS[npc.sheetType]} · {npc.status === 'ACTIVE' ? 'Ativo' : 'Arquivado'}</p>
+                {npc.inSession && <p className="text-sm text-muted-foreground">Em sessão ativa</p>}
                 {npc.threatLevel && <p className="text-sm">Ameaça {npc.threatLevel} · {NPC_THREATS[npc.threatLevel - 1]}</p>}
               </div>
             </div>

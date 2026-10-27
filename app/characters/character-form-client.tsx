@@ -14,7 +14,7 @@ import { HistoryStep } from '@/components/character-form/history-step'
 import { CreationHint, Field, SheetSection } from '@/components/character-form/form-controls'
 import { dots } from '@/components/character-form/dot-track'
 import { mentalSkills, physicalSkills, socialSkills, type QuickSkillMode } from '@/components/character-form/skill-options'
-import { createEmptyPower } from '@/components/character-form/discipline-fields'
+import { createEmptyPower, type DisciplinePower } from '@/components/character-form/discipline-fields'
 
 import Link from 'next/link'
 import { CampaignCreationGate, type AcceptedCampaignInvitation } from '@/components/campaign-creation-gate'
@@ -34,7 +34,7 @@ import { normalizeSkillId, serializeCharacterSkills, validateCharacterSkills } f
 import { calculateSecondaryAttributes } from '@/lib/vtm-v5/secondary-attributes'
 import { BloodPotencySummary } from '@/components/character-summary/blood-potency-summary'
 import { BLOOD_POTENCY_DERIVED_FIELDS } from '@/lib/vtm-v5/blood-potency'
-import type { CreationGrant } from '@/lib/vtm-v5/creation-grants'
+import { manualSkillValues, type CreationGrant } from '@/lib/vtm-v5/creation-grants'
 import { arrangeDisciplineEditor, fillDisciplinePowerSlots } from '@/lib/vtm-v5/discipline-editor'
 
 const fetcher = (url: string) => fetch(url).then((response) => response.json())
@@ -99,12 +99,12 @@ function CampaignLink({ characterId, onBeforeSubmit, onCampaignChange }: Readonl
   return <section className="mb-6 border border-border bg-card p-5" aria-label="Vincular ficha independente à mesa">
     <h2 className="font-serif text-xl">Incluir vínculo de mesa</h2>
     <CampaignCreationGate compact onReady={async invitation => {
-      if (!invitation) return
-      if (!(await onBeforeSubmit())) throw new Error('Salve a ficha antes de vincular a mesa.')
+      if (!invitation) { return }
+      if (!(await onBeforeSubmit())) { throw new Error('Salve a ficha antes de vincular a mesa.') }
       const current = await fetcher('/api/characters?id=' + characterId)
       const response = await fetch('/api/characters/' + characterId + '/campaign', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ invitation, expectedRevision: current.character.revision, idempotencyKey: crypto.randomUUID() }) })
       const body = await response.json()
-      if (!response.ok) throw new Error(body.error ?? 'Não foi possível vincular a mesa.')
+      if (!response.ok) { throw new Error(body.error ?? 'Não foi possível vincular a mesa.') }
       await onCampaignChange()
     }} />
   </section>
@@ -141,6 +141,8 @@ export default function CharacterFormClient({
   const [gmItems, setGmItems] = useState<PossessionItem[]>([])
   const [possessionFeedback, setPossessionFeedback] = useState('')
   const [addingPossession, setAddingPossession] = useState(false)
+  const possessionKeys = useRef<Record<string, string>>({})
+  const sendingPossession = useRef(false)
   const [newPossessionLabel, setNewPossessionLabel] = useState('')
   const [newPossessionDesc, setNewPossessionDesc] = useState('')
   const router = useRouter()
@@ -174,19 +176,24 @@ export default function CharacterFormClient({
   const [retainer, setRetainer] = useState({ controlMethod: 'VITAE', isGhoul: true, domitorCharacterId: '', storedVitaeJustification: '', disciplineLevel: 1, bondStrength: 1 })
 
   const handleAddPossession = async () => {
-    if (!newPossessionLabel.trim()) return
+    if (sendingPossession.current || saving || !newPossessionLabel.trim()) { return }
     const label = newPossessionLabel.trim()
     const description = newPossessionDesc.trim() || undefined
     if (characterId) {
+      sendingPossession.current = true
       setAddingPossession(true)
+      const operation = JSON.stringify([characterId, label, description])
+      possessionKeys.current[operation] ??= crypto.randomUUID()
       try {
         const response = await fetch('/api/possessions', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ characterId, label, description, origin: 'player' }),
+          body: JSON.stringify({ characterId, label, description, origin: 'player', idempotencyKey: possessionKeys.current[operation] }),
         })
         const result = await response.json().catch(() => null)
-        if (!response.ok) throw new Error(result?.error ?? 'Não foi possível enviar o pertence.')
+        if (!response.ok) { throw new Error(result?.error ?? 'Não foi possível enviar o pertence.') }
+        if (!result?.possession?.id || !Number.isSafeInteger(result.revision)) { throw new Error('Resposta inválida. Tente novamente para confirmar o mesmo pertence.') }
+        delete possessionKeys.current[operation]
         await mutatePossessions()
         setNewPossessionLabel('')
         setNewPossessionDesc('')
@@ -194,6 +201,7 @@ export default function CharacterFormClient({
       } catch (error) {
         setPossessionFeedback(error instanceof Error ? error.message : 'Falha ao enviar. O texto foi preservado para tentar novamente.')
       } finally {
+        sendingPossession.current = false
         setAddingPossession(false)
       }
       return
@@ -217,12 +225,23 @@ export default function CharacterFormClient({
     ? { ...resources, humanidade: secondaryAttributes.initialHumanity, vitalidade: secondaryAttributes.healthMax, vontade: secondaryAttributes.willpowerMax }
     : resources
   const [confirmingDiscipline, setConfirmingDiscipline] = useState<{ index: number; name: string } | null>(null)
-  const { data: characterData, mutate: mutateCharacter } = useSWR<{ character?: { id: string; revision: number; name: string; status: CharacterStatus; characterType: CharacterType; campaignId?: string | null; creationGrants?: CreationGrant[]; data: Record<string, unknown> }; campaign?: { principios: string | null } | null }>(characterId ? `/api/characters?id=${characterId}` : null, fetcher)
+  const { data: characterData, mutate: mutateCharacter } = useSWR<{ character?: { id: string; revision: number; name: string; status: CharacterStatus; characterType: CharacterType; campaignId?: string | null; creationGrants?: CreationGrant[]; canReduceSkills?: boolean; data: Record<string, unknown> }; campaign?: { principios: string | null } | null }>(characterId ? `/api/characters?id=${characterId}` : null, fetcher)
   const { data: possessionsData, mutate: mutatePossessions } = useSWR<{ possessions: PossessionItem[] }>(characterId ? `/api/possessions?characterId=${characterId}` : null, fetcher)
 
   useEffect(() => {
     if (characterData?.character?.data) {
-      const data = characterData.character.data
+      function restoreCharacterDisciplines(data: Record<string,unknown>,characterData: { character?: { id: string; revision: number; name: string; status: CharacterStatus; characterType: CharacterType; campaignId?: string|null; creationGrants?: CreationGrant[]; canReduceSkills?: boolean; data: Record<string,unknown> }; campaign?: { principios: string|null }|null }) {
+  if(Array.isArray(data['disciplinas'])) {
+    const loadedDisciplines=(data['disciplinas'] as Array<{ id?: string; name?: string; level?: number; powers?: DisciplinePower[]} >).map(d => ({
+      id: d.id||crypto.randomUUID(),
+      name: d.name||'',
+      level: Number(d.level)||0,
+      powers: fillDisciplinePowerSlots(Array.isArray(d.powers)? d.powers:[],Number(d.level)||0,createEmptyPower)
+    }))
+    setDisciplines(arrangeDisciplineEditor(loadedDisciplines,characterData.character?.creationGrants??[],{ id: crypto.randomUUID(),name: '',level: 0,powers: [] }))
+  }
+}
+const data = characterData.character.data
       setCharacterType(characterData.character.characterType ?? 'PLAYER_VAMPIRE')
       setCreationType((data.creationType as CreationType) ?? 'FLEDGLING')
       setEntryMode(data.entryMode === 'EXISTING' ? 'EXISTING' : 'ASSISTED')
@@ -264,15 +283,7 @@ export default function CharacterFormClient({
       for (const skill of [...physicalSkills, ...socialSkills, ...mentalSkills]) loadedSkills[skill] = validatedSkills.skills[normalizeSkillId(skill)] ?? 0
       setSkills(loadedSkills)
       // Carregar disciplinas
-      if (Array.isArray(data['disciplinas'])) {
-        const loadedDisciplines = (data['disciplinas'] as Array<{ id?: string; name?: string; level?: number; powers?: any[] }>).map(d => ({
-          id: d.id || crypto.randomUUID(),
-          name: d.name || '',
-          level: Number(d.level) || 0,
-          powers: fillDisciplinePowerSlots(Array.isArray(d.powers) ? d.powers : [], Number(d.level) || 0, createEmptyPower)
-        }))
-        setDisciplines(arrangeDisciplineEditor(loadedDisciplines, characterData.character.creationGrants ?? [], { id: crypto.randomUUID(), name: '', level: 0, powers: [] }))
-      }
+      restoreCharacterDisciplines(data,characterData)
       // Carregar recursos
       setResources({
         humanidade: Number(data['humanidade']) || 0,
@@ -352,7 +363,9 @@ export default function CharacterFormClient({
   const attributePointsRemaining = remainingPoints(attributeValues, ATTRIBUTE_DISTRIBUTION)
   const attributesComplete = matchesDistribution(attributeValues, ATTRIBUTE_DISTRIBUTION)
   const selectedSkillDistribution = SKILL_DISTRIBUTIONS[skillMode]
-  const skillValues = Object.values(skills)
+  const creationGrants = characterData?.character?.creationGrants ?? []
+  const canReduceSkills = characterData?.character?.canReduceSkills ?? !characterId
+  const skillValues = Object.values(manualSkillValues(skills, creationGrants))
   const skillPointsRemaining = remainingPoints(skillValues, selectedSkillDistribution)
   const skillsComplete = matchesDistribution(skillValues, selectedSkillDistribution)
   const disciplineDots = disciplines.reduce((total, discipline) => total + discipline.level, 0)
@@ -365,19 +378,21 @@ export default function CharacterFormClient({
   const flawDots = flaws.reduce((total, flaw) => total + flaw.level, 0)
 
   const setSkill = (name: string, value: number) => setSkills((current) => {
+    const grants = creationGrants.filter(grant => grant.kind === 'SKILL' && grant.id === normalizeSkillId(name)).reduce((sum, grant) => sum + grant.dots, 0)
+    if (value < grants || !canReduceSkills && value < (current[name] ?? 0)) { return current }
     const next = { ...current, [name]: value }
-    return (independent && entryMode === 'EXISTING') || value <= (current[name] ?? 0) || fitsDistribution(Object.values(next), selectedSkillDistribution) ? next : current
+    return (independent && entryMode === 'EXISTING') || value <= (current[name] ?? 0) || fitsDistribution(Object.values(manualSkillValues(next, creationGrants)), selectedSkillDistribution) ? next : current
   })
 
   const handleDisciplineLevelChange = (index: number, nextLevel: number) => {
     setDisciplines((current) => current.map((d, i) => {
-      if (i !== index) return d
+      if (i !== index) { return d }
       const granted = (characterData?.character?.creationGrants ?? []).filter(grant => grant.kind === 'DISCIPLINE' && grant.id === d.id && (!independent || grant.origin !== 'CLAN')).reduce((total, grant) => total + grant.dots, 0)
-      if (nextLevel < granted) return d
-      if (!independent && characterType === 'PLAYER_VAMPIRE' && nextLevel > d.level && !initialDisciplineOptions.some(name => normalizeDiscipline(name) === normalizeDiscipline(d.name))) return d
-      if (!independent && characterType === 'PLAYER_VAMPIRE' && (characterData?.character?.creationGrants ?? []).some(grant => grant.kind === 'DISCIPLINE' && grant.origin === 'CLAN')) return d
+      if (nextLevel < granted) { return d }
+      if (!independent && characterType === 'PLAYER_VAMPIRE' && nextLevel > d.level && !initialDisciplineOptions.some(name => normalizeDiscipline(name) === normalizeDiscipline(d.name))) { return d }
+      if (!independent && characterType === 'PLAYER_VAMPIRE' && (characterData?.character?.creationGrants ?? []).some(grant => grant.kind === 'DISCIPLINE' && grant.origin === 'CLAN')) { return d }
       const otherDots = current.reduce((total, discipline, disciplineIndex) => total + (disciplineIndex === index ? 0 : discipline.level), 0)
-      if (!independent && characterType === 'PLAYER_VAMPIRE' && creationType !== 'THIN_BLOOD' && nextLevel > d.level && (otherDots + nextLevel > 3 + predatorDisciplineBonus || nextLevel > 2 + predatorDisciplineBonus)) return d
+      if (!independent && characterType === 'PLAYER_VAMPIRE' && creationType !== 'THIN_BLOOD' && nextLevel > d.level && (otherDots + nextLevel > 3 + predatorDisciplineBonus || nextLevel > 2 + predatorDisciplineBonus)) { return d }
       const trimmedPowers = [...(d.powers || [])].map(p => typeof p === 'string' ? { ...createEmptyPower(), name: p } : p)
       const adjustedPowers = trimmedPowers.slice(0, Math.max(nextLevel, 0))
       while (adjustedPowers.length < 5) adjustedPowers.push(createEmptyPower())
@@ -386,76 +401,79 @@ export default function CharacterFormClient({
   }
 
   async function saveDraft(redirectUrl?: string, acceptedInvitation?: AcceptedCampaignInvitation) {
-    if (!characterId && campaignInvitation === 'UNDECIDED' && !acceptedInvitation) return null
-    if (mode === 'edit' && (!characterId || !characterData?.character)) return null
+    function collectCharacterFormData() {
+  return {
+    ...characterData?.character?.data,
+    characterType,
+    creationType,
+    entryMode,
+    skillMode,
+    npc: { mode: characterType==='VAMPIRE_NPC'? 'POOLS':npcMode,difficulty: npcDifficulty,...npcPools },
+    retainer: { ...retainer,domitorCharacterId: retainer.domitorCharacterId||null },
+    // Identidade
+    nome: nome||'',
+    conceito: conceito||'',
+    cla: cla||'',
+    predador: predador||'',
+    geracao: geracao||'',
+    sire: sire||'',
+    'potencia-de-sangue': characterText(bloodPotency||0),
+    'idade-verdadeira': idadeVerdadeira||'',
+    'idade-aparente': idadeAparente||'',
+    'dados-de-vida': dadosVida||'',
+    'dados-da-morte': dadosMorte||'',
+
+    // Atributos
+    forca: characterText(attributes.forca||1),
+    destreza: characterText(attributes.destreza||1),
+    vigor: characterText(attributes.vigor||1),
+    carisma: characterText(attributes.carisma||1),
+    manipulacao: characterText(attributes.manipulacao||1),
+    compostura: characterText(attributes.compostura||1),
+    inteligencia: characterText(attributes.inteligencia||1),
+    raciocinio: characterText(attributes.raciocinio||1),
+    determinacao: characterText(attributes.determinacao||1),
+
+    // Habilidades
+    ...Object.fromEntries(Object.entries(skills).map(([key,value]) => [`habilidade-${key}`,characterText(value)])),
+
+    // Disciplinas
+    disciplinas: disciplines.map(d => ({
+      id: d.id,
+      name: d.name,
+      level: d.level,
+      powers: d.powers.map(p => (typeof p==='string'? { ...createEmptyPower(),name: p }:p))
+    })),
+
+    // Recursos
+    humanidade: characterText(displayedResources.humanidade),
+    vontade: characterText(displayedResources.vontade),
+    vitalidade: characterText(displayedResources.vitalidade),
+    fome: characterText(resources.fome||0),
+    'convicoes-pilar-1': convictions[0]?.pilar||'',
+    'convicoes-crenca-1': convictions[0]?.crenca||'',
+    'convicoes-pilar-2': convictions[1]?.pilar||'',
+    'convicoes-crenca-2': convictions[1]?.crenca||'',
+    'convicoes-pilar-3': convictions[2]?.pilar||'',
+    'convicoes-crenca-3': convictions[2]?.crenca||'',
+
+    // Vantagens e Defeitos
+    vantagens: merits.map(m => ({ id: m.id,name: m.name,level: m.level,description: m.description })),
+    defeitos: flaws.map(f => ({ id: f.id,name: f.name,level: f.level,description: f.description })),
+    pertences: possessions.map(p => ({ label: p.label,description: p.description,status: p.status })),
+
+    // Histórico
+    historico: formData['historico']||'',
+    notas: formData['notas']||'',
+  }
+}
+if (!characterId && campaignInvitation === 'UNDECIDED' && !acceptedInvitation) { return null }
+    if (mode === 'edit' && (!characterId || !characterData?.character)) { return null }
     setSaving(true)
     const formData = formRef.current ? Object.fromEntries(new FormData(formRef.current).entries()) : {}
 
     // Constrói o objeto data com todos os valores do estado e do formulário
-    const data = {
-      ...characterData?.character?.data,
-      characterType,
-      creationType,
-      entryMode,
-      skillMode,
-      npc: { mode: characterType === 'VAMPIRE_NPC' ? 'POOLS' : npcMode, difficulty: npcDifficulty, ...npcPools },
-      retainer: { ...retainer, domitorCharacterId: retainer.domitorCharacterId || null },
-      // Identidade
-      nome: nome || '',
-      conceito: conceito || '',
-      cla: cla || '',
-      predador: predador || '',
-      geracao: geracao || '',
-      sire: sire || '',
-      'potencia-de-sangue': characterText(bloodPotency || 0),
-      'idade-verdadeira': idadeVerdadeira || '',
-      'idade-aparente': idadeAparente || '',
-      'dados-de-vida': dadosVida || '',
-      'dados-da-morte': dadosMorte || '',
-
-      // Atributos
-      forca: characterText(attributes.forca || 1),
-      destreza: characterText(attributes.destreza || 1),
-      vigor: characterText(attributes.vigor || 1),
-      carisma: characterText(attributes.carisma || 1),
-      manipulacao: characterText(attributes.manipulacao || 1),
-      compostura: characterText(attributes.compostura || 1),
-      inteligencia: characterText(attributes.inteligencia || 1),
-      raciocinio: characterText(attributes.raciocinio || 1),
-      determinacao: characterText(attributes.determinacao || 1),
-
-      // Habilidades
-      ...Object.fromEntries(Object.entries(skills).map(([key, value]) => [`habilidade-${key}`, characterText(value)])),
-
-      // Disciplinas
-      disciplinas: disciplines.map(d => ({
-        id: d.id,
-        name: d.name,
-        level: d.level,
-        powers: d.powers.map(p => (typeof p === 'string' ? { ...createEmptyPower(), name: p } : p))
-      })),
-
-      // Recursos
-      humanidade: characterText(displayedResources.humanidade),
-      vontade: characterText(displayedResources.vontade),
-      vitalidade: characterText(displayedResources.vitalidade),
-      fome: characterText(resources.fome || 0),
-      'convicoes-pilar-1': convictions[0]?.pilar || '',
-      'convicoes-crenca-1': convictions[0]?.crenca || '',
-      'convicoes-pilar-2': convictions[1]?.pilar || '',
-      'convicoes-crenca-2': convictions[1]?.crenca || '',
-      'convicoes-pilar-3': convictions[2]?.pilar || '',
-      'convicoes-crenca-3': convictions[2]?.crenca || '',
-
-      // Vantagens e Defeitos
-      vantagens: merits.map(m => ({ id: m.id, name: m.name, level: m.level, description: m.description })),
-      defeitos: flaws.map(f => ({ id: f.id, name: f.name, level: f.level, description: f.description })),
-      pertences: possessions.map(p => ({ label: p.label, description: p.description, status: p.status })),
-
-      // Histórico
-      historico: formData['historico'] || '',
-      notas: formData['notas'] || '',
-    }
+    const data = collectCharacterFormData()
     let canonicalData: Record<string, unknown>
     try {
       canonicalData = serializeCharacterSkills(data, skills)
@@ -491,15 +509,25 @@ export default function CharacterFormClient({
     }
     if (savedCharacterId) {
       try {
-        const savedUrl = `/api/characters?id=${savedCharacterId}`
+        async function persistDraftPossessions(possessions: PossessionItem[],savedCharacterId: string) {
+  for(const draft of possessions.filter(item => !item.id)) {
+    const response=await fetch('/api/possessions',{ method: 'POST',headers: { 'Content-Type': 'application/json' },body: JSON.stringify({ characterId: savedCharacterId,label: draft.label,description: draft.description,origin: 'player',idempotencyKey: draft.clientKey }) })
+    const result=await response.json().catch(() => null)
+    if(!response.ok||!result?.possession?.id||!Number.isSafeInteger(result.revision)) { throw new Error(result?.error??'A ficha foi salva, mas há pertences não confirmados. Salve novamente para reenviar os mesmos rascunhos.') }
+    setPossessions(current => current.map(item => item.clientKey===draft.clientKey? result.possession:item))
+  }
+}
+const savedUrl = `/api/characters?id=${savedCharacterId}`
+        await persistDraftPossessions(possessions,savedCharacterId)
+        await mutateCache(`/api/possessions?characterId=${savedCharacterId}`)
         const refreshed = characterId
           ? await mutateCharacter()
           : await mutateCache(savedUrl, fetcher(savedUrl), { revalidate: false })
-        if (!refreshed?.character || !Number.isSafeInteger(refreshed.character.revision)) throw new Error('Leitura da ficha inválida.')
+        if (!refreshed?.character || !Number.isSafeInteger(refreshed.character.revision)) { throw new Error('Leitura da ficha inválida.') }
         setCharacterStatus(refreshed.character.status)
       } catch {
         setSaving(false)
-        setValidationError('A ficha foi salva, mas não foi possível atualizar sua revisão. Recarregue a página antes de editar novamente.')
+        setValidationError('A ficha foi salva, mas não foi possível confirmar a atualização dos dados e pertences. Seus rascunhos foram preservados; tente salvar novamente.')
         return null
       }
     }
@@ -531,7 +559,7 @@ export default function CharacterFormClient({
     setValidating(true)
     try {
       const id = await saveDraft()
-      if (id) await validateSavedCharacter(id)
+      if (id) { await validateSavedCharacter(id) }
     } catch {
       setValidationError('Não foi possível salvar ou validar a ficha. Seus campos foram preservados; tente novamente.')
     } finally {
@@ -555,7 +583,7 @@ export default function CharacterFormClient({
     })
     const result = await response.json().catch(() => null)
     setSubmitting(false)
-    if (result?.report) setValidationReport(result.report as ValidationReport)
+    if (result?.report) { setValidationReport(result.report as ValidationReport) }
     if (!response.ok) {
       setValidationError(result?.error ?? 'Não foi possível enviar a ficha para revisão.')
       return
@@ -563,22 +591,22 @@ export default function CharacterFormClient({
     setCharacterStatus(characterData?.campaign ? 'PENDING_REVIEW' : 'APPROVED')
     try {
       const refreshed = await mutateCharacter()
-      if (!refreshed?.character || !Number.isSafeInteger(refreshed.character.revision)) throw new Error('Leitura da ficha inválida.')
+      if (!refreshed?.character || !Number.isSafeInteger(refreshed.character.revision)) { throw new Error('Leitura da ficha inválida.') }
     } catch {
       setValidationError('O status foi atualizado, mas não foi possível atualizar a revisão. Recarregue a página antes de editar novamente.')
     }
   }
 
   async function changeTab(tab: TabId) {
-    if (tab === activeTab || saving) return
+    if (tab === activeTab || saving) { return }
     const didSave = await saveDraft()
-    if (didSave) setActiveTab(tab)
+    if (didSave) { setActiveTab(tab) }
   }
 
-  if (mode === 'create' && !characterId && campaignInvitation === 'UNDECIDED') return <CampaignCreationGate onReady={async invitation => {
-    if (invitation && !(await saveDraft(undefined, invitation))) throw new Error('Não foi possível aceitar o convite e criar a ficha. Consulte novamente o convite e tente outra vez.')
+  if (mode === 'create' && !characterId && campaignInvitation === 'UNDECIDED') { return <CampaignCreationGate onReady={async invitation => {
+    if (invitation && !(await saveDraft(undefined, invitation))) { throw new Error('Não foi possível aceitar o convite e criar a ficha. Consulte novamente o convite e tente outra vez.') }
     setCampaignInvitation(null)
-  }} />
+  }} /> }
 
   const disciplineCreationHint=getDisciplineCreationHint(characterType,creationType,predatorDisciplineBonus,disciplinePointsRemaining)
   let submitLabel
@@ -612,12 +640,12 @@ export default function CharacterFormClient({
           {activeTab === 'identidade' && characterType === 'RETAINER' && <section className="mb-6 border border-border bg-card p-5" aria-labelledby="retentor-titulo"><p className="eyebrow">Criação rápida</p><div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center"><h2 id="retentor-titulo" className="mt-2 font-serif text-xl">Retentor ou carniçal</h2><button type="button" className="button-ghost" onClick={() => { setRetainer((current) => ({ ...current, isGhoul: true, disciplineLevel: GHOUL_TEMPLATE.disciplineLevel })); setNpcPools({ physicalPool: GHOUL_TEMPLATE.physicalPool, socialPool: GHOUL_TEMPLATE.socialPool, mentalPool: GHOUL_TEMPLATE.mentalPool }); setResources((current) => ({ ...current, vitalidade: GHOUL_TEMPLATE.health, vontade: GHOUL_TEMPLATE.willpower })) }}>Aplicar template de carniçal</button></div><div className="sheet-grid sheet-grid-2 mt-4"><label className="sheet-field"><span>Método de controle</span><select className="select" value={retainer.controlMethod} onChange={(event) => setRetainer((current) => ({ ...current, controlMethod: event.target.value }))}><option value="VITAE">Vitae</option><option value="PAYMENT">Pagamento</option><option value="LOYALTY">Lealdade</option><option value="COERCION">Coerção</option></select></label><label className="sheet-field"><span>Força do Laço de Sangue</span><input className="input" type="number" min="1" max="6" value={retainer.bondStrength} onChange={(event) => setRetainer((current) => ({ ...current, bondStrength: Number(event.target.value) }))} /></label><label className="sheet-field"><span>ID do domitor</span><input className="input" value={retainer.domitorCharacterId} onChange={(event) => setRetainer((current) => ({ ...current, domitorCharacterId: event.target.value }))} placeholder="UUID da ficha do domitor" /></label><label className="sheet-field"><span>Justificativa de vitae armazenada</span><input className="input" value={retainer.storedVitaeJustification} onChange={(event) => setRetainer((current) => ({ ...current, storedVitaeJustification: event.target.value }))} placeholder="Informe quando não houver domitor" /></label></div></section>}
           {activeTab === 'identidade' && <SheetSection title="Identidade" eyebrow="I / o nome antes da noite"><div className="sheet-grid sheet-grid-4"><Field label="Conceito" name="conceito" placeholder="O que define esta criatura?" className="span-2" value={conceito} onChange={(e) => setConceito(e.target.value)} />{characterType !== 'PLAYER_VAMPIRE' && <><Field label="Clã" name="cla" placeholder="Selecione" value={cla} onChange={(event) => setCla(event.target.value)} /><Field label="Predador" name="predador" placeholder="Instinto dominante" value={predador} onChange={(event) => setPredador(event.target.value)} /></>}<Field label="Geração" name="geracao" placeholder="—" value={geracao} onChange={(e) => setGeracao(e.target.value)} /></div><div className="identity-subsection"><div className="blood-heading"><h3>Potência de Sangue</h3>{dots(10, bloodPotency, setBloodPotency, 'potencia-de-sangue')}</div>{['PLAYER_VAMPIRE', 'VAMPIRE_NPC'].includes(characterType) && <BloodPotencySummary draft={{ ...characterData?.character?.data, characterType, creationType, cla, 'potencia-de-sangue': bloodPotency }} />}<dl className="mt-4 grid gap-3 sm:grid-cols-3" aria-label={historicalXp ? 'Experiência histórica' : 'Experiência calculada'}><div><dt>{historicalXp ? 'XP histórico total' : 'Experiência Total'}</dt><dd>{totalXp} XP</dd></div><div><dt>{historicalXp ? 'XP histórico gasto' : 'Experiência Gasta'}</dt><dd>{spentXp} XP</dd></div><div><dt>{historicalXp ? 'XP histórico disponível' : 'XP Disponível'}</dt><dd>{availableXp} XP</dd></div></dl><div className="sheet-grid sheet-grid-2 mt-4"><Field label="Idade Verdadeira" name="idade-verdadeira" value={idadeVerdadeira} onChange={(e) => setIdadeVerdadeira(e.target.value)} /><Field label="Idade Aparente" name="idade-aparente" value={idadeAparente} onChange={(e) => setIdadeAparente(e.target.value)} /></div><div className="sheet-grid sheet-grid-2 mt-6"><label className="sheet-field"><span>Dados de Vida</span><textarea name="dados-de-vida" rows={4} placeholder="Data de nascimento e a descrição do seu último dia de vida." value={dadosVida} onChange={(e) => setDadosVida(e.target.value)} /></label><label className="sheet-field"><span>Dados da Morte</span><textarea name="dados-da-morte" rows={4} placeholder="Data do Abraço e como você se tornou uma criatura da noite." value={dadosMorte} onChange={(e) => setDadosMorte(e.target.value)} /></label></div></div></SheetSection>}
           {activeTab === 'atributos' && <AttributesStep independent={independent} attributes={attributes} attributesComplete={attributesComplete} attributePointsRemaining={attributePointsRemaining} setAttribute={setAttribute} />}
-          {activeTab === 'habilidades' && <SkillsStep independent={independent} skills={skills} skillMode={skillMode} setSkillMode={setSkillMode} skillsComplete={skillsComplete} skillPointsRemaining={skillPointsRemaining} setSkill={setSkill} />}
+          {activeTab === 'habilidades' && <SkillsStep independent={independent} skills={skills} skillMode={skillMode} setSkillMode={setSkillMode} skillsComplete={skillsComplete} skillPointsRemaining={skillPointsRemaining} setSkill={setSkill} creationGrants={creationGrants} canReduceSkills={canReduceSkills} />}
           {activeTab === 'disciplinas' && <p className="mb-4 text-sm text-muted-foreground">Pontos iniciais: {initialDisciplineOptions.join(' · ') || 'Selecione o clã e suas opções na identidade.'} Predação é aplicada pelo seletor próprio e pode conceder uma Disciplina adicional fora do clã. Níveis adquiridos com XP são alterados somente pela evolução.</p>}
           {activeTab === 'disciplinas' && incompatibleDisciplines.length > 0 && <p role="alert" className="mb-4 text-sm text-primary">Escolhas incompatíveis: {incompatibleDisciplines.map(row => row.name).join(', ')}. Corrija as escolhas antes de concluir.</p>}
           {activeTab === 'disciplinas' && <DisciplinesStep disciplines={disciplines} setDisciplines={setDisciplines} confirmingDiscipline={confirmingDiscipline} setConfirmingDiscipline={setConfirmingDiscipline} availableDisciplines={availableDisciplines} handleDisciplineLevelChange={handleDisciplineLevelChange} addDiscipline={addDiscipline} creationGrants={(characterData?.character?.creationGrants ?? []).filter(grant => !independent || grant.origin !== 'CLAN' || grant.kind !== 'DISCIPLINE')} />}
           {activeTab === 'recursos' && <ResourcesStep characterType={characterType} displayedResources={displayedResources} setResources={setResources} convictions={convictions} setConvictions={setConvictions} principios={characterData?.campaign?.principios} showMissingPrinciples={!characterId || Boolean(characterData)} secondaryAttributes={secondaryAttributes} />}
-          {activeTab === 'vantagens' && <SheetSection title="Vantagens e Defeitos" eyebrow="VII / o que soma e o que custa"><p className="mb-5 text-xs text-muted-foreground">Clique no nome ou na descrição para pesquisar no catálogo ou criar um registro personalizado.</p><TraitsEditor merits={merits} flaws={flaws} setMerits={setMerits} setFlaws={setFlaws} grants={characterData?.character?.creationGrants ?? []} /><div className="mt-10 border-t border-border pt-8"><div className="blood-heading mb-4"><h3>Pertences e Posses</h3></div><p className="mb-6 text-xs text-muted-foreground">{characterData?.campaign ? 'Cadastre itens e equipamentos. Pertences submetidos aguardam aprovação do mestre. Itens concedidos pelo mestre são somente leitura.' : 'Cadastre itens e equipamentos. Fichas sem mesa não precisam de aprovação dos pertences.'}</p><div className="sheet-grid sheet-grid-2 gap-6"><div className="flex flex-col gap-4"><h4 className="font-mono text-xs uppercase tracking-wider text-[#d47776]">Seus Pertences</h4><div className="flex flex-col gap-3 border border-border bg-[#101013] p-4"><p className="text-[10px] font-mono font-semibold uppercase tracking-wider text-muted-foreground">Adicionar Novo Pertence</p>{possessionFeedback && <output className="block text-xs text-muted-foreground">{possessionFeedback}</output>}<label className="sheet-field"><span>Item / Equipamento</span><input value={newPossessionLabel} onChange={(e) => setNewPossessionLabel(e.target.value)} placeholder="Ex.: Carro Sedan, Armamento, Celular Seguro" /></label><label className="sheet-field"><span>Descrição (opcional)</span><input value={newPossessionDesc} onChange={(e) => setNewPossessionDesc(e.target.value)} placeholder="Detalhes do item ou localização" /></label><button type="button" onClick={handleAddPossession} disabled={addingPossession || !newPossessionLabel.trim()} className="button-ghost mt-1 inline-flex items-center gap-2 self-start"><Plus className="size-4" /> Adicionar pertence</button></div><div className="mt-2 flex flex-col gap-3">{possessions.length === 0 ? <p className="text-xs italic text-muted-foreground">Nenhum pertence cadastrado.</p> : possessions.map((item, index) => <div key={item.id ?? item.clientKey} className="flex flex-col gap-2 border border-border bg-[#151519] p-3.5"><input type="hidden" name={`pertence-${index}-label`} value={item.label} /><input type="hidden" name={`pertence-${index}-description`} value={item.description ?? ''} /><input type="hidden" name={`pertence-${index}-status`} value={item.status} /><div className="flex items-center justify-between gap-3"><span className="text-sm font-semibold">{item.label}</span>{item.status === 'aprovado' && <span className="status active"><span className="status-dot" /> Aprovado</span>}{item.status === 'reprovado' && <span className="status risk"><span className="status-dot" /> Reprovado</span>}{!item.id && <span className="status">Rascunho em memória</span>}{item.id && item.status === 'pendente' && <span className="status" style={{ borderColor: '#8a7332', color: '#e5c069' }}><span className="status-dot" /> Pendente</span>}</div>{item.description && <p className="text-xs text-muted-foreground">{item.description}</p>}{item.masterComment && <div className="mt-1 border-t border-border/50 pt-2 text-xs text-[#d77a75]"><span className="font-semibold">Comentário do Mestre:</span> {item.masterComment}</div>}</div>)}</div></div><div className="flex flex-col gap-4"><h4 className="font-mono text-xs uppercase tracking-wider text-[#9ac59b]">Concedidos pelo Mestre</h4><div className="flex flex-col gap-3">{gmItems.length === 0 ? <div className="border border-dashed border-border p-4 text-center"><p className="text-xs italic text-muted-foreground">Nenhum item foi concedido pelo mestre ainda.</p></div> : gmItems.map((item, index) => <div key={item.id} className="flex flex-col gap-2 border border-[#456649]/40 bg-[#142016]/40 p-3.5"><input type="hidden" name={`gm-item-${index}-label`} value={item.label} /><input type="hidden" name={`gm-item-${index}-description`} value={item.description ?? ''} /><div className="flex items-center justify-between gap-3"><span className="text-sm font-semibold text-[#b5d9b7]">{item.label}</span><span className="status active"><span className="status-dot" /> Concedido pelo Mestre</span></div>{item.description && <p className="text-xs text-muted-foreground">{item.description}</p>}{item.masterComment && <div className="mt-1 border-t border-[#456649]/30 pt-2 text-xs text-[#9ac59b]"><span className="font-semibold">Nota do Mestre:</span> {item.masterComment}</div>}</div>)}</div></div></div></div></SheetSection>}
+          {activeTab === 'vantagens' && <SheetSection title="Vantagens e Defeitos" eyebrow="VII / o que soma e o que custa"><p className="mb-5 text-xs text-muted-foreground">Clique no nome ou na descrição para pesquisar no catálogo ou criar um registro personalizado.</p><TraitsEditor merits={merits} flaws={flaws} setMerits={setMerits} setFlaws={setFlaws} grants={characterData?.character?.creationGrants ?? []} /><div className="mt-10 border-t border-border pt-8"><div className="blood-heading mb-4"><h3>Pertences e Posses</h3></div><p className="mb-6 text-xs text-muted-foreground">{characterData?.campaign ? 'Cadastre itens e equipamentos. Pertences submetidos aguardam aprovação do mestre. Itens concedidos pelo mestre são somente leitura.' : 'Cadastre itens e equipamentos. Fichas sem mesa não precisam de aprovação dos pertences.'}</p><div className="sheet-grid sheet-grid-2 gap-6"><div className="flex flex-col gap-4"><h4 className="font-mono text-xs uppercase tracking-wider text-foreground">Seus Pertences</h4><div className="flex flex-col gap-3 border border-border bg-card p-4"><p className="text-[10px] font-mono font-semibold uppercase tracking-wider text-muted-foreground">Adicionar Novo Pertence</p>{possessionFeedback && <output className="block text-xs text-muted-foreground">{possessionFeedback}</output>}<label className="sheet-field"><span>Item / Equipamento</span><input value={newPossessionLabel} onChange={(e) => setNewPossessionLabel(e.target.value)} placeholder="Ex.: Carro Sedan, Armamento, Celular Seguro" /></label><label className="sheet-field"><span>Descrição (opcional)</span><input value={newPossessionDesc} onChange={(e) => setNewPossessionDesc(e.target.value)} placeholder="Detalhes do item ou localização" /></label><button type="button" onClick={handleAddPossession} disabled={saving || addingPossession || !newPossessionLabel.trim()} className="button-ghost mt-1 inline-flex items-center gap-2 self-start"><Plus className="size-4" /> Adicionar pertence</button></div><div className="mt-2 flex flex-col gap-3">{possessions.length === 0 ? <p className="text-xs italic text-muted-foreground">Nenhum pertence cadastrado.</p> : possessions.map((item, index) => <div key={item.id ?? item.clientKey} className="flex flex-col gap-2 border border-border bg-card p-3.5"><input type="hidden" name={`pertence-${index}-label`} value={item.label} /><input type="hidden" name={`pertence-${index}-description`} value={item.description ?? ''} /><input type="hidden" name={`pertence-${index}-status`} value={item.status} /><div className="flex items-center justify-between gap-3"><span className="text-sm font-semibold">{item.label}</span>{item.status === 'aprovado' && <span className="status active"><span className="status-dot" /> Aprovado</span>}{item.status === 'reprovado' && <span className="status risk"><span className="status-dot" /> Reprovado</span>}{!item.id && <span className="status">Rascunho em memória</span>}{item.id && item.status === 'pendente' && <span className="status" ><span className="status-dot" /> Pendente</span>}</div>{item.description && <p className="text-xs text-muted-foreground">{item.description}</p>}{item.masterComment && <div className="mt-1 border-t border-border/50 pt-2 text-xs text-foreground"><span className="font-semibold">Comentário do Mestre:</span> {item.masterComment}</div>}</div>)}</div></div><div className="flex flex-col gap-4"><h4 className="font-mono text-xs uppercase tracking-wider text-foreground">Concedidos pelo Mestre</h4><div className="flex flex-col gap-3">{gmItems.length === 0 ? <div className="border border-dashed border-border p-4 text-center"><p className="text-xs italic text-muted-foreground">Nenhum item foi concedido pelo mestre ainda.</p></div> : gmItems.map((item, index) => <div key={item.id} className="flex flex-col gap-2 border border-border/40 bg-card/40 p-3.5"><input type="hidden" name={`gm-item-${index}-label`} value={item.label} /><input type="hidden" name={`gm-item-${index}-description`} value={item.description ?? ''} /><div className="flex items-center justify-between gap-3"><span className="text-sm font-semibold text-foreground">{item.label}</span><span className="status active"><span className="status-dot" /> Concedido pelo Mestre</span></div>{item.description && <p className="text-xs text-muted-foreground">{item.description}</p>}{item.masterComment && <div className="mt-1 border-t border-border/30 pt-2 text-xs text-foreground"><span className="font-semibold">Nota do Mestre:</span> {item.masterComment}</div>}</div>)}</div></div></div></div></SheetSection>}
           {activeTab === 'historico' && <HistoryStep historico={historico} notas={notas} setHistorico={setHistorico} setNotas={setNotas} />}
         </div>
         {activeTab === 'habilidades' && characterType === 'PLAYER_VAMPIRE' && characterId && <CharacterSpecialties characterId={characterId} draftSkills={skills} characterRevision={characterData?.character?.revision} onBeforeSubmit={() => saveDraft()} onChange={() => { void mutateCharacter() }} />}
@@ -651,6 +679,12 @@ export default function CharacterFormClient({
     <div className="sheet-watermark" aria-hidden="true"><Skull className="size-56" /></div>
   </main>
 }
+
+
+
+
+
+
 
 function getInitialDisciplineOptions(savedClan: { code?: string; caitiffDisciplines?: string[] }|undefined,cla: string,creationType: string) {
 const clanDefinition=CLANS.find(entry => entry.code===savedClan?.code||entry.name.toLocaleLowerCase('pt-BR')===cla.toLocaleLowerCase('pt-BR'))
