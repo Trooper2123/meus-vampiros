@@ -1,3 +1,14 @@
+## [2026-10-28 19:56 BRT] — fix - Unificar perfil e corrigir criação de mesas
+
+**Tipo:** fix
+
+**Arquivos principais:** `lib/campaigns.ts`, `lib/auth0.ts`, `app/api/campaigns/route.ts`, `app/campaigns/new/page.tsx`, `app/campaigns/page.tsx`, `README.md`, `UI-GUIDE.md`, testes de criação/acesso/perfil/catálogos e `vitest.access.config.ts`.
+
+- Implementa perfil único: toda sessão autenticada com ID válido acessa funcionalidades de jogador e Narrador, sem exigir claims/roles do Auth0 ou possuir mesa anterior. Remove role artificial do desenvolvimento. O nome Narrador continua identificando o proprietário da mesa no contexto dos recursos.
+- Preserva vínculo das mesas por `master_user_id`, fichas por `user_id`, convites e permissões contextuais. Criação usa o ID da sessão; IDs de proprietário enviados pelo cliente não substituem o ator. Não altera schema, vínculos existentes ou dados persistentes.
+- Corrige textos UTF-8 corrompidos de clãs, predações, crônica e calendário. Formulário aguarda autenticação e catálogos completos, com erros explícitos. Consulta sem cache e resposta privada variando por Cookie; autenticação do GET precede preparação do banco.
+- Validação: build e TypeScript aprovados; lint global sem erros/cinco avisos preexistentes; npm audit sem vulnerabilidades. 58 testes focados aprovados em dez arquivos; revisão de segurança/pré-commit sem achados críticos/altos, diff --check aprovado e scan de padrões de segredos sem achados. Configuração de testes de acesso usa mocks sem credenciais ou setup de banco. QA manual, integração PostgreSQL e login/deploy em produção não executados.
+
 ## [2026-10-26 22:10 BRT] — style - Organizar seções do modo sessão
 
 **Tipo:** style

@@ -1,8 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { getSession, hasMasterAccess, getMasterResearchCatalog, redirect, notFound } = vi.hoisted(() => { vi.stubEnv('NODE_ENV', 'test'); vi.stubEnv('DATABASE_URL', undefined); return { getSession: vi.fn(), hasMasterAccess: vi.fn(), getMasterResearchCatalog: vi.fn(), redirect: vi.fn((path: string) => { throw new Error(`redirect:${path}`) }), notFound: vi.fn(() => { throw new Error('not-found') }) } })
+const { getSession, getMasterResearchCatalog, redirect, notFound } = vi.hoisted(() => { vi.stubEnv('NODE_ENV', 'test'); vi.stubEnv('DATABASE_URL', undefined); return { getSession: vi.fn(), getMasterResearchCatalog: vi.fn(), redirect: vi.fn((path: string) => { throw new Error(`redirect:${path}`) }), notFound: vi.fn(() => { throw new Error('not-found') }) } })
 vi.mock('@/lib/auth0', () => ({ getSessionOrDev: getSession }))
-vi.mock('@/lib/campaigns', () => ({ hasMasterAccess }))
 vi.mock('@/lib/db', () => ({ getMasterResearchCatalog }))
 vi.mock('next/navigation', () => ({ redirect, notFound }))
 
@@ -11,7 +10,7 @@ import { DISCIPLINE_RESEARCH, SKILL_CATALOG } from '@/lib/vtm-v5/research-catalo
 import { DISCIPLINES } from '@/lib/vtm-v5/disciplines'
 
 describe('catálogo de pesquisa do Narrador', () => {
-  beforeEach(() => { vi.clearAllMocks(); getSession.mockResolvedValue({ user: { sub: 'master-1' } }); hasMasterAccess.mockResolvedValue(true); getMasterResearchCatalog.mockResolvedValue({ entries: DISCIPLINE_RESEARCH, skills: SKILL_CATALOG, disciplines: DISCIPLINES }) })
+  beforeEach(() => { vi.clearAllMocks(); getSession.mockResolvedValue({ user: { sub: 'user-1' } }); getMasterResearchCatalog.mockResolvedValue({ entries: DISCIPLINE_RESEARCH, skills: SKILL_CATALOG, disciplines: DISCIPLINES }) })
 
   it('semeia conteúdos e habilidades com identificadores únicos e estáveis', () => {
     const catalog = { entries: DISCIPLINE_RESEARCH, skills: SKILL_CATALOG, disciplines: DISCIPLINES }
@@ -23,17 +22,16 @@ describe('catálogo de pesquisa do Narrador', () => {
     expect(catalog.entries.every(entry => entry.skillIds.every(id => catalog.skills.some(skill => skill.id === id)))).toBe(true)
   })
 
-  it('exige sessão e papel de Narrador no servidor', async () => {
+  it('exige sessão com identidade válida no servidor', async () => {
     getSession.mockResolvedValueOnce(null)
     await expect(MasterResearchPage()).rejects.toThrow('redirect:/auth/login?returnTo=/master/catalogo')
-    getSession.mockResolvedValueOnce({ user: { sub: 'player-1' } })
-    hasMasterAccess.mockResolvedValueOnce(false)
+    getSession.mockResolvedValueOnce({ user: { sub: '  ' } })
     await expect(MasterResearchPage()).rejects.toThrow('not-found')
   })
 
-  it('renderiza o acervo para Narradores autorizados', async () => {
+  it('renderiza o acervo para usuário autenticado sem roles', async () => {
     const page = await MasterResearchPage()
     expect(page.type).toBe('main')
-    expect(hasMasterAccess).toHaveBeenCalledWith({ sub: 'master-1' })
+    expect(getMasterResearchCatalog).toHaveBeenCalledOnce()
   })
 })

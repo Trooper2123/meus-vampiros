@@ -16,12 +16,11 @@ async function getAuthenticatedUser() {
 
 export async function GET() {
   try {
-    await ensureAllTables()
     const user = await getAuthenticatedUser()
-    if (!user) { return NextResponse.json({ error: 'Não autorizado' }, { status: 401 }) }
-    if (!await hasMasterAccess(user)) { return NextResponse.json({ campaigns: [], canCreate: false }) }
+    if (!user || !await hasMasterAccess(user)) { return NextResponse.json({ error: 'Não autorizado' }, { status: 401 }) }
+    await ensureAllTables()
     const campaigns = await getCampaignsForMaster(user.sub)
-    return NextResponse.json({ campaigns, canCreate: true, clans: CLANS.map(({ code, name }) => ({ code, name })), predatorTypes: PREDATOR_TYPES.map(({ code, name, source }) => ({ code, name, source })) })
+    return NextResponse.json({ campaigns, canCreate: true, clans: CLANS.map(({ code, name }) => ({ code, name })), predatorTypes: PREDATOR_TYPES.map(({ code, name, source }) => ({ code, name, source })) }, { headers: { 'Cache-Control': 'private, no-store', Vary: 'Cookie' } })
   } catch {
     return NextResponse.json({ error: 'Não foi possível carregar as mesas.' }, { status: 500 })
   }
@@ -30,8 +29,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const user = await getAuthenticatedUser()
-    if (!user) { return NextResponse.json({ error: 'Não autorizado' }, { status: 401 }) }
-    if (!await hasMasterAccess(user)) { return NextResponse.json({ error: 'Somente o Narrador pode criar uma mesa.' }, { status: 403 }) }
+    if (!user || !await hasMasterAccess(user)) { return NextResponse.json({ error: 'Não autorizado' }, { status: 401 }) }
     const body = await request.json().catch(() => null)
     if (!body || typeof body !== 'object' || Array.isArray(body)) { return NextResponse.json({ error: 'Dados da mesa inválidos.' }, { status: 400 }) }
     const { enabledClanCodes, enabledPredatorCodes, exceptionCodes } = readCampaignPolicy(body)

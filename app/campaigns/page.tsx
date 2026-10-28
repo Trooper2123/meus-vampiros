@@ -17,7 +17,7 @@ export default async function CampaignsPage() {
 
   const userIsMaster = await hasMasterAccess(session.user)
 
-  // Somente narradores acessam esta página.
+  // A capacidade é comum; a consulta abaixo retorna somente mesas deste usuário.
   if (!userIsMaster) redirect('/master')
 
   const campaigns = await getCampaignsForMaster(session.user.sub)

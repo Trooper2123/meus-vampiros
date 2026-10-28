@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const mocks = vi.hoisted(() => ({ session: vi.fn(), access: vi.fn(), duplicate: vi.fn(), get: vi.fn(), create: vi.fn(), update: vi.fn(), membership: vi.fn() }))
 vi.mock('@/lib/auth0', () => ({ getSessionOrDev: mocks.session }))
 vi.mock('@/lib/db', () => ({ ensureAllTables: vi.fn() }))
-vi.mock('@/lib/campaigns', () => ({ hasMasterAccess: vi.fn().mockResolvedValue(false), getCampaignById: vi.fn() }))
+vi.mock('@/lib/campaigns', () => ({ hasMasterAccess: vi.fn().mockResolvedValue(true), getCampaignById: vi.fn() }))
 vi.mock('@/lib/auth/authorization', () => ({ canEditCharacter: vi.fn(), canManageCampaign: vi.fn() }))
 vi.mock('@/lib/availability', () => ({ isUserInCampaign: mocks.membership }))
 vi.mock('@/lib/characters', () => ({ getCharacterAccessRecord: mocks.access, duplicateCharacter: mocks.duplicate, getCharacterById: mocks.get, getCharacterForViewer: mocks.get, createCharacter: mocks.create, updateCharacter: mocks.update, getCharactersForCampaign: vi.fn(), updateCharacterXp: vi.fn(), normalizeDisciplines: vi.fn(), deleteCharacter: vi.fn() }))
@@ -63,6 +63,13 @@ describe('autorização de fichas independentes', () => {
     expect((await POST(request({ name: 'Helena', campaignId: null, data: { masterOverride: true, predatorTypeOverrides: ['bypass'] } }))).status).toBe(201)
     expect(mocks.create.mock.calls[0][1].data).toMatchObject({ masterOverride: false })
     expect(mocks.create.mock.calls[0][1].data).not.toHaveProperty('predatorTypeOverrides')
+  })
+
+  it('mantém criação de personagem vinculada ao ID da sessão apesar de proprietário forjado', async () => {
+    expect((await POST(request({ name: 'Helena', userId: 'other', ownerId: 'other', campaignId: null }))).status).toBe(201)
+    expect(mocks.create.mock.calls[0][0]).toBe('owner')
+    expect(mocks.create.mock.calls[0][1]).not.toHaveProperty('userId')
+    expect(mocks.create.mock.calls[0][1]).not.toHaveProperty('ownerId')
   })
 
   it('recusa entrada em campanha por simples conhecimento do UUID', async () => {

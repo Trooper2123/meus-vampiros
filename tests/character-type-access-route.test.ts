@@ -36,34 +36,26 @@ function createRequest(characterType: string) {
   })
 }
 
-describe('controle de tipos de ficha por perfil', () => {
+describe('controle de tipos de ficha por contexto no perfil único', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mocks.getSessionOrDev.mockResolvedValue({ user: { sub: 'auth0|usuario' } })
-    mocks.hasMasterAccess.mockResolvedValue(false)
+    mocks.hasMasterAccess.mockResolvedValue(true)
     mocks.createCharacter.mockResolvedValue({ id: '11111111-1111-4111-8111-111111111111' })
   })
 
-  it.each(['PLAYER_VAMPIRE', 'RETAINER'])('permite %s para jogador', async (characterType) => {
+  it.each(['PLAYER_VAMPIRE', 'RETAINER'])('permite %s para usuário autenticado', async (characterType) => {
     const response = await POST(createRequest(characterType))
 
     expect(response.status).toBe(201)
     expect(mocks.createCharacter).toHaveBeenCalledOnce()
   })
 
-  it.each(['HUMAN_NPC', 'VAMPIRE_NPC'])('recusa %s para jogador', async (characterType) => {
+  it.each(['HUMAN_NPC', 'VAMPIRE_NPC'])('exige criar %s pelo gerenciamento da mesa', async (characterType) => {
     const response = await POST(createRequest(characterType))
 
     expect(response.status).toBe(403)
     expect(mocks.createCharacter).not.toHaveBeenCalled()
   })
 
-  it.each(['HUMAN_NPC', 'VAMPIRE_NPC'])('recusa %s fora da mesa mesmo para Mestre', async (characterType) => {
-    mocks.hasMasterAccess.mockResolvedValue(true)
-
-    const response = await POST(createRequest(characterType))
-
-    expect(response.status).toBe(403)
-    expect(mocks.createCharacter).not.toHaveBeenCalled()
-  })
 })

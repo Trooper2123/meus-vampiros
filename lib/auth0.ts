@@ -7,7 +7,6 @@ export async function getSessionOrDev() {
 	if (isDev) {
 		const devUser = {
 			sub: 'dev|local',
-			'https://meus-vampiros.app/roles': ['mestre'],
 			name: process.env.DEV_USER_NAME || 'Dev User',
 			email: process.env.DEV_USER_EMAIL || 'dev@example.com',
 			picture: process.env.DEV_USER_PICTURE || null,

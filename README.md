@@ -2,6 +2,8 @@
 
 Aplicação de fichas e gerenciamento de mesas de Vampiro: A Máscara V5, com Next.js, React, TypeScript e PostgreSQL.
 
+O perfil é único: toda conta autenticada pode jogar, criar mesas e usar ferramentas de Narrador, sem exigir roles do Auth0. A gestão continua vinculada ao ID da sessão: `campaigns.master_user_id` para mesas e `characters.user_id` para fichas. Participação, convites e permissões do Narrador da mesa continuam sendo validados por recurso; o perfil comum não concede acesso a dados de terceiros.
+
 ## Desenvolvimento
 
 Requisito do Next instalado: Node.js >= 20.9.0 e pnpm disponível.
@@ -26,6 +28,8 @@ pnpm audit
 ```
 
 O build verifica tipos. A CLI Vercel não é dependência de runtime; eventual configuração de deploy é separada.
+
+Regressões de autenticação e isolamento sem acessar banco ou carregar credenciais: `pnpm exec vitest run --config vitest.access.config.ts`.
 
 ## Funcionalidades e limites
 
