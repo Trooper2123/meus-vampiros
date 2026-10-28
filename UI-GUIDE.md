@@ -13,6 +13,10 @@ A atmosfera é de um **arquivo de comando restrito**. Tensão sem ruído; funcio
 ### Princípio-chave
 > Clareza antes de atmosfera. Vermelho só quando tem intenção.
 
+### Perfil de acesso
+
+Todo usuário autenticado tem acesso às funcionalidades de jogador e Narrador, sem depender de roles no Auth0. Narrador é o proprietário da mesa naquele contexto. Mesas, personagens, NPCs e informações privadas continuam protegidos no servidor por ID do usuário e vínculos autorizados.
+
 ---
 
 ## 2. Cores — tokens obrigatórios

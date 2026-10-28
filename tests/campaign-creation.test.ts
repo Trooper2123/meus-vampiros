@@ -18,18 +18,18 @@ const request = (body: unknown) => new Request('http://localhost/api/campaigns',
 const campaignName = () => `Mesa de teste ${randomUUID()}`
 beforeEach(async () => {
   await preparePostgresTest()
-  session.mockResolvedValue({ user: { sub: 'narrator', 'https://meus-vampiros.app/roles': ['mestre'] } })
+  session.mockResolvedValue({ user: { sub: 'narrator' } })
 })
 
 it('usa o catálogo completo como padrão quando a lista de predações não é enviada', () => {
   expect(readCampaignPolicy({}).enabledPredatorCodes).toEqual(PREDATOR_TYPE_CODES)
 })
 
-it('bloqueia criação sem autenticação ou papel de Narrador', async () => {
+it('bloqueia criação sem identidade autenticada válida', async () => {
   session.mockResolvedValue(null)
   expect((await POST(request({ name: campaignName() }))).status).toBe(401)
-  session.mockResolvedValue({ user: { sub: `outsider-${randomUUID()}` } })
-  expect((await POST(request({ name: campaignName() }))).status).toBe(403)
+  session.mockResolvedValue({ user: { sub: '' } })
+  expect((await POST(request({ name: campaignName() }))).status).toBe(401)
 })
 
 it.each([{ enabledClanCodes: ['INVALID'] }, { enabledPredatorCodes: ['INVALID'] }, { enabledClanCodes: ['BRUJAH', 'BRUJAH'] }])('recusa configuração inválida sem criar campanha: %j', async config => {

@@ -1,26 +1,16 @@
 import { sql } from 'drizzle-orm'
 import { db } from '@/lib/db'
 
-const ROLES_CLAIM = 'https://meus-vampiros.app/roles'
 type Auth0User = {
   sub: string
   name?: string | null
   email?: string | null
   picture?: string | null
-  [ROLES_CLAIM]?: unknown
-}
-
-export function isMaster(user: Auth0User | null): boolean {
-  if (!user) return false
-  const roles = user[ROLES_CLAIM]
-  if (!Array.isArray(roles)) return false
-  return roles.includes('mestre')
 }
 
 export async function hasMasterAccess(user: Auth0User | null): Promise<boolean> {
-  if (!user?.sub) return false
-  if (isMaster(user)) return true
-  return (await getCampaignsForMaster(user.sub)).length > 0
+  // O perfil é único; a gestão de cada recurso continua condicionada ao proprietário.
+  return typeof user?.sub === 'string' && user.sub.trim().length > 0
 }
 
 export type CampaignSummary = {

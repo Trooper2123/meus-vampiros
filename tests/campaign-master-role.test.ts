@@ -1,12 +1,21 @@
-import { describe, expect, it } from 'vitest'
-import { isMaster } from '@/lib/campaigns'
+import { describe, expect, it, vi } from 'vitest'
 
-describe('papel de Narrador no claim Auth0', () => {
-  it('reconhece o papel mestre sem depender de possuir uma campanha', () => {
-    expect(isMaster({ sub: 'narrator', 'https://meus-vampiros.app/roles': ['jogador', 'mestre'] })).toBe(true)
+const execute = vi.hoisted(() => vi.fn())
+vi.mock('@/lib/db', () => ({ db: { execute } }))
+import { hasMasterAccess } from '@/lib/campaigns'
+
+describe('perfil único autenticado', () => {
+  it.each([
+    { sub: 'user' },
+    { sub: 'user', 'https://meus-vampiros.app/roles': [] },
+    { sub: 'user', 'https://meus-vampiros.app/roles': ['jogador'] },
+    { sub: 'user', 'https://meus-vampiros.app/roles': ['mestre'] },
+  ])('permite funcionalidades comuns independentemente de roles: %j', async user => {
+    expect(await hasMasterAccess(user)).toBe(true)
+    expect(execute).not.toHaveBeenCalled()
   })
 
-  it.each([null, { sub: 'player' }, { sub: 'player', 'https://meus-vampiros.app/roles': [] }, { sub: 'player', 'https://meus-vampiros.app/roles': ['jogador'] }, { sub: 'player', 'https://meus-vampiros.app/roles': ['modelo.md'] }, { sub: 'player', 'https://meus-vampiros.app/roles': 'mestre' }])('rejeita claim ausente ou inválido: %j', user => {
-    expect(isMaster(user)).toBe(false)
+  it.each([null, { sub: '' }, { sub: '   ' }])('exige identidade autenticada válida: %j', async user => {
+    expect(await hasMasterAccess(user)).toBe(false)
   })
 })
