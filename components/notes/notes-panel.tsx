@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useUser } from '@auth0/nextjs-auth0/client'
 import useSWR, { SWRConfig, useSWRConfig } from 'swr'
 import Link from 'next/link'
+import { SheetMediaPanel } from '@/components/sheet-media-panel'
 import type { getNote, notesContext, NoteLink } from '@/lib/notes'
 
 type NoteView = Awaited<ReturnType<typeof getNote>>
@@ -25,8 +26,8 @@ export function NotesPanel({ actorId, link, initialCampaignId = '' }: Readonly<{
 
 function NotesEditor({ link, initialCampaignId }: Readonly<{ link?: NoteLink; initialCampaignId: string }>) {
   const [page, setPage] = useState(1)
-  const endpoint = link ? `/api/notes/links?targetType=${link.targetType}&targetId=${link.targetId}&page=${page}` : `/api/notes?page=${page}`
-  const { data, error, mutate } = useSWR<{ notes: NoteView[]; total: number }>(endpoint, fetcher)
+  const endpoint = link ? `/api/notes/links?targetType=${link.targetType}&targetId=${link.targetId}&page=${page}` : `/api/notes?page=${page}${initialCampaignId?`&campaignId=${initialCampaignId}`:""}`
+  const { data, error, mutate } = useSWR<{ notes: NoteView[]; total: number }>(endpoint, fetcher, { refreshInterval: 5000 })
   const { data: context } = useSWR<Context>('/api/notes/context', fetcher)
   const [current, setCurrent] = useState<NoteView | null>(null)
   const [title, setTitle] = useState('')
@@ -34,16 +35,16 @@ function NotesEditor({ link, initialCampaignId }: Readonly<{ link?: NoteLink; in
   const [campaignId, setCampaignId] = useState(initialCampaignId)
   const [visibility, setVisibility] = useState('PRIVATE')
   const [recipients, setRecipients] = useState<string[]>([])
-  const [links, setLinks] = useState<NoteLink[]>([])
+  const [links, setLinks] = useState<NoteLink[]>(link?[link]:[])
   const [message, setMessage] = useState('')
   const [busy, setBusy] = useState(false)
   const { cache } = useSWRConfig()
-  const { error: accessError } = useSWR(current ? `/api/notes/${current.id}` : null, fetcher)
+  const { error: accessError } = useSWR(current ? `/api/notes/${current.id}` : null, fetcher, { refreshInterval: 5000 })
   const creationKey = useRef(crypto.randomUUID())
   const campaign = context?.campaigns.find(entry => entry.id === campaignId)
   const targets = context?.targets.filter(target => target.campaignId === (campaignId || null)) ?? []
 
-  function reset() { setCurrent(null); setTitle(''); setBody(''); setCampaignId(initialCampaignId); setVisibility('PRIVATE'); setRecipients([]); setLinks([]); setMessage(''); creationKey.current = crypto.randomUUID() }
+  function reset() { setCurrent(null); setTitle(''); setBody(''); setCampaignId(initialCampaignId); setVisibility('PRIVATE'); setRecipients([]); setLinks(link?[link]:[]); setMessage(''); creationKey.current = crypto.randomUUID() }
 
   useEffect(() => {
     if ([error?.status, accessError?.status].some(status => [401, 403, 404].includes(status))) {
@@ -104,12 +105,12 @@ function NotesEditor({ link, initialCampaignId }: Readonly<{ link?: NoteLink; in
       <label className="sheet-field"><span>Título</span><input required maxLength={120} value={title} disabled={busy} readOnly={current !== null && !current.canEdit} onChange={event => setTitle(event.target.value)} /></label>
       <label className="sheet-field"><span>Texto</span><textarea rows={8} maxLength={20000} value={body} disabled={busy} readOnly={current !== null && !current.canEdit} onChange={event => setBody(event.target.value)} /></label>
       <label className="sheet-field"><span>Mesa</span><select className="select" value={campaignId} disabled={readOnly || Boolean(current?.campaignId)} onChange={event => { setCampaignId(event.target.value); setRecipients([]); setLinks([]); setVisibility('PRIVATE') }}><option value="">Independente</option>{context?.campaigns.map(entry => <option key={entry.id} value={entry.id}>{entry.name}</option>)}</select></label>
-      <label className="sheet-field"><span>Quem pode ler</span><select className="select" value={visibility} disabled={readOnly || current?.visibility === 'NARRATOR_ONLY'} onChange={event => { setVisibility(event.target.value); if (event.target.value !== 'SHARED') { setRecipients([]) } }}><option value="PRIVATE">Somente eu</option>{campaignId && <option value="SHARED">Destinatários escolhidos (somente leitura)</option>}{campaign?.isNarrator && (!current || current.visibility === 'NARRATOR_ONLY') && <option value="NARRATOR_ONLY">Somente o Narrador atual da mesa</option>}</select></label>
+      <label className="sheet-field"><span>Quem pode ler</span><select className="select" value={visibility} disabled={readOnly || !!current?.reveal || current?.visibility === 'NARRATOR_ONLY'} onChange={event => { setVisibility(event.target.value); if (event.target.value !== 'SHARED') { setRecipients([]) } }}><option value="PRIVATE">Somente eu</option>{campaignId && <option value="SHARED">Destinatários escolhidos (somente leitura)</option>}{campaign?.isNarrator && (!current || current.visibility === 'NARRATOR_ONLY') && <option value="NARRATOR_ONLY">Somente o Narrador atual da mesa</option>}</select></label>
       {visibility === 'SHARED' && <fieldset><legend>Destinatários autorizados</legend>{campaign?.recipients.map(user => <label key={user} className="mt-2 flex gap-2 text-sm"><input type="checkbox" disabled={readOnly} checked={recipients.includes(user)} onChange={event => setRecipients(values => event.target.checked ? [...values, user] : values.filter(value => value !== user))} />{user}</label>)}</fieldset>}
-      <fieldset><legend>Vínculos</legend><p className="mb-3 text-xs text-muted-foreground">Opcional: salve a anotação mesmo sem marcar vínculos.</p>{targets.map(target => <label key={`${target.targetType}:${target.targetId}`} className="mt-2 flex gap-2 text-sm"><input type="checkbox" disabled={readOnly} checked={links.some(link => link.targetId === target.targetId && link.targetType === target.targetType)} onChange={event => setLinks(values => event.target.checked ? [...values, { targetType: target.targetType, targetId: target.targetId }] : values.filter(link => link.targetId !== target.targetId))} />{target.label}</label>)}</fieldset>
+      <fieldset><legend>Vínculos</legend><p className="mb-3 text-xs text-muted-foreground">Opcional: salve a anotação mesmo sem marcar vínculos.</p>{targets.map(target => <label key={`${target.targetType}:${target.targetId}`} className="mt-2 flex gap-2 text-sm"><input type="checkbox" disabled={readOnly || !!current?.reveal} checked={links.some(link => link.targetId === target.targetId && link.targetType === target.targetType)} onChange={event => setLinks(values => event.target.checked ? [...values, { targetType: target.targetType, targetId: target.targetId }] : values.filter(link => link.targetId !== target.targetId))} />{target.label}</label>)}</fieldset>
       <div className="flex flex-wrap gap-3"><button className="button-primary" type="submit" disabled={readOnly || !title.trim()}>Salvar</button>{current?.canDelete && <button className="action-delete" style={{ minHeight: 40, flex: 'none' }} type="button" disabled={busy} onClick={() => void save(true)}>Excluir</button>}</div>
       {message && <output className="block text-sm">{message}</output>}
-    </form></section>
+    </form>{current&&<div className="mt-6 border-t border-border pt-5">{current.reveal&&<p className="mb-4 text-sm text-muted-foreground">Revelação {current.reveal.revealed?'revelada':'não revelada'} · controle de visibilidade na sessão.</p>}{current.reveal?.mediaId&&<img className="mb-4 max-h-96 w-full object-contain" src={`/api/sheet-media/${current.reveal.mediaId}`} alt={current.title}/>}<SheetMediaPanel key={current.id} subjectType="NOTE" subjectId={current.id}/></div>}{!current&&<p className="mt-4 text-sm text-muted-foreground">Salve a anotação para adicionar imagens.</p>}</section>
   </div>
 }
 

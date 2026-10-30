@@ -1,3 +1,38 @@
+## [2026-10-29 21:00 BRT] — feat - Arquivar mesas, anexar imagens e preservar revelações por sessão
+
+**Tipo:** feat
+
+**Arquivos principais:** `app/api/campaigns/[id]/archive/route.ts`, `app/campaigns/{page.tsx,[id]/page.tsx}`, `lib/{campaign-archive,game-sessions,notes,sheet-media,sheet-records,npc-http}.ts`, `components/{campaign-archive-control,master-panel,sheet-media-panel}.tsx`, painéis de sessão/notas/revelações, `migrations/20261029_session_notes_images.sql`, testes de arquivamento/notas/imagens/sessão, `tests/postgres-global-setup.ts`, `vitest.session-notes.config.ts`, `README.md` e `UI-GUIDE.md`.
+
+- Implementa a preferência confirmada de arquivar/restaurar mesas, preservando todos os vínculos, fichas, notas, imagens e sessões. Exige proprietário e confirmação do nome no servidor, bloqueia arquivamento durante sessão ativa e novas sessões arquivadas. Listagem principal e revalidação separam mesas atuais/arquivadas. Arquivar não é exclusão física nem bloqueio geral de edição do acervo.
+- Reutiliza retratos existentes de personagens próprios e NPCs do Narrador. Anotações salvas aceitam imagens pelo upload privado existente, com limites, reencodificação, quota e ACL herdada da nota; compartilhamento não concede edição das imagens ao leitor. Ocultação/revogação de nota bloqueia leitura dos bytes no servidor.
+- Revelações são salvas atomicamente como anotações vinculadas à sessão, com texto e imagens; criações livres começam não reveladas. Narrador controla revelar/ocultar inclusive após encerramento, enquanto jogadores recebem apenas registros revelados. Notas de revelação não permitem exclusão ou compartilhamento genéricos. Alterações privadas posteriores da ficha original não mudam a projeção copiada.
+- Painel do jogador mantém vídeo, resumo da própria ficha, recursos/rolagens oficiais, notas e revelações; seleção das últimas cem sessões permite consultar o histórico encerrado. Leituras de sessão/revelação e imagens reveladas recusam participantes desvinculados ou com ficha excluída. Corrige classificação de erros PostgreSQL encapsulados pelo Drizzle (503 para schema ausente, 409 para conflitos), sem expor SQL/parâmetros.
+- Migração autorizada aplicada somente no PostgreSQL local, schemas `public` e `meus_vampiros_test`, em transações, sem limpeza/seeds. Amplia CHECKs de tipos e salva revelações anteriores como notas; verificação confirmou zero revelações sem nota em ambos os schemas. Procedimento de produção documentado, sem execução externa. Setup da suíte PostgreSQL acompanha a nova migração; configuração focada usa schema já preparado e não aplica DDL.
+- Validação: 95 testes focados em 12 arquivos e 135 testes de acesso em 17 arquivos aprovados; TypeScript e build aprovados; lint global sem erros/cinco avisos preexistentes; npm audit sem vulnerabilidades. Revisão pre-commit/segurança do escopo sem achados críticos/altos; scan de padrões de segredos sem achados. QA visual/responsividade, chamada LiveKit real e upload Blob real não executados; testes usam storage em memória e fixtures sintéticas locais. Suíte global não executada e alterações anteriores da árvore foram preservadas.
+
+## [2026-10-29 20:31 BRT] — fix - Aplicar tabelas locais de NPCs e documentar migração de produção
+
+**Tipo:** fix
+
+**Arquivos principais:** `README.md`, `CHANGELOG.md`; aplicada a migração existente `migrations/20261023_npcs_sheet_narrative.sql` sem alterar seu conteúdo.
+
+- Diagnóstico: tabelas de NPCs ausentes no PostgreSQL local, banco `postgres`, schema `public`. Migração aditiva autorizada pelo usuário e aplicada em transação única, com timeouts e rollback em erro; confirmadas as dez tabelas e a coluna de política narrativa. Sem limpeza, seeds ou acesso a produção.
+- Documenta o comando `psql -X --set=ON_ERROR_STOP=1 --single-transaction --file=migrations/20261023_npcs_sheet_narrative.sql`, configuração explícita de destino, pré-requisitos, backup e rollback preservando dados. Confirma que `/api/migrate` não executa esse arquivo. Execução e repetição do comando `psql` aprovadas localmente.
+- Validação: 25 testes aprovados e um teste legado de autorização falhou (esperava 403 para jogador autenticado, recebeu 400 para payload vazio sob o perfil único atual), em três arquivos de domínio/validação/integração. Integração usou apenas dados sintéticos no schema local `meus_vampiros_test`, sem setup/limpeza. Validação global permanece bloqueada por essa divergência, sem conclusão de SPEC ou recomendação de commit. Código de aplicação/autenticação não foi alterado. Salvamento pela interface e ambiente de produção não testados.
+
+## [2026-10-28 20:18 BRT] — fix - Completar gestão e substituição segura de retratos
+
+**Tipo:** fix
+
+**Arquivos principais:** `components/sheet-media-panel.tsx`, `lib/sheet-media.ts`, `tests/sheet-media-api.test.ts`, `tests/sheet-media-ui.test.ts`, `tests/sheet-media-lifecycle.test.ts`, `vitest.media.config.ts`, `docs/imagens-fichas.md`, `README.md` e `UI-GUIDE.md`.
+
+- Retratos compactos de personagens e NPCs permitem editar título/enquadramento e remover com confirmação, respeitando as permissões retornadas pelo servidor. Distingue carregamento de retrato ausente e esvazia corretamente o campo de arquivo após sucesso/cancelamento.
+- Confirmação repetida preserva a reserva e evita upload duplicado. Falha ao atualizar a lista após salvar/remover não é apresentada como falha da operação já confirmada. Falhas de envio ou edição mantêm arquivo/rascunho para nova tentativa.
+- Corrige risco de perda do retrato anterior: exclusão física de objetos substituídos ocorre somente após a transação confirmar. Rollback preserva o retrato e o staging para repetir a confirmação; substituições no contexto da mesa preservam a imagem anterior na galeria.
+- Segurança: revalida quota de cem imagens dentro do lock na confirmação e impede desmarcar o uso de retrato de uma imagem global. Preserva ID/ownership, Blob privado, autenticação e leitura sem cache, limites de MIME/tamanho/pixels, reencodificação e revogação lógica. Sem schema, migração, seed ou limpeza persistente.
+- Validação: 32 testes focados aprovados em três arquivos, com fixtures sintéticas no PostgreSQL local/schema meus_vampiros_test existente e storage em memória; APIs cobrem 401/403, origem, destino de token, IDs manipulados e privacidade. TypeScript aprovado; lint global sem erros/cinco avisos preexistentes; npm audit sem vulnerabilidades. Build aprovado; revisão pre-commit-review/segurança e scan de padrões de segredos sem achados bloqueantes. Nenhum upload no Blob real ou alteração de produção; QA visual manual pendente.
+
 ## [2026-10-28 19:56 BRT] — fix - Unificar perfil e corrigir criação de mesas
 
 **Tipo:** fix

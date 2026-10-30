@@ -100,9 +100,9 @@ export function NewCampaignForm({ onCreated }: Readonly<{ onCreated: (campaign: 
   )
 }
 
-export function MasterPanel({ initialCampaigns }: Readonly<{ initialCampaigns: CampaignSummary[] }>) {
+export function MasterPanel({ initialCampaigns, archived = false }: Readonly<{ initialCampaigns: CampaignSummary[]; archived?: boolean }>) {
   const { data } = useSWR('/api/campaigns', fetcher)
-  const campaigns: CampaignSummary[] = data?.campaigns ?? initialCampaigns
+  const campaigns: CampaignSummary[] = (data?.campaigns ?? initialCampaigns).filter((campaign: CampaignSummary) => (campaign.status === 'Arquivada') === archived)
   if (campaigns.length === 0) return null
 
   return <div className="mt-6 flex w-full flex-col gap-6">{campaigns.map(campaign => <section key={campaign.id} className="border border-border bg-card p-6">

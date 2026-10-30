@@ -6,7 +6,8 @@ import { BookOpen, Plus } from 'lucide-react'
 import { getCampaignsForMaster, hasMasterAccess } from '@/lib/campaigns'
 import { MasterPanel } from '@/components/master-panel'
 
-export default async function CampaignsPage() {
+export default async function CampaignsPage({ searchParams }: Readonly<{ searchParams: Promise<{ archived?: string }> }>) {
+  const showArchived = (await searchParams)?.archived === 'true'
   if (!process.env.AUTH0_DOMAIN || !process.env.AUTH0_CLIENT_ID || !process.env.AUTH0_SECRET || !process.env.AUTH0_CLIENT_SECRET) {
     const session = await getSessionOrDev()
     if (!session?.user) redirect('/auth/login?returnTo=/campaigns')
@@ -20,7 +21,8 @@ export default async function CampaignsPage() {
   // A capacidade é comum; a consulta abaixo retorna somente mesas deste usuário.
   if (!userIsMaster) redirect('/master')
 
-  const campaigns = await getCampaignsForMaster(session.user.sub)
+  const allCampaigns = await getCampaignsForMaster(session.user.sub)
+  const campaigns = allCampaigns.filter(campaign => (campaign.status === 'Arquivada') === showArchived)
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-background text-foreground">
@@ -43,7 +45,9 @@ export default async function CampaignsPage() {
           </Link></div>
         </div>
 
+        <nav aria-label="Filtro de mesas" className="my-6 flex flex-wrap gap-3"><Link className="button-ghost" aria-current={!showArchived?'page':undefined} href="/campaigns">Mesas atuais</Link><Link className="button-ghost" aria-current={showArchived?'page':undefined} href="/campaigns?archived=true">Mesas arquivadas</Link></nav>
         {campaigns.length === 0 ? (
+          showArchived ? <p className="empty-state">Nenhuma mesa arquivada.</p> :
           <section className="login-panel mx-auto max-w-2xl text-center">
             <BookOpen className="mx-auto size-12 text-primary" aria-hidden="true" />
             <p className="eyebrow mt-6">Nenhuma crônica registrada</p>
@@ -56,7 +60,7 @@ export default async function CampaignsPage() {
             </Link></div>
           </section>
         ) : (
-          <MasterPanel initialCampaigns={campaigns} />
+          <MasterPanel initialCampaigns={campaigns} archived={showArchived} />
         )}
       </div>
     </main>

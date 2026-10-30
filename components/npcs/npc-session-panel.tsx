@@ -8,6 +8,7 @@ import { NPC_CREATURES,NPC_THREATS } from '@/lib/npc-options'
 import type { NpcData } from '@/lib/npc-domain'
 import { SPECIALTY_SKILL_NAMES } from '@/lib/vtm-v5/skills'
 import { SheetNarrativeTabs } from '@/components/sheet-narrative-tabs'
+import { SheetMediaPanel } from '@/components/sheet-media-panel'
 
 type Instance={id:string;instance_key?:string;name?:string;description?:string;creatureType?:keyof typeof NPC_CREATURES;active:boolean;revision:number;campaign_revision:number;snapshot?:{npcId:string;name:string;data:NpcData;characterId:string|null;fullData:Record<string,unknown>|null};state?:{healthDamage:{superficial:number;aggravated:number};willpowerDamage:{superficial:number;aggravated:number};hunger:number;conditions:string[]};maxima?:{healthMax:number|null;willpowerMax:number|null};revealed_fields?:string[]}
 type Snapshot={session:{id:string;campaignId:string;status:string};canManage:boolean;instances:Instance[];rolls:{id:string;result:any;created_at:string}[];available:{id:string;name:string;sheet_type:string;threat_level:number|null}[]}
@@ -50,4 +51,42 @@ function NpcInstanceControls({instance,instances,sessionId,campaignId,closed,bus
     <div className="flex flex-col gap-3 border border-border p-4"><p className="text-sm text-muted-foreground">{closed?'Sessão encerrada.':'Antes de encerrar a sessão,'} copie o estado de uma instância para a campanha somente se desejar preservar suas condições no próximo encontro. Outras campanhas e instâncias não são alteradas.</p><button type="button" className="button-ghost self-start" disabled={busy} onClick={()=>{if(window.confirm('Substituir o estado persistente deste NPC nesta campanha pelos recursos e condições desta instância?')){ void command({action:'RECONCILE',id:instance.id,expectedRevision:instance.revision,expectedCampaignRevision:instance.campaign_revision}).catch(()=>{}) }}}>Reconciliar esta instância com a campanha</button></div>
   </div>
 }
-export function SessionReveals({sessionId}:Readonly<{sessionId:string}>){const url=`/api/sessions/${sessionId}/reveals`,{data,error,mutate}=useSWR<{canManage:boolean;reveals:{id:string;kind:string;snapshot:{title:string;body?:string;description?:string;mediaId?:string}}[]}>(url,npcJson,{refreshInterval:5000});const [message,setMessage]=useState('');return <section className="flex flex-col gap-4 border border-border bg-card p-5"><h2 className="font-serif text-2xl">Revelações da sessão</h2>{error&&<p role="alert" className="text-sm text-primary">{error.message}</p>}{message&&<output  className="block text-sm text-muted-foreground">{message}</output>}{!data?.reveals.length&&<p className="text-sm text-muted-foreground">Nenhuma nota ou imagem revelada nesta sessão.</p>}{data?.reveals.map(item=><article key={item.id} className="border border-border p-4"><h3 className="font-serif text-xl">{item.snapshot.title}</h3>{item.kind==='MEDIA'?<img className="mt-4 max-h-96 w-full object-contain" src={`/api/sheet-media/${item.snapshot.mediaId}`} alt={item.snapshot.title}/>:<p className="mt-3 whitespace-pre-wrap text-sm leading-6">{item.snapshot.body}</p>}{item.snapshot.description&&<p className="mt-2 text-sm">{item.snapshot.description}</p>}{data.canManage&&<button type="button" className="button-ghost mt-4" onClick={()=>void npcJson(url,{action:'HIDE',id:item.id}).then(()=>mutate()).catch(e=>setMessage(e.message))}>Ocultar nesta sessão</button>}</article>)}</section>}
+export function SessionReveals({sessionId,active=false}:Readonly<{sessionId:string;active?:boolean}>){
+  const url=`/api/sessions/${sessionId}/reveals`
+  const {data:snapshot,error,mutate}=useSWR<{canManage:boolean;reveals:{id:string;kind:string;revealed:boolean;snapshot:{title:string;body?:string;description?:string;mediaId?:string}}[]}>(url,npcJson,{refreshInterval:5000})
+  const data=error?undefined:snapshot
+  const [message,setMessage]=useState(''),[busy,setBusy]=useState(false),[title,setTitle]=useState(''),[body,setBody]=useState('')
+  const pending=useRef<{signature:string;id:string}|null>(null)
+  async function create(event:React.FormEvent){
+    event.preventDefault();if(busy){return}setBusy(true);setMessage('')
+    const signature=JSON.stringify({title,body});const id=pending.current?.signature===signature?pending.current.id:crypto.randomUUID();pending.current={signature,id}
+    try{await npcJson(url,{action:'CREATE',id,title,body});pending.current=null;setTitle('');setBody('');await mutate();setMessage('Revelação salva como anotação. Adicione imagens abaixo.')}
+    catch(error){setMessage(error instanceof Error?error.message:'Não foi poss?vel salvar a revelação.')}
+    finally{setBusy(false)}
+  }
+  async function visibility(id:string,revealed:boolean){
+    setBusy(true);setMessage('')
+    try{await npcJson(url,{action:revealed?'HIDE':'SHOW',id});await mutate()}
+    catch(error){setMessage(error instanceof Error?error.message:'Não foi poss?vel alterar a visibilidade.')}
+    finally{setBusy(false)}
+  }
+  return <section className="flex flex-col gap-4 border border-border bg-card p-5">
+    <h2 className="font-serif text-2xl">Revelações da sessão</h2>
+    {error&&<p role="alert" className="text-sm text-primary">{error.message}</p>}{message&&<output className="block text-sm text-muted-foreground">{message}</output>}
+    {data?.canManage&&active&&<form className="flex flex-col gap-4" onSubmit={e=>void create(e)}>
+      <label className="sheet-field"><span>Título da revelação</span><input required maxLength={120} value={title} disabled={busy} onChange={e=>setTitle(e.target.value)}/></label>
+      <label className="sheet-field"><span>Texto da revelação</span><textarea maxLength={20000} value={body} disabled={busy} onChange={e=>setBody(e.target.value)}/></label>
+      <p className="text-sm text-muted-foreground">Salve, adicione imagens e use Revelar nesta sessão quando estiver pronto.</p>
+      <button className="button-primary self-start" disabled={busy||!title.trim()} type="submit">Salvar como não revelado</button>
+    </form>}
+    {data&&!data.reveals.length&&<p className="text-sm text-muted-foreground">Nenhuma nota ou imagem revelada nesta sessão.</p>}
+    {data?.reveals.map(item=><article key={item.id} className="border border-border p-4">
+      <h3 className="font-serif text-xl">{item.snapshot.title}</h3>
+      {data.canManage&&<p className="mt-2 text-sm text-muted-foreground">{item.revealed?'Revelado aos jogadores':'Não revelado'}</p>}
+      {item.snapshot.mediaId&&<img className="mt-4 max-h-96 w-full object-contain" src={`/api/sheet-media/${item.snapshot.mediaId}`} alt={item.snapshot.title}/>}
+      <p className="mt-3 whitespace-pre-wrap text-sm leading-6">{item.snapshot.body??item.snapshot.description}</p>
+      <div className="mt-4"><SheetMediaPanel subjectType="NOTE" subjectId={item.id}/></div>
+      {data.canManage&&<button type="button" disabled={busy} className="button-ghost mt-4" onClick={()=>void visibility(item.id,item.revealed)}>{item.revealed?'Ocultar nesta sessão':'Revelar nesta sessão'}</button>}
+    </article>)}
+  </section>
+}
