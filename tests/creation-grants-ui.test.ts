@@ -1,11 +1,14 @@
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { beforeEach, expect, it, vi } from 'vitest'
+import { beforeEach, expect, it } from 'vitest'
 import { grantedDotOrigins, projectCreationGrants, type CreationGrant } from '@/lib/vtm-v5/creation-grants'
 import { GrantOriginLabel } from '@/components/character-summary/grant-origin-label'
 import { SummaryMerits } from '@/components/character-summary/summary-merits'
-import { devCreateCharacter } from '@/lib/dev-db'
+import { sql } from 'drizzle-orm'
+import { db } from '@/lib/db'
+import { createCharacter } from '@/lib/characters'
 import { getCharacterById } from '@/lib/characters'
+import { preparePostgresTest } from './postgres-test-helpers'
 
 const grants: CreationGrant[] = [
   { id: 'discipline', kind: 'DISCIPLINE', origin: 'CLAN', name: 'Presença', dots: 2 },
@@ -25,7 +28,7 @@ it('Nosferatu mantém Aparência −2 e ignora bônus manuais ou concedidos sem 
   expect(renderToStaticMarkup(createElement(SummaryMerits, { clan: 'Nosferatu', merits: [], flaws: [] }))).toContain('Aparência: −2')
 })
 
-beforeEach(() => { vi.stubEnv('NODE_ENV', 'test'); vi.stubEnv('DATABASE_URL', ''); global.__devDb = undefined })
+beforeEach(preparePostgresTest)
 
 it('distingue pontos manuais de concessões somadas sem criar pontos', () => {
   expect(grantedDotOrigins(grants, 'DISCIPLINE', 'discipline', 4)).toEqual([null, 'CLAN', 'CLAN', 'PREDATOR'])
@@ -39,13 +42,14 @@ it('resumo indica em azul as origens, não apenas cor', () => {
   expect(renderToStaticMarkup(createElement(SummaryMerits, { grants, merits: [{ id: 'merit', name: 'Aparência', level: 2 }], flaws: [] }))).toContain('preenchimento automático')
 })
 it('projeta somente metadados públicos e não aceita origem declarada nos dados da ficha', async () => {
-  const character = devCreateCharacter('owner', { data: { creationGrants: grants } })
+  const character = await createCharacter('owner', { name: 'Ficha de teste', data: { creationGrants: grants } })
   expect((await getCharacterById(character.id, 'owner'))?.creationGrants).toEqual([])
-  character.gameState = { ...character.gameState, creationEffects: grants.map(grant => ({ ...grant, baseDots: 1 })) }
+  const gameState = { creationEffects: grants.map(grant => ({ ...grant, baseDots: 1 })) }
+  await db.execute(sql`UPDATE characters SET game_state = ${JSON.stringify(gameState)}::jsonb WHERE id = ${character.id}::uuid`)
   const result = await getCharacterById(character.id, 'owner')
   expect(result?.creationGrants).toEqual(grants)
   expect(result?.creationGrants[0]).not.toHaveProperty('baseDots')
   result!.creationGrants[0].dots = 999
-  expect(projectCreationGrants(character.gameState ?? {})[0].dots).toBe(2)
+  expect(projectCreationGrants(gameState)[0].dots).toBe(2)
   expect(await getCharacterById(character.id, 'other')).toBeNull()
 })

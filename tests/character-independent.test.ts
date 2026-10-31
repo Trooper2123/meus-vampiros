@@ -12,7 +12,7 @@ describe('fichas independentes e atributos secundários', () => {
   it('cria e edita Disciplinas livremente sem mesa, mantendo limites e propriedade', async () => {
     const created = await createCharacter('owner', { name: 'Teste de disciplinas', data: { cla: 'Toreador', disciplinas: [{ name: 'Animalismo', level: 5, powers: [] }] } })
     await updateCharacter(created.id!, 'owner', { data: { disciplinas: [{ name: 'Potência', level: 4, powers: [] }] } })
-    expect(((await getCharacterById(created.id!, 'owner'))?.data as Record<string, unknown>).disciplinas).toEqual([expect.objectContaining({ name: 'Potência', level: 4 })])
+    expect(((await getCharacterById(created.id!, 'owner'))?.data as Record<string, unknown>).disciplinas).toEqual([expect.objectContaining({ id: 'discipline:POTENCE', name: 'Potence', level: 4, powers: [] })])
     expect(await updateCharacter(created.id!, 'other', { data: { disciplinas: [] } })).toBeNull()
     await expect(updateCharacter(created.id!, 'owner', { data: { disciplinas: [{ name: 'Potência', level: 6 }] } })).rejects.toMatchObject({ status: 422 })
     await expect(updateCharacter(created.id!, 'owner', { data: { disciplinas: [{ name: 'Inventada', level: 1 }] } })).rejects.toMatchObject({ status: 422 })

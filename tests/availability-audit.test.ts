@@ -1,29 +1,24 @@
 import { beforeEach, expect, it, vi } from 'vitest'
 
-const session = vi.hoisted(() => {
-  vi.stubEnv('NODE_ENV', 'test')
-  vi.stubEnv('DATABASE_URL', '')
-  return vi.fn()
-})
+const session = vi.hoisted(() => vi.fn())
 vi.mock('@/lib/auth0', () => ({ getSessionOrDev: session }))
-vi.mock('@/lib/db', () => ({ ensureAllTables: vi.fn(), db: null }))
-import { devCreateCampaign, devCreateCharacter } from '@/lib/dev-db'
+import { createTestCampaign, createTestCharacter, preparePostgresTest } from './postgres-test-helpers'
 import { GET, POST, PATCH } from '@/app/api/campaign-availability/route'
 import { getAvailability, getCampaignSchedule } from '@/lib/availability'
 
 let campaignId: string
 const request = (body: unknown, method = 'PATCH') => new Request('http://localhost/api/campaign-availability', { method, headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
-beforeEach(() => {
-  global.__devDb = undefined
-  campaignId = devCreateCampaign('narrator', { name: 'Mesa', theme: null, principios: null, averageXp: 0, status: 'Ativa', lastSessionAt: null }).id
-  devCreateCharacter('player', { campaignId, name: 'Jogador' })
+beforeEach(async () => {
+  preparePostgresTest()
+  campaignId = (await createTestCampaign('narrator', 'Mesa')).id
+  await createTestCharacter('player', campaignId, 'Jogador')
   session.mockResolvedValue({ user: { sub: 'narrator' } })
 })
 
 it('persiste horários na própria mesa e não mistura campanhas', async () => {
   expect((await PATCH(request({ campaignId, action: 'schedule', startTime: '19:30', endTime: '22:15' }))).status).toBe(200)
   expect(await getCampaignSchedule(campaignId)).toEqual({ startTime: '19:30', endTime: '22:15' })
-  const other = devCreateCampaign('narrator', { name: 'Outra', theme: null, principios: null, averageXp: 0, status: 'Ativa', lastSessionAt: null })
+  const other = await createTestCampaign('narrator', 'Outra')
   expect(await getCampaignSchedule(other.id)).toEqual({ startTime: null, endTime: null })
   const response = await GET(new Request(`http://localhost/api/campaign-availability?campaignId=${campaignId}`))
   expect(await response.json()).toMatchObject({ currentUserId: 'narrator', schedule: { startTime: '19:30', endTime: '22:15' } })

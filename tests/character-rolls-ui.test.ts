@@ -4,7 +4,7 @@ import { expect, it, vi } from 'vitest'
 import { CharacterRolls } from '@/components/character-summary/character-rolls'
 
 vi.mock('swr', () => ({ default: () => ({ data: { attributes: { forca: 2 }, skills: { briga: 1, ciencia: 0 }, specialties: [], canUseSpecialties: false, canRollSecret: false, status: 'APPROVED', revision: 3 }, mutate: vi.fn() }) }))
-vi.mock('react', async original => ({ ...await original<typeof import('react')>(), useId: () => 'roll', useState: (value: unknown) => [value, vi.fn()], useRef: (value: unknown) => ({ current: value }) }))
+vi.mock('react', async original => ({ ...await original<typeof import('react')>(), useId: () => 'roll', useState: (value: unknown) => [value, vi.fn()], useRef: (value: unknown) => ({ current: value }), useEffect: vi.fn() }))
 
 it('rola sem pedir motivo e preserva contexto no comando', async () => {
   const fetchMock = vi.fn().mockResolvedValue(Response.json({ ok: true }))

@@ -1,12 +1,20 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { sql } from 'drizzle-orm'
+import { db } from '@/lib/db'
+import { preparePostgresTest, createTestCampaign, createTestCharacter } from './postgres-test-helpers'
 
-const session = vi.hoisted(() => { vi.stubEnv('DATABASE_URL', undefined); vi.stubEnv('NODE_ENV', 'test'); return vi.fn() })
+const session = vi.hoisted(() => vi.fn())
 vi.mock('@/lib/auth0', () => ({ getSessionOrDev: session }))
 import { PATCH } from '@/app/api/characters/[id]/status/route'
 
-const id = '11111111-1111-4111-8111-111111111111'
-const campaignId = '22222222-2222-4222-8222-222222222222'
-const context = { params: Promise.resolve({ id }) }
+let id: string
+let campaignId: string
+const context = () => ({ params: Promise.resolve({ id }) })
+const current = async () => (await db.execute(sql`SELECT status, revision, validation_report AS "validationReport", data, campaign_id AS "campaignId" FROM characters WHERE id=${id}::uuid`)).rows[0] as Record<string, any>
+const ledger = async () => (await db.execute(sql`SELECT event_type, payload, created_by_user_id FROM character_ledger_events WHERE character_id=${id}::uuid`)).rows as Array<Record<string, any>>
+const setStatus = (status: string) => db.execute(sql`UPDATE characters SET status=${status} WHERE id=${id}::uuid`)
+const setCampaign = (value: string | null) => db.execute(sql`UPDATE characters SET campaign_id=${value}::uuid WHERE id=${id}::uuid`)
+const setData = (data: Record<string, unknown>) => db.execute(sql`UPDATE characters SET data=${JSON.stringify(data)}::jsonb WHERE id=${id}::uuid`)
 
 function validData() {
   return { creationType: 'FLEDGLING', cla: 'Toreador', geracao: 13, humanidade: 7, 'potencia-de-sangue': 1,
@@ -21,88 +29,90 @@ function request(status: string, expectedRevision = 0) {
 }
 
 describe('PATCH status com transação real em memória', () => {
-  beforeEach(() => {
-    const now = new Date()
-    global.__devDb = { characters: [{ id, userId: 'owner', createdByUserId: 'owner', name: 'Helena', concept: null, clan: 'Toreador', generation: '13', status: 'DRAFT', characterType: 'PLAYER_VAMPIRE', campaignId, data: validData(), totalXp: 0, spentXp: 0, revision: 0, gameState: {}, createdAt: now, updatedAt: now }], campaigns: [{ id: campaignId, masterUserId: 'narrator', name: 'Mesa', theme: null, principios: null, averageXp: null, status: 'Ativa', lastSessionAt: null, createdAt: now, updatedAt: now }], possessions: [], characterLedgerEvents: [] }
+  beforeEach(async () => {
+    preparePostgresTest()
+    campaignId = (await createTestCampaign('narrator', 'Mesa')).id
+    id = (await createTestCharacter('owner', campaignId, 'Helena', validData())).id
+    await db.execute(sql`UPDATE characters SET status='DRAFT', character_type='PLAYER_VAMPIRE', clan='Toreador', generation='13' WHERE id=${id}::uuid`)
     session.mockReset()
     session.mockResolvedValue({ user: { sub: 'owner' } })
   })
   it('conclui ficha independente sem Narrador após validação', async () => {
-    global.__devDb!.characters[0].campaignId = null
-    expect((await PATCH(request('APPROVED'), context)).status).toBe(200)
-    expect(global.__devDb!.characters[0]).toMatchObject({ status: 'APPROVED', revision: 1, validationReport: { valid: true } })
+    await setCampaign(null)
+    expect((await PATCH(request('APPROVED'), context())).status).toBe(200)
+    expect(await current()).toMatchObject({ status: 'APPROVED', revision: 1, validationReport: { valid: true } })
   })
   it('conclui independente com distribuição livre e escolhas fora do clã, sem requisitos de criação', async () => {
-    const character = global.__devDb!.characters[0]
-    character.campaignId = null
-    character.data = { creationType: 'FLEDGLING', cla: 'Toreador', humanidade: 7,
+    await setCampaign(null)
+    await setData({ creationType: 'FLEDGLING', cla: 'Toreador', humanidade: 7,
       forca: 5, destreza: 5, vigor: 5, carisma: 5, manipulacao: 5, compostura: 5, inteligencia: 5, raciocinio: 5, determinacao: 5,
-      'habilidade-briga': 5, skillMode: 'BALANCED', disciplinas: [{ name: 'Animalismo', level: 5, powers: [] }] }
-    const response = await PATCH(request('APPROVED'), context)
+      'habilidade-briga': 5, skillMode: 'BALANCED', disciplinas: [{ name: 'Animalismo', level: 5, powers: [] }] })
+    const response = await PATCH(request('APPROVED'), context())
     expect(response.status).toBe(200)
     expect(await response.json()).toMatchObject({ status: 'APPROVED', report: { valid: true, errors: [], warnings: expect.arrayContaining([expect.objectContaining({ code: 'ATTRIBUTES_INVALID_DISTRIBUTION' })]) } })
   })
   it.each([6, -1, 1.5, 'inválido'])('independente mantém limites de atributos: %s', async value => {
-    const character = global.__devDb!.characters[0]
-    character.campaignId = null
-    character.data.forca = value
-    expect((await PATCH(request('APPROVED'), context)).status).toBe(422)
-    expect(character.status).toBe('DRAFT')
+    await setCampaign(null)
+    await setData({ ...validData(), forca: value })
+    expect((await PATCH(request('APPROVED'), context())).status).toBe(422)
+    expect((await current()).status).toBe('DRAFT')
   })
   it('não confia em flags do cliente para dispensar regras de ficha vinculada', async () => {
-    global.__devDb!.characters[0].data = { ...validData(), independent: true, campaignId: null, forca: 5 }
-    expect((await PATCH(request('PENDING_REVIEW'), context)).status).toBe(422)
+    await setData({ ...validData(), independent: true, campaignId: null, forca: 5 })
+    expect((await PATCH(request('PENDING_REVIEW'), context())).status).toBe(422)
   })
   it('não envia ficha independente a Narrador inexistente', async () => {
-    global.__devDb!.characters[0].campaignId = null
-    expect((await PATCH(request('PENDING_REVIEW'), context)).status).toBe(409)
-    expect(global.__devDb!.characters[0].status).toBe('DRAFT')
-    expect(global.__devDb!.characterLedgerEvents).toHaveLength(0)
+    await setCampaign(null)
+    expect((await PATCH(request('PENDING_REVIEW'), context())).status).toBe(409)
+    expect((await current()).status).toBe('DRAFT')
+    expect(await ledger()).toHaveLength(0)
   })
   it('dono envia ficha válida para revisão, com relatório e evento atômicos', async () => {
-    const response = await PATCH(request('PENDING_REVIEW'), context)
+    const response = await PATCH(request('PENDING_REVIEW'), context())
     expect(response.status).toBe(200)
     expect(await response.json()).toMatchObject({ status: 'PENDING_REVIEW', revision: 1, report: { valid: true } })
-    expect(global.__devDb!.characters[0]).toMatchObject({ status: 'PENDING_REVIEW', revision: 1, validationReport: { valid: true } })
-    expect(global.__devDb!.characterLedgerEvents[0]).toMatchObject({ eventType: 'STATUS_CHANGE', createdByUserId: 'owner', payload: { input: { status: 'PENDING_REVIEW' }, after: { status: 'PENDING_REVIEW' } } })
+    expect(await current()).toMatchObject({ status: 'PENDING_REVIEW', revision: 1, validationReport: { valid: true } })
+    expect(await ledger()).toMatchObject([{ event_type: 'STATUS_CHANGE', created_by_user_id: 'owner', payload: { input: { status: 'PENDING_REVIEW' }, after: { status: 'PENDING_REVIEW' } } }])
   })
   it('bloqueia envio inválido sem mudar status, revisão ou ledger', async () => {
-    global.__devDb!.characters[0].data = {}
-    expect((await PATCH(request('PENDING_REVIEW'), context)).status).toBe(422)
-    expect(global.__devDb!.characters[0]).toMatchObject({ status: 'DRAFT', revision: 0 })
-    expect(global.__devDb!.characterLedgerEvents).toHaveLength(0)
+    await setData({})
+    expect((await PATCH(request('PENDING_REVIEW'), context())).status).toBe(422)
+    expect(await current()).toMatchObject({ status: 'DRAFT', revision: 0 })
+    expect(await ledger()).toHaveLength(0)
   })
   it('Narrador da campanha aprova ficha válida em revisão', async () => {
     session.mockResolvedValue({ user: { sub: 'narrator' } })
-    global.__devDb!.characters[0].status = 'PENDING_REVIEW'
-    expect((await PATCH(request('APPROVED'), context)).status).toBe(200)
-    expect(global.__devDb!.characters[0]).toMatchObject({ status: 'APPROVED', revision: 1, validationReport: { valid: true } })
+    await setStatus('PENDING_REVIEW')
+    expect((await PATCH(request('APPROVED'), context())).status).toBe(200)
+    expect(await current()).toMatchObject({ status: 'APPROVED', revision: 1, validationReport: { valid: true } })
   })
   it('Narrador não aprova ficha inválida mesmo com relatório anterior válido', async () => {
     session.mockResolvedValue({ user: { sub: 'narrator' } })
-    Object.assign(global.__devDb!.characters[0], { status: 'PENDING_REVIEW', data: {}, validationReport: { valid: true } })
-    expect((await PATCH(request('APPROVED'), context)).status).toBe(422)
-    expect(global.__devDb!.characters[0]).toMatchObject({ status: 'PENDING_REVIEW', revision: 0 })
-    expect(global.__devDb!.characterLedgerEvents).toHaveLength(0)
+    await setStatus('PENDING_REVIEW')
+    await setData({})
+    await db.execute(sql`UPDATE characters SET validation_report='{"valid":true}'::jsonb WHERE id=${id}::uuid`)
+    expect((await PATCH(request('APPROVED'), context())).status).toBe(422)
+    expect(await current()).toMatchObject({ status: 'PENDING_REVIEW', revision: 0 })
+    expect(await ledger()).toHaveLength(0)
   })
   it('dono não aprova ficha vinculada nem usa transição inexistente', async () => {
-    expect((await PATCH(request('APPROVED'), context)).status).toBe(409)
-    global.__devDb!.characters[0].status = 'PENDING_REVIEW'
-    expect((await PATCH(request('APPROVED'), context)).status).toBe(409)
-    expect(global.__devDb!.characterLedgerEvents).toHaveLength(0)
+    expect((await PATCH(request('APPROVED'), context())).status).toBe(409)
+    await setStatus('PENDING_REVIEW')
+    expect((await PATCH(request('APPROVED'), context())).status).toBe(409)
+    expect(await ledger()).toHaveLength(0)
   })
   it('exige autenticação e recusa terceiros e Narrador de outra mesa', async () => {
     session.mockResolvedValue(null)
-    expect((await PATCH(request('PENDING_REVIEW'), context)).status).toBe(401)
+    expect((await PATCH(request('PENDING_REVIEW'), context())).status).toBe(401)
     for (const actor of ['other', 'other-narrator']) {
       session.mockResolvedValue({ user: { sub: actor } })
-      expect((await PATCH(request('PENDING_REVIEW'), context)).status).toBe(403)
+      expect((await PATCH(request('PENDING_REVIEW'), context())).status).toBe(403)
     }
-    expect(global.__devDb!.characterLedgerEvents).toHaveLength(0)
+    expect(await ledger()).toHaveLength(0)
   })
   it('revisão antiga recebe conflito antes de validar ou alterar status', async () => {
-    expect((await PATCH(request('PENDING_REVIEW', 5), context)).status).toBe(409)
-    expect(global.__devDb!.characters[0]).toMatchObject({ status: 'DRAFT', revision: 0 })
-    expect(global.__devDb!.characterLedgerEvents).toHaveLength(0)
+    expect((await PATCH(request('PENDING_REVIEW', 5), context())).status).toBe(409)
+    expect(await current()).toMatchObject({ status: 'DRAFT', revision: 0 })
+    expect(await ledger()).toHaveLength(0)
   })
 })

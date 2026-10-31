@@ -1,4 +1,5 @@
 import {ArchiveHeader} from '@/components/archive-header'
+import {CreateCharacterButton} from '@/components/character-creation-dialog'
 import Link from 'next/link'
 import {redirect} from 'next/navigation'
 import {getSessionOrDev} from '@/lib/auth0'
@@ -68,10 +69,9 @@ export default async function PersonagensPage() {
                         >
                             <BookOpen className="size-4"/> Conte sua história
                         </Link>}
-                        <Link href="/create-characters"
-                              className="button-primary inline-flex items-center justify-center gap-2">
+                        <CreateCharacterButton>
                             <Plus className="size-4"/> Criar personagem
-                        </Link>
+                        </CreateCharacterButton>
                     </div>
                 </div>
 
@@ -83,9 +83,9 @@ export default async function PersonagensPage() {
                         <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-muted-foreground">
                             Comece criando seu primeiro personagem. O rascunho ficará vinculado à sua conta.
                         </p>
-                        <Link href="/create-characters" className="button-primary mt-7 inline-flex items-center gap-2">
+                        <CreateCharacterButton className="button-primary mt-7 inline-flex items-center gap-2">
                             Abrir criação <ArrowRight className="size-4"/>
-                        </Link>
+                        </CreateCharacterButton>
                     </section>
                 ) : (
                     <div className="flex flex-col gap-8">

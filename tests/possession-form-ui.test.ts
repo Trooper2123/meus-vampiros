@@ -1,7 +1,7 @@
 import type { ReactElement, ReactNode } from 'react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 const harness = vi.hoisted(() => ({ states: [] as any[], refs: [] as { current: any }[], state: 0, ref: 0, id: 'fixture', revision: 0, items: [] as any[] }))
-vi.mock('next/navigation', () => ({ useSearchParams: () => new URLSearchParams(), useRouter: () => ({ push: vi.fn() }) }))
+vi.mock('next/navigation', () => ({ useSearchParams: () => new URLSearchParams('entryMode=ASSISTED'), useRouter: () => ({ push: vi.fn() }) }))
 vi.mock('react', async original => ({
   ...await original<typeof import('react')>(), useEffect: () => undefined,
   useState: (initial: any) => {

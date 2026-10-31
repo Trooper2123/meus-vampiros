@@ -4,6 +4,7 @@ import { Brain, Fingerprint, Zap } from 'lucide-react'
 
 type SummarySkillsProps = {
   skills: Record<string, number>
+  onRoll?: (skill: string) => void
 }
 
 const skillGroups = [
@@ -69,7 +70,7 @@ function DotTrack({ total, value }: Readonly<{ total: number; value: number }>) 
   )
 }
 
-export function SummarySkills({ skills }: Readonly<SummarySkillsProps>) {
+export function SummarySkills({ skills, onRoll }: Readonly<SummarySkillsProps>) {
   const hasSkills = Object.values(skills).some((value) => value > 0)
 
   if (!hasSkills) {
@@ -97,8 +98,9 @@ export function SummarySkills({ skills }: Readonly<SummarySkillsProps>) {
                 </h3>
               </div>
               {groupSkills.map((skill) => (
-                <div key={skill} className="summary-rating">
+                <div key={skill} className="summary-rating flex-wrap">
                   <span className="text-sm">{skill}</span>
+                  {onRoll && <a href="#rolagens" className="button-ghost min-h-10" onClick={() => onRoll(skill)} aria-label={`Rolar com ${skill}`}>Rolar</a>}
                   <DotTrack total={5} value={skills[skill] ?? 0} />
                 </div>
               ))}

@@ -595,7 +595,7 @@ main > .toast-overlay {
     align-items: start;
 }
 
-.character-summary-nav { display: grid; gap: 5px; position: sticky; top: 16px; }
+.character-summary-nav { display: grid; gap: 5px; }
 .character-summary-nav a { border-radius: 7px; background: #242225; padding: 10px; color: #c9c5c7; font-size: 12px; }
 .character-summary-nav a:hover, .character-summary-nav a.is-active { background: #542532; color: #fff; }
 .character-summary-content { display: grid; gap: 18px; min-width: 0; border-radius: 16px; background: #211f22; padding: 16px; }
@@ -613,7 +613,7 @@ main > .toast-overlay {
     .character-summary-identity { min-height: 166px; padding-left: 126px; }
     .character-summary-stats { grid-template-columns: 1fr; }
     .character-summary-body { grid-template-columns: 1fr; }
-    .character-summary-nav { position: static; grid-template-columns: repeat(3, 1fr); }
+    .character-summary-nav { grid-template-columns: repeat(3, 1fr); }
 }
 
 @media (max-width: 760px) {

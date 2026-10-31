@@ -9,6 +9,8 @@
     "start": "next start",
     "lint": "eslint .",
     "test": "vitest run",
+    "test:wiki": "vitest run --config vitest.wiki.config.ts",
+    "wiki:poc": "node scripts/vtm-wiki-poc.mjs",
     "sonar:export": "powershell -NoProfile -File ./sonar-export.ps1"
   },
   "dependencies": {

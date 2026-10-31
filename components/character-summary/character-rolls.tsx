@@ -1,6 +1,6 @@
 'use client'
 
-import { useId, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import useSWR from 'swr'
 import { RollHistory } from './roll-history'
 import type { RollMode } from '@/lib/character-roll-history'
@@ -24,16 +24,17 @@ async function fetchRollData(url: string): Promise<RollData> {
   return body
 }
 
-export function CharacterRolls({ characterId, sessionId }: Readonly<{ characterId: string; sessionId?: string }>) {
-  return <RollPanel key={`${characterId}:${sessionId ?? ''}`} characterId={characterId} sessionId={sessionId} />
+export function CharacterRolls({ characterId, sessionId, prefill }: Readonly<{ characterId: string; sessionId?: string; prefill?: { attribute?: string; skill?: string } }>) {
+  return <RollPanel key={`${characterId}:${sessionId ?? ''}`} characterId={characterId} sessionId={sessionId} prefill={prefill} />
 }
 
-function RollPanel({ characterId, sessionId }: Readonly<{ characterId: string; sessionId?: string }>) {
+function RollPanel({ characterId, sessionId, prefill }: Readonly<{ characterId: string; sessionId?: string; prefill?: { attribute?: string; skill?: string } }>) {
   const fieldId = useId()
   const endpoint = `/api/characters/${characterId}/rolls`
   const { data, error: loadError, isLoading, mutate } = useSWR<RollData>(endpoint, fetchRollData)
   const [attribute, setAttribute] = useState('')
   const [skillId, setSkillId] = useState('')
+  useEffect(() => { if (prefill?.attribute) setAttribute(prefill.attribute); if (prefill?.skill) setSkillId(prefill.skill) }, [prefill])
   const [specialtyId, setSpecialtyId] = useState('')
   const [difficulty, setDifficulty] = useState('1')
   const [mode, setMode] = useState<RollMode>('TEST')

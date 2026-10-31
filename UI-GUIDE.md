@@ -106,6 +106,8 @@ Referência visual vigente: `codex/Meus Vampiros — Arquivos da Noite.pdf` (16 
 
 ### Fichas independentes e Aparência
 
+- “Criar personagem” e “Abrir criação” abrem um modal para escolher criação assistida V5 ou transcrição. Confirmar leva ao fluxo de mesa/convite com o modo definido; cancelar ou Escape não cria rascunho. Acesso direto sem escolha válida também exige o modal. O editor mostra o modo escolhido sem seletor inline; edição restaura o modo salvo. Transcrição independente libera valores atuais dentro dos limites, sem calcular XP histórico; o vínculo mantém as regras da mesa.
+- Retratos compactos de personagens e NPCs oferecem enviar/substituir, editar título/enquadramento e remover com confirmação para usuários autorizados. Durante carregamento, distinguir consulta de retrato ausente. Falhas de confirmação preservam a reserva para repetir sem novo upload; falhas ao atualizar a lista após sucesso confirmado orientam recarregar. Galeria mantém ações e permissões por item.
 - Sem mesa, fichas de jogador permitem distribuição livre de atributos (1–5), habilidades (0–5) e Disciplinas conhecidas (0–5). Requisitos de criação aparecem como avisos na validação, sem impedir a conclusão. Selecionar clã não exige pacote 2+1 nem apaga Disciplinas existentes. Fichas vinculadas mantêm regras e aprovação do Narrador.
 - Nosferatu apresenta Aparência sempre −2. Vantagens positivas de Aparência ficam preservadas no cadastro e identificadas como ignoradas no resumo, inclusive concessões de predação; Siren não impede a seleção de Nosferatu.
 - O acesso ao catálogo na listagem de mesas se chama “Pesquisa de habilidades” e abre em nova guia.

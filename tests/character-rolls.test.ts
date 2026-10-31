@@ -1,23 +1,24 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-vi.hoisted(() => { vi.stubEnv('DATABASE_URL', undefined); vi.stubEnv('NODE_ENV', 'test') })
+import { sql } from 'drizzle-orm'
+import { db } from '@/lib/db'
+import { preparePostgresTest, createTestCampaign, createTestCharacter } from './postgres-test-helpers'
 
 import { executeCharacterRoll, type RollInput } from '@/lib/character-rolls'
 import { evaluateV5Roll } from '@/lib/vtm-v5/dice-evaluator'
 import { serverDiceProvider } from '@/lib/vtm-v5/dice-provider'
 
-const id = '11111111-1111-4111-8111-111111111111'
-const campaignId = '22222222-2222-4222-8222-222222222222'
+let id: string
+let campaignId: string
 const input: RollInput = { attribute: 'forca', skillId: 'briga', difficulty: 2, visibility: 'PUBLIC', reason: 'Combate', expectedRevision: 0, idempotencyKey: 'roll-1' }
 const provider = { rollD10: vi.fn<(count: number) => number[]>() }
+const ledger = async () => (await db.execute(sql`SELECT event_type, payload, created_by_user_id FROM character_ledger_events WHERE character_id = ${id}::uuid`)).rows as Array<Record<string, any>>
 
 describe('rolagens V5 autoritativas com provider injetável', () => {
-  beforeEach(() => {
-    const now = new Date()
-    global.__devDb = {
-      characters: [{ id, userId: 'player', createdByUserId: 'player', name: 'Helena', concept: null, clan: null, generation: null, status: 'APPROVED', characterType: 'PLAYER_VAMPIRE', campaignId, data: { forca: 3, vigor: 2, determinacao: 2, compostura: 2, 'habilidade-briga': 2 }, totalXp: 10, spentXp: 0, revision: 0, gameState: { hunger: 2, condition: 'ACTIVE', specialties: [{ id: 'briga-specialty', skillId: 'briga', name: 'Agarrar', origin: 'XP', status: 'APPROVED', costXp: 3 }] }, createdAt: now, updatedAt: now }],
-      campaigns: [{ id: campaignId, masterUserId: 'narrator', name: 'Mesa', theme: null, principios: null, averageXp: null, status: 'Ativa', lastSessionAt: null, createdAt: now, updatedAt: now }], possessions: [], characterLedgerEvents: [],
-    }
+  beforeEach(async () => {
+    preparePostgresTest()
+    campaignId = (await createTestCampaign('narrator', 'Mesa')).id
+    id = (await createTestCharacter('player', campaignId, 'Helena', { forca: 3, vigor: 2, determinacao: 2, compostura: 2, 'habilidade-briga': 2 })).id
+    await db.execute(sql`UPDATE characters SET status = 'APPROVED', character_type = 'PLAYER_VAMPIRE', total_xp = 10, game_state = '{"hunger":2,"condition":"ACTIVE","specialties":[{"id":"briga-specialty","skillId":"briga","name":"Agarrar","origin":"XP","status":"APPROVED","costXp":3}]}'::jsonb WHERE id = ${id}::uuid`)
     provider.rollD10.mockReset()
     provider.rollD10.mockImplementation(count => Array(count).fill(6))
   })
@@ -27,8 +28,9 @@ describe('rolagens V5 autoritativas com provider injetável', () => {
     const result = await executeCharacterRoll('player', id, input, provider)
     expect(provider.rollD10).toHaveBeenCalledExactlyOnceWith(5)
     expect(result).toMatchObject({ pool: 5, specialtyBonus: 0, visibility: 'PUBLIC', revision: 1, result: { normalDice: [10, 10, 2], hungerDice: [6, 1], successes: 5, outcome: 'CRITICAL' } })
-    expect(global.__devDb!.characters[0].gameState!.hunger).toBe(2)
-    expect(global.__devDb!.characterLedgerEvents[0]).toMatchObject({ eventType: 'DICE_ROLLED', createdByUserId: 'player', payload: { input, after: { pool: 5 } } })
+    const state = (await db.execute<{ game_state: { hunger: number } }>(sql`SELECT game_state FROM characters WHERE id = ${id}::uuid`)).rows[0]?.game_state
+    expect(state.hunger).toBe(2)
+    expect(await ledger()).toMatchObject([{ event_type: 'DICE_ROLLED', created_by_user_id: 'player', payload: { input, after: { pool: 5 } } }])
   })
 
   it('Narrador confirma especialidade aplicável e adiciona somente um dado', async () => {
@@ -38,7 +40,7 @@ describe('rolagens V5 autoritativas com provider injetável', () => {
   })
 
   it('dono sem mesa pode usar especialidade, mas não rolar secretamente', async () => {
-    global.__devDb!.characters[0].campaignId = null
+    await db.execute(sql`UPDATE characters SET campaign_id = NULL WHERE id = ${id}::uuid`)
     await expect(executeCharacterRoll('player', id, { ...input, visibility: 'SECRET' }, provider)).rejects.toMatchObject({ status: 403 })
     await expect(executeCharacterRoll('player', id, { ...input, specialtyId: 'briga-specialty' }, provider)).resolves.toMatchObject({ specialtyBonus: 1, pool: 6 })
   })
@@ -46,7 +48,7 @@ describe('rolagens V5 autoritativas com provider injetável', () => {
   it.each([{ specialtyId: 'briga-specialty' }, { visibility: 'SECRET' as const }])('jogador não declara aplicação de bônus nem rolagem secreta %j', async override => {
     await expect(executeCharacterRoll('player', id, { ...input, ...override }, provider)).rejects.toMatchObject({ status: 403 })
     expect(provider.rollD10).not.toHaveBeenCalled()
-    expect(global.__devDb!.characterLedgerEvents).toHaveLength(0)
+    expect(await ledger()).toHaveLength(0)
   })
 
   it('apenas Narrador da campanha executa rolagem secreta', async () => {
@@ -56,26 +58,28 @@ describe('rolagens V5 autoritativas com provider injetável', () => {
   })
 
   it.each(['TORPOR', 'STAKED', 'FINAL_DEATH'])('condição %s impede ação normal antes de chamar provider', async condition => {
-    global.__devDb!.characters[0].gameState!.condition = condition
+    await db.execute(sql`UPDATE characters SET game_state = game_state || ${JSON.stringify({ condition })}::jsonb WHERE id = ${id}::uuid`)
     await expect(executeCharacterRoll('player', id, input, provider)).rejects.toMatchObject({ status: 409 })
     expect(provider.rollD10).not.toHaveBeenCalled()
   })
 
   it.each(['DRAFT', 'PENDING_REVIEW', 'ARCHIVED'])('ficha %s não rola', async status => {
-    global.__devDb!.characters[0].status = status
+    await db.execute(sql`UPDATE characters SET status = ${status} WHERE id = ${id}::uuid`)
     await expect(executeCharacterRoll('player', id, input, provider)).rejects.toMatchObject({ status: 422 })
     expect(provider.rollD10).not.toHaveBeenCalled()
   })
 
   it.each([{ forca: 0 }, { forca: 6 }, { forca: 1.5 }, { 'habilidade-briga': -1 }, { 'habilidade-briga': 6 }, { 'habilidade-briga': 1.5 }])('atributos ou habilidades inválidos não chamam engine %j', async data => {
-    Object.assign(global.__devDb!.characters[0].data, data)
+    await db.execute(sql`UPDATE characters SET data = data || ${JSON.stringify(data)}::jsonb WHERE id = ${id}::uuid`)
     await expect(executeCharacterRoll('player', id, input, provider)).rejects.toMatchObject({ status: 422 })
     expect(provider.rollD10).not.toHaveBeenCalled()
   })
 
   it.each([{ id: 'unknown' }, { id: 'briga-specialty', status: 'PENDING' }, { id: 'briga-specialty', skillId: 'academicos' }])('especialidade inexistente, pendente ou de outra habilidade é recusada %j', async override => {
-    const specialties = global.__devDb!.characters[0].gameState!.specialties as Record<string, unknown>[]
-    if (override.id !== 'unknown') Object.assign(specialties[0], override)
+    if (override.id !== 'unknown') {
+      const specialty = { ...override, id: 'briga-specialty', skillId: override.skillId ?? 'briga', name: 'Agarrar', origin: 'XP', status: override.status ?? 'APPROVED', costXp: 3 }
+      await db.execute(sql`UPDATE characters SET game_state = game_state || ${JSON.stringify({ specialties: [specialty] })}::jsonb WHERE id = ${id}::uuid`)
+    }
     await expect(executeCharacterRoll('narrator', id, { ...input, specialtyId: override.id }, provider)).rejects.toMatchObject({ status: 422 })
     expect(provider.rollD10).not.toHaveBeenCalled()
   })
@@ -86,21 +90,22 @@ describe('rolagens V5 autoritativas com provider injetável', () => {
     await expect(executeCharacterRoll('player', id, { ...input, difficulty: 3 }, provider)).rejects.toMatchObject({ status: 409 })
     await expect(executeCharacterRoll('player', id, { ...input, idempotencyKey: 'stale' }, provider)).rejects.toMatchObject({ status: 409 })
     expect(provider.rollD10).toHaveBeenCalledTimes(1)
-    expect(global.__devDb!.characterLedgerEvents).toHaveLength(1)
+    expect(await ledger()).toHaveLength(1)
   })
 
   it('requests concorrentes da mesma chave usam uma única amostra', async () => {
     const results = await Promise.all(Array.from({ length: 10 }, () => executeCharacterRoll('player', id, input, provider)))
     expect(results.every(result => result.revision === 1)).toBe(true)
     expect(provider.rollD10).toHaveBeenCalledTimes(1)
-    expect(global.__devDb!.characterLedgerEvents).toHaveLength(1)
+    expect(await ledger()).toHaveLength(1)
   })
 
   it('provider com quantidade incorreta não registra resultado', async () => {
     provider.rollD10.mockReturnValue([6])
-    await expect(executeCharacterRoll('player', id, input, provider)).rejects.toMatchObject({ status: 500 })
-    expect(global.__devDb!.characters[0].revision).toBe(0)
-    expect(global.__devDb!.characterLedgerEvents).toHaveLength(0)
+    await expect(executeCharacterRoll('player', id, input, provider)).rejects.toThrow('O provedor de dados retornou resultados inválidos.')
+    const row = (await db.execute(sql`SELECT revision FROM characters WHERE id = ${id}::uuid`)).rows[0]
+    expect(row.revision).toBe(0)
+    expect(await ledger()).toHaveLength(0)
   })
 })
 

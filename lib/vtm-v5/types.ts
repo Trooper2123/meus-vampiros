@@ -8,6 +8,7 @@ export type CharacterType = typeof CHARACTER_TYPES[number]
 export type CharacterStatus = typeof CHARACTER_STATUSES[number]
 export type CharacterVisibility = typeof CHARACTER_VISIBILITIES[number]
 export type CreationType = typeof CREATION_TYPES[number]
+export type CharacterEntryMode = 'ASSISTED' | 'EXISTING'
 
 export function canCreateCharacterType(characterType: CharacterType, isMaster: boolean): boolean {
   return isMaster || PLAYER_CHARACTER_TYPES.includes(characterType as (typeof PLAYER_CHARACTER_TYPES)[number])

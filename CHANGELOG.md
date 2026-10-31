@@ -1,3 +1,48 @@
+## [2026-10-31 18:00 BRT] � feat - Escolher modo ao criar personagem
+
+**Tipo:** feat
+
+**Arquivos principais:** `components/character-creation-dialog.tsx`, `app/characters/character-form-client.tsx`, `app/api/characters/route.ts`, `components/character-form/{attributes-step,skills-step}.tsx`.
+
+- Ao iniciar ficha independente, a pessoa escolhe cria��o assistida V5 ou transcri��o de valores existentes; o modo � validado no servidor e salvo no rascunho.
+- Transcri��o aceita valores atuais sem impor distribui��o inicial; fichas vinculadas preservam regras da mesa. Cancelar n�o cria rascunho.
+- Testes focados adicionados para escolha, cancelamento, valida��o do modo e limites de ficha vinculada.
+## [2026-10-31 17:09 BRT] — fix - Liberar envio de imagens em anotações
+
+**Tipo:** fix
+
+**Arquivos principais:** `migrations/20261029_session_notes_images.sql` (existente, sem alteração), `README.md`, `CHANGELOG.md`.
+
+- Produção estava com a constraint de `sheet_media.subject_type` limitada a `CHARACTER` e `NPC`; uploads de imagens de anotações usam `NOTE`.
+- Com autorização de produção e backup recuperável já confirmado, aplicada a migração existente em transação. Confirmados os tipos `NOTE` nas duas constraints e os dois índices; zero revelações antigas precisaram ser convertidas. Sem seeds ou limpeza.
+
+## [2026-10-31 17:04 BRT] — fix - Habilitar salvamento de NPCs em produção
+
+**Tipo:** fix
+
+**Arquivos principais:** `migrations/20261023_npcs_sheet_narrative.sql` (existente, sem alteração), `README.md`, `CHANGELOG.md`.
+
+- Diagnóstico somente leitura confirmou banco `neondb`, schema `public`, com `campaigns`, `characters`, `game_sessions` e `notes`, mas sem as tabelas da migração de NPCs.
+- Com autorização explícita e backup recuperável confirmado, aplicada a migração existente em transação, com timeout de lock/comando e rollback automático em falha. Confirmadas as dez tabelas e `campaigns.allow_player_narrative_edits`. Sem seeds ou limpeza.
+
+## [2026-10-31 16:53 BRT] — style - Menu lateral da ficha acompanha a página
+
+**Tipo:** style
+
+**Arquivos principais:** `app/globals.css`.
+
+- Remove o posicionamento fixo por rolagem de `.character-summary-nav`; o menu segue o fluxo da página no desktop e no mobile.
+
+## [2026-10-31 15:21 BRT] — feat - Navegação do dossiê e atalhos de rolagem
+
+**Tipo:** feat
+
+**Arquivos principais:** `app/characters/[id]/character-summary-client.tsx`, `components/character-summary/{character-summary,summary-attributes,summary-skills,character-rolls}.tsx`, `tests/{character-summary-notes,character-rolls-ui,character-rolls}.test.ts`.
+
+- A ficha oferece âncoras para recursos, atributos, habilidades, vantagens, disciplinas e rolagens. Atributos e habilidades levam ao painel V5 existente com o traço preenchido; a confirmação e o cálculo continuam no servidor.
+- Corrige duas anotações de tipos em testes de rolagem já modificados localmente. Sem nova API, migração, seed ou alteração de permissão.
+- Validação: 5 testes focados, TypeScript, lint global (5 avisos antigos), build e auditoria de dependências de produção sem vulnerabilidades. Auditoria completa encontrou 13 achados moderados na cadeia de desenvolvimento, sem correção disponível no relatório. QA manual de teclado/mobile pendente; a SPEC completa continua em andamento.
+
 ## [2026-10-29 21:00 BRT] — feat - Arquivar mesas, anexar imagens e preservar revelações por sessão
 
 **Tipo:** feat
@@ -43,6 +88,18 @@
 - Preserva vínculo das mesas por `master_user_id`, fichas por `user_id`, convites e permissões contextuais. Criação usa o ID da sessão; IDs de proprietário enviados pelo cliente não substituem o ator. Não altera schema, vínculos existentes ou dados persistentes.
 - Corrige textos UTF-8 corrompidos de clãs, predações, crônica e calendário. Formulário aguarda autenticação e catálogos completos, com erros explícitos. Consulta sem cache e resposta privada variando por Cookie; autenticação do GET precede preparação do banco.
 - Validação: build e TypeScript aprovados; lint global sem erros/cinco avisos preexistentes; npm audit sem vulnerabilidades. 58 testes focados aprovados em dez arquivos; revisão de segurança/pré-commit sem achados críticos/altos, diff --check aprovado e scan de padrões de segredos sem achados. Configuração de testes de acesso usa mocks sem credenciais ou setup de banco. QA manual, integração PostgreSQL e login/deploy em produção não executados.
+
+## [2026-10-26 22:53 BRT] — feat - Iniciar POC segura de metadados da VTM Wiki
+
+**Tipo:** feat
+
+**Arquivos principais:** `scripts/vtm-wiki-poc.mjs`, `tests/vtm-wiki-poc.test.ts`, `vitest.wiki.config.ts`, `package.json`, `README.md` e `docs/vtm-wiki-sync.md`.
+
+- Adiciona comandos wiki:poc/test:wiki para diagnóstico manual de siteinfo, alterações recentes, continuação e revisões, sem baixar textos de regras ou modificar catálogos/fichas. API padrão confirmada via Node; origem mantém https://vtm.paradoxwikis.com/VTM_Wiki.
+- Teste pontual solicitado com Axios: domínio raiz retornou 301/HTML; endpoint VTM api.php retornou 200/JSON e revisão de Ventrue. Conteúdo não exibido nem incorporado a catálogos/fixtures; Axios usado somente em pasta temporária, sem dependência nova no aplicativo.
+- Segurança: whitelist de host/caminho HTTPS, redirects e credenciais recusados, limite de 1 MiB inclusive em stream, timeout de 10s incluindo body e consultas sequenciais com 15s conforme robots.txt. Falhas não expõem corpo remoto, credenciais ou erro interno; sem retry de bloqueio.
+- Licença por entrada/edição V5 continuam pendentes: mesmo com metadados acessíveis, resultado geral BLOCKED e publicationAllowed false. Sem rotas/admin, novos acessos, persistência, migração, seed ou limpeza de banco.
+- Validação: 32 testes aprovados na configuração isolada; TypeScript aprovado; lint global sem erros/cinco avisos preexistentes e lint focado aprovado; build aprovado; npm audit sem vulnerabilidades; scan de padrões de segredos sem achados. POC real confirmou metadados; configuração de testes não carrega ambiente/setup PostgreSQL. Vitest saiu com código 0 e alerta de timeout ao encerrar dois servidores Vite; registrado como limite. Revisão de segurança sem achados bloqueantes na POC. Suíte global e banco não executados; QA visual não aplicável (sem UI nova).
 
 ## [2026-10-26 22:10 BRT] — style - Organizar seções do modo sessão
 

@@ -24,6 +24,7 @@ async function readPayload(request: Request) {
   if (body.name !== undefined && (typeof body.name !== 'string' || body.name.length > 200)) throw new InvalidPayload()
   if (body.data !== undefined && (!body.data || typeof body.data !== 'object' || Array.isArray(body.data) || JSON.stringify(body.data).length > 100000)) throw new InvalidPayload()
   const rawData = body.data as Record<string, unknown> | undefined
+  if (rawData?.entryMode !== undefined && rawData.entryMode !== 'ASSISTED' && rawData.entryMode !== 'EXISTING') throw new InvalidPayload()
   if (rawData?.characterType !== undefined && !CHARACTER_TYPES.includes(rawData.characterType as CharacterType)) throw new InvalidPayload()
   if (rawData?.creationType !== undefined && !CREATION_TYPES.includes(rawData.creationType as CreationType)) throw new InvalidPayload()
   return {
