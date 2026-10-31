@@ -601,6 +601,10 @@ main > .toast-overlay {
 .character-summary-content { display: grid; gap: 18px; min-width: 0; border-radius: 16px; background: #211f22; padding: 16px; }
 .character-summary-content > *, .character-summary-content [class*="border-border"] { border-color: #302d31; }
 .summary-page-note { color: #b4afb2; font-size: 14px; }
+.npc-summary-content { display: grid; gap: 18px; min-width: 0; border-radius: 16px; background: #211f22; padding: 16px; }
+.npc-summary-content > details, .npc-summary-content > section { border-color: #302d31; }
+.npc-summary-identity .summary-page-actions { justify-content: flex-start; margin-top: 18px; }
+.npc-summary-stats .character-summary-stat { align-content: space-between; }
 
 @media (max-width: 760px) {
     .character-summary-page { padding: 12px; }
