@@ -23,15 +23,14 @@ export default async function CharacterSummaryPage({
       <div className="noise" aria-hidden="true" />
       <ArchiveHeader title="Resumo da ficha" />
 
-      <div className="archive-content">
-        <div className="mb-4 flex flex-wrap justify-end gap-3">
-          <Link href={`/characters/${id}/edit`} className="button-primary inline-flex items-center gap-2">
-            <span className="text-xs">Editar ficha completa</span>
-          </Link>
+      <div className="archive-content character-summary-page">
+        <div className="summary-page-actions">
+          <Link href={`/characters/${id}/edit`} className="button-primary inline-flex items-center gap-2"><span className="text-xs">Editar ficha completa</span></Link>
+          <Link className="button-ghost" href={`/characters/${id}/narrative`}>Perfil, relações e mídias</Link>
         </div>
-
-        <section className="mb-6 flex flex-col gap-4"><SheetMediaPanel compact subjectType="CHARACTER" subjectId={id}/><Link className="button-ghost self-start" href={`/characters/${id}/narrative`}>Perfil, relações e mídias</Link></section>
+        <div className="summary-media-compact"><SheetMediaPanel compact subjectType="CHARACTER" subjectId={id}/></div>
         <CharacterSummaryClient data={characterData} />
+        <p className="summary-page-note">Prévia conceitual com dados ilustrativos, não extraídos de uma ficha existente.</p>
       </div>
     </main>
   )
