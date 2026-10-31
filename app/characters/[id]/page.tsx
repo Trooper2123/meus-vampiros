@@ -24,46 +24,18 @@ export default async function CharacterPage({
       <div className="noise" aria-hidden="true" />
       <ArchiveHeader title="Ficha completa" />
 
-      <div className="archive-content">
-        {/* Navegação entre Resumo e Ficha Completa */}
-        <div className="mb-8 flex items-center gap-2 border-b border-border pb-4">
-          <Link
-            href={`/characters/${id}`}
-            className="px-4 py-2 text-sm font-medium text-primary"
-          >
-            <div className="flex items-center gap-2">
-              <BookOpen className="size-4" />
-              Ficha Completa
-            </div>
-          </Link>
-          <Link
-            href={`/characters/${id}/summary`}
-            className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <div className="flex items-center gap-2">
-              <FileText className="size-4" />
-              Resumo
-            </div>
-          </Link>
+      <div className="archive-content character-summary-page">
+        <div className="summary-page-tabs" aria-label="Navegação da ficha">
+          <Link href={`/characters/${id}`} className="is-active"><BookOpen className="size-4" />Ficha Completa</Link>
+          <Link href={`/characters/${id}/summary`}><FileText className="size-4" />Resumo</Link>
         </div>
-
-        {/* Conteúdo da Ficha */}
-        <section className="mb-6 flex flex-col gap-4"><SheetMediaPanel compact subjectType="CHARACTER" subjectId={id}/><Link className="button-ghost self-start" href={`/characters/${id}/narrative`}>Perfil, relações e mídias</Link></section>
+        <div className="summary-page-actions">
+          <Link href={`/characters/${id}/edit`} className="button-primary inline-flex items-center gap-2"><Edit className="size-4" />Editar ficha completa</Link>
+          <Link className="button-ghost" href={`/characters/${id}/narrative`}>Perfil, relações e mídias</Link>
+        </div>
+        <div className="summary-media-compact"><SheetMediaPanel compact subjectType="CHARACTER" subjectId={id}/></div>
         <CharacterSummaryClient data={characterData} />
-        
-        {/* Botão para editar ficha completa */}
-        <div className="mt-8 border-t border-border pt-6 text-center">
-          <p className="text-sm text-muted-foreground mb-4">
-            Edite todos os detalhes da ficha em uma página interativa
-          </p>
-          <Link
-            href={`/characters/${id}/edit`}
-            className="button-primary inline-flex items-center gap-2"
-          >
-            <Edit className="size-4" />
-            Editar ficha completa
-          </Link>
-        </div>
+        <p className="summary-page-note">Prévia conceitual com dados ilustrativos, não extraídos de uma ficha existente.</p>
       </div>
     </main>
   )

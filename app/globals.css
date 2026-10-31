@@ -472,8 +472,29 @@ main > .toast-overlay {
 }
 
 .character-summary-page {
+    position: relative;
     max-width: 1280px;
     padding: 18px 18px 28px;
+}
+
+.summary-page-tabs {
+    display: flex;
+    gap: 18px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 18px;
+}
+
+.summary-page-tabs a {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    color: #aaa6a8;
+    font-size: 13px;
+}
+
+.summary-page-tabs a.is-active {
+    color: #c93442;
 }
 
 .summary-page-actions {
