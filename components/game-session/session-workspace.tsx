@@ -11,7 +11,7 @@ import { CampaignPossessionsManager } from '@/components/master-panel'
 import { NotesPanel } from '@/components/notes/notes-panel'
 import { NpcSessionPanel,SessionReveals } from '@/components/npcs/npc-session-panel'
 
-type Snapshot = { session: { id: string; status: 'ACTIVE' | 'CLOSED'; revision: number; chronicleNightIds: string[] } | null; canManage: boolean; characters: { id: string; name: string }[] }
+type Snapshot = { archived?: boolean; sessions?: {id:string;status:'ACTIVE'|'CLOSED';startedAt:string}[]; session: { id: string; status: 'ACTIVE' | 'CLOSED'; revision: number; chronicleNightIds: string[] } | null; canManage: boolean; characters: { id: string; name: string }[] }
 const read = async (url: string) => { const response = await fetch(url, { cache: 'no-store' }); const body = await response.json(); if (!response.ok) { throw new Error(body.error ?? 'Não foi possível carregar a sessão.'); } return body }
 
 export function CampaignSessionWorkspace({ campaignId, actorId }: Readonly<{ campaignId: string; actorId: string }>) {
@@ -32,7 +32,8 @@ function SessionWorkspace({ campaignId, actorId }: Readonly<{ campaignId: string
   const manage = data?.canManage ?? false
   const activeSession = data?.session
   const current = data?.characters.find(character => character.id === selected) ?? data?.characters[0]
-  const npcSessionId=data?.session?.id??closedNpcSession
+  const notesSessionId=data?.sessions?.find(session=>session.id===closedNpcSession)?.id??data?.session?.id??data?.sessions?.[0]?.id
+  const npcSessionId=notesSessionId
   useEffect(()=>{const id=new URL(window.location.href).searchParams.get('npcSessionId');if(id&&/^[0-9a-f-]{36}$/i.test(id)){ setClosedNpcSession(id) }},[])
 
   useEffect(() => {
@@ -71,9 +72,11 @@ function SessionWorkspace({ campaignId, actorId }: Readonly<{ campaignId: string
   }
 
   return <div className="flex flex-col gap-6">
-    <header className="border border-border bg-card p-5"><p className="eyebrow">Modo sessão</p><h1 className="mt-2 font-serif text-3xl">Mesa em andamento</h1><p className="mt-2 text-sm text-muted-foreground">Recursos e rolagens usam os comandos oficiais da ficha. A sala de vídeo é opcional.</p>{feedback && <output  className="block mt-3 text-sm text-muted-foreground">{feedback}</output>}{error && <p role="alert" className="mt-3 text-sm text-primary">{error.message}</p>}{!data?.session && manage && <button className="button-primary mt-4 min-h-10" disabled={pending} onClick={() => void command('POST', url, {})}>Iniciar sessão</button>}{activeSession?.status === 'ACTIVE' && manage && <button className="button-ghost mt-4 min-h-10" disabled={pending} onClick={() => void command('PATCH', `/api/sessions/${activeSession.id}`, { expectedRevision: activeSession.revision })}>Encerrar sessão</button>}</header>
+    <header className="border border-border bg-card p-5"><p className="eyebrow">Modo sessão</p><h1 className="mt-2 font-serif text-3xl">Mesa em andamento</h1><p className="mt-2 text-sm text-muted-foreground">Recursos e rolagens usam os comandos oficiais da ficha. A sala de vídeo é opcional.</p>{feedback && <output  className="block mt-3 text-sm text-muted-foreground">{feedback}</output>}{error && <p role="alert" className="mt-3 text-sm text-primary">{error.message}</p>}{!data?.session && manage && !data?.archived && <button className="button-primary mt-4 min-h-10" disabled={pending} onClick={() => void command('POST', url, {})}>Iniciar sessão</button>}{activeSession?.status === 'ACTIVE' && manage && <button className="button-ghost mt-4 min-h-10" disabled={pending} onClick={() => void command('PATCH', `/api/sessions/${activeSession.id}`, { expectedRevision: activeSession.revision })}>Encerrar sessão</button>}</header>
+    {data?.archived&&<p className="border border-border bg-card p-4 text-sm">Mesa arquivada. O histórico continua disponível; restaure a mesa para iniciar novas sessões.</p>}
+    {!!data?.sessions?.length&&<label className="sheet-field"><span>Sessão para consultar anotações e revelações</span><select className="select" value={notesSessionId??''} onChange={event=>{const id=event.target.value;setClosedNpcSession(id);const location=new URL(window.location.href);location.searchParams.set('npcSessionId',id);window.history.replaceState(window.history.state,'',location.toString())}}>{data.sessions.map(session=><option key={session.id} value={session.id}>{new Date(session.startedAt).toLocaleString('pt-BR')} · {session.status==='ACTIVE'?'Em andamento':'Encerrada'}</option>)}</select></label>}
     {activeSession?.status === 'ACTIVE' && manage && <details className="border border-border bg-card p-5"><summary className="cursor-pointer font-serif text-2xl">Início da noite</summary><div className="mt-5"><AwakePanel campaignId={campaignId} sessionId={activeSession.id} /></div></details>}
-    {activeSession?.status === 'ACTIVE' && <details className="border border-border bg-card p-5"><summary className="cursor-pointer font-serif text-2xl">Anotações da mesa</summary><div className="mt-5"><NotesPanel actorId={actorId} initialCampaignId={campaignId} /></div></details>}
+    {data&&notesSessionId && <details className="border border-border bg-card p-5"><summary className="cursor-pointer font-serif text-2xl">Anotações da mesa</summary><div className="mt-5"><NotesPanel key={notesSessionId} actorId={actorId} initialCampaignId={campaignId} link={{targetType:'SESSION',targetId:notesSessionId}} /></div></details>}
     {data && <details className="border border-border bg-card p-5"><summary className="cursor-pointer font-serif text-2xl">Videochamada</summary><div className="mt-5"><LiveKitRoomLink campaignId={campaignId} master={manage} /></div></details>}
     {data&&npcSessionId&&<details className="border border-border bg-card p-5"><summary className="cursor-pointer font-serif text-2xl">NPCs da sessão</summary><div className="mt-5"><NpcSessionPanel sessionId={npcSessionId} campaignId={campaignId}/></div></details>}
     {data?.session?.status === 'ACTIVE' && <>
@@ -85,8 +88,8 @@ function SessionWorkspace({ campaignId, actorId }: Readonly<{ campaignId: string
       {current && <div className="grid gap-5 xl:grid-cols-2"><SessionResources key={`resources-${current.id}`} characterId={current.id} sessionId={data.session.id} /><CharacterRolls key={`rolls-${current.id}`} characterId={current.id} sessionId={data.session.id} /></div>}
       </div></details>
       {manage && <details className="border border-border bg-card p-5"><summary className="cursor-pointer font-serif text-2xl">XP e pertences</summary><div className="mt-5"><CampaignPossessionsManager campaignId={campaignId} sessionId={data.session.id} /></div></details>}
-      <details className="border border-border bg-card p-5"><summary className="cursor-pointer font-serif text-2xl">Revelações da sessão</summary><div className="mt-5"><SessionReveals sessionId={data.session.id}/></div></details>
     </>}
+    {data&&notesSessionId&&<details className="border border-border bg-card p-5"><summary className="cursor-pointer font-serif text-2xl">Revelações da sessão</summary><div className="mt-5"><SessionReveals key={notesSessionId} sessionId={notesSessionId} active={data.session?.id===notesSessionId&&data.session.status==='ACTIVE'}/></div></details>}
     {!snapshot && !error && <output  className="block border border-border bg-card p-5 text-sm text-muted-foreground">Carregando sessão...</output>}
     {data && !data.session && <p className="border border-border bg-card p-5 text-sm text-muted-foreground">Aguardando o Narrador iniciar uma sessão.</p>}
   </div>

@@ -3,14 +3,16 @@ import { get,put,del } from '@vercel/blob'
 import sharp from 'sharp'
 import { sql } from 'drizzle-orm'
 import { db } from './db'
+import { getNote } from './notes'
 import { npcFail,npcInteger,npcKeys,npcObject,npcText } from './npc-domain'
 import { npcId } from './npc-store'
 import { canReadSheetItem,canEditSheetItem,contextAccess,ensureSheetContext,globalSubjectAccess,sheetVisibility,subjectAccess,type SheetVisibility,type SubjectType } from './sheet-access'
 
 export const MAX_SHEET_IMAGE_BYTES=5*1024*1024
 export type MediaStore={read:(key:string)=>Promise<Uint8Array|null>;write:(key:string,data:Uint8Array)=>Promise<void>;remove:(key:string)=>Promise<void>}
-export type MediaRow={id:string;context_id:string|null;subject_type:SubjectType;subject_id:string;storage_key:string;mime_type:string;size_bytes:number;width:number;height:number;title:string;description:string;category:string;is_portrait:boolean;position_x:number;position_y:number;visibility:SheetVisibility;author_id:string;revision:number;deleted_at:Date|null;created_at:Date}
-type UploadRow={id:string;author_id:string;context_id:string|null;subject_type:SubjectType;subject_id:string;metadata:ReturnType<typeof validateMetadata>;created_at:Date;completed_at:Date|null}
+export type MediaSubjectType = SubjectType | 'NOTE'
+export type MediaRow={id:string;context_id:string|null;subject_type:MediaSubjectType;subject_id:string;storage_key:string;mime_type:string;size_bytes:number;width:number;height:number;title:string;description:string;category:string;is_portrait:boolean;position_x:number;position_y:number;visibility:SheetVisibility;author_id:string;revision:number;deleted_at:Date|null;created_at:Date}
+type UploadRow={id:string;author_id:string;context_id:string|null;subject_type:MediaSubjectType;subject_id:string;metadata:ReturnType<typeof validateMetadata>;created_at:Date;completed_at:Date|null}
 export function requireBlobConfiguration(){if(!process.env.BLOB_READ_WRITE_TOKEN){ npcFail(503,'Configure um Vercel Blob privado e BLOB_READ_WRITE_TOKEN para enviar imagens.') }}
 async function boundedStream(stream:ReadableStream<Uint8Array>){const reader=stream.getReader(),chunks:Uint8Array[]=[];let size=0;try{while(true){const part=await reader.read();if(part.done){ break; }size+=part.value.length;if(size>MAX_SHEET_IMAGE_BYTES){ npcFail(413,'A imagem excede 5 MB.'); }chunks.push(part.value)}}finally{await reader.cancel().catch(()=>{})}return Buffer.concat(chunks)}
 export const privateBlobStore:MediaStore={
@@ -33,10 +35,11 @@ function validateMetadata(input:unknown){const value=npcObject(input);npcKeys(va
 export async function prepareSheetUpload(actorId:string,input:unknown,configured=true){
   if(configured){ requireBlobConfiguration() }
   const value=npcObject(input);npcKeys(value,['subjectType','subjectId','campaignId','data'])
-  if(!['CHARACTER','NPC'].includes(String(value.subjectType))){ npcFail(422,'Tipo de ficha inválido.') }
-  const type=value.subjectType as SubjectType,id=npcId(value.subjectId),metadata=validateMetadata(value.data)
+  if(!['CHARACTER','NPC','NOTE'].includes(String(value.subjectType))){ npcFail(422,'Tipo de ficha inválido.') }
+  const type=value.subjectType as MediaSubjectType,id=npcId(value.subjectId),metadata=validateMetadata(value.data)
   let contextId:string|null=null
-  if(value.campaignId){const resolved=await ensureSheetContext(actorId,npcId(value.campaignId),type,id);contextId=resolved.context.id;if(metadata.visibility==='GM_ONLY'&&!resolved.access.isNarrator){ npcFail(403,'Apenas o Narrador define mídia exclusiva.') }}
+  if(type==='NOTE'){await noteMediaAccess(actorId,id,true);if(value.campaignId||metadata.isPortrait||metadata.visibility!=='OWNER_ONLY'){ npcFail(422,'Imagens de anotações seguem a visibilidade da anotação e não são retratos.') }}
+  else if(value.campaignId){const resolved=await ensureSheetContext(actorId,npcId(value.campaignId),type,id);contextId=resolved.context.id;if(metadata.visibility==='GM_ONLY'&&!resolved.access.isNarrator){ npcFail(403,'Apenas o Narrador define mídia exclusiva.') }}
   else {await globalSubjectAccess(actorId,type,id,true);if(!metadata.isPortrait||!['OWNER_ONLY','CAMPAIGN_VISIBLE'].includes(metadata.visibility)){ npcFail(422,'Imagens globais são retratos; escolha visibilidade do dono ou dos participantes.') }}
   return await db.transaction(async tx=>{
     await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtextextended(${actorId+':uploads'},0))`)
@@ -53,13 +56,15 @@ export async function authorizeSheetUpload(actorId:string,id:string){
   const rows=await db.execute<UploadRow>(sql`SELECT * FROM sheet_upload_requests WHERE id=${npcId(id)}::uuid AND author_id=${actorId} AND completed_at IS NULL AND created_at>now()-interval '1 hour'`),row=rows.rows[0]
   if(!row){ npcFail(403,'Envio expirado ou não autorizado.') }
   if(row.context_id){const {access}=await contextAccess(actorId,row.context_id);if(!access.canWrite){ npcFail(403,'Envio não autorizado.') }}
+  else if(row.subject_type==='NOTE') await noteMediaAccess(actorId,row.subject_id,true)
   else await globalSubjectAccess(actorId,row.subject_type,row.subject_id,true)
   return row
 }
 function mediaProjection(row:MediaRow,canEdit:boolean){return {id:row.id,title:row.title,description:row.description,category:row.category,isPortrait:row.is_portrait,positionX:row.position_x,positionY:row.position_y,visibility:row.visibility,width:row.width,height:row.height,sizeBytes:row.size_bytes,revision:row.revision,canEdit,url:`/api/sheet-media/${row.id}`}}
 export async function confirmSheetUpload(actorId:string,id:string,store:MediaStore=privateBlobStore){
   npcId(id)
-  return await db.transaction(async tx=>{
+  const cleanup:string[]=[]
+  const confirmed=await db.transaction(async tx=>{
     const uploads=await tx.execute<UploadRow>(sql`SELECT * FROM sheet_upload_requests WHERE id=${id}::uuid AND author_id=${actorId} FOR UPDATE`),upload=uploads.rows[0]
     if(!upload){ npcFail(403,'Envio não autorizado.') }
     const prior=await tx.execute<MediaRow>(sql`SELECT * FROM sheet_media WHERE id=${id}::uuid AND deleted_at IS NULL`)
@@ -71,18 +76,24 @@ export async function confirmSheetUpload(actorId:string,id:string,store:MediaSto
     try{image=await sanitizeSheetImage(raw)}catch(error){await store.remove(staging).catch(()=>{});throw error}
     const storageKey=`sheet-images/${id}.webp`,meta=upload.metadata
     await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtextextended(${upload.subject_type+':'+upload.subject_id+':'+(upload.context_id??'global')},0))`)
+    const count=await tx.execute<{count:string}>(sql`SELECT count(*) AS count FROM sheet_media WHERE subject_type=${upload.subject_type} AND subject_id=${upload.subject_id}::uuid AND context_id IS NOT DISTINCT FROM ${upload.context_id}::uuid AND deleted_at IS NULL`)
+    if(Number(count.rows[0].count)>=100){ npcFail(422,'Limite de 100 imagens neste contexto. Remova uma imagem antes de enviar outra.') }
     const old=meta.isPortrait?await tx.execute<MediaRow>(sql`UPDATE sheet_media SET is_portrait=false,deleted_at=CASE WHEN context_id IS NULL THEN now() ELSE deleted_at END,revision=revision+1 WHERE subject_type=${upload.subject_type} AND subject_id=${upload.subject_id}::uuid AND context_id IS NOT DISTINCT FROM ${upload.context_id}::uuid AND is_portrait AND deleted_at IS NULL RETURNING *`):{rows:[]}
     await store.write(storageKey,image.bytes)
     const rows=await tx.execute<MediaRow>(sql`INSERT INTO sheet_media(id,context_id,subject_type,subject_id,storage_key,mime_type,size_bytes,width,height,title,description,category,is_portrait,position_x,position_y,visibility,author_id) VALUES(${id}::uuid,${upload.context_id}::uuid,${upload.subject_type},${upload.subject_id}::uuid,${storageKey},${image.mimeType},${image.bytes.length},${image.width},${image.height},${meta.title},${meta.description},${meta.category},${meta.isPortrait},${meta.positionX},${meta.positionY},${meta.visibility},${actorId}) RETURNING *`)
     await tx.execute(sql`UPDATE sheet_upload_requests SET completed_at=now() WHERE id=${id}::uuid`)
-    await store.remove(staging).catch(()=>{})
-    for(const row of old.rows)if(!row.context_id){ await store.remove(row.storage_key).catch(()=>{}) }
+    cleanup.push(staging,...old.rows.filter(row=>!row.context_id).map(row=>row.storage_key))
     return mediaProjection(rows.rows[0],true)
   })
+  // O retrato anterior deve sobreviver a rollback ou falha no commit.
+  // shortcut: falhas de exclusão deixam objetos privados órfãos; automatizar a reconciliação ao adicionar limpeza operacional.
+  for(const key of cleanup){ await store.remove(key).catch(()=>{}) }
+  return confirmed
 }
 async function authorizeMedia(actorId:string,row:MediaRow,write=false){
   if(row.deleted_at){ npcFail(404,'Imagem não encontrada.') }
-  if(!write){const revealed=await db.execute(sql`SELECT r.id FROM sheet_reveals r JOIN game_sessions s ON s.id=r.session_id JOIN campaigns c ON c.id=s.campaign_id WHERE r.kind='MEDIA' AND r.target_id=${row.id}::uuid AND r.revoked_at IS NULL AND s.status='ACTIVE' AND (c.master_user_id=${actorId} OR EXISTS(SELECT 1 FROM characters ch WHERE ch.campaign_id=c.id AND ch.user_id=${actorId})) LIMIT 1`);if(revealed.rows.length){ return {canEdit:false} }}
+  if(row.subject_type==='NOTE'){ return noteMediaAccess(actorId,row.subject_id,write) }
+  if(!write){const revealed=await db.execute(sql`SELECT r.id FROM sheet_reveals r JOIN game_sessions s ON s.id=r.session_id JOIN campaigns c ON c.id=s.campaign_id WHERE r.kind='MEDIA' AND r.target_id=${row.id}::uuid AND r.revoked_at IS NULL AND (c.master_user_id=${actorId} OR EXISTS(SELECT 1 FROM characters ch WHERE ch.campaign_id=c.id AND ch.user_id=${actorId} AND ch.status<>'DELETED')) LIMIT 1`);if(revealed.rows.length){ return {canEdit:false} }}
   if(row.context_id){const {access}=await contextAccess(actorId,row.context_id);if(!canReadSheetItem(access,row.author_id,row.visibility)){ npcFail(404,'Imagem não encontrada.'); }const canEdit=canEditSheetItem(access,row.author_id);if(write&&!canEdit){ npcFail(403,'Mídia somente para leitura.'); }return {canEdit}}
   const access=await globalSubjectAccess(actorId,row.subject_type,row.subject_id,write)
   const visible=access.isOwner||access.isNarrator||row.visibility==='CAMPAIGN_VISIBLE'&&access.campaignIds.length>0
@@ -96,7 +107,17 @@ export async function listSheetMedia(actorId:string,campaignId:string,type:Subje
   for(const row of rows.rows){const allowed=await authorizeMedia(actorId,row).catch(()=>null);if(allowed){ visible.push({...mediaProjection(row,allowed.canEdit),global:!row.context_id}) }}
   return {media:visible,portrait:visible.find(m=>m.isPortrait&&!m.global)??visible.find(m=>m.isPortrait)??null,storageConfigured:!!process.env.BLOB_READ_WRITE_TOKEN}
 }
+async function noteMediaAccess(actorId:string,id:string,write=false){
+  const note=await getNote(actorId,npcId(id))
+  if(write&&!note.canEdit){ npcFail(403,'Anotação somente para leitura.') }
+  return {canEdit:note.canEdit}
+}
 export async function listGlobalSheetMedia(actorId:string,type:unknown,id:string){
+  if(type==='NOTE'){
+    const access=await noteMediaAccess(actorId,id)
+    const rows=await db.execute<MediaRow>(sql`SELECT * FROM sheet_media WHERE subject_type='NOTE' AND subject_id=${id}::uuid AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 100`)
+    return {media:rows.rows.map(row=>mediaProjection(row,access.canEdit)),portrait:null,canEdit:access.canEdit,storageConfigured:!!process.env.BLOB_READ_WRITE_TOKEN}
+  }
   if(type!=='CHARACTER'&&type!=='NPC'){ npcFail(400,'Tipo de ficha inválido.') }
   const access=await globalSubjectAccess(actorId,type,id)
   const rows=await db.execute<MediaRow>(sql`SELECT * FROM sheet_media WHERE subject_type=${String(type)} AND subject_id=${id}::uuid AND context_id IS NULL AND is_portrait AND deleted_at IS NULL LIMIT 1`)
@@ -119,8 +140,9 @@ export async function editSheetMedia(actorId:string,id:string,input:unknown,stor
   }
   if(value.action!=='EDIT'){ npcFail(400,'Operação de mídia inválida.') }
   const meta=validateMetadata(value.data)
-  if(row.context_id){const {access}=await contextAccess(actorId,row.context_id);if(meta.visibility==='GM_ONLY'&&!access.isNarrator){ npcFail(403,'Visibilidade reservada ao Narrador.') }}
-  else if(!['OWNER_ONLY','CAMPAIGN_VISIBLE'].includes(meta.visibility)){ npcFail(422,'Visibilidade de retrato global inválida.') }
+  if(row.subject_type==='NOTE'){if(meta.isPortrait||meta.visibility!=='OWNER_ONLY'){ npcFail(422,'Imagens seguem a visibilidade da anotação.') }}
+  else if(row.context_id){const {access}=await contextAccess(actorId,row.context_id);if(meta.visibility==='GM_ONLY'&&!access.isNarrator){ npcFail(403,'Visibilidade reservada ao Narrador.') }}
+  else if(!meta.isPortrait||!['OWNER_ONLY','CAMPAIGN_VISIBLE'].includes(meta.visibility)){ npcFail(422,'Imagens globais são retratos; escolha visibilidade do dono ou dos participantes.') }
   return await db.transaction(async tx=>{
     await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtextextended(${row.subject_type+':'+row.subject_id+':'+(row.context_id??'global')},0))`)
     const current=await tx.execute<MediaRow>(sql`SELECT * FROM sheet_media WHERE id=${id}::uuid FOR UPDATE`)

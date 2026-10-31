@@ -22,13 +22,13 @@ function requireStorage() {
 }
 
 async function getAccess(campaignId: string, actorId: string) {
-  const result = await db.execute<{ is_master: boolean; is_member: boolean }>(sql`
-    SELECT c.master_user_id = ${actorId} AS is_master,
-      (c.master_user_id = ${actorId} OR EXISTS (SELECT 1 FROM characters ch WHERE ch.campaign_id = c.id AND ch.user_id = ${actorId})) AS is_member
+  const result = await db.execute<{ is_master: boolean; is_member: boolean; archived: boolean }>(sql`
+    SELECT c.status='Arquivada' AS archived,c.master_user_id = ${actorId} AS is_master,
+      (c.master_user_id = ${actorId} OR EXISTS (SELECT 1 FROM characters ch WHERE ch.campaign_id = c.id AND ch.user_id = ${actorId} AND ch.status<>'DELETED')) AS is_member
     FROM campaigns c WHERE c.id = ${campaignId}::uuid
   `)
   const row = result.rows[0]
-  return row ? { isMaster: row.is_master, isMember: row.is_member } : null
+  return row ? { isMaster: row.is_master, isMember: row.is_member, archived: row.archived } : null
 }
 
 async function getCharacters(campaignId: string, actorId: string, isMaster: boolean) {
@@ -93,8 +93,9 @@ function validateChronicleNights(value: unknown) {
 
 async function startPersistentSession(campaignId: string, actorId: string, key: string, chronicleNightIds: string[]) {
   return await db.transaction(async transaction => {
-    const campaign = await transaction.execute<{ master_user_id: string }>(sql`SELECT master_user_id FROM campaigns WHERE id = ${campaignId}::uuid FOR SHARE`)
+    const campaign = await transaction.execute<{ master_user_id: string; status: string }>(sql`SELECT master_user_id,status FROM campaigns WHERE id = ${campaignId}::uuid FOR SHARE`)
     if (campaign.rows[0]?.master_user_id !== actorId) { throw new CharacterCommandError(403, 'Somente o Narrador atual pode iniciar a sessão.') }
+    if (campaign.rows[0]?.status === 'Arquivada') { throw new CharacterCommandError(409, 'Restaure a mesa antes de iniciar uma sessão.') }
     const prior = await transaction.execute<SessionRecord>(sql`
       SELECT ${sessionColumns}, COALESCE(array_agg(n.chronicle_night_id ORDER BY n.chronicle_night_id) FILTER (WHERE n.chronicle_night_id IS NOT NULL), ARRAY[]::uuid[]) AS "chronicleNightIds"
       FROM game_sessions s LEFT JOIN game_session_nights n ON n.session_id = s.id
@@ -150,7 +151,9 @@ export async function getCampaignGameSession(actorId: string, campaignId: string
   if (!access) { throw new CharacterCommandError(404, 'Mesa não encontrada.') }
   if (!access.isMember) { throw new CharacterCommandError(403, 'Acesso negado.') }
   const active = await readActiveSession(campaignId)
-  return { session: active ? sessionProjection(active) : null, canManage: access.isMaster, characters: active ? await getCharacters(campaignId, actorId, access.isMaster) : [] }
+  // shortcut: histórico limitado às cem sessões recentes; paginar quando houver mesas com mais encontros.
+  const history=await db.execute<{id:string;status:'ACTIVE'|'CLOSED';startedAt:Date}>(sql`SELECT id,status,started_at AS "startedAt" FROM game_sessions WHERE campaign_id=${campaignId}::uuid ORDER BY started_at DESC,id DESC LIMIT 100`)
+  return { sessions:history.rows, archived:access.archived, session: active ? sessionProjection(active) : null, canManage: access.isMaster, characters: active ? await getCharacters(campaignId, actorId, access.isMaster) : [] }
 }
 
 export async function startGameSession(actorId: string, campaignId: string, input: unknown) {

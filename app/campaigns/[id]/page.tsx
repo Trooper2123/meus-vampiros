@@ -1,3 +1,4 @@
+import { CampaignArchiveControl } from '@/components/campaign-archive-control'
 import { ArchiveHeader } from '@/components/archive-header'
 import { CampaignTools } from '@/components/campaign-calendar/campaign-tools'
 import { CharacterSummary } from '@/components/character-summary/character-summary'
@@ -55,6 +56,7 @@ export default async function CampaignDetailPage({ params, searchParams }: Reado
             <Link href="/master/vantagens-defeitos" target="_blank" rel="noopener noreferrer" className="button-ghost self-start">Pesquisa de vantagens e defeitos</Link>
           </nav>
 
+          <CampaignArchiveControl id={campaign.id} name={campaign.name} archived={campaign.status==='Arquivada'} />
           <CampaignTools campaignId={campaign.id} master />
 
           <details className="border border-border bg-card p-5">

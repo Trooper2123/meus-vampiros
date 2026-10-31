@@ -2,7 +2,7 @@ import type { ReactElement, ReactNode } from 'react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
-  snapshot: { session: null as null | { id: string; status: string; revision: number }, canManage: true, characters: [] },
+  snapshot: { session: null as null | { id: string; status: string; revision: number }, archived: false, sessions: [] as { id: string; status: string; startedAt: string }[], canManage: true, characters: [] },
   changed: vi.fn(), mutate: vi.fn(),
 }))
 vi.mock('react', async original => ({
@@ -38,6 +38,8 @@ beforeEach(() => {
   vi.clearAllMocks()
   mocks.snapshot.session = null
   mocks.snapshot.canManage = true
+  mocks.snapshot.archived = false
+  mocks.snapshot.sessions = []
   vi.stubGlobal('window', { location: { href: 'http://localhost/campaigns/campaign/session' }, history: { state: null, replaceState: vi.fn() } })
 })
 afterEach(() => vi.unstubAllGlobals())
@@ -57,6 +59,18 @@ it('não oferece início de noite, pesquisas ou gestão de XP ao jogador', () =>
 
 it('mantém início de noite e notas indisponíveis antes de iniciar a sessão', () => {
   expect(view().filter(element => element.type === 'summary').map(element => element.props.children)).toEqual(['Videochamada'])
+})
+
+it('jogador consulta notas e revelações de sessão encerrada sem receber comandos ativos', () => {
+  mocks.snapshot.canManage = false
+  mocks.snapshot.sessions = [{ id: 'closed', status: 'CLOSED', startedAt: '2026-10-29T20:00:00Z' }]
+  expect(view().filter(element => element.type === 'summary').map(element => element.props.children)).toEqual(['Anotações da mesa', 'Videochamada', 'NPCs da sessão', 'Revelações da sessão'])
+  expect(view().some(element => element.type === 'select' && element.props.value === 'closed')).toBe(true)
+})
+
+it('não oferece início de sessão para mesa arquivada', () => {
+  mocks.snapshot.archived = true
+  expect(view().some(element => element.type === 'button' && element.props.children === 'Iniciar sessão')).toBe(false)
 })
 
 it('bloqueia cliques concorrentes e conserva a chave após falha de rede', async () => {

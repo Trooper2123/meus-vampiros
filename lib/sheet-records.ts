@@ -148,31 +148,53 @@ async function createSheetRelation(value: Record<string,unknown>,actorId: string
 
 export async function revealSheetItem(actorId:string,sessionId:string,input:unknown) {
   const session=await getGameSession(actorId,npcId(sessionId))
-  if(!session.canManage||session.session.status!=='ACTIVE'){ npcFail(403,'Revelações exigem o Narrador e sessão ativa.') }
-  const value=npcObject(input);npcKeys(value,['action','id','kind','targetId'])
-  if(value.action==='HIDE') {await db.execute(sql`UPDATE sheet_reveals SET revoked_at=now() WHERE id=${npcId(value.id)}::uuid AND session_id=${sessionId}::uuid`);return {ok:true}}
-  if(value.action!=='REVEAL'||!['RECORD','MEDIA'].includes(String(value.kind))){ npcFail(422,'Revelação inválida.') }
-  let snapshot:Record<string,unknown>
-  if(value.kind==='RECORD'){
-    const rows=await db.execute<SheetRecord>(sql`SELECT * FROM sheet_records WHERE id=${npcId(value.targetId)}::uuid`),row=rows.rows[0]
-    if(!row){ npcFail(404,'Registro não encontrado.') }
-    const {context}=await contextAccess(actorId,row.context_id)
-    if(context.campaign_id!==session.session.campaignId){ npcFail(403,'Registro de outra mesa.') }
-    snapshot={title:row.title,body:row.body,section:row.section}
-  }else {
-    const rows=await db.execute<{id:string;context_id:string;title:string;description:string}>(sql`SELECT id,context_id,title,description FROM sheet_media WHERE id=${npcId(value.targetId)}::uuid AND deleted_at IS NULL`),row=rows.rows[0]
-    if(!row?.context_id){ npcFail(404,'Mídia de campanha não encontrada.') }
-    const {context}=await contextAccess(actorId,row.context_id)
-    if(context.campaign_id!==session.session.campaignId){ npcFail(403,'Mídia de outra mesa.') }
-    snapshot={mediaId:row.id,title:row.title,description:row.description}
-  }
+  if(!session.canManage){ npcFail(403,'Somente o Narrador controla revelações.') }
+  const value=npcObject(input);npcKeys(value,['action','id','kind','targetId','title','body'])
   const revealId=npcId(value.id)
-  await db.execute(sql`INSERT INTO sheet_reveals(id,session_id,kind,target_id,snapshot,revealed_by) VALUES(${revealId}::uuid,${sessionId}::uuid,${String(value.kind)},${npcId(value.targetId)}::uuid,${JSON.stringify(snapshot)}::jsonb,${actorId}) ON CONFLICT(id) DO NOTHING`)
-  return {id:revealId}
+  if(!['CREATE','REVEAL','SHOW','HIDE'].includes(String(value.action))){ npcFail(422,'Revelação inválida.') }
+  let snapshot:Record<string,unknown>={},kind='NOTE',targetId=revealId
+  if(value.action==='CREATE'){
+    snapshot={title:npcText(value.title,120,true),body:npcText(value.body,20000)}
+  }else if(value.action==='REVEAL'){
+    kind=String(value.kind);targetId=npcId(value.targetId)
+    if(kind==='RECORD'){
+      const rows=await db.execute<SheetRecord>(sql`SELECT * FROM sheet_records WHERE id=${targetId}::uuid`),row=rows.rows[0]
+      if(!row){ npcFail(404,'Registro não encontrado.') }
+      const {context}=await contextAccess(actorId,row.context_id)
+      if(context.campaign_id!==session.session.campaignId){ npcFail(403,'Registro de outra mesa.') }
+      snapshot={title:row.title,body:row.body,section:row.section}
+    }else if(kind==='MEDIA'){
+      const rows=await db.execute<{id:string;context_id:string;title:string;description:string}>(sql`SELECT id,context_id,title,description FROM sheet_media WHERE id=${targetId}::uuid AND deleted_at IS NULL`),row=rows.rows[0]
+      if(!row?.context_id){ npcFail(404,'Mídia de campanha não encontrada.') }
+      const {context}=await contextAccess(actorId,row.context_id)
+      if(context.campaign_id!==session.session.campaignId){ npcFail(403,'Mídia de outra mesa.') }
+      snapshot={mediaId:row.id,title:row.title,description:row.description}
+    }else npcFail(422,'Revelação inválida.')
+  }
+  return db.transaction(async tx=>{
+    const campaign=await tx.execute<{master_user_id:string}>(sql`SELECT master_user_id FROM campaigns WHERE id=${session.session.campaignId}::uuid FOR SHARE`)
+    if(campaign.rows[0]?.master_user_id!==actorId){ npcFail(403,'Somente o Narrador atual controla revelações.') }
+    const locked=await tx.execute<{status:string}>(sql`SELECT status FROM game_sessions WHERE id=${sessionId}::uuid FOR SHARE`)
+    if(!locked.rows[0]){ npcFail(404,'Sessão não encontrada.') }
+    if(value.action==='SHOW'||value.action==='HIDE'){
+      const rows=await tx.execute(sql`UPDATE sheet_reveals SET revoked_at=${value.action==='HIDE'?new Date():null} WHERE id=${revealId}::uuid AND session_id=${sessionId}::uuid RETURNING id`)
+      if(!rows.rows.length){ npcFail(404,'Revelação não encontrada nesta sessão.') }
+      return {id:revealId,ok:true}
+    }
+    if(locked.rows[0].status!=='ACTIVE'){ npcFail(403,'Novas revelações exigem sessão ativa.') }
+    const inserted=await tx.execute(sql`INSERT INTO sheet_reveals(id,session_id,kind,target_id,snapshot,revealed_by,revoked_at) VALUES(${revealId}::uuid,${sessionId}::uuid,${kind},${targetId}::uuid,${JSON.stringify(snapshot)}::jsonb,${actorId},${value.action==='CREATE'?new Date():null}) ON CONFLICT(id) DO NOTHING RETURNING id`)
+    if(!inserted.rows.length){
+      const prior=await tx.execute<{session_id:string;kind:string;target_id:string;snapshot:Record<string,unknown>}>(sql`SELECT session_id,kind,target_id,snapshot FROM sheet_reveals WHERE id=${revealId}::uuid`),row=prior.rows[0]
+      if(!row||row.session_id!==sessionId||row.kind!==kind||row.target_id!==targetId||row.snapshot.title!==snapshot.title||row.snapshot.body!==snapshot.body||row.snapshot.description!==snapshot.description){ npcFail(409,'Identificador já utilizado em outra revelação.') }
+      return {id:revealId}
+    }
+    const links=[{targetType:'SESSION',targetId:sessionId}]
+    await tx.execute(sql`INSERT INTO notes(id,author_user_id,campaign_id,visibility,title,body,links) VALUES(${revealId}::uuid,${actorId},${session.session.campaignId}::uuid,'PRIVATE',${String(snapshot.title)},${String(snapshot.body??snapshot.description??'')},${JSON.stringify(links)}::jsonb)`)
+    return {id:revealId}
+  })
 }
 export async function listSheetReveals(actorId:string,sessionId:string) {
-  const {session,canManage}=await getGameSession(actorId,npcId(sessionId))
-  if(session.status!=='ACTIVE'){ return {reveals:[],canManage} }
-  const rows=await db.execute(sql`SELECT id,kind,snapshot,revealed_at FROM sheet_reveals WHERE session_id=${sessionId}::uuid AND revoked_at IS NULL ORDER BY revealed_at DESC LIMIT 100`)
+  const {canManage}=await getGameSession(actorId,npcId(sessionId))
+  const rows=await db.execute<{id:string;kind:string;snapshot:Record<string,unknown>;revealed_at:Date;revealed:boolean}>(sql`SELECT r.id,r.kind,r.snapshot || jsonb_build_object('title',n.title,'body',n.body) AS snapshot,r.revealed_at,r.revoked_at IS NULL AS revealed FROM sheet_reveals r JOIN notes n ON n.id=r.id WHERE r.session_id=${sessionId}::uuid AND (${canManage} OR r.revoked_at IS NULL) ORDER BY r.revealed_at DESC LIMIT 100`)
   return {reveals:rows.rows,canManage}
 }
