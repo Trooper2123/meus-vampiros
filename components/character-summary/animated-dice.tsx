@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 
 type AnimatedDiceProps = Readonly<{
+  animate: boolean
   normalDice: number[]
   hungerDice: number[]
   outcome: string
@@ -19,19 +20,19 @@ const outcomeNames: Record<string, string> = {
   BESTIAL_FAILURE: 'Falha bestial',
 }
 
-export function AnimatedDice({ normalDice, hungerDice, outcome, successes, difficulty, visibility }: AnimatedDiceProps) {
-  const [finished, setFinished] = useState(false)
-  const [skipMotion, setSkipMotion] = useState(false)
+export function AnimatedDice({ animate, normalDice, hungerDice, outcome, successes, difficulty, visibility }: AnimatedDiceProps) {
+  const [finished, setFinished] = useState(!animate)
+  const [skipMotion, setSkipMotion] = useState(!animate)
   const resultRef = useRef<HTMLDivElement>(null)
   const dice = [...normalDice.map((value, index) => ({ value, hunger: false, key: `n-${index}` })), ...hungerDice.map((value, index) => ({ value, hunger: true, key: `h-${index}` }))]
   useEffect(() => {
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const reduced = !animate || window.matchMedia('(prefers-reduced-motion: reduce)').matches
     setSkipMotion(reduced)
     setFinished(reduced)
     if (reduced) return
     const timer = window.setTimeout(() => setFinished(true), 1750)
     return () => window.clearTimeout(timer)
-  }, [normalDice, hungerDice])
+  }, [animate, normalDice, hungerDice])
   useEffect(() => { if (finished) resultRef.current?.focus() }, [finished])
   return <div className="mt-5 border-t border-border pt-5" aria-label="Resultado da rolagem">
     <div className="flex items-center justify-between gap-3">
