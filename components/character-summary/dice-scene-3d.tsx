@@ -49,13 +49,15 @@ export function DiceScene3D({ dice }: Readonly<{ dice: Die[] }>) {
       <directionalLight position={[4, 10, 6]} intensity={2.5} castShadow shadow-mapSize-width={1024} shadow-mapSize-height={1024} />
       <Physics gravity={[0, -15, 0]}>
         <RigidBody type="fixed" colliders={false}>
-          <CuboidCollider args={[9, 0.3, 6]} position={[0, -0.4, 0]} />
+          {/* Superfície física em y=0: o topo da mesa visual deve coincidir exatamente. */}
+          <CuboidCollider args={[9, 0.15, 6]} position={[0, -0.15, 0]} />
           <CuboidCollider args={[0.3, 2, 6]} position={[-9, 1.5, 0]} />
           <CuboidCollider args={[0.3, 2, 6]} position={[9, 1.5, 0]} />
           <CuboidCollider args={[9, 2, 0.3]} position={[0, 1.5, -6]} />
           <CuboidCollider args={[9, 2, 0.3]} position={[0, 1.5, 6]} />
         </RigidBody>
-        <mesh position={[0, -0.72, 0]} receiveShadow>
+        {/* A superfície visível termina em y=0, igual ao collider, sem cobrir os dados. */}
+        <mesh position={[0, -0.125, 0]} receiveShadow>
           <boxGeometry args={[18, 0.25, 12]} />
           <meshStandardMaterial color="#151519" roughness={0.95} />
         </mesh>
