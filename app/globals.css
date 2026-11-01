@@ -61,6 +61,15 @@
     --font-sans: 'Geist', 'Geist Fallback';
     --font-mono: 'Geist Mono', 'Geist Mono Fallback';
     --font-serif: 'Cormorant Garamond', Georgia, serif;
+    --animate-shake: shake 0.3s ease-in-out infinite;
+
+    @keyframes shake {
+        0%, 100% { transform: translate(0, 0) rotate(0deg); }
+        20% { transform: translate(-4px, 4px) rotate(-1deg); }
+        40% { transform: translate(-4px, -2px) rotate(1deg); }
+        60% { transform: translate(4px, 4px) rotate(0deg); }
+        80% { transform: translate(4px, -2px) rotate(1deg); }
+    }
 }
 * {
     box-sizing: border-box;
