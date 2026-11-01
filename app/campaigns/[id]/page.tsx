@@ -11,6 +11,7 @@ import { getCharactersForCampaign } from '@/lib/characters'
 import { getCampaignsForMaster } from '@/lib/campaigns'
 import { getSessionOrDev } from '@/lib/auth0'
 import Link from 'next/link'
+import { ArrowLeft, Play, Users, BookOpen, CalendarDays } from 'lucide-react'
 import { notFound, redirect } from 'next/navigation'
 
 export default async function CampaignDetailPage({ params, searchParams }: Readonly<{ params: Promise<{ id: string }>; searchParams?: Promise<{ xpCharacterId?: string }> }>) {
@@ -36,11 +37,11 @@ export default async function CampaignDetailPage({ params, searchParams }: Reado
   ]
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-background text-foreground">
+    <main className="campaign-detail-ui relative min-h-screen overflow-hidden bg-background text-foreground">
       <div className="noise" aria-hidden="true" />
       <ArchiveHeader title="Crônicas / gerenciamento" showCampaigns />
-      <div className="archive-content">
-        <section className="archive-page-heading">
+      <div className="archive-content campaign-detail-ui-content">
+        <section className="archive-page-heading campaign-detail-hero">
           <p className="eyebrow">Ficha da mesa</p>
           <h1 className="mt-3 font-serif text-4xl uppercase tracking-[0.08em] sm:text-6xl">{campaign.name}</h1>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
@@ -48,10 +49,11 @@ export default async function CampaignDetailPage({ params, searchParams }: Reado
           </p>
         </section>
 
+        <div className="campaign-detail-metrics" aria-label="Resumo da campanha"><div><Users className="size-5 text-primary" aria-hidden="true"/><span className="eyebrow">Participantes</span><strong>{campaign.playerCount}</strong></div><div><BookOpen className="size-5 text-primary" aria-hidden="true"/><span className="eyebrow">Personagens</span><strong>{characters.length}</strong></div><div><CalendarDays className="size-5 text-primary" aria-hidden="true"/><span className="eyebrow">Último encontro</span><strong className="text-base">{campaign.lastSessionAt ? new Date(campaign.lastSessionAt).toLocaleDateString("pt-BR") : "Não registrado"}</strong></div></div>
         <div className="mt-8 flex flex-col gap-8">
-          <nav className="archive-card-actions" aria-label="Ações da mesa">
-            <Link href="/campaigns" className="button-ghost self-start">Voltar às mesas</Link>
-            <Link href={`/campaigns/${campaign.id}/session`} className="button-primary self-start">Abrir modo sessão</Link>
+          <nav className="archive-card-actions campaign-detail-toolbar" aria-label="Ações da mesa">
+            <Link href="/campaigns" className="button-ghost self-start"><ArrowLeft className="size-4" aria-hidden="true"/> Voltar às mesas</Link>
+            <Link href={`/campaigns/${campaign.id}/session`} className="button-primary self-start"><Play className="size-4" aria-hidden="true"/> Iniciar sessão</Link>
             <Link href={`/notes?targetType=CAMPAIGN&targetId=${campaign.id}`} target="_blank" rel="noopener noreferrer" className="button-ghost self-start">Anotações do Narrador</Link>
             <Link href="/master/catalogo" target="_blank" rel="noopener noreferrer" className="button-ghost self-start">Pesquisa de habilidades</Link>
             <Link href="/master/vantagens-defeitos" target="_blank" rel="noopener noreferrer" className="button-ghost self-start">Pesquisa de vantagens e defeitos</Link>
@@ -60,7 +62,7 @@ export default async function CampaignDetailPage({ params, searchParams }: Reado
           <CampaignArchiveControl id={campaign.id} name={campaign.name} archived={campaign.status==='Arquivada'} />
           <CampaignTools campaignId={campaign.id} master />
 
-          <details className="border border-border bg-card p-5">
+          <details className="campaign-detail-section border border-border bg-card p-5">
             <summary className="cursor-pointer font-serif text-2xl">Gestão de NPCs</summary>
             <div className="mt-5">
             <p className="eyebrow">Personagens do Narrador</p>
