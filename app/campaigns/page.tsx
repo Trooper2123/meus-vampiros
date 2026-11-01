@@ -2,7 +2,7 @@ import { ArchiveHeader } from '@/components/archive-header'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getSessionOrDev } from '@/lib/auth0'
-import { BookOpen, Plus } from 'lucide-react'
+import { BookOpen, Plus, Layers, Users, CalendarDays, Archive } from 'lucide-react'
 import { getCampaignsForMaster, hasMasterAccess } from '@/lib/campaigns'
 import { MasterPanel } from '@/components/master-panel'
 
@@ -26,6 +26,8 @@ export default async function CampaignsPage({ searchParams }: Readonly<{ searchP
   const activeCampaigns = allCampaigns.filter(campaign => campaign.status !== 'Arquivada')
   const archivedCampaigns = allCampaigns.filter(campaign => campaign.status === 'Arquivada')
   const totalPlayers = campaigns.reduce((total, campaign) => total + campaign.playerCount, 0)
+  const runningCampaigns = activeCampaigns.filter(campaign => campaign.status === 'Ativa')
+  const campaignsWithSessions = campaigns.filter(campaign => Boolean(campaign.lastSessionAt)).length
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-background text-foreground campaigns-reference-shell">
@@ -59,7 +61,7 @@ export default async function CampaignsPage({ searchParams }: Readonly<{ searchP
 
         <nav aria-label="Filtro de mesas" className="campaign-dashboard-tabs">
           <Link className={showArchived ? '' : 'is-active'} aria-current={!showArchived ? 'page' : undefined} href="/campaigns">Mesas atuais <span>{activeCampaigns.length}</span></Link>
-          <Link className={showArchived ? 'is-active' : ''} aria-current={showArchived ? 'page' : undefined} href="/campaigns?archived=true">Mesas arquivadas <span>{archivedCampaigns.length}</span></Link>
+          <Link className={showArchived ? 'is-active' : ''} aria-current={showArchived ? 'page' : undefined} href="/campaigns?archived=true"><Archive className="size-3.5" aria-hidden="true" /> Mesas arquivadas <span>{archivedCampaigns.length}</span></Link>
         </nav>
         {campaigns.length === 0 ? (
           showArchived ? <p className="empty-state">Nenhuma mesa arquivada.</p> :
