@@ -104,7 +104,7 @@ export function MasterPanel({ initialCampaigns, archived = false }: Readonly<{ i
   const { data } = useSWR('/api/campaigns', fetcher)
   const [query, setQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('Todas')
-  const campaigns: CampaignSummary[] = (data?.campaigns ?? initialCampaigns).filter((campaign: CampaignSummary) => (campaign.status === 'Arquivada') === archived)
+  const campaigns: CampaignSummary[] = (Array.isArray(data?.campaigns) ? data.campaigns : initialCampaigns).filter((campaign: CampaignSummary) => (campaign.status === 'Arquivada') === archived)
   const statuses = Array.from(new Set(campaigns.map(campaign => campaign.status)))
   const visibleCampaigns = campaigns.filter(campaign =>
     (statusFilter === 'Todas' || campaign.status === statusFilter) &&
@@ -127,7 +127,13 @@ export function MasterPanel({ initialCampaigns, archived = false }: Readonly<{ i
       </label>
     </div>
     <p className="mt-3 text-xs text-muted-foreground" role="status">{visibleCampaigns.length} de {campaigns.length} campanha(s) nesta visão</p>
-    {visibleCampaigns.length === 0 ? <div className="empty-state mt-5">Nenhuma campanha corresponde aos filtros. <button type="button" className="underline" onClick={() => { setQuery(''); setStatusFilter('Todas') }}>Limpar filtros</button></div> :
+    {visibleCampaigns.length === 0 ? <div className="campaigns-empty-state">
+      <BookOpen className="size-11 text-primary" strokeWidth={1.5} aria-hidden="true" />
+      <p className="eyebrow mt-5">{campaigns.length === 0 ? 'Nenhuma crônica registrada' : 'Nenhuma campanha encontrada'}</p>
+      <h3 className="mt-3 font-serif text-2xl sm:text-3xl">{campaigns.length === 0 ? (archived ? 'O arquivo está vazio' : 'A noite ainda não começou') : 'Nenhuma correspondência'}</h3>
+      <p className="mt-3 max-w-md text-sm leading-6 text-muted-foreground">{campaigns.length === 0 ? (archived ? 'Ainda não há campanhas arquivadas.' : 'Crie sua primeira campanha e comece a tecer sua história.') : 'Tente outra busca ou remova os filtros.'}</p>
+      {campaigns.length === 0 && !archived ? <Link href="/campaigns/new" className="button-primary mt-6"><Plus className="size-4" /> Criar primeira campanha</Link> : campaigns.length > 0 ? <button type="button" className="button-ghost mt-6" onClick={() => { setQuery(''); setStatusFilter('Todas') }}>Limpar filtros</button> : null}
+    </div> :
     <div className="campaigns-dossier-list mt-5">
       {visibleCampaigns.map(campaign => <article key={campaign.id} className="campaign-dossier-card">
         <div className="campaign-dossier-art" aria-hidden="true"><BookOpen className="size-12" strokeWidth={1} /><span>ARQUIVO DA NOITE</span></div>
