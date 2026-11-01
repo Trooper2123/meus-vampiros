@@ -14,6 +14,14 @@ import {LiveKitRoomLink} from '@/components/livekit/livekit-room-link'
 import {EditCharacterButton} from "@/components/edit-character-button"
 import {GetResumeCharacterButton} from "@/components/get-resume-character-button";
 
+const characterStatusLabels: Record<string, string> = {
+    DRAFT: 'Rascunho',
+    IN_REVIEW: 'Em revisão',
+    APPROVED: 'Aprovada',
+    ARCHIVED: 'Arquivada',
+    REJECTED: 'Devolvida',
+}
+
 export default async function PersonagensPage() {
     if (!process.env.AUTH0_DOMAIN || !process.env.AUTH0_CLIENT_ID || !process.env.AUTH0_SECRET || !process.env.AUTH0_CLIENT_SECRET) {
         const session = await getSessionOrDev()
@@ -107,15 +115,10 @@ export default async function PersonagensPage() {
                                                 <span className="characters-ui-avatar" aria-hidden="true">{character.name?.trim().charAt(0).toUpperCase() || "?"}</span>
                                                 <h3 className="break-words font-serif text-2xl">{character.name}</h3>
                                             </div>
-                                            <span
-                                                className={`status ${character.status === 'APPROVED' ? 'active' : ''}`}><span
-                                                className="status-dot" aria-hidden="true"/>{({
-                                                DRAFT: 'Rascunho',
-                                                IN_REVIEW: 'Em revisão',
-                                                APPROVED: 'Aprovada',
-                                                ARCHIVED: 'Arquivada',
-                                                REJECTED: 'Devolvida'
-                                            } as Record<string, string>)[character.status] ?? 'Não definido'}</span>
+                                            <span className={`status ${character.status === 'APPROVED' ? 'active' : ''}`}>
+                                                <span className="status-dot" aria-hidden="true" />
+                                                {characterStatusLabels[character.status] ?? 'Não definido'}
+                                            </span>
                                         </div>
                                         <div className="mt-5"><p className="archive-label">Conceito</p><p
                                             className="mt-2 text-sm">{character.concept || 'Não definido'}</p></div>

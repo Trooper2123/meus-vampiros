@@ -1,3 +1,12 @@
+## [2026-11-01 02:05 BRT] - fix - Corrigir JSX na lista de personagens
+
+**Tipo:** fix
+
+**Arquivos principais:** `app/characters/page.tsx`.
+
+- Simplifica a renderizacao dos rotulos de status para evitar erro de parsing JSX durante a compilacao da pagina de personagens.
+- Verificacao de tipos passou com `npx tsc --noEmit`; build e testes nao executados.
+
 ## [2026-11-01 01:52 BRT] — chore - Sincronizar Next.js e SWC
 
 **Tipo:** chore
