@@ -1,3 +1,12 @@
+## [2026-11-01 00:19 BRT] — fix - Permitir rolagens em fichas independentes
+
+**Tipo:** fix
+
+**Arquivos principais:** `lib/character-rolls.ts`, `app/api/characters/[id]/rolls/route.ts`, `components/character-summary/character-rolls.tsx`, `tests/character-rolls.test.ts`.
+
+- O dono pode fazer rolagens públicas em fichas independentes no estado `DRAFT`; rolagens secretas continuam restritas ao Narrador e fichas vinculadas à mesa continuam exigindo aprovação.
+- Adicionado teste para rolagem independente em rascunho. Validação automática pendente.
+
 ## [2026-10-31 18:00 BRT] — feat - Escolher modo ao criar personagem
 
 **Tipo:** feat

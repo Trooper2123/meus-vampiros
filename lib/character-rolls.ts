@@ -18,7 +18,7 @@ export function executeCharacterRoll(actorId: string, id: string, input: RollInp
   if (input.mode !== undefined && !ROLL_MODES.includes(input.mode) || input.hiddenDifficulty !== undefined && typeof input.hiddenDifficulty !== 'boolean' || !Number.isSafeInteger(input.difficulty) || input.difficulty < 1 || input.difficulty > 50) { throw new CharacterCommandError(400, 'Contexto de rolagem inválido.') }
   if (input.clanContext !== undefined && !validClanRollContext(input.clanContext)) { throw new CharacterCommandError(400, 'Contexto de clã inválido.') }
   return runCharacterCommand(actorId, id, { key: input.idempotencyKey, type: 'DICE_ROLLED', expectedRevision: input.expectedRevision, payload: input }, character => (character.ownerId === actorId || character.masterId === actorId) && (!(input.visibility === 'SECRET' || input.hiddenDifficulty || input.clanContext !== undefined) || character.masterId === actorId), async character => {
-    assertRollableCharacter(character)
+    assertRollableCharacter(character, character.ownerId === actorId)
     const { mode,canUseSpecialties,state }=assertRollContext(character,actorId,input)
     const { attribute,skillDots,bonus }: { attribute: number; skillDots: number; bonus: number }=rollAttributeAndSpecialty(character,input,mode,canUseSpecialties)
     const adjustment=await bloodClanAdjustment(mode,character,input)
@@ -88,8 +88,8 @@ async function bloodClanAdjustment(mode: string,character: CommandCharacter,inpu
   return adjustment
 }
 
-function assertRollableCharacter(character: CommandCharacter) {
-  if(character.status!=='APPROVED'||character.characterType!=='PLAYER_VAMPIRE') { throw new CharacterCommandError(422,'A ficha precisa ser um vampiro aprovado para rolar.') }
+function assertRollableCharacter(character: CommandCharacter, isOwner: boolean) {
+  if((character.status!=='APPROVED'&&!(isOwner&&!character.campaignId&&character.status==='DRAFT'))||character.characterType!=='PLAYER_VAMPIRE') { throw new CharacterCommandError(422,'A ficha precisa estar aprovada para rolar.') }
   if(character.validationReport&&typeof character.validationReport==='object'&&(character.validationReport as { valid?: boolean} ).valid===false) { throw new CharacterCommandError(422,'A ficha possui um relatório de validação inválido.') }
 }
 

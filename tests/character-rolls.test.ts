@@ -56,6 +56,12 @@ describe('rolagens V5 autoritativas com provider injetável', () => {
     await expect(executeCharacterRoll('player', id, { ...input, specialtyId: 'briga-specialty' }, provider)).resolves.toMatchObject({ specialtyBonus: 1, pool: 6 })
   })
 
+  it('dono pode rolar ficha independente em rascunho', async () => {
+    await db.execute(sql`UPDATE characters SET campaign_id = NULL, status = 'DRAFT' WHERE id = ${id}::uuid`)
+    await expect(executeCharacterRoll('player', id, input, provider)).resolves.toMatchObject({ visibility: 'PUBLIC' })
+    expect(provider.rollD10).toHaveBeenCalled()
+  })
+
   it.each([{ specialtyId: 'briga-specialty' }, { visibility: 'SECRET' as const }])('jogador não declara aplicação de bônus nem rolagem secreta %j', async override => {
     await expect(executeCharacterRoll('player', id, { ...input, ...override }, provider)).rejects.toMatchObject({ status: 403 })
     expect(provider.rollD10).not.toHaveBeenCalled()
@@ -74,7 +80,7 @@ describe('rolagens V5 autoritativas com provider injetável', () => {
     expect(provider.rollD10).not.toHaveBeenCalled()
   })
 
-  it.each(['DRAFT', 'PENDING_REVIEW', 'ARCHIVED'])('ficha %s não rola', async status => {
+  it.each(['DRAFT', 'PENDING_REVIEW', 'ARCHIVED'])('ficha de mesa %s não rola', async status => {
     await db.execute(sql`UPDATE characters SET status = ${status} WHERE id = ${id}::uuid`)
     await expect(executeCharacterRoll('player', id, input, provider)).rejects.toMatchObject({ status: 422 })
     expect(provider.rollD10).not.toHaveBeenCalled()
