@@ -3,7 +3,7 @@ import {CreateCharacterButton} from '@/components/character-creation-dialog'
 import Link from 'next/link'
 import {redirect} from 'next/navigation'
 import {getSessionOrDev} from '@/lib/auth0'
-import {ArrowRight, BookOpen, Plus, Skull} from 'lucide-react'
+import {ArrowRight, BookOpen, Plus, Skull, Users, ScrollText, ShieldCheck} from 'lucide-react'
 import {getCharactersForUser} from '@/lib/characters'
 import {getCampaignsForMaster, hasMasterAccess} from '@/lib/campaigns'
 import {MasterPanel} from '@/components/master-panel'
@@ -35,6 +35,9 @@ export default async function PersonagensPage() {
         },
         {label: 'Arquivados', characters: characters.filter((character) => character.status === 'ARCHIVED')},
     ]
+    const activeCount = characters.filter(character => character.status !== 'ARCHIVED').length
+    const approvedCount = characters.filter(character => character.status === 'APPROVED').length
+    const linkedCount = characters.filter(character => Boolean(character.campaignId) && character.status !== 'ARCHIVED').length
     const userIsMaster = await hasMasterAccess(session.user)
     const campaigns = userIsMaster ? await getCampaignsForMaster(session.user.sub) : []
 
@@ -75,6 +78,12 @@ export default async function PersonagensPage() {
                     </div>
                 </div>
 
+                <section aria-label="Visão geral do arquivo" className="mb-10 grid gap-3 sm:grid-cols-3">
+                    <div className="flex items-center gap-4 rounded-xl border border-border bg-card p-5"><Users className="size-6 shrink-0 text-primary" aria-hidden="true"/><div><p className="archive-label">Fichas atuais</p><p className="mt-1 font-serif text-3xl tabular-nums">{activeCount}</p></div></div>
+                    <div className="flex items-center gap-4 rounded-xl border border-border bg-card p-5"><ShieldCheck className="size-6 shrink-0 text-primary" aria-hidden="true"/><div><p className="archive-label">Aprovadas</p><p className="mt-1 font-serif text-3xl tabular-nums">{approvedCount}</p></div></div>
+                    <div className="flex items-center gap-4 rounded-xl border border-border bg-card p-5"><ScrollText className="size-6 shrink-0 text-primary" aria-hidden="true"/><div><p className="archive-label">Vinculadas a mesas</p><p className="mt-1 font-serif text-3xl tabular-nums">{linkedCount}</p></div></div>
+                </section>
+
                 {characters.length === 0 ? (
                     <section className="login-panel mx-auto max-w-2xl text-center">
                         <Skull className="mx-auto size-12 text-primary" aria-hidden="true"/>
@@ -90,14 +99,17 @@ export default async function PersonagensPage() {
                 ) : (
                     <div className="flex flex-col gap-8">
                         {characterGroups.filter((group) => group.characters.length > 0).map((group) => <section
-                            key={group.label} aria-label={group.label}><h2 className="eyebrow mb-6">{group.label}</h2>
-                            <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+                            key={group.label} aria-label={group.label}><div className="mb-5 flex items-center gap-3 border-b border-border pb-4"><h2 className="font-serif text-2xl">{group.label}</h2><span className="status">{group.characters.length} ficha(s)</span></div>
+                            <div className="grid gap-5 lg:grid-cols-2 2xl:grid-cols-3">
                                 {group.characters.map((character) => (
-                                    <div key={character.id} className="archive-character-card">
+                                    <div key={character.id} className="archive-character-card group relative overflow-hidden rounded-xl transition-colors hover:border-primary/60">
+                                        <div className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-primary/70" aria-hidden="true"/>
                                         <div className="flex items-start justify-between gap-4">
+                                            <div className="flex min-w-0 items-center gap-3">
+                                                <div className="flex size-14 shrink-0 items-center justify-center rounded-lg border border-border bg-background font-serif text-2xl text-primary" aria-hidden="true">{character.name?.trim().charAt(0).toUpperCase() || '?'}</div>
                                             <div>
                                                 <h3 className="break-words font-serif text-2xl">{character.name}</h3>
-                                            </div>
+                                            </div></div>
                                             <span
                                                 className={`status ${character.status === 'APPROVED' ? 'active' : ''}`}><span
                                                 className="status-dot" aria-hidden="true"/>{({
@@ -108,7 +120,7 @@ export default async function PersonagensPage() {
                                                 REJECTED: 'Devolvida'
                                             } as Record<string, string>)[character.status] ?? 'Não definido'}</span>
                                         </div>
-                                        <div className="mt-5"><p className="archive-label">Conceito</p><p
+                                        <div className="mt-5 rounded-lg border border-border bg-background/60 p-3"><p className="archive-label">Conceito</p><p
                                             className="mt-2 text-sm">{character.concept || 'Não definido'}</p></div>
                                         <dl className="mt-5 grid grid-cols-2 gap-5 border-t border-border pt-5 text-sm">
                                             <div>
@@ -139,7 +151,7 @@ export default async function PersonagensPage() {
                                                 <dd className="mt-1">{character.spentXp ?? '0'} / {character.totalXp ?? '0'}</dd>
                                             </div>
                                         </dl>
-                                        <div className="archive-card-actions">
+                                        <div className="archive-card-actions mt-auto border-t border-border pt-5">
                                             {character.characterType === 'PLAYER_VAMPIRE' &&
                                                 <GetResumeCharacterButton characterId={character.id}/>}
                                             {character.characterType === 'PLAYER_VAMPIRE' &&
