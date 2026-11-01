@@ -106,7 +106,7 @@ export default async function PersonagensPage() {
                                             <div className="flex min-w-0 items-center gap-3">
                                                 <span className="characters-ui-avatar" aria-hidden="true">{character.name?.trim().charAt(0).toUpperCase() || "?"}</span>
                                                 <h3 className="break-words font-serif text-2xl">{character.name}</h3>
-                                            </div>
+                                            </div></div>
                                             <span
                                                 className={`status ${character.status === 'APPROVED' ? 'active' : ''}`}><span
                                                 className="status-dot" aria-hidden="true"/>{({
@@ -117,7 +117,7 @@ export default async function PersonagensPage() {
                                                 REJECTED: 'Devolvida'
                                             } as Record<string, string>)[character.status] ?? 'Não definido'}</span>
                                         </div>
-                                        <div className="mt-5"><p className="archive-label">Conceito</p><p
+                                        <div className="mt-5 rounded-lg border border-border bg-background/60 p-3"><p className="archive-label">Conceito</p><p
                                             className="mt-2 text-sm">{character.concept || 'Não definido'}</p></div>
                                         <dl className="mt-5 grid grid-cols-2 gap-5 border-t border-border pt-5 text-sm">
                                             <div>
