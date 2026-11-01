@@ -52,7 +52,7 @@ export function AnimatedDice({ animate, normalDice, hungerDice, outcome, success
       {!finished && <button type="button" className="button-ghost min-h-10" onClick={() => { setSkipMotion(true); setFinished(true) }}>Pular animação</button>}
     </div>
     {supports3D && !finished && !skipMotion && <div className="mt-4"><DiceScene3D dice={dice} /></div>}
-    <div className="mt-4 flex min-h-24 flex-wrap items-center justify-center gap-3 rounded border border-border bg-background p-4" aria-hidden="true">
+    <div className={`mt-4 min-h-24 flex-wrap items-center justify-center gap-3 rounded border border-border bg-background p-4 ${supports3D && !finished && !skipMotion ? 'hidden' : 'flex'}`} aria-hidden="true">
       {dice.map((die, index) => <span key={die.key} className={`dice-face ${die.hunger ? 'dice-face-hunger' : ''} ${!skipMotion && !finished && !supports3D ? 'dice-face-rolling' : ''}`} style={{ animationDelay: `${index * 55}ms` }}>{die.value}</span>)}
       {dice.length === 0 && <span className="text-sm text-muted-foreground">Nenhum dado lançado.</span>}
     </div>
