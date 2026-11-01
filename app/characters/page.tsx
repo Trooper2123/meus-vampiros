@@ -3,7 +3,7 @@ import {CreateCharacterButton} from '@/components/character-creation-dialog'
 import Link from 'next/link'
 import {redirect} from 'next/navigation'
 import {getSessionOrDev} from '@/lib/auth0'
-import {ArrowRight, BookOpen, Plus, Skull} from 'lucide-react'
+import {ArrowRight, BookOpen, Plus, Skull, Users, ShieldCheck, ScrollText} from 'lucide-react'
 import {getCharactersForUser} from '@/lib/characters'
 import {getCampaignsForMaster, hasMasterAccess} from '@/lib/campaigns'
 import {MasterPanel} from '@/components/master-panel'
@@ -35,17 +35,20 @@ export default async function PersonagensPage() {
         },
         {label: 'Arquivados', characters: characters.filter((character) => character.status === 'ARCHIVED')},
     ]
+    const activeCount = characters.filter(character => character.status !== 'ARCHIVED').length
+    const approvedCount = characters.filter(character => character.status === 'APPROVED').length
+    const linkedCount = characters.filter(character => Boolean(character.campaignId) && character.status !== 'ARCHIVED').length
     const userIsMaster = await hasMasterAccess(session.user)
     const campaigns = userIsMaster ? await getCampaignsForMaster(session.user.sub) : []
 
     const storyHref = userIsMaster ? '/campaigns' : '/master'
 
     return (
-        <main className="relative min-h-screen overflow-hidden bg-background text-foreground">
+        <main className="characters-ui-shell relative min-h-screen overflow-hidden bg-background text-foreground">
             <div className="noise" aria-hidden="true"/>
             <ArchiveHeader title="Personagens" showCampaigns={campaigns.length > 0}/>
 
-            <div className="archive-content">
+            <div className="archive-content characters-ui-content">
                 <div
                     className="mb-8 flex flex-col gap-4">{[...new Map(characters.flatMap(character => character.campaignId ? [[character.campaignId, character.campaignName] as const] : []))].map(([campaignId, campaignName]) =>
                     <LiveKitRoomLink key={campaignId} campaignId={campaignId} campaignName={campaignName}
@@ -70,11 +73,16 @@ export default async function PersonagensPage() {
                             <BookOpen className="size-4"/> Conte sua história
                         </Link>}
                         <CreateCharacterButton>
-                            <Plus className="size-4"/> Criar personagem
+                            <Plus className="size-4"/> Novo personagem
                         </CreateCharacterButton>
                     </div>
                 </div>
 
+                <section className="characters-ui-stats" aria-label="Resumo das fichas">
+                    <div><Users className="size-6 text-primary" aria-hidden="true" /><span className="eyebrow">Fichas atuais</span><strong>{activeCount}</strong></div>
+                    <div><ShieldCheck className="size-6 text-primary" aria-hidden="true" /><span className="eyebrow">Aprovadas</span><strong>{approvedCount}</strong></div>
+                    <div><ScrollText className="size-6 text-primary" aria-hidden="true" /><span className="eyebrow">Vinculadas a mesas</span><strong>{linkedCount}</strong></div>
+                </section>
                 {characters.length === 0 ? (
                     <section className="login-panel mx-auto max-w-2xl text-center">
                         <Skull className="mx-auto size-12 text-primary" aria-hidden="true"/>
@@ -91,11 +99,12 @@ export default async function PersonagensPage() {
                     <div className="flex flex-col gap-8">
                         {characterGroups.filter((group) => group.characters.length > 0).map((group) => <section
                             key={group.label} aria-label={group.label}><h2 className="eyebrow mb-6">{group.label}</h2>
-                            <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+                            <div className="grid gap-5 lg:grid-cols-2 2xl:grid-cols-3">
                                 {group.characters.map((character) => (
-                                    <div key={character.id} className="archive-character-card">
+                                    <div key={character.id} className="archive-character-card characters-ui-card">
                                         <div className="flex items-start justify-between gap-4">
-                                            <div>
+                                            <div className="flex min-w-0 items-center gap-3">
+                                                <span className="characters-ui-avatar" aria-hidden="true">{character.name?.trim().charAt(0).toUpperCase() || "?"}</span>
                                                 <h3 className="break-words font-serif text-2xl">{character.name}</h3>
                                             </div>
                                             <span
@@ -139,7 +148,7 @@ export default async function PersonagensPage() {
                                                 <dd className="mt-1">{character.spentXp ?? '0'} / {character.totalXp ?? '0'}</dd>
                                             </div>
                                         </dl>
-                                        <div className="archive-card-actions">
+                                        <div className="archive-card-actions characters-ui-actions">
                                             {character.characterType === 'PLAYER_VAMPIRE' &&
                                                 <GetResumeCharacterButton characterId={character.id}/>}
                                             {character.characterType === 'PLAYER_VAMPIRE' &&
