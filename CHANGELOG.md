@@ -1561,3 +1561,15 @@ Cada entrada deve incluir data, horÃ¡rio (BRT), tipo e resumo do que foi feito
 ## 2026-10-17 22:55 BRT â€” chore
 - PotÃªncia do Sangue: preparaÃ§Ã£o Ãºnica em processo de testes isolado (`scripts/prepare-v5-development.mjs`), provider/schema em memÃ³ria atual, seeds e integridade aprovados (8 fichas/3 mesas); nenhum PostgreSQL acessado.
 - Validação: 3 testes de organização do catálogo passaram, TypeScript e build aprovados. Vitest encerrou com aviso de timeout de dois servidores, após informar saída 0.
+
+
+---
+
+## 2026-10-31 21:06 BRT — feat
+
+**Arquivos principais:** `lib/character-rolls.ts`, `lib/character-roll-history.ts`, `app/api/characters/[id]/rolls/route.ts`, `components/character-summary/character-rolls.tsx`, `components/character-summary/roll-history.tsx`, `components/sheet-media-panel.tsx`, rotas de ficha/campanha/NPC/catálogos.
+
+- Adicionado tipo de teste **Predação**, com validação de tipo cadastrado, pool da ficha, dados de Fome e identificação no histórico.
+- Adicionados links de retorno contextual nas fichas, campanhas, sessão, criação/detalhe de NPC e pesquisas do Narrador.
+- Falhas de upload no Vercel Blob agora mostram orientação para conferir o token do storage do ambiente.
+- Validação: 69 testes focados passaram; typecheck passou. Um teste legado de referência visual falhou e parte da suíte V5 exige `DATABASE_URL` não configurada.

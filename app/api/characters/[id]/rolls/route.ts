@@ -10,6 +10,7 @@ import { ROLL_MODES, visibleCharacterRolls, type RollMode } from '@/lib/characte
 import { characterSpecialties } from '@/lib/character-specialties'
 import { characterClan } from '@/lib/vtm-v5/clans'
 import { readClanConditions, validClanRollContext } from '@/lib/vtm-v5/clan-mechanics'
+import { PREDATOR_TYPE_BY_CODE, normalizePredatorType } from '@/lib/vtm-v5/predator-types'
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const attributes = new Set(['forca', 'destreza', 'vigor', 'carisma', 'manipulacao', 'compostura', 'inteligencia', 'raciocinio', 'determinacao'])
@@ -25,7 +26,9 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
     if (!character) { return NextResponse.json({ error: 'Ficha não encontrada.' }, { status: 404 }) }
     if (character.ownerId !== session.user.sub && character.masterId !== session.user.sub) { return NextResponse.json({ error: 'Acesso negado.' }, { status: 403 }) }
     const normalized = normalizeCharacterRulesInput(character.data)
-    return notesResponse({ history: visibleCharacterRolls(character, session.user.sub), canAdjudicate: character.masterId === session.user.sub, canAcceptCost: character.ownerId === session.user.sub, attributes: normalized.attributes, skills: Object.fromEntries(Object.entries(normalized.skills).map(([skill, dots]) => [normalizeSpecialtySkillId(skill), dots])), specialties: characterSpecialties(character).filter(specialty => specialty.status === 'APPROVED'), canUseSpecialties: character.masterId === session.user.sub || (!character.campaignId && character.ownerId === session.user.sub), canRollSecret: character.masterId === session.user.sub, clanCode: characterClan(character.data)?.code, clanConditions: readClanConditions(character), revision: character.revision, status: character.status })
+    const predatorCode = normalizePredatorType(character.data.predatorTypeCode ?? character.data.predador)
+    const predator = predatorCode ? PREDATOR_TYPE_BY_CODE.get(predatorCode) : undefined
+    return notesResponse({ history: visibleCharacterRolls(character, session.user.sub), canAdjudicate: character.masterId === session.user.sub, canAcceptCost: character.ownerId === session.user.sub, attributes: normalized.attributes, skills: Object.fromEntries(Object.entries(normalized.skills).map(([skill, dots]) => [normalizeSpecialtySkillId(skill), dots])), specialties: characterSpecialties(character).filter(specialty => specialty.status === 'APPROVED'), canUseSpecialties: character.masterId === session.user.sub || (!character.campaignId && character.ownerId === session.user.sub), canRollSecret: character.masterId === session.user.sub, clanCode: characterClan(character.data)?.code, clanConditions: readClanConditions(character), predatorCode, predatorName: predator?.name, predatorRoll: predator?.predatorRoll, revision: character.revision, status: character.status })
   } catch { return NextResponse.json({ error: 'Não foi possível carregar opções de rolagem.' }, { status: 500 }) }
 }
 

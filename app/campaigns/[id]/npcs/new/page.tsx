@@ -3,6 +3,7 @@ import { notFound, redirect } from 'next/navigation'
 import { getSessionOrDev } from '@/lib/auth0'
 import { getCampaignsForMaster } from '@/lib/campaigns'
 import { NewNpcForm } from '@/components/npcs/npc-catalogue'
+import Link from 'next/link'
 
 export default async function NewNpcPage({ params }: Readonly<{ params: Promise<{ id: string }> }>) {
   const session = await getSessionOrDev()
@@ -15,6 +16,7 @@ export default async function NewNpcPage({ params }: Readonly<{ params: Promise<
     <ArchiveHeader title="Novo NPC" showCampaigns />
     <div className="archive-content flex flex-col gap-8">
       <section className="archive-page-heading"><p className="eyebrow">NPC · {campaign.name}</p><h1 className="mt-3 font-serif text-4xl uppercase sm:text-6xl">Criar ficha de NPC</h1><p className="mt-3 text-sm text-muted-foreground">A mesa atual é vinculada automaticamente e não pode ser alterada aqui.</p></section>
+      <Link className="button-ghost self-start" href={`/campaigns/${campaign.id}`}>Voltar à mesa</Link>
       <NewNpcForm campaignId={campaign.id} />
     </div>
   </main>

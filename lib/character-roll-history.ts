@@ -7,7 +7,7 @@ import { readSessionState } from './vtm-v5/session-state'
 import { RULE_PROFILE, publicRuleSource } from './vtm-v5/rule-profile'
 import type { ClanModifiers } from './vtm-v5/clan-mechanics'
 
-export const ROLL_MODES = ['TEST', 'CHECK', 'WILLPOWER', 'HUMANITY', 'TAKING_HALF', 'AUTOMATIC'] as const
+export const ROLL_MODES = ['TEST', 'PREDATION', 'CHECK', 'WILLPOWER', 'HUMANITY', 'TAKING_HALF', 'AUTOMATIC'] as const
 export type RollMode = typeof ROLL_MODES[number]
 type RollResult = ReturnType<typeof evaluateV5Roll>
 type Adjudication = { id: string; kind: 'COMPLICATION' | 'NARRATIVE_FAILURE' | 'OFFER_COST' | 'ACCEPT_COST'; note: string; shared: boolean; actorId: string; offerId?: string }
@@ -28,7 +28,7 @@ export function projectRoll(roll: StoredRoll, isMaster: boolean) {
     result: visibleResult(revision.result), rollRevision: revision.number,
     dice: [...revision.result.normalDice.map((value, index) => ({ id: `N:${index}`, type: 'NORMAL', value })), ...revision.result.hungerDice.map((value, index) => ({ id: `H:${index}`, type: 'HUNGER', value }))],
     revisions: roll.revisions.map(entry => ({ number: entry.number, result: visibleResult(entry.result), replacements: entry.replacements })),
-    canReroll: (isMaster || !roll.hiddenDifficulty) && roll.mode === 'TEST' && !roll.willpowerUsed && revision.result.normalDice.length > 0 && !roll.adjudications.some(entry => ['OFFER_COST', 'ACCEPT_COST', 'NARRATIVE_FAILURE'].includes(entry.kind)),
+    canReroll: (isMaster || !roll.hiddenDifficulty) && ['TEST', 'PREDATION'].includes(roll.mode) && !roll.willpowerUsed && revision.result.normalDice.length > 0 && !roll.adjudications.some(entry => ['OFFER_COST', 'ACCEPT_COST', 'NARRATIVE_FAILURE'].includes(entry.kind)),
     adjudications: roll.adjudications.filter(entry => isMaster || entry.shared).map(({ id, kind, note, offerId }) => ({ id, kind, note, offerId })),
   }
 }
@@ -106,7 +106,7 @@ export async function adjudicateCharacterRoll(actorId: string, characterId: stri
     const roll = findRoll(character, actorId, rollId)
     const result = roll.revisions.at(-1)!.result
     if (roll.campaignId !== character.campaignId) throw new CharacterCommandError(409, 'O vínculo da ficha mudou.')
-    if (input.kind === 'OFFER_COST' && (result.success || result.successes < 1 || roll.mode !== 'TEST' || roll.adjudications.some(entry => ['OFFER_COST', 'ACCEPT_COST'].includes(entry.kind)))) throw new CharacterCommandError(422, 'Vitória a custo exige falha com ao menos um sucesso e oferta única.')
+    if (input.kind === 'OFFER_COST' && (result.success || result.successes < 1 || !['TEST', 'PREDATION'].includes(roll.mode) || roll.adjudications.some(entry => ['OFFER_COST', 'ACCEPT_COST'].includes(entry.kind)))) throw new CharacterCommandError(422, 'Vitória a custo exige falha com ao menos um sucesso e oferta única.')
     if (input.kind === 'ACCEPT_COST' && (!roll.adjudications.some(entry => entry.id === input.offerId && entry.kind === 'OFFER_COST' && entry.shared) || roll.adjudications.some(entry => entry.kind === 'ACCEPT_COST'))) throw new CharacterCommandError(422, 'Oferta indisponível ou já aceita.')
     if (input.kind === 'NARRATIVE_FAILURE' && (!result.messyCritical || roll.adjudications.some(entry => ['NARRATIVE_FAILURE', 'ACCEPT_COST'].includes(entry.kind)))) throw new CharacterCommandError(422, 'A falha narrativa exige um crítico com Fome ainda não resolvido.')
     roll.adjudications.push({ id: randomUUID(), kind: input.kind, note: input.note.trim(), actorId, shared: ['OFFER_COST', 'ACCEPT_COST'].includes(input.kind) || input.shared === true, ...(input.offerId ? { offerId: input.offerId } : {}) })

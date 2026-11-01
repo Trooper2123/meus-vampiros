@@ -14,7 +14,7 @@ vi.mock('react', async original => ({ ...await original<typeof import('react')>(
 it.each([['PLAYER_VAMPIRE', 'CHARACTER'], ['HUMAN_NPC', 'NPC'], ['VAMPIRE_NPC', 'NPC']])('anotações de %s abrem em nova guia junto ao nome', (characterType, targetType) => {
   const data: ComponentProps<typeof CharacterSummaryClient>['data'] = { id: '11111111-1111-4111-8111-111111111111', characterType, name: 'Helena', clan: null, predator: null, generation: null, campaignName: null, campaignTheme: null, attributes: {}, skills: {}, merits: [], flaws: [], disciplines: [], resources: { humanidade: 7, vontade: 5, vitalidade: 5, fome: 1 } }
   const tree = CharacterSummaryClient({ data })
-  const summary = tree.props.children[1]
+  const summary = tree.props.children[1].props.children[0]
   const actions = summary.props.headerActions
   const action = actions.props.children.find((child: ReactElement<{ href?: string }> | false) => child && child.props.href?.startsWith('/notes'))
   expect(action.props.href).toBe(`/notes?targetType=${targetType}&targetId=${data.id}`)
@@ -33,11 +33,25 @@ it('o dossiê leva atributos e habilidades ao painel existente', () => {
   const data: ComponentProps<typeof CharacterSummaryClient>['data'] = { id: '11111111-1111-4111-8111-111111111111', characterType: 'PLAYER_VAMPIRE', name: 'Helena', clan: null, predator: null, generation: null, campaignName: null, campaignTheme: null, attributes: { forca: 3 }, skills: { Briga: 2 }, merits: [], flaws: [], disciplines: [], resources: { humanidade: 7, vontade: 5, vitalidade: 5, fome: 1 } }
   setRollPrefill.mockClear()
   const tree = CharacterSummaryClient({ data })
-  const summary = tree.props.children[1]
+  const summary = tree.props.children[1].props.children[0]
   expect(renderToStaticMarkup(SummaryAttributes({ attributes: data.attributes, onRoll: summary.props.onRollAttribute }))).toContain('href="#rolagens"')
   expect(renderToStaticMarkup(SummarySkills({ skills: data.skills, onRoll: summary.props.onRollSkill }))).toContain('href="#rolagens"')
   summary.props.onRollAttribute('forca')
   summary.props.onRollSkill('Briga')
   expect(setRollPrefill).toHaveBeenNthCalledWith(1, { attribute: 'forca' })
   expect(setRollPrefill).toHaveBeenNthCalledWith(2, { skill: 'briga' })
+})
+
+it('mantém a navegação lateral contextual ligada a seções existentes e em fluxo normal', () => {
+  const data: ComponentProps<typeof CharacterSummaryClient>['data'] = { id: '11111111-1111-4111-8111-111111111111', characterType: 'PLAYER_VAMPIRE', name: 'Helena', clan: null, predator: null, generation: null, campaignName: null, campaignTheme: null, attributes: {}, skills: {}, merits: [], flaws: [], disciplines: [], resources: { humanidade: 7, vontade: 5, vitalidade: 5, fome: 1 } }
+  const tree = CharacterSummaryClient({ data })
+  const nav = tree.props.children[0]
+  const html = renderToStaticMarkup(nav)
+  expect(nav.props.className).toBe('character-summary-nav')
+  expect(nav.props['aria-label']).toBe('Navegação do dossiê')
+  expect(html).toContain('href="#visao-geral"')
+  expect(html).toContain('href="#atributos"')
+  expect(html).toContain('href="#recursos"')
+  expect(html).toContain('href="#rolagens"')
+  expect(html).toContain('href="#potencia-de-sangue"')
 })

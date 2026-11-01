@@ -71,7 +71,7 @@ export function CharacterSummary({ data, onChangeResources, onRollAttribute, onR
 
   return (
     <div className="flex flex-col gap-6">
-      <SummaryHeader
+      <div id="visao-geral"><SummaryHeader
         actions={headerActions}
         name={data.name}
         clan={data.clan}
@@ -79,8 +79,8 @@ export function CharacterSummary({ data, onChangeResources, onRollAttribute, onR
         generation={data.generation}
         campaignName={data.campaignName}
         campaignTheme={data.campaignTheme}
-      />
-      {clanDetails}
+      /></div>
+      {clanDetails && <div id="clan">{clanDetails}</div>}
       {resources && <div id="recursos">{resources}</div>}
       {Boolean(data.convictions?.length) && <section className="border border-border bg-card p-6" aria-label="Pilares e convicções"><h2 className="mb-5 font-serif text-2xl">Pilares e convicções</h2><dl className="grid gap-4 sm:grid-cols-3">{data.convictions?.map(entry => <div key={`${entry.touchstone}:${entry.text}`}><dt className="font-semibold">{entry.touchstone || 'Pilar não informado'}</dt><dd className="mt-2 text-sm text-muted-foreground">{entry.text || 'Convicção não informada'}</dd></div>)}</dl></section>}
       <div id="atributos"><SummaryAttributes attributes={data.attributes} onRoll={onRollAttribute} /></div>

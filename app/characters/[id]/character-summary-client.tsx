@@ -56,7 +56,36 @@ type CharacterSummaryClientProps = {
 export function CharacterSummaryClient({ data }: Readonly<CharacterSummaryClientProps>) {
   const [rollPrefill, setRollPrefill] = useState<{ attribute?: string; skill?: string }>()
   const canRoll = data.characterType === 'PLAYER_VAMPIRE'
-  return <div className="flex flex-col gap-6"><nav aria-label="Seções do dossiê" className="flex flex-wrap gap-2 border-b border-border pb-4 text-sm"><a className="button-ghost" href="#atributos">Atributos</a><a className="button-ghost" href="#habilidades">Habilidades</a><a className="button-ghost" href="#vantagens">Vantagens e defeitos</a><a className="button-ghost" href="#disciplinas">Disciplinas</a>{canRoll && <><a className="button-ghost" href="#recursos">Recursos</a><a className="button-ghost" href="#rolagens">Rolagens</a></>}</nav><CharacterSummary onRollAttribute={canRoll ? attribute => setRollPrefill({ attribute }) : undefined} onRollSkill={canRoll ? skill => setRollPrefill({ skill: Object.entries(SPECIALTY_SKILL_NAMES).find(([, name]) => name === skill)?.[0] }) : undefined} clanDetails={
-    data.characterType === 'PLAYER_VAMPIRE' ? <CharacterClanSummary characterId={data.id} /> : undefined} data={data} headerActions={
-    <>{data.campaignId && data.characterType === 'PLAYER_VAMPIRE' && <Link href={`/campaigns/${data.campaignId}/session`} className="button-primary">Abrir sessão da mesa</Link>}<Link href={`/notes?targetType=${['HUMAN_NPC', 'VAMPIRE_NPC'].includes(data.characterType ?? '') ? 'NPC' : 'CHARACTER'}&targetId=${data.id}`} target="_blank" rel="noopener noreferrer" className="button-primary" aria-label="Anotações (abre em nova guia)">Anotações</Link>{data.characterType === 'PLAYER_VAMPIRE' && <Link href={`/characters/${data.id}/evolution`} target="_blank" rel="noopener noreferrer" className="button-ghost" aria-label="Evolução (abre em nova guia)">Evolução</Link>}</>} resources={data.characterType === 'PLAYER_VAMPIRE' ? <SessionResources characterId={data.id} /> : undefined} />{['PLAYER_VAMPIRE', 'VAMPIRE_NPC'].includes(data.characterType ?? '') && <BloodPotencySummary characterId={data.id} />}{data.characterType === 'PLAYER_VAMPIRE' && <div id="rolagens"><CharacterRolls characterId={data.id} prefill={rollPrefill} /></div>}{hasSummaryName(data.predator) && data.predator && <PlayerPredatorSummary name={data.predator} roll={data.predatorRoll} source={data.predatorSource} selection={data.predatorSelection} />}</div>
+  const hasBloodPotency = ['PLAYER_VAMPIRE', 'VAMPIRE_NPC'].includes(data.characterType ?? '')
+  return (
+    <div className="character-summary-body">
+      <nav className="character-summary-nav" aria-label="Navegação do dossiê">
+        <a href="#visao-geral">Visão geral</a>
+        <a href="#atributos">Atributos</a>
+        <a href="#habilidades">Habilidades</a>
+        <a href="#vantagens">Vantagens e defeitos</a>
+        <a href="#disciplinas">Disciplinas</a>
+        {hasBloodPotency && <a href="#potencia-de-sangue">Potência de Sangue</a>}
+        {canRoll && <><a href="#recursos">Recursos</a><a href="#rolagens">Rolagens</a></>}
+        {hasSummaryName(data.predator) && <a href="#predacao">Predação</a>}
+      </nav>
+      <div className="character-summary-content">
+        <CharacterSummary
+          onRollAttribute={canRoll ? attribute => setRollPrefill({ attribute }) : undefined}
+          onRollSkill={canRoll ? skill => setRollPrefill({ skill: Object.entries(SPECIALTY_SKILL_NAMES).find(([, name]) => name === skill)?.[0] }) : undefined}
+          clanDetails={data.characterType === 'PLAYER_VAMPIRE' ? <CharacterClanSummary characterId={data.id} /> : undefined}
+          data={data}
+          headerActions={<>
+            {data.campaignId && data.characterType === 'PLAYER_VAMPIRE' && <Link href={`/campaigns/${data.campaignId}/session`} className="button-primary">Abrir sessão da mesa</Link>}
+            <Link href={`/notes?targetType=${['HUMAN_NPC', 'VAMPIRE_NPC'].includes(data.characterType ?? '') ? 'NPC' : 'CHARACTER'}&targetId=${data.id}`} target="_blank" rel="noopener noreferrer" className="button-primary" aria-label="Anotações (abre em nova guia)">Anotações</Link>
+            {data.characterType === 'PLAYER_VAMPIRE' && <Link href={`/characters/${data.id}/evolution`} target="_blank" rel="noopener noreferrer" className="button-ghost" aria-label="Evolução (abre em nova guia)">Evolução</Link>}
+          </>}
+          resources={canRoll ? <SessionResources characterId={data.id} /> : undefined}
+        />
+        {hasBloodPotency && <div id="potencia-de-sangue"><BloodPotencySummary characterId={data.id} /></div>}
+        {canRoll && <div id="rolagens"><CharacterRolls characterId={data.id} prefill={rollPrefill} /></div>}
+        {hasSummaryName(data.predator) && data.predator && <div id="predacao"><PlayerPredatorSummary name={data.predator} roll={data.predatorRoll} source={data.predatorSource} selection={data.predatorSelection} /></div>}
+      </div>
+    </div>
+  )
 }

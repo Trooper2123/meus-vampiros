@@ -10,6 +10,7 @@ import { ROLL_MODES, storeRoll, type RollMode } from './character-roll-history'
 import { clanRollAdjustment, readClanConditions, validClanRollContext, type ClanRollContext } from './vtm-v5/clan-mechanics'
 import { calculateBloodPotencyEffects, type BloodContext } from './vtm-v5/blood-potency'
 import { getBloodPolicy } from './blood-policy'
+import { normalizePredatorType } from './vtm-v5/predator-types'
 
 export type RollInput = { mode?: RollMode; hiddenDifficulty?: boolean; clanContext?: ClanRollContext; attribute: string; skillId: string; difficulty: number; specialtyId?: string; visibility: 'PUBLIC' | 'SECRET'; reason: string; idempotencyKey: string; expectedRevision: number }
 
@@ -24,7 +25,7 @@ export function executeCharacterRoll(actorId: string, id: string, input: RollInp
     const difficulty = adjustment.difficulty ?? input.difficulty
     const basePool = rollBasePool(mode,state,attribute+skillDots+bonus)
     const pool = Math.max(0, basePool - (adjustment.modifiers?.dicePenalty ?? 0))
-    const hungerCount = ['TEST', 'TAKING_HALF', 'AUTOMATIC'].includes(mode) ? Math.min(pool, state.hunger) : 0
+    const hungerCount = ['TEST', 'PREDATION', 'TAKING_HALF', 'AUTOMATIC'].includes(mode) ? Math.min(pool, state.hunger) : 0
     const result=resolveCharacterRollResult(mode,difficulty,provider,pool,hungerCount)
     return { ok: true, ...storeRoll(character, actorId, { mode, pool, specialtyBonus: bonus, visibility: input.visibility, reason: input.reason, hiddenDifficulty: input.hiddenDifficulty, ...(adjustment.modifiers ? { clanModifiers: adjustment.modifiers } : {}) }, result) }
   })
@@ -47,7 +48,8 @@ function rollAttributeAndSpecialty(character: CommandCharacter,input: RollInput,
   const skills=Object.fromEntries(Object.entries(normalized.skills).map(([skill,dots]) => [normalizeSpecialtySkillId(skill),dots]))
   const skill=normalizeSpecialtySkillId(input.skillId)
   const skillDots=skills[skill]
-  if(['TEST','TAKING_HALF','AUTOMATIC'].includes(mode)&&(!Number.isSafeInteger(attribute)||attribute<1||attribute>5||!Number.isSafeInteger(skillDots)||skillDots<0||skillDots>5)) { throw new CharacterCommandError(422,'Atributo ou habilidade inválido na ficha.') }
+  if(['TEST','PREDATION','TAKING_HALF','AUTOMATIC'].includes(mode)&&(!Number.isSafeInteger(attribute)||attribute<1||attribute>5||!Number.isSafeInteger(skillDots)||skillDots<0||skillDots>5)) { throw new CharacterCommandError(422,'Atributo ou habilidade inválido na ficha.') }
+  if(mode==='PREDATION'&&!normalizePredatorType(character.data.predatorTypeCode ?? character.data.predador)) { throw new CharacterCommandError(422,'Defina um tipo de predação válido antes de rolar.') }
   let bonus: number
   try { bonus=specialtyRollBonus(input.specialtyId? [input.specialtyId]:[],skill,characterSpecialties(character),canUseSpecialties)} 
   catch(error) { throw new CharacterCommandError(422,error instanceof Error? error.message:'Especialidade inválida.')} 
@@ -62,7 +64,7 @@ function assertRollContext(character: CommandCharacter,actorId: string,input: Ro
   if(['TORPOR','FINAL_DEATH','STAKED','DAY_SLEEP'].includes(state.condition)) { throw new CharacterCommandError(409,'A condição do personagem impede esta ação normal.') }
   const isMaster=character.masterId===actorId
   const mode=input.mode??'TEST'
-  if(input.specialtyId&&!['TEST','TAKING_HALF','AUTOMATIC'].includes(mode)) { throw new CharacterCommandError(400,'Este teste não recebe bônus de especialidade.') }
+  if(input.specialtyId&&!['TEST','PREDATION','TAKING_HALF','AUTOMATIC'].includes(mode)) { throw new CharacterCommandError(400,'Este teste não recebe bônus de especialidade.') }
   if((input.hiddenDifficulty||['TAKING_HALF','AUTOMATIC'].includes(mode))&&!isMaster) { throw new CharacterCommandError(403,'Este contexto exige condução do Narrador.') }
   const canUseSpecialties=isMaster||(!character.campaignId&&character.ownerId===actorId)
   if(input.visibility==='SECRET'&&!isMaster) { throw new CharacterCommandError(403,'Rolagens secretas exigem o Narrador.') }

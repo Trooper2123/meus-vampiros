@@ -4,6 +4,7 @@ import { getSessionOrDev } from '@/lib/auth0'
 import { hasMasterAccess } from '@/lib/campaigns'
 import { getMasterResearchCatalog } from '@/lib/db'
 import { notFound, redirect } from 'next/navigation'
+import Link from 'next/link'
 
 export default async function MasterResearchPage() {
   const session = await getSessionOrDev()
@@ -14,6 +15,7 @@ export default async function MasterResearchPage() {
     <div className="noise" aria-hidden="true" />
     <ArchiveHeader title="Pesquisa do Narrador" />
     <div className="archive-content">
+      <Link className="button-ghost mb-5 inline-flex" href="/campaigns">Voltar às mesas</Link>
       <section className="archive-page-heading">
         <p className="eyebrow">Acervo de regras · acesso restrito</p>
         <h1 className="font-serif text-4xl uppercase sm:text-6xl">Disciplinas e habilidades</h1>

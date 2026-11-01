@@ -96,7 +96,7 @@ export default async function PersonagensPage() {
                                     <div key={character.id} className="archive-character-card">
                                         <div className="flex items-start justify-between gap-4">
                                             <div>
-                                                <h3 className="font-serif text-2xl">{character.name}</h3>
+                                                <h3 className="break-words font-serif text-2xl">{character.name}</h3>
                                             </div>
                                             <span
                                                 className={`status ${character.status === 'APPROVED' ? 'active' : ''}`}><span
@@ -121,7 +121,7 @@ export default async function PersonagensPage() {
                                             </div>
                                             <div className="col-span-2">
                                                 <dt className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">Mesa</dt>
-                                                <dd className="mt-1 truncate"
+                                                <dd className="mt-1 break-words"
                                                     title={character.campaignName ?? 'Sem vínculo'}>
                                                     {character.campaignName ?? 'Sem vínculo'}
                                                 </dd>

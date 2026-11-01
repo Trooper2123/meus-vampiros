@@ -33,6 +33,17 @@ describe('rolagens V5 autoritativas com provider injetável', () => {
     expect(await ledger()).toMatchObject([{ event_type: 'DICE_ROLLED', created_by_user_id: 'player', payload: { input, after: { pool: 5 } } }])
   })
 
+  it('registra rolagem de predação usando pool da ficha e nome do predador no motivo', async () => {
+    await db.execute(sql`UPDATE characters SET data = data || '{"predatorTypeCode":"SIREN"}'::jsonb WHERE id = ${id}::uuid`)
+    const result = await executeCharacterRoll('player', id, { ...input, mode: 'PREDATION', reason: 'Predação Sereia: Carisma + Subterfúgio.' }, provider)
+    expect(result).toMatchObject({ mode: 'PREDATION', pool: 5, result: { normalDice: [6, 6, 6], hungerDice: [6, 6] } })
+  })
+
+  it('não permite rolagem de predação se a ficha não define tipo reconhecido', async () => {
+    await expect(executeCharacterRoll('player', id, { ...input, mode: 'PREDATION' }, provider)).rejects.toMatchObject({ status: 422 })
+    expect(provider.rollD10).not.toHaveBeenCalled()
+  })
+
   it('Narrador confirma especialidade aplicável e adiciona somente um dado', async () => {
     const result = await executeCharacterRoll('narrator', id, { ...input, specialtyId: 'briga-specialty' }, provider)
     expect(result).toMatchObject({ pool: 6, specialtyBonus: 1 })
