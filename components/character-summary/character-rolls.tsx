@@ -44,6 +44,14 @@ function RollPanel({ characterId, sessionId, prefill }: Readonly<{ characterId: 
   const [visibility, setVisibility] = useState<'PUBLIC' | 'SECRET'>('PUBLIC')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const [animateDice, setAnimateDice] = useState(true)
+  useEffect(() => {
+    try { setAnimateDice(window.localStorage.getItem('meus-vampiros:animate-dice') !== 'false') } catch { /* Armazenamento indisponível: usar padrão */ }
+  }, [])
+  function toggleDiceAnimation(checked: boolean) {
+    setAnimateDice(checked)
+    try { window.localStorage.setItem('meus-vampiros:animate-dice', String(checked)) } catch { /* Preferência válida nesta sessão */ }
+  }
   const [retryCommand, setRetryCommand] = useState<RollCommand | null>(null)
   const [result, setResult] = useState<RollResponse | null>(null)
   const submitting = useRef(false)
@@ -114,6 +122,7 @@ function RollPanel({ characterId, sessionId, prefill }: Readonly<{ characterId: 
       {Boolean(data.clanConditions?.length) && <p className="text-sm text-muted-foreground">Condições confirmadas: {data.clanConditions!.map(condition => CLAN_CONDITION_LABELS[condition]).join(' · ')}. Penalidades calculadas pelo servidor; check de Sangue não recebe modificadores. Exceções narrativas são conduzidas pelo Narrador.</p>}
       {canUseCommunication && <label className="flex items-start gap-2 text-sm"><input type="checkbox" disabled={disabled} checked={communication} onChange={event => setCommunication(event.target.checked)} />Confirmar comunicação tecnológica Lasombra: dificuldade 2 + Gravidade da Perdição, calculada pelo servidor</label>}
       {canPursueCompulsion && <label className="flex items-start gap-2 text-sm"><input type="checkbox" disabled={disabled} checked={pursuingCompulsion} onChange={event => setPursuingCompulsion(event.target.checked)} />Confirmar que esta ação atende ao objetivo da compulsão, dispensando sua penalidade nesta rolagem</label>}
+      <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={animateDice} onChange={event => toggleDiceAnimation(event.target.checked)} />Animar rolagem de dados</label>
       <button type="submit" className="button-primary min-h-10 sm:self-start" disabled={disabled || Boolean(loadError) || data.status !== 'APPROVED' || !selectedAttribute || (!selectedSkill && !['CHECK', 'WILLPOWER', 'HUMANITY'].includes(mode)) || !validDifficulty}>{busy ? 'Rolando…' : 'Rolar dados'}</button>
     </form>}
     {error && <p role="alert" className="mt-4 text-sm text-primary">{error}</p>}
@@ -121,7 +130,7 @@ function RollPanel({ characterId, sessionId, prefill }: Readonly<{ characterId: 
     {busy && <output className="block mt-4 text-sm text-muted-foreground">Registrando rolagem…</output>}
     {result?.clanModifiers && <p className="mt-4 text-sm">{result.clanModifiers.labels.join(' · ')} · Penalidade de clã: −{result.clanModifiers.dicePenalty} dado(s).</p>}
     {result && <>
-      <AnimatedDice key={result.revision} normalDice={result.result.normalDice} hungerDice={result.result.hungerDice} outcome={result.result.outcome} successes={result.result.successes} difficulty={result.result.difficulty} visibility={result.visibility} />
+      <AnimatedDice key={`${result.revision}:${animateDice}`} animate={animateDice} normalDice={result.result.normalDice} hungerDice={result.result.hungerDice} outcome={result.result.outcome} successes={result.result.successes} difficulty={result.result.difficulty} visibility={result.visibility} />
       <p className="mt-2 text-sm text-muted-foreground">{result.pool} dado(s){result.specialtyBonus > 0 ? ' · Especialidade +1' : ''}</p>
     </>}
     <RollHistory characterId={characterId} />
