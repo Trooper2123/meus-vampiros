@@ -9,7 +9,7 @@ async function fetchCampaigns(url: string): Promise<{ campaigns: { id: string }[
   return response.json()
 }
 
-export function ArchiveHeader({ title, showCampaigns }: Readonly<{ title: string; showCampaigns?: boolean }>) {
+export function ArchiveHeader({ title, showCampaigns, variant = 'default' }: Readonly<{ title: string; showCampaigns?: boolean; variant?: 'default' | 'campaigns' }>) {
   const { data } = useSWR(showCampaigns === undefined ? '/api/campaigns' : null, fetchCampaigns)
   const hasCampaigns = showCampaigns ?? Boolean(data?.campaigns?.length)
   const links = <>
@@ -21,7 +21,7 @@ export function ArchiveHeader({ title, showCampaigns }: Readonly<{ title: string
     <a href="/auth/logout" className="button-ghost">Sair</a>
   </>
 
-  return <header className="sheet-header archive-header">
+  return <header className={`sheet-header archive-header ${variant === 'campaigns' ? 'archive-header-campaigns' : ''}`}>
     <div><p className="eyebrow">Arquivos da Noite</p><p className="archive-header-title">{title}</p></div>
     <nav className="archive-nav" aria-label="Navegação principal">{links}</nav>
     <details className="archive-menu">

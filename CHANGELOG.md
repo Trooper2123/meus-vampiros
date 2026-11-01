@@ -1,3 +1,21 @@
+## [2026-11-01 02:05 BRT] - fix - Corrigir JSX na lista de personagens
+
+**Tipo:** fix
+
+**Arquivos principais:** `app/characters/page.tsx`.
+
+- Simplifica a renderizacao dos rotulos de status para evitar erro de parsing JSX durante a compilacao da pagina de personagens.
+- Verificacao de tipos passou com `npx tsc --noEmit`; build e testes nao executados.
+
+## [2026-11-01 01:52 BRT] — chore - Sincronizar Next.js e SWC
+
+**Tipo:** chore
+
+**Arquivos principais:** `package.json`, `package-lock.json`, `pnpm-lock.yaml`.
+
+- Atualiza a faixa de Next.js para 16.4.3 e sincroniza as versões dos pacotes SWC nos lockfiles do npm e pnpm para evitar incompatibilidade de compilador.
+- Validação local confirmou Next.js e SWC em 16.4.3; testes, lint e build não executados.
+
 ## [2026-11-01 00:19 BRT] — fix - Permitir rolagens em fichas independentes
 
 **Tipo:** fix
