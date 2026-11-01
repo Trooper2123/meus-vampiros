@@ -1780,3 +1780,57 @@ main > .archive-header {
     .campaigns-reference-shell::before { left: 0; height: 180px; }
     .campaigns-reference-shell .archive-header-campaigns .archive-menu { display: block; }
 }
+
+/* Specificity fix: .sheet-header was overriding fixed campaign navigation. */
+@media (min-width: 761px) {
+  .campaigns-reference-shell > .sheet-header.archive-header-campaigns {
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: 232px;
+    height: 100dvh;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: stretch;
+    flex-wrap: nowrap;
+    overflow-y: auto;
+    padding: 28px 14px;
+    background: var(--background);
+    border-right: 1px solid var(--border);
+    border-bottom: 0;
+  }
+  .campaigns-reference-shell > .archive-content {
+    width: calc(100% - 232px);
+    max-width: none;
+    margin: 0 0 0 232px;
+    padding: 36px clamp(20px, 3vw, 48px) 56px;
+  }
+  .campaigns-reference-shell::before { left: 232px; }
+  .campaigns-reference-shell .archive-header-campaigns .archive-nav {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+@media (max-width: 760px) {
+  .campaigns-reference-shell > .sheet-header.archive-header-campaigns {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    height: auto;
+    min-height: 76px;
+    padding: 16px 20px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .campaigns-reference-shell > .archive-content {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 28px 16px 40px;
+  }
+}
