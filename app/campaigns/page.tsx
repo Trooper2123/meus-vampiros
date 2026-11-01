@@ -45,8 +45,6 @@ export default async function CampaignsPage({ searchParams }: Readonly<{ searchP
             </p>
           </div>
           <div className="archive-page-actions campaign-dashboard-actions">
-            <Link href="/master/catalogo" target="_blank" rel="noopener noreferrer" className="button-ghost inline-flex items-center justify-center gap-2">Pesquisa de habilidades</Link>
-            <Link href="/master/vantagens-defeitos" target="_blank" rel="noopener noreferrer" className="button-ghost inline-flex items-center justify-center gap-2">Pesquisa de vantagens e defeitos</Link>
             <Link href="/campaigns/new" id="btn-nova-campanha" className="button-primary inline-flex items-center justify-center gap-2">
               <Plus className="size-4" /> Nova campanha
             </Link>
@@ -60,26 +58,18 @@ export default async function CampaignsPage({ searchParams }: Readonly<{ searchP
           <div><Users className="size-6 text-primary" aria-hidden="true" /><span className="eyebrow">Participantes nesta visão</span><strong>{totalPlayers}</strong></div>
         </section>
 
-        <nav aria-label="Filtro de mesas" className="campaign-dashboard-tabs">
-          <Link className={showArchived ? '' : 'is-active'} aria-current={!showArchived ? 'page' : undefined} href="/campaigns">Mesas atuais <span>{activeCampaigns.length}</span></Link>
-          <Link className={showArchived ? 'is-active' : ''} aria-current={showArchived ? 'page' : undefined} href="/campaigns?archived=true"><Archive className="size-3.5" aria-hidden="true" /> Mesas arquivadas <span>{archivedCampaigns.length}</span></Link>
-        </nav>
-        {campaigns.length === 0 ? (
-          showArchived ? <p className="empty-state">Nenhuma mesa arquivada.</p> :
-          <section className="login-panel mx-auto max-w-2xl text-center">
-            <BookOpen className="mx-auto size-12 text-primary" aria-hidden="true" />
-            <p className="eyebrow mt-6">Nenhuma crônica registrada</p>
-            <h3 className="mt-3 font-serif text-3xl uppercase tracking-[0.08em]">A noite ainda não começou</h3>
-            <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-muted-foreground">
-              Crie sua primeira campanha e comece a tecer sua história. Os jogadores poderão se vincular a ela.
-            </p>
-            <div className="archive-page-actions"><Link href="/campaigns/new" className="button-primary mt-7 inline-flex items-center gap-2">
-              Criar primeira mesa <Plus className="size-4" />
-            </Link></div>
-          </section>
-        ) : (
-          <MasterPanel initialCampaigns={campaigns} archived={showArchived} />
-        )}
+        <div className="campaigns-filter-row">
+          <nav aria-label="Filtro de mesas" className="campaign-dashboard-tabs">
+            <Link className={showArchived ? '' : 'is-active'} aria-current={!showArchived ? 'page' : undefined} href="/campaigns">Todas as atuais <span>{activeCampaigns.length}</span></Link>
+            <Link className={showArchived ? 'is-active' : ''} aria-current={showArchived ? 'page' : undefined} href="/campaigns?archived=true"><Archive className="size-3.5" aria-hidden="true" /> Arquivadas <span>{archivedCampaigns.length}</span></Link>
+          </nav>
+          <div className="campaigns-catalog-links">
+            <Link href="/master/catalogo">Disciplinas e habilidades</Link>
+            <Link href="/master/vantagens-defeitos">Vantagens e defeitos</Link>
+          </div>
+        </div>
+        <MasterPanel initialCampaigns={campaigns} archived={showArchived} />
+
       </div>
     </main>
   )
