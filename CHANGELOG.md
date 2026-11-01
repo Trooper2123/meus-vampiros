@@ -1,3 +1,12 @@
+## [2026-11-01 01:52 BRT] — chore - Sincronizar Next.js e SWC
+
+**Tipo:** chore
+
+**Arquivos principais:** `package.json`, `package-lock.json`, `pnpm-lock.yaml`.
+
+- Atualiza a faixa de Next.js para 16.4.3 e sincroniza as versões dos pacotes SWC nos lockfiles do npm e pnpm para evitar incompatibilidade de compilador.
+- Validação local confirmou Next.js e SWC em 16.4.3; testes, lint e build não executados.
+
 ## [2026-11-01 00:19 BRT] — fix - Permitir rolagens em fichas independentes
 
 **Tipo:** fix
