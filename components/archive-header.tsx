@@ -15,6 +15,8 @@ export function ArchiveHeader({ title, showCampaigns }: Readonly<{ title: string
   const links = <>
     <Link href="/characters" className="button-ghost">Personagens</Link>
     {hasCampaigns && <Link href="/campaigns" className="button-ghost">Mesas</Link>}
+    <Link href="/master/catalogo" className="button-ghost">Disciplinas e habilidades</Link>
+    <Link href="/master/vantagens-defeitos" className="button-ghost">Vantagens e defeitos</Link>
     <Link href="/notes" className="button-ghost">Anotações</Link>
     <a href="/auth/logout" className="button-ghost">Sair</a>
   </>
