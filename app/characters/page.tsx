@@ -120,7 +120,7 @@ export default async function PersonagensPage() {
                                                 {characterStatusLabels[character.status] ?? 'Não definido'}
                                             </span>
                                         </div>
-                                        <div className="mt-5"><p className="archive-label">Conceito</p><p
+                                        <div className="mt-5 rounded-lg border border-border bg-background/60 p-3"><p className="archive-label">Conceito</p><p
                                             className="mt-2 text-sm">{character.concept || 'Não definido'}</p></div>
                                         <dl className="mt-5 grid grid-cols-2 gap-5 border-t border-border pt-5 text-sm">
                                             <div>
