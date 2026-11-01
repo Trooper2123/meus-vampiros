@@ -49,9 +49,9 @@ export function AnimatedDice({ animate, normalDice, hungerDice, outcome, success
   return <div className="mt-5 border-t border-border pt-5" aria-label="Resultado da rolagem">
     <div className="flex items-center justify-between gap-3">
       <p className="eyebrow">Dados lançados</p>
-      {!finished && <button type="button" className="button-ghost min-h-10" onClick={() => { setSkipMotion(true); setFinished(true) }}>Pular animação</button>}
+      {!finished && !supports3D && <button type="button" className="button-ghost min-h-10" onClick={() => { setSkipMotion(true); setFinished(true) }}>Pular animação</button>}
     </div>
-    {supports3D && !finished && !skipMotion && <div className="mt-4"><DiceScene3D dice={dice} /></div>}
+    {supports3D && !finished && !skipMotion && <DiceScene3D dice={dice} onSkip={() => { setSkipMotion(true); setFinished(true) }} />}
     <div className={`mt-4 min-h-24 flex-wrap items-center justify-center gap-3 rounded border border-border bg-background p-4 ${supports3D && !finished && !skipMotion ? 'hidden' : 'flex'}`} aria-hidden="true">
       {dice.map((die, index) => <span key={die.key} className={`dice-face ${die.hunger ? 'dice-face-hunger' : ''} ${!skipMotion && !finished && !supports3D ? 'dice-face-rolling' : ''}`} style={{ animationDelay: `${index * 55}ms` }}>{die.value}</span>)}
       {dice.length === 0 && <span className="text-sm text-muted-foreground">Nenhum dado lançado.</span>}
