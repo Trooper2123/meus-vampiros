@@ -13,7 +13,7 @@ export async function POST(request:Request){try{
     try{payload=npcObject(JSON.parse(clientPayload??''))}catch{return npcFail(400,'Pedido de upload inválido.')}
     npcKeys(payload,['uploadId']);const id=npcId(payload.uploadId);await authorizeSheetUpload(actorId,id)
     if(pathname!==mediaStagingKey(actorId,id))return npcFail(403,'Destino de upload não autorizado.')
-    return {allowedContentTypes:['image/jpeg','image/png','image/webp'],maximumSizeInBytes:MAX_SHEET_IMAGE_BYTES,validUntil:Date.now()+10*60*1000,addRandomSuffix:false,allowOverwrite:false}
+    return {access:'private',allowedContentTypes:['image/jpeg','image/png','image/webp'],maximumSizeInBytes:MAX_SHEET_IMAGE_BYTES,validUntil:Date.now()+10*60*1000,addRandomSuffix:false,allowOverwrite:true}
   }})
   return notesResponse(result)
 }catch(error){return npcFailure(error)}}
