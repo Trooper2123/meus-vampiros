@@ -35,7 +35,12 @@ async function saveImageUpload() {
       if(!file) { throw new Error('Escolha uma imagem.')} 
       if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>5*1024*1024) { throw new Error('Envie JPEG, PNG ou WebP de até 5 MB.')} 
       const prepared=await json('/api/sheet-media',{ action: 'PREPARE',subjectType,subjectId,campaignId: global? null:campaignId,data: { ...form,isPortrait: global&&!isNote? true:form.isPortrait } })
-      await upload(prepared.pathname,file,{ access: 'private',handleUploadUrl: '/api/sheet-media/upload',clientPayload: JSON.stringify({ uploadId: prepared.uploadId }),contentType: file.type })
+      try {
+        await upload(prepared.pathname,file,{ access: 'private',handleUploadUrl: '/api/sheet-media/upload',clientPayload: JSON.stringify({ uploadId: prepared.uploadId }),contentType: file.type })
+      } catch(error) {
+        if(error instanceof Error) throw new Error(`${error.message} (Falha de upload no Vercel Blob; confira o token do storage deste ambiente.)`,{cause:error})
+        throw error
+      }
       uploadId=prepared.uploadId; setPending(uploadId)
     }
     await json('/api/sheet-media',{ action: 'CONFIRM',uploadId })

@@ -5,7 +5,7 @@ import CharacterFormClient from '@/app/characters/character-form-client'
 import { SWRConfig } from 'swr'
 
 const state = vi.hoisted(() => ({ tab: 'identidade', characterType: 'PLAYER_VAMPIRE', creationType: 'FLEDGLING' }))
-vi.mock('next/navigation', () => ({ useSearchParams: () => new URLSearchParams(), useRouter: () => ({ push: vi.fn() }) }))
+vi.mock('next/navigation', () => ({ useSearchParams: () => new URLSearchParams('entryMode=ASSISTED'), useRouter: () => ({ push: vi.fn() }) }))
 vi.mock('react', async importOriginal => {
   const original = await importOriginal<typeof import('react')>()
   return { ...original, useState: (initial: unknown) => original.useState(initial === 'UNDECIDED' ? null : initial === 'identidade' ? state.tab : initial === 'PLAYER_VAMPIRE' ? state.characterType : initial === 'FLEDGLING' ? state.creationType : initial) }
@@ -58,8 +58,8 @@ it.each(['identidade', 'atributos', 'habilidades', 'disciplinas', 'recursos', 'v
 
 it('identidade não duplica entradas de clã/predação nem permite editar XP', () => {
   const html = renderToStaticMarkup(createElement(CharacterFormClient, {}))
-  expect(html).toContain('Como deseja preencher a ficha?')
-  expect(html.indexOf('Como deseja preencher a ficha?')).toBeLessThan(html.indexOf('role="tablist"'))
+  expect(html).not.toContain('Como deseja preencher a ficha?')
+  expect(html).toContain('Modo de preenchimento:')
   expect(html).not.toContain('name="cla"')
   expect(html).not.toContain('name="predador"')
   expect(html).not.toContain('name="experiencia-total"')

@@ -9,7 +9,7 @@ type Roll = { id: string; mode: string; reason: string; visibility: string; hidd
 type History = { revision: number; history: Roll[]; canAdjudicate: boolean; canAcceptCost?: boolean }
 type Pending = { path: string; body: Record<string, unknown> }
 const outcomes: Record<string, string> = { SUCCESS: 'Vitória', CRITICAL: 'Vitória crítica', MESSY_CRITICAL: 'Crítico com Fome', FAILURE: 'Falha', BESTIAL_FAILURE: 'Falha bestial' }
-const modeNames: Record<string, string> = { TEST: 'Atributo + habilidade', CHECK: 'Check', WILLPOWER: 'Força de Vontade', HUMANITY: 'Humanidade', TAKING_HALF: 'Taking Half', AUTOMATIC: 'Vitória automática' }
+const modeNames: Record<string, string> = { TEST: 'Atributo + habilidade', PREDATION: 'Predação', CHECK: 'Check', WILLPOWER: 'Força de Vontade', HUMANITY: 'Humanidade', TAKING_HALF: 'Taking Half', AUTOMATIC: 'Vitória automática' }
 
 async function fetchHistory(url: string): Promise<History> {
   const response = await fetch(url)

@@ -5,7 +5,7 @@ import CharacterFormClient from '@/app/characters/character-form-client'
 import { CampaignCreationGate } from '@/components/campaign-creation-gate'
 import { parseCampaignInvitationLink } from '@/lib/campaign-invitation-link'
 
-vi.mock('next/navigation', () => ({ useSearchParams: () => new URLSearchParams(), useRouter: () => ({ push: vi.fn() }) }))
+vi.mock('next/navigation', () => ({ useSearchParams: () => new URLSearchParams('entryMode=ASSISTED'), useRouter: () => ({ push: vi.fn() }) }))
 it('pergunta sobre mesa antes dos campos e ações de ficha', () => {
   const html = renderToStaticMarkup(createElement(CharacterFormClient, {}))
   expect(html).toContain('Você já tem uma mesa para se juntar?')

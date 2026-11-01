@@ -3,6 +3,7 @@
 import { Brain, Fingerprint, Zap } from 'lucide-react'
 
 type SummaryAttributesProps = {
+  onRoll?: (attribute: string) => void
   attributes: {
     forca?: number
     destreza?: number
@@ -61,7 +62,7 @@ function DotTrack({ total, value }: Readonly<{ total: number; value: number }>) 
   )
 }
 
-export function SummaryAttributes({ attributes }: Readonly<SummaryAttributesProps>) {
+export function SummaryAttributes({ attributes, onRoll }: Readonly<SummaryAttributesProps>) {
   const hasAttributes = Object.values(attributes).some(
     (value) => (value as number) > 0
   )
@@ -91,8 +92,9 @@ export function SummaryAttributes({ attributes }: Readonly<SummaryAttributesProp
                 </h3>
               </div>
               {groupAttributes.map((attr) => (
-                <div key={attr.key} className="summary-rating">
+                <div key={attr.key} className="summary-rating flex-wrap">
                   <span className="text-sm">{attr.label}</span>
+                  {onRoll && <a href="#rolagens" className="button-ghost min-h-10" onClick={() => onRoll(attr.key)} aria-label={`Rolar com ${attr.label}`}>Rolar</a>}
                   <DotTrack
                     total={5}
                     value={(attributes[attr.key] as number) || 0}

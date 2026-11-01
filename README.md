@@ -64,7 +64,7 @@ psql -X --set=ON_ERROR_STOP=1 --single-transaction --file=migrations/20261023_np
 if ($LASTEXITCODE -ne 0) { throw 'Migração falhou; a transação foi revertida.' }
 ```
 
-O exemplo usa o schema `public`; ajustar explicitamente se a instalação usar outro schema. No Windows, se `psql` não estiver no PATH, usar `& 'C:\Program Files\PostgreSQL\18\bin\psql.exe'` no lugar de `psql`. Confirmar depois as dez tabelas do arquivo e testar listagem/modelos/criação com uma conta autorizada. A transação reverte a migração inteira em caso de erro; após sucesso, rollback da aplicação deve preservar tabelas e dados, sem `DROP`. O comando foi executado com sucesso e repetido no PostgreSQL local; produção não foi acessada.
+O exemplo usa o schema `public`; ajustar explicitamente se a instalação usar outro schema. No Windows, se `psql` não estiver no PATH, usar `& 'C:\Program Files\PostgreSQL\18\bin\psql.exe'` no lugar de `psql`. Confirmar depois as dez tabelas do arquivo e testar listagem/modelos/criação com uma conta autorizada. A transação reverte a migração inteira em caso de erro; após sucesso, rollback da aplicação deve preservar tabelas e dados, sem `DROP`. Em 31/10/2026, a migração foi aplicada em transação à produção `neondb/public`, com backup recuperável confirmado; foram verificadas as dez tabelas e a coluna `campaigns.allow_player_narrative_edits`. Não houve seeds nem limpeza.
 
 ### Mesas arquivadas, imagens e revelações
 
@@ -80,7 +80,7 @@ Depois da migração inicial de NPCs, aplicar também `migrations/20261029_sessi
 psql -X --set=ON_ERROR_STOP=1 --single-transaction --file=migrations/20261029_session_notes_images.sql
 ```
 
-Essa migração amplia os tipos aceitos de mídia/revelação e salva revelações antigas como anotações, preservando sua visibilidade. Foi aplicada somente no PostgreSQL local, schemas `public` e `meus_vampiros_test`, com autorização específica. `/api/migrate` não aplica os arquivos SQL desse diretório. Rollback da aplicação preserva as notas e imagens; não remover as constraints novas enquanto houver registros NOTE. Testes focados sem limpeza/DDL automático: `npx vitest run --config vitest.session-notes.config.ts` (exige schema local de testes previamente preparado e migrado).
+Essa migração amplia os tipos aceitos de mídia/revelação e salva revelações antigas como anotações, preservando sua visibilidade. Foi aplicada em 31/10/2026 no PostgreSQL local (`public` e `meus_vampiros_test`) e na produção (`neondb/public`), com autorização específica e backup confirmado. Na produção, a consulta prévia encontrou zero revelações antigas para converter. `/api/migrate` não aplica os arquivos SQL desse diretório. Rollback da aplicação preserva as notas e imagens; não remover as constraints novas enquanto houver registros NOTE. Testes focados sem limpeza/DDL automático: `npx vitest run --config vitest.session-notes.config.ts` (exige schema local de testes previamente preparado e migrado).
 
 ### Mesa virtual
 
@@ -88,6 +88,8 @@ LiveKit utiliza LIVEKIT_URL, LIVEKIT_API_KEY e LIVEKIT_API_SECRET no servidor. N
 
 ## Documentação
 
+- [Imagens de personagens e NPCs](docs/imagens-fichas.md): configuração do Blob privado, retratos, galeria, limites e testes locais.
+- [POC de acesso à VTM Wiki](docs/vtm-wiki-sync.md): diagnóstico de metadados, sem ingestão, publicação ou alterações no banco.
 - [Instruções de desenvolvimento](AGENTS.md), [guia de UI](UI-GUIDE.md) e [design system](design-system.md).
 - [Histórico de alterações](CHANGELOG.md).
 - [Central local de documentação](codex/README.md): specs, tarefas concluídas e backlog. A pasta de planejamento é local e pode não acompanhar o clone; não incluí-la automaticamente em commits.

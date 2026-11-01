@@ -50,6 +50,7 @@ export default async function CampaignDetailPage({ params, searchParams }: Reado
 
         <div className="mt-8 flex flex-col gap-8">
           <nav className="archive-card-actions" aria-label="Ações da mesa">
+            <Link href="/campaigns" className="button-ghost self-start">Voltar às mesas</Link>
             <Link href={`/campaigns/${campaign.id}/session`} className="button-primary self-start">Abrir modo sessão</Link>
             <Link href={`/notes?targetType=CAMPAIGN&targetId=${campaign.id}`} target="_blank" rel="noopener noreferrer" className="button-ghost self-start">Anotações do Narrador</Link>
             <Link href="/master/catalogo" target="_blank" rel="noopener noreferrer" className="button-ghost self-start">Pesquisa de habilidades</Link>

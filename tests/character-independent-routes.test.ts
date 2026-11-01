@@ -72,6 +72,20 @@ describe('autorização de fichas independentes', () => {
     expect(mocks.create.mock.calls[0][1]).not.toHaveProperty('ownerId')
   })
 
+  it.each(['ASSISTED', 'EXISTING'])('persiste modo %s sem alterar propriedade ou conceder acesso a uma mesa', async entryMode => {
+    expect((await POST(request({ name: 'Helena', data: { entryMode } }))).status).toBe(201)
+    expect(mocks.create.mock.calls[0][0]).toBe('owner')
+    expect(mocks.create.mock.calls[0][1].data.entryMode).toBe(entryMode)
+    mocks.create.mockClear()
+    expect((await POST(request({ name: 'Helena', campaignId: id, data: { entryMode } }))).status).toBe(403)
+    expect(mocks.create).not.toHaveBeenCalled()
+  })
+
+  it.each(['INVALID', null, 1, [], {}])('rejeita modo de preenchimento inválido %j', async entryMode => {
+    expect((await POST(request({ data: { entryMode } }))).status).toBe(400)
+    expect(mocks.create).not.toHaveBeenCalled()
+  })
+
   it('recusa entrada em campanha por simples conhecimento do UUID', async () => {
     expect((await POST(request({ name: 'Helena', campaignId: id }))).status).toBe(403)
     expect(mocks.create).not.toHaveBeenCalled()

@@ -30,6 +30,7 @@ export default async function CharacterPage({
           <Link href={`/characters/${id}/summary`}><FileText className="size-4" />Resumo</Link>
         </div>
         <div className="summary-page-actions">
+          <Link className="button-ghost" href="/characters">Voltar aos personagens</Link>
           <Link href={`/characters/${id}/edit`} className="button-primary inline-flex items-center gap-2"><Edit className="size-4" />Editar ficha completa</Link>
           <Link className="button-ghost" href={`/characters/${id}/narrative`}>Perfil, relações e mídias</Link>
         </div>

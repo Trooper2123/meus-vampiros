@@ -1,7 +1,7 @@
 ﻿# UI-GUIDE — Direcionamento de Layout e Tema
 
 > Este arquivo é a referência de consulta obrigatória do agente ao construir novas páginas ou implementar atualizações visuais no projeto **Arquivos da Noite**.
-> O arquivo `design-system.md` contém o detalhamento completo; este documento é o resumo operacional de acesso rápido.
+> O arquivo `design-system.md` contém o detalhamento completo; este documento é o resumo operacional de acesso rápido. As SPECs 008 (dossiê e rolagens) e 009 (padronização visual) complementam as regras existentes, sem autorizar remoção de funcionalidades.
 
 ---
 
@@ -85,7 +85,7 @@ Referência visual vigente: `codex/Meus Vampiros — Arquivos da Noite.pdf` (16 
 - Em celular, navegação em `<details>` com rótulo “Menu”; funciona por clique e teclado. “Mesas” só aparece para quem tem mesas próprias; isso não substitui autorização no servidor. Anotações permanece acessível pelo menu.
 - `.archive-content`: largura máxima de 1440px, padding desktop 64px, tablet 32px e mobile 20px. Em 1440px, área útil de 1312px.
 - `.archive-page-heading`: eyebrow, título editorial, descrição e divisória. Ações da listagem ficam abaixo da divisória; em celular ocupam a largura disponível.
-- Cards de personagem: nome e status textual, conceito, clã/geração, mesa, XP, ações com divisória. Preservar agrupamentos e ações já existentes.
+- Cards de personagem: preservar obrigatoriamente nome, status textual, conceito, clã, geração, nome e descrição da mesa, XP gasto/total e as ações Resumo, Duplicar, Editar e Excluir ficha (quando autorizadas). Manter agrupamentos, divisória de ações e dados reais. Retrato opcional não pode ocultar metadados.
 - Resumo: botão “Anotações” junto ao nome abre /notes em nova guia com filtro da ficha, sem modal nem card de anotações relacionadas; detalhes de clã após o cabeçalho. Rolagens sem campo de motivo, com contexto automático no histórico.
 - Evolução: página /characters/[id]/evolution reúne especialidades e Disciplinas. Botão Evolução junto ao nome abre nova guia no resumo do jogador; gestão da mesa apresenta o resumo sem esse acesso. A página exige proprietário ou Narrador da mesa no servidor.
 - Criação geral oferece apenas fichas jogáveis. NPC humano/vampiro é criado em `/campaigns/[id]/npcs/new`, com API própria e autorização do Narrador da mesa. Tipo de ficha fica fixo após salvar. Vínculo por convite aparece no início do editor somente para ficha independente de jogador; criação com convite não apresenta campo adicional de vínculo.
@@ -106,6 +106,8 @@ Referência visual vigente: `codex/Meus Vampiros — Arquivos da Noite.pdf` (16 
 
 ### Fichas independentes e Aparência
 
+- “Criar personagem” e “Abrir criação” abrem um modal para escolher criação assistida V5 ou transcrição. Confirmar leva ao fluxo de mesa/convite com o modo definido; cancelar ou Escape não cria rascunho. Acesso direto sem escolha válida também exige o modal. O editor mostra o modo escolhido sem seletor inline; edição restaura o modo salvo. Transcrição independente libera valores atuais dentro dos limites, sem calcular XP histórico; o vínculo mantém as regras da mesa.
+- Retratos compactos de personagens e NPCs oferecem enviar/substituir, editar título/enquadramento e remover com confirmação para usuários autorizados. Durante carregamento, distinguir consulta de retrato ausente. Falhas de confirmação preservam a reserva para repetir sem novo upload; falhas ao atualizar a lista após sucesso confirmado orientam recarregar. Galeria mantém ações e permissões por item.
 - Sem mesa, fichas de jogador permitem distribuição livre de atributos (1–5), habilidades (0–5) e Disciplinas conhecidas (0–5). Requisitos de criação aparecem como avisos na validação, sem impedir a conclusão. Selecionar clã não exige pacote 2+1 nem apaga Disciplinas existentes. Fichas vinculadas mantêm regras e aprovação do Narrador.
 - Nosferatu apresenta Aparência sempre −2. Vantagens positivas de Aparência ficam preservadas no cadastro e identificadas como ignoradas no resumo, inclusive concessões de predação; Siren não impede a seleção de Nosferatu.
 - O acesso ao catálogo na listagem de mesas se chama “Pesquisa de habilidades” e abre em nova guia.
@@ -118,7 +120,7 @@ Referência visual vigente: `codex/Meus Vampiros — Arquivos da Noite.pdf` (16 
 - O histórico preserva dados originais e revisões. Selecionar de um a três dados comuns permite uma única rerrolagem por Vontade, com 1 dano superficial; dados de Fome ficam indisponíveis. Reenvio conserva a operação para evitar nova cobrança. Dificuldade reservada mantém alvo e resolução fora do DTO do jogador; nesse caso o Narrador conduz a rerrolagem.
 - Complicações e falha narrativa são decisões separadas do total rolado. Ofertas de vitória a custo exigem falha com sucesso parcial e aceitação explícita do proprietário. Notas privadas e rolagens secretas não aparecem ao jogador nem ao Narrador de outra mesa.
 - Fontes de dados abrem em nova guia com livro, edição e páginas impressa/física. PDFs são servidos por rota autenticada e IDs permitidos, sem expor caminhos locais.
-- Durante a chamada, reutilizar a rolagem da ficha por `CallRolls`; a lista é autorizada no servidor e oferece ao jogador somente suas fichas aprovadas. NPCs/carniçais e configuração ampliada do perfil dependem das próximas etapas da SPEC.
+- Durante a chamada, reutilizar a rolagem da ficha por `CallRolls`; a lista é autorizada no servidor e oferece ao jogador somente suas fichas aprovadas. A extensão a NPCs/carniçais e ao perfil ampliado é objetivo da SPEC-008, condicionada à implementação e aos testes; não presumir que já esteja disponível.
 
 ### Esqueleto atualizado
 
@@ -247,3 +249,78 @@ Antes de considerar uma página pronta, verificar:
 - Detalhamento completo: [`design-system.md`](./design-system.md)
 - Estilos globais: [`app/globals.css`](./app/globals.css)
 - Histórico de alterações: [`CHANGELOG.md`](./CHANGELOG.md)
+
+---
+
+## 12. Evolução de interface — SPEC-008 e SPEC-009
+
+### 12.1 Regra de precedência e preservação
+
+- Este guia e `design-system.md` são a base visual vigente. As propostas de protótipo com tons grafite/vinho devem ser mapeadas para tokens existentes, **não** substituí-los por hexadecimais diretamente nos componentes.
+- Não renomear a marca visível **Arquivos da Noite**, nem remover `ArchiveHeader`, rotas, autorizações, validações ou ações existentes por razões puramente visuais.
+- Quando um comportamento planejado nas SPECs conflitar com uma regra operacional já implementada, preservar o comportamento existente até decisão explícita e teste de regressão. Distinguir **proposta**, **em implementação** e **implementado**.
+- A identidade de dossiê é uma composição de componentes compartilhados, não uma licença para reproduzir o mesmo layout indiscriminadamente em todas as páginas.
+
+### 12.2 Dossiê unificado — SPEC-008
+
+- Aplicar a mesma linguagem visual a jogador, NPC vampiro, NPC humano e carniçal. Adaptar os campos mecânicos conforme a natureza do personagem; não exibir Fome ou Potência de Sangue como recursos de humanos e carniçais.
+- Cabeçalho: retrato opcional, nome, conceito, tipo, status, clã/seita/geração quando aplicáveis, campanha e indicadores de recursos autorizados. Usar placeholder quando não houver retrato.
+- Navegação contextual agrupada: **Visão geral / Perfil / História**, **Atributos / Habilidades / Disciplinas / Vantagens e defeitos**, **Relações / Organizações / Pilares**, **Inventário / Propriedades**, **Rolagens / Combate / Evolução / Histórico**. Ocultar itens inaplicáveis; não criar páginas vazias para funcionalidades ainda não implementadas.
+- Informações exclusivas do Narrador (segredos, ganchos, ajustes narrativos e rolagens secretas) só devem ser retornadas por endpoints autorizados; nunca apenas escondidas com CSS.
+- NPCs podem ter ficha completa ou simplificada. A visualização é compartilhada, mas as regras de criação, edição, propriedade e autorização continuam específicas. Carniçais devem expor vínculo com regente vampiro existente quando cadastrado.
+- Ações de edição contextual podem complementar o editor completo, nunca substituí-lo. Reutilizar componentes, validação e persistência; indicar carregamento, sucesso e erro sem alterar valores confirmados antes da resposta do servidor.
+- No desktop, menu contextual lateral e painel principal; em mobile, menu recolhível ou abas acessíveis e drawer para ações densas. Evitar menus que ocupem largura fixa e comprimam o conteúdo.
+
+### 12.3 Rolagens integradas — SPEC-008
+
+- Disponibilizar ação **Rolar** junto a atributos, habilidades, disciplinas e testes de combate quando o fluxo estiver implementado. O painel deve exibir composição da parada, dados comuns/de Fome, modificadores, dificuldade visível quando autorizada, resultado e acesso ao histórico.
+- Reutilizar o motor V5 e `CallRolls` existentes, com resolução e validação no servidor. Não criar sorteio concorrente no cliente nem duplicar regras mecânicas.
+- Respeitar as distinções vigentes entre teste comum, checks sem Fome, Força de Vontade, Humanidade, Taking Half, vitória automática e rerrolagens. Complicações narrativas e consequências dependem das decisões autorizadas do Narrador.
+- Rolagens de NPCs podem ser públicas ou secretas conforme autorização. Nunca expor alvo reservado, detalhes privados ou rolagens secretas em DTOs, eventos, histórico ou telas de jogadores.
+- O Modo Sessão existente mantém videochamada e seções atuais; o painel de rolagens é integrado progressivamente, sem reconstruir o módulo de campanha/sessão.
+
+### 12.4 Listagens e cards — SPEC-009
+
+- Usar a mesma base de card/lista para personagens, NPCs e carniçais, com adaptações semânticas por tipo. Filtros por tipo, status, clã e mesa, pesquisa e alternância cards/lista são melhorias progressivas, não requisitos para remover listagens atuais.
+- **Contrato visual obrigatório do card de jogador:** nome, status (inclusive Rascunho), conceito, clã, geração, nome da mesa, descrição da mesa e **XP (gasto/total)**. Dados ausentes devem ter tratamento explícito e não ser inventados.
+- **Ações obrigatórias quando autorizadas:** Resumo, Duplicar, Editar e Excluir ficha. Preservar destinos e fluxos existentes, confirmação de exclusão e feedback de falhas. Ações não autorizadas não devem ser expostas como funcionais.
+- Retrato é opcional; sem imagem, exibir placeholder temático e manter todos os campos legíveis. Nunca substituir campos existentes por fotografia, ícones ou tooltip exclusivo.
+- Nos cards de NPC humano e carniçal, omitir clã/geração quando inaplicáveis, sem inventar valores; exibir tipo, regente e outros metadados relevantes somente quando disponíveis.
+- Títulos, badges, metadados, separadores e botões devem usar tokens/classes existentes. As quatro ações precisam permanecer acessíveis no mobile, sem depender de hover.
+
+### 12.5 Padrões por área — SPEC-009
+
+| Área | Padrão de composição | Preservação obrigatória |
+|---|---|---|
+| Dashboard | Resumos e atalhos de continuidade | Acessos autorizados e estados reais |
+| Personagens / NPCs / Carniçais | Cards ou lista com filtros contextuais | Campos, ações e permissões existentes |
+| Criação / edição | Etapas ou seções de formulário, revisão e feedback | Modos de criação, regras V5 e dados salvos |
+| Dossiê / resumo | Cabeçalho, indicadores, navegação contextual e conteúdo | Informações da ficha e links existentes |
+| Campanhas / mesas | Cabeçalho da crônica, participantes, sessões e gestão | Convites, aprovação, arquivamento e privacidade |
+| Modo Sessão | Videochamada e painéis expansíveis de jogo | Fluxos e ordem funcional existentes |
+| Catálogos | Busca, filtros, detalhes, fontes e graduações | IDs, nomes oficiais, traduções e regras de elegibilidade |
+| Inventário / XP / histórico | Listas e linha do tempo, ações contextualizadas | Auditoria, saldo e histórico persistidos |
+| Configurações / notas | Formulários e painéis de leitura/edição | Controle de acesso e anexos privados |
+
+### 12.6 Componentização sugerida
+
+- `AppShell` ou composição equivalente deve **reutilizar** `ArchiveHeader` e `.archive-content`, não criar um segundo cabeçalho global.
+- Extrair conforme necessidade: `PageHeader`, `ContextNavigation`, `EntityCard`, `CharacterDossier`, `CharacterHeader`, `CharacterStats`, `CharacterRelations`, `DicePanel`, `CatalogBrowser`, `EmptyState` e `ConfirmDialog`.
+- Componentes de apresentação recebem props tipadas; consultas, autorização, cálculo de XP e rolagens ficam no servidor ou serviços de domínio existentes.
+- Reutilizar `.character-card`, `.portrait`, `.status`, `.actions`, `.button-primary`, `.button-ghost` e tokens antes de criar variantes.
+
+### 12.7 Critérios de aceite adicionais
+
+- [ ] Nenhum campo ou ação do card atual de jogador desaparece após o redesenho.
+- [ ] NPCs e carniçais compartilham o padrão visual sem receber mecânicas inaplicáveis.
+- [ ] Navegação global e contextual são distintas, acessíveis e responsivas.
+- [ ] As rolagens visíveis reutilizam a lógica e as autorizações existentes no servidor.
+- [ ] Informações privadas não são enviadas ao cliente sem autorização.
+- [ ] Não há cores literais novas em JSX/TSX; mudanças de paleta exigem revisão de `design-system.md` e `globals.css`.
+- [ ] Funcionalidades ainda planejadas não são apresentadas como operacionais.
+- [ ] Testar fluxos críticos em 390px, 768px e 1440px e registrar regressões.
+
+### Referências das mudanças
+
+- **SPEC-CHAR-008:** Dossiê Unificado de Personagens, NPCs e Sistema de Rolagens V5.
+- **SPEC-UI-009:** Padronização Visual do Meus Vampiros e preservação dos cards de personagem.

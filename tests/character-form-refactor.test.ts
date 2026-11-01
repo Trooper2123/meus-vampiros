@@ -5,7 +5,7 @@ import { expect, it, vi } from 'vitest'
 import CharacterFormClient from '@/app/characters/character-form-client'
 
 const state = vi.hoisted(() => ({ tab: 'atributos', characterType: 'PLAYER_VAMPIRE' }))
-vi.mock('next/navigation', () => ({ useSearchParams: () => new URLSearchParams(), useRouter: () => ({ push: vi.fn() }) }))
+vi.mock('next/navigation', () => ({ useSearchParams: () => new URLSearchParams('entryMode=ASSISTED'), useRouter: () => ({ push: vi.fn() }) }))
 vi.mock('react', async importOriginal => {
   const original = await importOriginal<typeof import('react')>()
   return { ...original, useState: (initial: unknown) => original.useState(initial === 'UNDECIDED' ? null : initial === 'identidade' ? state.tab : initial === 'PLAYER_VAMPIRE' ? state.characterType : initial) }

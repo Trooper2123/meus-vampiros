@@ -1,20 +1,20 @@
 'use client'
 
-import { useId, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import useSWR from 'swr'
 import { RollHistory } from './roll-history'
+import { AnimatedDice } from './animated-dice'
 import type { RollMode } from '@/lib/character-roll-history'
 import type { Specialty } from '@/lib/vtm-v5/specialties'
 import { CLAN_CONDITION_LABELS, type ClanCondition, type ClanRollContext, type ClanModifiers } from '@/lib/vtm-v5/clan-mechanics'
 
-type RollData = { attributes: Record<string, number>; skills: Record<string, number>; specialties: Specialty[]; canUseSpecialties: boolean; canRollSecret: boolean; clanCode?: string; clanConditions?: ClanCondition[]; revision: number; status: string }
+type RollData = { attributes: Record<string, number>; skills: Record<string, number>; specialties: Specialty[]; canUseSpecialties: boolean; canRollSecret: boolean; independent: boolean; clanCode?: string; clanConditions?: ClanCondition[]; predatorCode?: string; predatorName?: string; predatorRoll?: string; revision: number; status: string }
 type RollCommand = { mode?: RollMode; hiddenDifficulty?: boolean; clanContext?: ClanRollContext; attribute: string; skillId: string; difficulty: number; specialtyId?: string; visibility: 'PUBLIC' | 'SECRET'; reason: string; expectedRevision: number; idempotencyKey: string; sessionId?: string }
 type RollResponse = { ok: boolean; pool: number; specialtyBonus: number; clanModifiers?: ClanModifiers; visibility: 'PUBLIC' | 'SECRET'; revision: number; result: { normalDice: number[]; hungerDice: number[]; difficulty: number; successes: number; success: boolean; outcome: 'SUCCESS' | 'CRITICAL' | 'MESSY_CRITICAL' | 'FAILURE' | 'BESTIAL_FAILURE' } }
 const attributeNames: Record<string, string> = { forca: 'Força', destreza: 'Destreza', vigor: 'Vigor', carisma: 'Carisma', manipulacao: 'Manipulação', compostura: 'Compostura', inteligencia: 'Inteligência', raciocinio: 'Raciocínio', determinacao: 'Determinação' }
 const skillNames: Record<string, string> = { 'armas-brancas': 'Armas brancas', 'armas-de-fogo': 'Armas de fogo', atletismo: 'Atletismo', briga: 'Briga', conducao: 'Condução', furtividade: 'Furtividade', ladroagem: 'Ladroagem', oficios: 'Ofícios', sobrevivencia: 'Sobrevivência', 'empatia-com-animais': 'Empatia com animais', etiqueta: 'Etiqueta', intimidacao: 'Intimidação', lideranca: 'Liderança', manha: 'Manha', performance: 'Performance', persuasao: 'Persuasão', sagacidade: 'Sagacidade', subterfugio: 'Subterfúgio', ciencia: 'Ciência', academicos: 'Erudição', financas: 'Finanças', investigacao: 'Investigação', medicina: 'Medicina', ocultismo: 'Ocultismo', percepcao: 'Percepção', politica: 'Política', tecnologia: 'Tecnologia' }
-const outcomeNames: Record<RollResponse['result']['outcome'], string> = { SUCCESS: 'Sucesso', CRITICAL: 'Sucesso crítico', MESSY_CRITICAL: 'Crítico bagunçado', FAILURE: 'Falha', BESTIAL_FAILURE: 'Falha bestial' }
-const rollReason = (mode: RollMode, attribute: string, skill: string) => mode === 'TEST'
-  ? `Teste de ${attributeNames[attribute] ?? attribute} + ${skillNames[skill] ?? skill}.`
+const rollReason = (mode: RollMode, attribute: string, skill: string, predatorName?: string) => mode === 'TEST' || mode === 'PREDATION'
+  ? `${mode === 'PREDATION' ? `Predação ${predatorName ?? ''}: ` : 'Teste de '}${attributeNames[attribute] ?? attribute} + ${skillNames[skill] ?? skill}.`
   : `Teste de ${({ CHECK: 'check', WILLPOWER: 'Força de Vontade', HUMANITY: 'Humanidade', TAKING_HALF: 'Taking Half', AUTOMATIC: 'vitória automática' } as const)[mode]}.`
 
 async function fetchRollData(url: string): Promise<RollData> {
@@ -24,16 +24,17 @@ async function fetchRollData(url: string): Promise<RollData> {
   return body
 }
 
-export function CharacterRolls({ characterId, sessionId }: Readonly<{ characterId: string; sessionId?: string }>) {
-  return <RollPanel key={`${characterId}:${sessionId ?? ''}`} characterId={characterId} sessionId={sessionId} />
+export function CharacterRolls({ characterId, sessionId, prefill }: Readonly<{ characterId: string; sessionId?: string; prefill?: { attribute?: string; skill?: string } }>) {
+  return <RollPanel key={`${characterId}:${sessionId ?? ''}`} characterId={characterId} sessionId={sessionId} prefill={prefill} />
 }
 
-function RollPanel({ characterId, sessionId }: Readonly<{ characterId: string; sessionId?: string }>) {
+function RollPanel({ characterId, sessionId, prefill }: Readonly<{ characterId: string; sessionId?: string; prefill?: { attribute?: string; skill?: string } }>) {
   const fieldId = useId()
   const endpoint = `/api/characters/${characterId}/rolls`
   const { data, error: loadError, isLoading, mutate } = useSWR<RollData>(endpoint, fetchRollData)
   const [attribute, setAttribute] = useState('')
   const [skillId, setSkillId] = useState('')
+  useEffect(() => { if (prefill?.attribute) setAttribute(prefill.attribute); if (prefill?.skill) setSkillId(prefill.skill) }, [prefill])
   const [specialtyId, setSpecialtyId] = useState('')
   const [difficulty, setDifficulty] = useState('1')
   const [mode, setMode] = useState<RollMode>('TEST')
@@ -43,6 +44,14 @@ function RollPanel({ characterId, sessionId }: Readonly<{ characterId: string; s
   const [visibility, setVisibility] = useState<'PUBLIC' | 'SECRET'>('PUBLIC')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  const [animateDice, setAnimateDice] = useState(true)
+  useEffect(() => {
+    try { setAnimateDice(window.localStorage.getItem('meus-vampiros:animate-dice') !== 'false') } catch { /* Armazenamento indisponível: usar padrão */ }
+  }, [])
+  function toggleDiceAnimation(checked: boolean) {
+    setAnimateDice(checked)
+    try { window.localStorage.setItem('meus-vampiros:animate-dice', String(checked)) } catch { /* Preferência válida nesta sessão */ }
+  }
   const [retryCommand, setRetryCommand] = useState<RollCommand | null>(null)
   const [result, setResult] = useState<RollResponse | null>(null)
   const submitting = useRef(false)
@@ -53,7 +62,7 @@ function RollPanel({ characterId, sessionId }: Readonly<{ characterId: string; s
   const specialties = data?.canUseSpecialties ? data.specialties.filter(entry => entry.status === 'APPROVED' && entry.skillId === selectedSkill) : []
   const selectedSpecialty = specialties.find(entry => entry.id === specialtyId)
   const disabled = busy || retryCommand !== null
-  const usesTraits = ['TEST', 'TAKING_HALF', 'AUTOMATIC'].includes(mode)
+  const usesTraits = ['TEST', 'PREDATION', 'TAKING_HALF', 'AUTOMATIC'].includes(mode)
   const canUseCommunication = data?.canRollSecret && data.clanCode === 'LASOMBRA' && mode === 'TEST' && selectedSkill === 'tecnologia'
   const canPursueCompulsion = data?.canRollSecret && mode !== 'CHECK' && data.clanConditions?.includes('COMPULSION_PENALTY') && !['BANU_HAQIM', 'LASOMBRA'].includes(data.clanCode ?? '')
   const validDifficulty = mode === 'CHECK' || Number.isInteger(Number(difficulty)) && Number(difficulty) >= 1 && Number(difficulty) <= 50
@@ -86,9 +95,9 @@ function RollPanel({ characterId, sessionId }: Readonly<{ characterId: string; s
 
   function submit(event: React.FormEvent) {
     event.preventDefault()
-    if (!data || disabled || data.status !== 'APPROVED' || !selectedAttribute || (!selectedSkill && !['CHECK', 'WILLPOWER', 'HUMANITY'].includes(mode)) || !validDifficulty) return
+    if (!data || disabled || (data.status !== 'APPROVED' && !(data.independent && data.status === 'DRAFT')) || !selectedAttribute || (!selectedSkill && !['CHECK', 'WILLPOWER', 'HUMANITY'].includes(mode)) || mode === 'PREDATION' && !data.predatorCode || !validDifficulty) return
     const clanContext = { ...(canUseCommunication && communication ? { communication: true } : {}), ...(canPursueCompulsion && pursuingCompulsion ? { pursuingCompulsion: true } : {}) }
-    void execute({ mode, ...(data.canRollSecret ? { hiddenDifficulty } : {}), ...(Object.keys(clanContext).length ? { clanContext } : {}), attribute: selectedAttribute, skillId: selectedSkill, difficulty: mode === 'CHECK' ? 1 : Number(difficulty), ...(selectedSpecialty ? { specialtyId: selectedSpecialty.id } : {}), visibility: data.canRollSecret ? visibility : 'PUBLIC', reason: rollReason(mode, selectedAttribute, selectedSkill), expectedRevision: data.revision, idempotencyKey: crypto.randomUUID(), ...(sessionId ? { sessionId } : {}) })
+    void execute({ mode, ...(data.canRollSecret ? { hiddenDifficulty } : {}), ...(Object.keys(clanContext).length ? { clanContext } : {}), attribute: selectedAttribute, skillId: selectedSkill, difficulty: mode === 'CHECK' ? 1 : Number(difficulty), ...(selectedSpecialty ? { specialtyId: selectedSpecialty.id } : {}), visibility: data.canRollSecret ? visibility : 'PUBLIC', reason: rollReason(mode, selectedAttribute, selectedSkill, data.predatorName), expectedRevision: data.revision, idempotencyKey: crypto.randomUUID(), ...(sessionId ? { sessionId } : {}) })
   }
 
   return <section className="border border-border bg-card p-5 sm:p-6" aria-labelledby={`${fieldId}-title`} aria-busy={busy || isLoading}>
@@ -98,8 +107,9 @@ function RollPanel({ characterId, sessionId }: Readonly<{ characterId: string; s
     {isLoading && <output className="block mt-4 text-sm">Carregando dados da rolagem…</output>}
     {loadError && <div role="alert" className="mt-4 flex flex-col gap-3 text-sm"><p>Não foi possível carregar os dados da rolagem.</p><button type="button" className="button-ghost min-h-10" disabled={busy} onClick={() => void mutate().catch(() => undefined)}>Carregar novamente</button></div>}
     {data && <form onSubmit={submit} className="mt-5 flex flex-col gap-4">
-      {data.status !== 'APPROVED' && <output className="block text-sm text-muted-foreground">A ficha precisa estar aprovada para realizar rolagens.</output>}
-      <label className="sheet-field"><span>Tipo de teste</span><select className="select" value={mode} disabled={disabled} onChange={event => { setMode(event.target.value as RollMode); setSpecialtyId('') }}><option value="TEST">Atributo + habilidade</option><option value="CHECK">Check (1d10, sem Fome ou rerrolagem)</option><option value="WILLPOWER">Força de Vontade (sem Fome)</option><option value="HUMANITY">Humanidade (sem Fome)</option>{data.canRollSecret && <><option value="TAKING_HALF">Taking Half (opção oficial conduzida pelo Narrador)</option><option value="AUTOMATIC">Vitória automática (concessão do Narrador)</option></>}</select></label>
+      {data.status !== 'APPROVED' && !(data.independent && data.status === 'DRAFT') && <output className="block text-sm text-muted-foreground">A ficha precisa estar aprovada para realizar rolagens.</output>}
+      <label className="sheet-field"><span>Tipo de teste</span><select className="select" value={mode} disabled={disabled} onChange={event => { setMode(event.target.value as RollMode); setSpecialtyId('') }}><option value="TEST">Atributo + habilidade</option>{data.predatorCode && <option value="PREDATION">Predação{data.predatorName ? ` — ${data.predatorName}` : ''}</option>}<option value="CHECK">Check (1d10, sem Fome ou rerrolagem)</option><option value="WILLPOWER">Força de Vontade (sem Fome)</option><option value="HUMANITY">Humanidade (sem Fome)</option>{data.canRollSecret && <><option value="TAKING_HALF">Taking Half (opção oficial conduzida pelo Narrador)</option><option value="AUTOMATIC">Vitória automática (concessão do Narrador)</option></>}</select></label>
+      {mode === 'PREDATION' && <p className="text-sm text-muted-foreground">{data.predatorRoll ? `Rolagem indicada: ${data.predatorRoll}. ` : ''}Selecione os traços da ficha aplicáveis à cena; Fome e modificadores válidos são calculados normalmente.</p>}
       {data.canRollSecret && <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={hiddenDifficulty} disabled={disabled} onChange={event => setHiddenDifficulty(event.target.checked)} />Reservar dificuldade e resolução ao Narrador</label>}
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="flex flex-col gap-2 text-sm" htmlFor={`${fieldId}-attribute`}>Atributo<select id={`${fieldId}-attribute`} className="select min-h-10 w-full" disabled={disabled || !usesTraits} value={selectedAttribute} onChange={event => setAttribute(event.target.value)}>{attributes.length === 0 && <option value="">Nenhum atributo disponível</option>}{attributes.map(([key, dots]) => <option key={key} value={key}>{attributeNames[key] ?? key} ({dots})</option>)}</select></label>
@@ -112,13 +122,17 @@ function RollPanel({ characterId, sessionId }: Readonly<{ characterId: string; s
       {Boolean(data.clanConditions?.length) && <p className="text-sm text-muted-foreground">Condições confirmadas: {data.clanConditions!.map(condition => CLAN_CONDITION_LABELS[condition]).join(' · ')}. Penalidades calculadas pelo servidor; check de Sangue não recebe modificadores. Exceções narrativas são conduzidas pelo Narrador.</p>}
       {canUseCommunication && <label className="flex items-start gap-2 text-sm"><input type="checkbox" disabled={disabled} checked={communication} onChange={event => setCommunication(event.target.checked)} />Confirmar comunicação tecnológica Lasombra: dificuldade 2 + Gravidade da Perdição, calculada pelo servidor</label>}
       {canPursueCompulsion && <label className="flex items-start gap-2 text-sm"><input type="checkbox" disabled={disabled} checked={pursuingCompulsion} onChange={event => setPursuingCompulsion(event.target.checked)} />Confirmar que esta ação atende ao objetivo da compulsão, dispensando sua penalidade nesta rolagem</label>}
-      <button type="submit" className="button-primary min-h-10 sm:self-start" disabled={disabled || Boolean(loadError) || data.status !== 'APPROVED' || !selectedAttribute || (!selectedSkill && !['CHECK', 'WILLPOWER', 'HUMANITY'].includes(mode)) || !validDifficulty}>{busy ? 'Rolando…' : 'Rolar dados'}</button>
+      <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={animateDice} onChange={event => toggleDiceAnimation(event.target.checked)} />Animar rolagem de dados</label>
+      <button type="submit" className="button-primary min-h-10 sm:self-start" disabled={disabled || Boolean(loadError) || (data.status !== 'APPROVED' && !(data.independent && data.status === 'DRAFT')) || !selectedAttribute || (!selectedSkill && !['CHECK', 'WILLPOWER', 'HUMANITY'].includes(mode)) || !validDifficulty}>{busy ? 'Rolando…' : 'Rolar dados'}</button>
     </form>}
     {error && <p role="alert" className="mt-4 text-sm text-primary">{error}</p>}
     {retryCommand && !busy && <button type="button" className="button-ghost mt-3 min-h-10" onClick={() => void execute(retryCommand)}>Tentar novamente a mesma rolagem</button>}
     {busy && <output className="block mt-4 text-sm text-muted-foreground">Registrando rolagem…</output>}
     {result?.clanModifiers && <p className="mt-4 text-sm">{result.clanModifiers.labels.join(' · ')} · Penalidade de clã: −{result.clanModifiers.dicePenalty} dado(s).</p>}
-    {result && <output className="block mt-5 border-t border-border pt-5" aria-live="polite"><h3 className="font-serif text-xl">{outcomeNames[result.result.outcome]}</h3><span className="block mt-2 text-sm">{result.result.successes} sucesso(s) · Dificuldade {result.result.difficulty} · {result.pool} dado(s){result.specialtyBonus > 0 ? ' · Especialidade +1' : ''}</span><span className="block mt-2 text-xs text-muted-foreground">{result.visibility === 'SECRET' ? 'Rolagem secreta — somente Narrador' : 'Rolagem pública'}</span><dl className="mt-4 grid gap-3 sm:grid-cols-2"><div><dt className="text-sm">Dados normais</dt><dd className="mt-1 font-mono text-sm">{result.result.normalDice.join(' · ') || 'Nenhum'}</dd></div><div><dt className="text-sm">Dados de Fome</dt><dd className="mt-1 font-mono text-sm">{result.result.hungerDice.join(' · ') || 'Nenhum'}</dd></div></dl></output>}
+    {result && <>
+      <AnimatedDice key={`${result.revision}:${animateDice}`} animate={animateDice} normalDice={result.result.normalDice} hungerDice={result.result.hungerDice} outcome={result.result.outcome} successes={result.result.successes} difficulty={result.result.difficulty} visibility={result.visibility} />
+      <p className="mt-2 text-sm text-muted-foreground">{result.pool} dado(s){result.specialtyBonus > 0 ? ' · Especialidade +1' : ''}</p>
+    </>}
     <RollHistory characterId={characterId} />
   </section>
 }

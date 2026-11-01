@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock('@/lib/auth0', () => ({ getSessionOrDev: mocks.getSessionOrDev }))
 vi.mock('@/lib/auth/authorization', () => ({ canManageCampaign: mocks.canManageCampaign }))
 vi.mock('@/lib/db', () => ({ ensureAllTables: mocks.ensureAllTables }))
+vi.mock('@/lib/campaign-invitations', () => ({ campaignPredatorOverrides: vi.fn().mockResolvedValue([]) }))
 vi.mock('@/lib/characters', () => ({
   appendCharacterLedgerEvent: mocks.appendCharacterLedgerEvent,
   getCharacterAccessRecord: mocks.getCharacterAccessRecord,
