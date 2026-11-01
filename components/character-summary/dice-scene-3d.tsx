@@ -1,15 +1,14 @@
 'use client'
 
-import { Canvas, useFrame } from '@react-three/fiber'
+import { Canvas } from '@react-three/fiber'
 import { Physics, RigidBody, CuboidCollider } from '@react-three/rapier'
-import { useMemo, useRef } from 'react'
+import { useMemo } from 'react'
 import * as THREE from 'three'
-import type { RapierRigidBody } from '@react-three/rapier'
 
 type Die = { value: number; hunger: boolean; key: string }
 
 function makeD10Geometry() {
-  // Bipirâmide pentagonal alongada: 10 faces triangulares, não um dodecaedro.
+  // Corpo fechado com dez vértices equatoriais alternados, adequado ao casco convexo.
   const vertices: number[] = []
   const top = new THREE.Vector3(0, 0.88, 0)
   const bottom = new THREE.Vector3(0, -0.88, 0)
@@ -20,9 +19,9 @@ function makeD10Geometry() {
   for (let i = 0; i < 10; i++) {
     const a = ring[i]
     const b = ring[(i + 1) % 10]
-    const apex = i % 2 === 0 ? top : bottom
-    const tri = i % 2 === 0 ? [a, apex, b] : [b, apex, a]
-    for (const p of tri) vertices.push(p.x, p.y, p.z)
+    for (const tri of [[a, top, b], [b, bottom, a]]) {
+      for (const p of tri) vertices.push(p.x, p.y, p.z)
+    }
   }
   const geometry = new THREE.BufferGeometry()
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3))
@@ -31,14 +30,9 @@ function makeD10Geometry() {
 }
 
 function DieBody({ index, hunger, geometry }: { index: number; hunger: boolean; geometry: THREE.BufferGeometry }) {
-  const body = useRef<RapierRigidBody>(null)
   const column = index % 6
   const row = Math.floor(index / 6)
-  useFrame(() => {
-    // A física é exclusivamente visual: não determina os valores do servidor.
-    if (!body.current) return
-  })
-  return <RigidBody ref={body} colliders="hull" restitution={0.42} friction={0.65} linearDamping={0.65} angularDamping={0.9}
+  return <RigidBody colliders="hull" restitution={0.42} friction={0.65} linearDamping={0.65} angularDamping={0.9}
     position={[(column - 2.5) * 1.22, 4 + row * 1.4 + index * 0.15, (index % 3 - 1) * 1.1]}
     rotation={[index * 0.61, index * 0.43, index * 0.29]}>
     <mesh geometry={geometry} castShadow receiveShadow>
