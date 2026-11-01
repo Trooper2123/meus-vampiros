@@ -54,9 +54,10 @@ export default async function CampaignsPage({ searchParams }: Readonly<{ searchP
         </header>
 
         <section aria-label="Resumo das mesas" className="campaign-dashboard-stats">
-          <div><span className="eyebrow">Mesas atuais</span><strong>{activeCampaigns.length}</strong></div>
-          <div><span className="eyebrow">No arquivo</span><strong>{archivedCampaigns.length}</strong></div>
-          <div><span className="eyebrow">Jogadores nesta visão</span><strong>{totalPlayers}</strong></div>
+          <div><Layers className="size-6 text-primary" aria-hidden="true" /><span className="eyebrow">Campanhas</span><strong>{allCampaigns.length}</strong></div>
+          <div><BookOpen className="size-6 text-primary" aria-hidden="true" /><span className="eyebrow">Mesas ativas</span><strong>{runningCampaigns.length}</strong></div>
+          <div><CalendarDays className="size-6 text-primary" aria-hidden="true" /><span className="eyebrow">Mesas com encontros registrados</span><strong>{campaignsWithSessions}</strong></div>
+          <div><Users className="size-6 text-primary" aria-hidden="true" /><span className="eyebrow">Participantes nesta visão</span><strong>{totalPlayers}</strong></div>
         </section>
 
         <nav aria-label="Filtro de mesas" className="campaign-dashboard-tabs">
