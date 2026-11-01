@@ -23,6 +23,9 @@ export default async function CampaignsPage({ searchParams }: Readonly<{ searchP
 
   const allCampaigns = await getCampaignsForMaster(session.user.sub)
   const campaigns = allCampaigns.filter(campaign => (campaign.status === 'Arquivada') === showArchived)
+  const activeCampaigns = allCampaigns.filter(campaign => campaign.status !== 'Arquivada')
+  const archivedCampaigns = allCampaigns.filter(campaign => campaign.status === 'Arquivada')
+  const totalPlayers = campaigns.reduce((total, campaign) => total + campaign.playerCount, 0)
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-background text-foreground">
@@ -31,21 +34,33 @@ export default async function CampaignsPage({ searchParams }: Readonly<{ searchP
       <ArchiveHeader title="Suas mesas" showCampaigns={campaigns.length > 0} />
 
       <div className="archive-content">
-        {/* Cabeçalho */}
-        <div className="archive-page-heading">
+        <header className="archive-page-heading campaign-dashboard-heading">
           <div>
-            <p className="eyebrow">Painel do Narrador</p>
+            <p className="eyebrow">Painel do Narrador / {showArchived ? 'Arquivo' : 'Visão geral'}</p>
             <h1 className="mt-3 font-serif text-4xl uppercase tracking-[0.08em] sm:text-6xl">Suas histórias</h1>
             <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
               Um resumo das campanhas que você narra. Gerencie os participantes, pertences e acontecimentos de cada crônica.
             </p>
           </div>
-          <div className="archive-page-actions"><Link href="/master/catalogo" target="_blank" rel="noopener noreferrer" className="button-ghost inline-flex items-center justify-center gap-2">Pesquisa de habilidades</Link><Link href="/master/vantagens-defeitos" target="_blank" rel="noopener noreferrer" className="button-ghost inline-flex items-center justify-center gap-2">Pesquisa de vantagens e defeitos</Link><Link href="/campaigns/new" id="btn-nova-campanha" className="button-primary inline-flex items-center justify-center gap-2">
-            <Plus className="size-4" /> Nova campanha
-          </Link></div>
-        </div>
+          <div className="archive-page-actions campaign-dashboard-actions">
+            <Link href="/master/catalogo" target="_blank" rel="noopener noreferrer" className="button-ghost inline-flex items-center justify-center gap-2">Pesquisa de habilidades</Link>
+            <Link href="/master/vantagens-defeitos" target="_blank" rel="noopener noreferrer" className="button-ghost inline-flex items-center justify-center gap-2">Pesquisa de vantagens e defeitos</Link>
+            <Link href="/campaigns/new" id="btn-nova-campanha" className="button-primary inline-flex items-center justify-center gap-2">
+              <Plus className="size-4" /> Nova campanha
+            </Link>
+          </div>
+        </header>
 
-        <nav aria-label="Filtro de mesas" className="my-6 flex flex-wrap gap-3"><Link className="button-ghost" aria-current={!showArchived?'page':undefined} href="/campaigns">Mesas atuais</Link><Link className="button-ghost" aria-current={showArchived?'page':undefined} href="/campaigns?archived=true">Mesas arquivadas</Link></nav>
+        <section aria-label="Resumo das mesas" className="campaign-dashboard-stats">
+          <div><span className="eyebrow">Mesas atuais</span><strong>{activeCampaigns.length}</strong></div>
+          <div><span className="eyebrow">No arquivo</span><strong>{archivedCampaigns.length}</strong></div>
+          <div><span className="eyebrow">Jogadores nesta visão</span><strong>{totalPlayers}</strong></div>
+        </section>
+
+        <nav aria-label="Filtro de mesas" className="campaign-dashboard-tabs">
+          <Link className={showArchived ? '' : 'is-active'} aria-current={!showArchived ? 'page' : undefined} href="/campaigns">Mesas atuais <span>{activeCampaigns.length}</span></Link>
+          <Link className={showArchived ? 'is-active' : ''} aria-current={showArchived ? 'page' : undefined} href="/campaigns?archived=true">Mesas arquivadas <span>{archivedCampaigns.length}</span></Link>
+        </nav>
         {campaigns.length === 0 ? (
           showArchived ? <p className="empty-state">Nenhuma mesa arquivada.</p> :
           <section className="login-panel mx-auto max-w-2xl text-center">

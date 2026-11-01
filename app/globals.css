@@ -419,6 +419,77 @@ main > .toast-overlay {
     padding-bottom: 16px;
 }
 
+.campaign-dashboard-heading {
+    align-items: flex-end;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 28px;
+}
+
+.campaign-dashboard-actions {
+    max-width: 520px;
+    justify-content: flex-end;
+}
+
+.campaign-dashboard-stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1px;
+    margin-top: 24px;
+    border: 1px solid var(--border);
+    background: var(--border);
+}
+
+.campaign-dashboard-stats > div {
+    display: flex;
+    min-height: 92px;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 12px;
+    background: var(--card);
+    padding: 16px 18px;
+}
+
+.campaign-dashboard-stats strong {
+    font-family: var(--font-serif), Georgia, serif;
+    font-size: 30px;
+    font-weight: 600;
+    line-height: 1;
+}
+
+.campaign-dashboard-tabs {
+    display: flex;
+    gap: 24px;
+    margin-top: 26px;
+    border-bottom: 1px solid var(--border);
+}
+
+.campaign-dashboard-tabs a {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    padding: 11px 2px 13px;
+    color: var(--muted-foreground);
+    font-family: var(--font-mono), monospace;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+}
+
+.campaign-dashboard-tabs a:hover,
+.campaign-dashboard-tabs a.is-active {
+    border-bottom-color: var(--primary);
+    color: var(--foreground);
+}
+
+.campaign-dashboard-tabs span {
+    border: 1px solid var(--border);
+    padding: 3px 6px;
+    font-size: 9px;
+}
+
 .campaign-table {
     display: flex;
     flex-direction: column;
@@ -620,6 +691,23 @@ main > .toast-overlay {
     .campaign-table-row {
         grid-template-columns: 1fr;
         gap: 4px;
+    }
+
+    .campaign-dashboard-heading {
+        align-items: flex-start;
+    }
+
+    .campaign-dashboard-actions {
+        justify-content: flex-start;
+    }
+
+    .campaign-dashboard-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .campaign-dashboard-tabs {
+        gap: 16px;
+        overflow-x: auto;
     }
 }
 
