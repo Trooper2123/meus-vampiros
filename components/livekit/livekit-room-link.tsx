@@ -15,11 +15,11 @@ const fetcher = async (url: string): Promise<CallStatus> => {
   return body
 }
 
-export function LiveKitRoomLink({ campaignId, master, campaignName }: Readonly<{ campaignId: string; master: boolean; campaignName?: string | null }>) {
-  return <RoomPanel key={campaignId} campaignId={campaignId} master={master} campaignName={campaignName} />
+export function LiveKitRoomLink({ campaignId, master, campaignName, compact = false }: Readonly<{ campaignId: string; master: boolean; campaignName?: string | null; compact?: boolean }>) {
+  return <RoomPanel key={campaignId} campaignId={campaignId} master={master} campaignName={campaignName} compact={compact} />
 }
 
-function RoomPanel({ campaignId, master, campaignName }: Readonly<{ campaignId: string; master: boolean; campaignName?: string | null }>) {
+function RoomPanel({ campaignId, master, campaignName, compact }: Readonly<{ campaignId: string; master: boolean; campaignName?: string | null }>) {
   const endpoint = `/api/campaigns/${campaignId}/call`
   const { data: status, error: statusError, mutate } = useSWR(endpoint, fetcher, { refreshInterval: 5000 })
   const [room, setRoom] = useState<RoomInfo | null>(null)
@@ -71,7 +71,7 @@ function RoomPanel({ campaignId, master, campaignName }: Readonly<{ campaignId: 
   } else {
     roomLabel = 'Entrar na sessão da mesa'
   }
-  return <section aria-labelledby={`virtual-room-${campaignId}`} className="border border-border bg-card p-6">
+  return <section aria-labelledby={`virtual-room-${campaignId}`} className={compact ? "session-video-panel" : "border border-border bg-card p-6"}>
     <p className="eyebrow">Comunicação</p><h2 id={`virtual-room-${campaignId}`} className="mt-2 font-serif text-2xl">Mesa virtual{campaignName ? ` · ${campaignName}` : ''}</h2>
     <p className="mt-2 text-sm text-muted-foreground">{status?.active ? 'O Narrador convocou os participantes para a sessão da mesa.' : 'Aguardando convocação do Narrador.'}</p>
     {(error || statusError) && <p role="alert" className="mt-4 text-sm text-primary">{error ?? statusError.message}</p>}
@@ -83,9 +83,9 @@ function RoomPanel({ campaignId, master, campaignName }: Readonly<{ campaignId: 
         catch { setError('Não foi possível copiar o link.') }
       }}><Copy className="size-4" aria-hidden="true" />{copied ? <><Check className="size-4" aria-hidden="true" /> Link copiado</> : 'Copiar link da chamada'}</button>
     </div>
-    {canEnter && <div className={joined && room ? 'mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(20rem,0.85fr)]' : 'mt-6'}>
+    {canEnter && <div className={compact ? "mt-4" : joined && room ? 'mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(20rem,0.85fr)]' : 'mt-6'}>
       {joined && room && <LiveKitRoom token={room.token} serverUrl={room.roomUrl} onDisconnected={() => { setJoined(false); setRoom(null) }} />}
-      <CallRolls campaignId={campaignId} />
+      {!compact && <CallRolls campaignId={campaignId} />}
     </div>}
     {status?.canSummon && <p className="mt-3 text-xs text-muted-foreground">Prepare a sala entrando como host. Encerrar a convocação bloqueia novas entradas, mas não revoga tokens já emitidos.</p>}
   </section>
