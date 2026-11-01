@@ -84,7 +84,7 @@ function RoomPanel({ campaignId, master, campaignName, compact }: Readonly<{ cam
       }}><Copy className="size-4" aria-hidden="true" />{copied ? <><Check className="size-4" aria-hidden="true" /> Link copiado</> : 'Copiar link da chamada'}</button>
     </div>
     {canEnter && <div className={compact ? "mt-4" : joined && room ? 'mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(20rem,0.85fr)]' : 'mt-6'}>
-      {joined && room && <LiveKitRoom token={room.token} serverUrl={room.roomUrl} onDisconnected={() => { setJoined(false); setRoom(null) }} />}
+      {joined && room && <LiveKitRoom compact={compact} token={room.token} serverUrl={room.roomUrl} onDisconnected={() => { setJoined(false); setRoom(null) }} />}
       {!compact && <CallRolls campaignId={campaignId} />}
     </div>}
     {status?.canSummon && <p className="mt-3 text-xs text-muted-foreground">Prepare a sala entrando como host. Encerrar a convocação bloqueia novas entradas, mas não revoga tokens já emitidos.</p>}
