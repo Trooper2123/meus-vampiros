@@ -1,6 +1,9 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import dynamic from 'next/dynamic'
+
+const DiceScene3D = dynamic(() => import('./dice-scene-3d').then(module => module.DiceScene3D), { ssr: false, loading: () => <p className="p-4 text-sm text-muted-foreground">Preparando dados tridimensionais…</p> })
 
 type AnimatedDiceProps = Readonly<{
   animate: boolean
@@ -24,6 +27,7 @@ export function AnimatedDice({ animate, normalDice, hungerDice, outcome, success
   const [finished, setFinished] = useState(!animate)
   const [skipMotion, setSkipMotion] = useState(!animate)
   const resultRef = useRef<HTMLDivElement>(null)
+  const [supports3D, setSupports3D] = useState(false)
   const dice = [...normalDice.map((value, index) => ({ value, hunger: false, key: `n-${index}` })), ...hungerDice.map((value, index) => ({ value, hunger: true, key: `h-${index}` }))]
   useEffect(() => {
     const reduced = !animate || window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -33,14 +37,23 @@ export function AnimatedDice({ animate, normalDice, hungerDice, outcome, success
     const timer = window.setTimeout(() => setFinished(true), 1750)
     return () => window.clearTimeout(timer)
   }, [animate, normalDice, hungerDice])
+  useEffect(() => {
+    if (!animate || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    try {
+      const canvas = document.createElement('canvas')
+      const webgl = canvas.getContext('webgl2') || canvas.getContext('webgl')
+      setSupports3D(Boolean(webgl) && dice.length > 0 && dice.length <= 20)
+    } catch { setSupports3D(false) }
+  }, [animate, dice.length])
   useEffect(() => { if (finished) resultRef.current?.focus() }, [finished])
   return <div className="mt-5 border-t border-border pt-5" aria-label="Resultado da rolagem">
     <div className="flex items-center justify-between gap-3">
       <p className="eyebrow">Dados lançados</p>
       {!finished && <button type="button" className="button-ghost min-h-10" onClick={() => { setSkipMotion(true); setFinished(true) }}>Pular animação</button>}
     </div>
+    {supports3D && !finished && !skipMotion && <div className="mt-4"><DiceScene3D dice={dice} /></div>}
     <div className="mt-4 flex min-h-24 flex-wrap items-center justify-center gap-3 rounded border border-border bg-background p-4" aria-hidden="true">
-      {dice.map((die, index) => <span key={die.key} className={`dice-face ${die.hunger ? 'dice-face-hunger' : ''} ${!skipMotion && !finished ? 'dice-face-rolling' : ''}`} style={{ animationDelay: `${index * 55}ms` }}>{die.value}</span>)}
+      {dice.map((die, index) => <span key={die.key} className={`dice-face ${die.hunger ? 'dice-face-hunger' : ''} ${!skipMotion && !finished && !supports3D ? 'dice-face-rolling' : ''}`} style={{ animationDelay: `${index * 55}ms` }}>{die.value}</span>)}
       {dice.length === 0 && <span className="text-sm text-muted-foreground">Nenhum dado lançado.</span>}
     </div>
     <div ref={resultRef} tabIndex={-1} className="mt-4 outline-none" aria-live="polite" aria-atomic="true">
