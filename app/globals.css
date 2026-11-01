@@ -1976,3 +1976,21 @@ main > .archive-header {
  .characters-ui-stats, .campaign-detail-metrics { grid-template-columns: 1fr; }
  .catalog-ui-body { padding: 12px; }
 }
+
+/* Modo Sessão — Arquivos da Noite: ferramentas, palco e câmeras. */
+.session-layout { display:grid; grid-template-columns: 210px minmax(0,1fr) minmax(260px,320px); gap:16px; align-items:start; }
+.session-tools,.session-stage,.session-cameras { min-width:0; border:1px solid var(--border); border-radius:9px; background:var(--card); }
+.session-tools { display:flex; flex-direction:column; gap:5px; padding:16px 10px; }
+.session-tool { display:flex; align-items:center; gap:10px; width:100%; padding:12px; border:1px solid transparent; border-radius:6px; color:var(--muted-foreground); background:transparent; text-align:left; font-size:13px; cursor:pointer; }
+.session-tool:hover { color:var(--foreground); border-color:var(--border); }
+.session-tool-active { color:var(--foreground); background:color-mix(in srgb,var(--primary) 22%,transparent); border-color:var(--primary); }
+.session-tool:focus-visible { outline:2px solid var(--ring); outline-offset:2px; }
+.session-stage { min-height:480px; overflow:hidden; }
+.session-visual-stage { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:480px; padding:48px 24px; text-align:center; background:radial-gradient(ellipse at center,color-mix(in srgb,var(--primary) 10%,transparent),transparent 70%); }
+.session-panel { padding:24px; }
+.session-cameras { position:sticky; top:20px; padding:16px; }
+.session-video-panel { padding:12px; border:1px solid var(--border); border-radius:7px; background:var(--background); }
+.session-video-grid { min-height:260px; }
+.session-video-grid .lk-video-conference { min-height:260px; }
+@media (max-width:1150px) { .session-layout { grid-template-columns:170px minmax(0,1fr); } .session-cameras { grid-column:2; position:static; } }
+@media (max-width:700px) { .session-layout { display:flex; flex-direction:column; } .session-tools { width:100%; flex-direction:row; overflow-x:auto; padding:10px; } .session-tool { width:auto; flex:none; white-space:nowrap; } .session-stage,.session-cameras { width:100%; } .session-panel { padding:16px; } .session-visual-stage { min-height:300px; } }
