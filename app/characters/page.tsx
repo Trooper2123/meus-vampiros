@@ -5,8 +5,6 @@ import {redirect} from 'next/navigation'
 import {getSessionOrDev} from '@/lib/auth0'
 import {ArrowRight, BookOpen, Plus, Skull, Users, ShieldCheck, ScrollText} from 'lucide-react'
 import {getCharactersForUser} from '@/lib/characters'
-import {getCampaignsForMaster, hasMasterAccess} from '@/lib/campaigns'
-import {MasterPanel} from '@/components/master-panel'
 import {DateAvailabilityCalendar} from '@/components/date-availability-calendar'
 import {DuplicateCharacterButton} from '@/components/duplicate-character-button'
 import {DeleteCharacterButton} from '@/components/delete-character-button'
@@ -46,15 +44,12 @@ export default async function PersonagensPage() {
     const activeCount = characters.filter(character => character.status !== 'ARCHIVED').length
     const approvedCount = characters.filter(character => character.status === 'APPROVED').length
     const linkedCount = characters.filter(character => Boolean(character.campaignId) && character.status !== 'ARCHIVED').length
-    const userIsMaster = await hasMasterAccess(session.user)
-    const campaigns = userIsMaster ? await getCampaignsForMaster(session.user.sub) : []
-
-    const storyHref = userIsMaster ? '/campaigns' : '/master'
+    const storyHref = '/campaigns'
 
     return (
         <main className="characters-ui-shell relative min-h-screen overflow-hidden bg-background text-foreground">
             <div className="noise" aria-hidden="true"/>
-            <ArchiveHeader title="Personagens" showCampaigns={campaigns.length > 0}/>
+            <ArchiveHeader title="Personagens" showCampaigns={true}/>
 
             <div className="archive-content characters-ui-content">
                 <div
@@ -73,7 +68,7 @@ export default async function PersonagensPage() {
                         </p>
                     </div>
                     <div className="archive-page-actions">
-                        {campaigns.length === 0 && <Link
+                        {<Link
                             href={storyHref}
                             id="btn-conte-historia"
                             className="button-ghost inline-flex items-center justify-center gap-2"
@@ -175,19 +170,7 @@ export default async function PersonagensPage() {
                     </section>
                 ))}
 
-                {userIsMaster && campaigns.length > 0 && (
-                    <section className="mt-14 border-t border-border pt-10">
-                        <div className="flex items-center justify-between mb-4">
-                            <div>
-                                <p className="eyebrow">Painel do Narrador</p>
-                                <h3 className="font-serif text-2xl uppercase tracking-[0.08em] mt-1">Gerenciamento de
-                                    Mesas</h3>
-                            </div>
-                            <Link href="/campaigns" className="button-ghost text-xs">Ver tela cheia</Link>
-                        </div>
-                        <MasterPanel initialCampaigns={campaigns}/>
-                    </section>
-                )}
+
             </div>
         </main>
     )
