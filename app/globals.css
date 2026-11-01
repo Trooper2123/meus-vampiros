@@ -419,6 +419,63 @@ main > .toast-overlay {
     padding-bottom: 16px;
 }
 
+.campaigns-reference-shell {
+    background:
+        linear-gradient(90deg, #050506 0%, #050506d9 18%, #05050699 52%, #050506e8 100%),
+        url("https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-mODakpyufSi3go5TTNmFF39ZzEoVDL.png") top center / cover no-repeat fixed;
+    background-blend-mode: normal, screen;
+}
+
+.archive-header-campaigns {
+    min-height: 100vh;
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 10;
+    width: 262px;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    border-right: 1px solid #9f202466;
+    border-bottom: 0;
+    background: #050506e8;
+    padding: 28px 15px;
+}
+
+.archive-header-campaigns .archive-header-title {
+    margin: 0 20px 34px;
+    font-family: var(--font-serif), Georgia, serif;
+    font-size: 30px;
+    line-height: .9;
+}
+
+.archive-header-campaigns .archive-nav {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+}
+
+.archive-header-campaigns .archive-nav .button-ghost {
+    justify-content: flex-start;
+    border-color: transparent;
+    padding: 12px 20px;
+    font-family: var(--font-serif), Georgia, serif;
+    font-size: 17px;
+    letter-spacing: 0;
+    text-transform: none;
+}
+
+.archive-header-campaigns .archive-nav .button-ghost[href="/campaigns"] {
+    border-color: #9f2024;
+    background: #6f0e18;
+}
+
+.campaigns-reference-shell .archive-content {
+    max-width: none;
+    margin-left: 262px;
+    padding: 42px 30px 56px;
+}
+
 .campaign-dashboard-heading {
     align-items: flex-end;
     border-bottom: 1px solid var(--border);
@@ -688,6 +745,28 @@ main > .toast-overlay {
 }
 
 @media (max-width: 760px) {
+    .archive-header-campaigns {
+        position: relative;
+        min-height: auto;
+        width: 100%;
+        border-right: 0;
+        border-bottom: 1px solid #9f202466;
+        padding: 18px;
+    }
+
+    .archive-header-campaigns .archive-header-title {
+        margin: 0 0 18px;
+    }
+
+    .archive-header-campaigns .archive-nav {
+        display: none;
+    }
+
+    .campaigns-reference-shell .archive-content {
+        margin-left: 0;
+        padding: 28px 16px 40px;
+    }
+
     .campaign-table-row {
         grid-template-columns: 1fr;
         gap: 4px;

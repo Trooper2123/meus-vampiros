@@ -28,18 +28,18 @@ export default async function CampaignsPage({ searchParams }: Readonly<{ searchP
   const totalPlayers = campaigns.reduce((total, campaign) => total + campaign.playerCount, 0)
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-background text-foreground">
+    <main className="relative min-h-screen overflow-hidden bg-background text-foreground campaigns-reference-shell">
       <div className="noise" aria-hidden="true" />
 
-      <ArchiveHeader title="Suas mesas" showCampaigns={campaigns.length > 0} />
+      <ArchiveHeader title="Campanhas" showCampaigns={campaigns.length > 0} variant="campaigns" />
 
       <div className="archive-content">
         <header className="archive-page-heading campaign-dashboard-heading">
           <div>
             <p className="eyebrow">Painel do Narrador / {showArchived ? 'Arquivo' : 'Visão geral'}</p>
-            <h1 className="mt-3 font-serif text-4xl uppercase tracking-[0.08em] sm:text-6xl">Suas histórias</h1>
+            <h1 className="mt-3 font-serif text-4xl tracking-[0.02em] sm:text-6xl">Campanhas</h1>
             <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
-              Um resumo das campanhas que você narra. Gerencie os participantes, pertences e acontecimentos de cada crônica.
+              Organize suas mesas, participantes, personagens e sessões.
             </p>
           </div>
           <div className="archive-page-actions campaign-dashboard-actions">
