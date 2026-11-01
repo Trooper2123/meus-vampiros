@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react'
 import useSWR from 'swr'
-import { Check, Copy, Plus, Users } from 'lucide-react'
+import { Check, Copy, Plus, Users, Search, CalendarDays, BookOpen, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 
 export type CampaignSummary = {
@@ -102,19 +102,64 @@ export function NewCampaignForm({ onCreated }: Readonly<{ onCreated: (campaign: 
 
 export function MasterPanel({ initialCampaigns, archived = false }: Readonly<{ initialCampaigns: CampaignSummary[]; archived?: boolean }>) {
   const { data } = useSWR('/api/campaigns', fetcher)
-  const campaigns: CampaignSummary[] = (data?.campaigns ?? initialCampaigns).filter((campaign: CampaignSummary) => (campaign.status === 'Arquivada') === archived)
-  if (campaigns.length === 0) return null
+  const [query, setQuery] = useState('')
+  const [statusFilter, setStatusFilter] = useState('Todas')
+  const campaigns: CampaignSummary[] = (Array.isArray(data?.campaigns) ? data.campaigns : initialCampaigns).filter((campaign: CampaignSummary) => (campaign.status === 'Arquivada') === archived)
+  const statuses = Array.from(new Set(campaigns.map(campaign => campaign.status)))
+  const visibleCampaigns = campaigns.filter(campaign =>
+    (statusFilter === 'Todas' || campaign.status === statusFilter) &&
+    [campaign.name, campaign.theme, campaign.principios].some(value => (value ?? '').toLocaleLowerCase('pt-BR').includes(query.trim().toLocaleLowerCase('pt-BR')))
+  )
 
-  return <div className="mt-6 flex w-full flex-col gap-6">{campaigns.map(campaign => <section key={campaign.id} className="border border-border bg-card p-6">
-    <div className="flex flex-wrap items-start justify-between gap-4"><h3 className="font-serif text-2xl">{campaign.name}</h3><span className={`status ${campaign.status === 'Ativa' ? 'active' : ''}`}><span className="status-dot" />{campaign.status}</span></div>
-    {campaign.theme && <p className="mt-3 text-sm text-muted-foreground">{campaign.theme}</p>}
-    <div className="mt-5 grid gap-5 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,2fr)]">
-      <div><p className="eyebrow">Participantes</p><p className="mt-2 text-sm">{campaign.playerCount} jogadores</p></div>
-      <div><p className="eyebrow">Última sessão</p><p className="mt-2 text-sm">{formatDate(campaign.lastSessionAt)}</p></div>
-      <div><p className="eyebrow">Próxima sessão</p><MasterReminderItem campaign={campaign} /></div>
+  return <section className="campaigns-collection mt-6" aria-label="Listagem de campanhas">
+    <div className="campaigns-toolbar">
+      <label className="campaigns-search">
+        <Search className="size-4 shrink-0" aria-hidden="true" />
+        <span className="sr-only">Buscar campanha por nome, tema ou princípios</span>
+        <input type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder="Buscar por nome, tema ou princípio..." />
+      </label>
+      <label className="campaigns-status-filter">
+        <span className="sr-only">Filtrar por situação</span>
+        <select value={statusFilter} onChange={event => setStatusFilter(event.target.value)} aria-label="Filtrar por situação">
+          <option value="Todas">Todas as situações</option>
+          {statuses.map(status => <option key={status} value={status}>{status}</option>)}
+        </select>
+      </label>
     </div>
-    <div className="mt-5 flex flex-wrap items-center gap-3"><Link href={`/campaigns/${campaign.id}`} className="button-primary">Gerenciar mesa</Link><CopyCampaignId id={campaign.id} /></div>
-  </section>)}</div>
+    <p className="mt-3 text-xs text-muted-foreground" role="status">{visibleCampaigns.length} de {campaigns.length} campanha(s) nesta visão</p>
+    {visibleCampaigns.length === 0 ? <div className="campaigns-empty-state">
+      <BookOpen className="size-11 text-primary" strokeWidth={1.5} aria-hidden="true" />
+      <p className="eyebrow mt-5">{campaigns.length === 0 ? 'Nenhuma crônica registrada' : 'Nenhuma campanha encontrada'}</p>
+      <h3 className="mt-3 font-serif text-2xl sm:text-3xl">{campaigns.length === 0 ? (archived ? 'O arquivo está vazio' : 'A noite ainda não começou') : 'Nenhuma correspondência'}</h3>
+      <p className="mt-3 max-w-md text-sm leading-6 text-muted-foreground">{campaigns.length === 0 ? (archived ? 'Ainda não há campanhas arquivadas.' : 'Crie sua primeira campanha e comece a tecer sua história.') : 'Tente outra busca ou remova os filtros.'}</p>
+      {campaigns.length === 0 && !archived ? <Link href="/campaigns/new" className="button-primary mt-6"><Plus className="size-4" /> Criar primeira campanha</Link> : campaigns.length > 0 ? <button type="button" className="button-ghost mt-6" onClick={() => { setQuery(''); setStatusFilter('Todas') }}>Limpar filtros</button> : null}
+    </div> :
+    <div className="campaigns-dossier-list mt-5">
+      {visibleCampaigns.map(campaign => <article key={campaign.id} className="campaign-dossier-card">
+        <div className="campaign-dossier-art" aria-hidden="true"><BookOpen className="size-12" strokeWidth={1} /><span>ARQUIVO DA NOITE</span></div>
+        <div className="campaign-dossier-main">
+          <div className="flex flex-wrap items-center gap-3">
+            <h3 className="font-serif text-2xl sm:text-3xl">{campaign.name}</h3>
+            <span className={`status ${campaign.status === 'Ativa' ? 'active' : ''}`}><span className="status-dot" aria-hidden="true" />{campaign.status}</span>
+          </div>
+          <p className="mt-2 text-sm leading-6 text-muted-foreground">{campaign.theme || 'Tema ainda não definido.'}</p>
+          {campaign.principios && <p className="mt-2 line-clamp-2 text-xs leading-5 text-muted-foreground">Princípios: {campaign.principios}</p>}
+          <div className="campaign-dossier-tags">
+            <span><Users className="size-4" aria-hidden="true" /> {campaign.playerCount} participante(s)</span>
+            <span><CalendarDays className="size-4" aria-hidden="true" /> Última sessão: {formatDate(campaign.lastSessionAt)}</span>
+          </div>
+        </div>
+        <div className="campaign-dossier-next">
+          <p className="eyebrow">Próxima sessão sugerida</p>
+          <MasterReminderItem campaign={campaign} />
+        </div>
+        <div className="campaign-dossier-actions">
+          <Link href={`/campaigns/${campaign.id}`} className="button-primary"><ArrowRight className="size-4" aria-hidden="true" /> Gerenciar mesa</Link>
+          <CopyCampaignId id={campaign.id} />
+        </div>
+      </article>)}
+    </div>}
+  </section>
 }
 
 type Possession = {
