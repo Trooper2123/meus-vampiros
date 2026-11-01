@@ -1,3 +1,59 @@
+## [2026-11-01 03:04 BRT] - chore - Validar animacao de rolagem
+
+**Tipo:** chore
+
+**Arquivos principais:** `components/character-summary/dice-scene-3d.tsx`, `components/character-summary/animated-dice.tsx`.
+
+- Validados tipos, lint e build de producao. Auditoria npm sem vulnerabilidades altas ou criticas; testes automatizados nao executados para esta alteracao visual.
+## [2026-11-01 02:49 BRT] - style - Deixar ficha visivel sob a rolagem
+
+**Tipo:** style
+
+**Arquivos principais:** `components/character-summary/dice-scene-3d.tsx`.
+
+- Torna o overlay da arena translÃºcido e o canvas transparente para manter a ficha visÃ­vel durante a animaÃ§Ã£o.
+## [2026-11-01 02:48 BRT] - style - Aumentar dados animados em 40 por cento
+
+**Tipo:** style
+
+**Arquivos principais:** `components/character-summary/dice-scene-3d.tsx`.
+
+- Amplia cada D10 da cena para 1,4x, mantendo o posicionamento atual dos dados.
+## [2026-11-01 02:47 BRT] - feat - Simular lancamento e quicada dos dados
+
+**Tipo:** feat
+
+**Arquivos principais:** `components/character-summary/dice-scene-3d.tsx`.
+
+- Substitui o giro no lugar por trajetorias com gravidade, quicadas, atrito e sombra na arena; os valores de rolagem permanecem definidos pelo servidor.
+## [2026-11-01 02:45 BRT] - style - Melhorar contraste e ampliar animacao dos dados
+
+**Tipo:** style
+
+**Arquivos principais:** `components/character-summary/dice-scene-3d.tsx`, `components/character-summary/animated-dice.tsx`.
+
+- Adiciona contornos visiveis aos dados escuros e expande a cena 3D para tela cheia, mantendo a acao para pular a animacao acessivel no overlay.
+## [2026-11-01 02:41 BRT] - style - Sincronizar tremor da arena com o impacto
+
+**Tipo:** style
+
+**Arquivos principais:** `components/character-summary/dice-scene-3d.tsx`.
+
+- Inicia o tremor 150 ms apÃ³s a arena montar e o encerra apÃ³s 300 ms; os temporizadores sÃ£o limpos ao desmontar.
+## [2026-11-01 02:40 BRT] - style - Adicionar efeito shake aos dados
+
+**Tipo:** style
+
+**Arquivos principais:** `app/globals.css`, `components/character-summary/dice-scene-3d.tsx`.
+
+- Define a animaÃ§Ã£o reutilizÃ¡vel `animate-shake` no tema Tailwind v4 e aplica o movimento Ã  arena 3D durante a rolagem, respeitando a preferÃªncia por movimento reduzido.
+## [2026-11-01 02:38 BRT] - feat - Animar dados D10 com React Three Fiber
+
+**Tipo:** feat
+
+**Arquivos principais:** `components/character-summary/dice-scene-3d.tsx`.
+
+- Atualiza a cena 3D da rolagem para dados D10 girarem e desacelerarem, diferenciando dados de Fome pelos tokens do tema; os resultados continuam calculados no servidor.
 ## [2026-11-01 02:05 BRT] - fix - Corrigir JSX na lista de personagens
 
 **Tipo:** fix
@@ -7,33 +63,33 @@
 - Simplifica a renderizacao dos rotulos de status para evitar erro de parsing JSX durante a compilacao da pagina de personagens.
 - Verificacao de tipos passou com `npx tsc --noEmit`; build e testes nao executados.
 
-## [2026-11-01 01:52 BRT] — chore - Sincronizar Next.js e SWC
+## [2026-11-01 01:52 BRT] ï¿½ chore - Sincronizar Next.js e SWC
 
 **Tipo:** chore
 
 **Arquivos principais:** `package.json`, `package-lock.json`, `pnpm-lock.yaml`.
 
-- Atualiza a faixa de Next.js para 16.4.3 e sincroniza as versões dos pacotes SWC nos lockfiles do npm e pnpm para evitar incompatibilidade de compilador.
-- Validação local confirmou Next.js e SWC em 16.4.3; testes, lint e build não executados.
+- Atualiza a faixa de Next.js para 16.4.3 e sincroniza as versï¿½es dos pacotes SWC nos lockfiles do npm e pnpm para evitar incompatibilidade de compilador.
+- Validaï¿½ï¿½o local confirmou Next.js e SWC em 16.4.3; testes, lint e build nï¿½o executados.
 
-## [2026-11-01 00:19 BRT] — fix - Permitir rolagens em fichas independentes
+## [2026-11-01 00:19 BRT] ï¿½ fix - Permitir rolagens em fichas independentes
 
 **Tipo:** fix
 
 **Arquivos principais:** `lib/character-rolls.ts`, `app/api/characters/[id]/rolls/route.ts`, `components/character-summary/character-rolls.tsx`, `tests/character-rolls.test.ts`.
 
-- O dono pode fazer rolagens públicas em fichas independentes no estado `DRAFT`; rolagens secretas continuam restritas ao Narrador e fichas vinculadas à mesa continuam exigindo aprovação.
-- Adicionado teste para rolagem independente em rascunho. Validação automática pendente.
+- O dono pode fazer rolagens pï¿½blicas em fichas independentes no estado `DRAFT`; rolagens secretas continuam restritas ao Narrador e fichas vinculadas ï¿½ mesa continuam exigindo aprovaï¿½ï¿½o.
+- Adicionado teste para rolagem independente em rascunho. Validaï¿½ï¿½o automï¿½tica pendente.
 
-## [2026-10-31 18:00 BRT] — feat - Escolher modo ao criar personagem
+## [2026-10-31 18:00 BRT] ï¿½ feat - Escolher modo ao criar personagem
 
 **Tipo:** feat
 
 **Arquivos principais:** `components/character-creation-dialog.tsx`, `app/characters/character-form-client.tsx`, `app/api/characters/route.ts`, `components/character-form/{attributes-step,skills-step}.tsx`.
 
-- Ao iniciar ficha independente, a pessoa escolhe criação assistida V5 ou transcrição de valores existentes; o modo é validado no servidor e salvo no rascunho.
-- Transcrição aceita valores atuais sem impor distribuição inicial; fichas vinculadas preservam regras da mesa. Cancelar não cria rascunho.
-- Testes focados adicionados para escolha, cancelamento, validação do modo e limites de ficha vinculada.
+- Ao iniciar ficha independente, a pessoa escolhe criaï¿½ï¿½o assistida V5 ou transcriï¿½ï¿½o de valores existentes; o modo ï¿½ validado no servidor e salvo no rascunho.
+- Transcriï¿½ï¿½o aceita valores atuais sem impor distribuiï¿½ï¿½o inicial; fichas vinculadas preservam regras da mesa. Cancelar nï¿½o cria rascunho.
+- Testes focados adicionados para escolha, cancelamento, validaï¿½ï¿½o do modo e limites de ficha vinculada.
 ## [2026-10-31 17:09 BRT] â€” fix - Liberar envio de imagens em anotaÃ§Ãµes
 
 **Tipo:** fix
