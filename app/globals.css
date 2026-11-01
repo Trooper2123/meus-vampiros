@@ -420,10 +420,8 @@ main > .toast-overlay {
 }
 
 .campaigns-reference-shell {
-    background:
-        linear-gradient(90deg, #050506 0%, #050506d9 18%, #05050699 52%, #050506e8 100%),
-        url("https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-mODakpyufSi3go5TTNmFF39ZzEoVDL.png") top center / cover no-repeat fixed;
-    background-blend-mode: normal, screen;
+    background: var(--background);
+    isolation: isolate;
 }
 
 .archive-header-campaigns {
@@ -1761,4 +1759,24 @@ main > .archive-header {
     .campaign-dossier-next, .campaign-dossier-actions { grid-column: 1; grid-row: auto; }
     .campaign-dossier-next { border-top: 1px solid var(--border); padding-top: 12px; }
     .campaign-dossier-actions { flex-wrap: wrap; }
+}
+
+/* The campaigns page must never use a full-page mockup as a background. */
+.campaigns-reference-shell::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 262px;
+    height: 240px;
+    z-index: 0;
+    pointer-events: none;
+    background: radial-gradient(ellipse at 75% 0%, color-mix(in srgb, var(--primary) 18%, transparent), transparent 65%);
+}
+.campaigns-reference-shell > .archive-content { position: relative; z-index: 1; }
+.campaigns-reference-shell > .archive-header-campaigns { z-index: 20; }
+.campaigns-reference-shell .archive-header-campaigns .archive-menu { display: none; }
+@media (max-width: 760px) {
+    .campaigns-reference-shell::before { left: 0; height: 180px; }
+    .campaigns-reference-shell .archive-header-campaigns .archive-menu { display: block; }
 }
