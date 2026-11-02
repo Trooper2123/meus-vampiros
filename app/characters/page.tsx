@@ -3,9 +3,10 @@ import {CreateCharacterButton} from '@/components/character-creation-dialog'
 import Link from 'next/link'
 import {redirect} from 'next/navigation'
 import {getSessionOrDev} from '@/lib/auth0'
-import {ArrowRight, BookOpen, Plus, Skull, Users, ShieldCheck, ScrollText, Clock3, Pencil, UserRound, CalendarDays} from 'lucide-react'
+import {ArrowRight, BookOpen, Plus, Skull, Clock3, Pencil, UserRound, CalendarDays} from 'lucide-react'
 import {getCharactersForUser} from '@/lib/characters'
 import {getPlayerUpcomingEncounters} from '@/lib/player-upcoming-encounters'
+import {CharacterFilterDashboard, CharacterFilterGroup, CharacterFilterCard} from '@/components/characters/character-filter-dashboard'
 import {getCampaignsForMaster, hasMasterAccess} from '@/lib/campaigns'
 import {DuplicateCharacterButton} from '@/components/duplicate-character-button'
 import {DeleteCharacterButton} from '@/components/delete-character-button'
@@ -89,11 +90,10 @@ export default async function PersonagensPage() {
                     </div>
                 </div>
 
-                <section className="characters-ui-stats" aria-label="Resumo das fichas">
-                    <div><Users className="size-6 text-primary" aria-hidden="true" /><span className="eyebrow">Fichas atuais</span><strong>{activeCount}</strong></div>
-                    <div><ShieldCheck className="size-6 text-primary" aria-hidden="true" /><span className="eyebrow">Aprovadas</span><strong>{approvedCount}</strong></div>
-                    <div><ScrollText className="size-6 text-primary" aria-hidden="true" /><span className="eyebrow">Vinculadas a mesas</span><strong>{linkedCount}</strong></div>
-                </section>
+                <CharacterFilterDashboard
+                  counts={{current: activeCount, approved: approvedCount, linked: linkedCount}}
+                  characters={characters.map(character => ({status: character.status, linked: Boolean(character.campaignId)}))}
+                >
                 <div className="characters-approved-body">
                   <div className="characters-approved-main">
                 {characters.length === 0 ? (
@@ -110,11 +110,12 @@ export default async function PersonagensPage() {
                     </section>
                 ) : (
                     <div className="flex flex-col gap-8">
-                        {characterGroups.filter((group) => group.characters.length > 0).map((group) => <section
-                            key={group.label} aria-label={group.label}><h2 className="eyebrow mb-6">{group.label}</h2>
+                        {characterGroups.filter((group) => group.characters.length > 0).map((group) => <CharacterFilterGroup key={group.label} characters={group.characters.map(character => ({status: character.status, linked: Boolean(character.campaignId)}))}><section
+                            aria-label={group.label}><h2 className="eyebrow mb-6">{group.label}</h2>
                             <div className="grid gap-5 lg:grid-cols-2">
                                 {group.characters.map((character) => (
-                                    <div key={character.id} className="archive-character-card characters-ui-card characters-approved-card">
+                                    <CharacterFilterCard key={character.id} character={{status: character.status, linked: Boolean(character.campaignId)}}>
+                                    <div className="archive-character-card characters-ui-card characters-approved-card">
                                         <div className="flex items-start justify-between gap-4">
                                             <div className="flex min-w-0 items-center gap-3">
                                                 <span className="characters-ui-avatar" aria-hidden="true">{character.name?.trim().charAt(0).toUpperCase() || <UserRound className="size-6"/>}</span>
@@ -168,9 +169,10 @@ export default async function PersonagensPage() {
                                                                        revision={character.revision}/>}
                                         </div>
                                     </div>
+                                    </CharacterFilterCard>
                                 ))}
                             </div>
-                        </section>)}
+                        </section></CharacterFilterGroup>)}
                     </div>
                 )}
 
@@ -194,7 +196,7 @@ export default async function PersonagensPage() {
                     </section>
                   </aside>
                 </div>
-
+                </CharacterFilterDashboard>
 
             </div>
         </main>
