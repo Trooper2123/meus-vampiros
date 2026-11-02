@@ -5,12 +5,13 @@ import { BookOpen, CalendarDays, FileText, MessageCircle, NotebookPen, Search, U
 import Link from 'next/link'
 import useSWR, { SWRConfig, useSWRConfig } from 'swr'
 import { LiveKitRoomLink } from '@/components/livekit/livekit-room-link'
-import { CharacterRolls } from '@/components/character-summary/character-rolls'
 import { CampaignPossessionsManager } from '@/components/master-panel'
 import { NotesPanel } from '@/components/notes/notes-panel'
 import { NpcSessionPanel,SessionReveals } from '@/components/npcs/npc-session-panel'
 import { CampaignTools } from '@/components/campaign-calendar/campaign-tools'
 import { SessionQuickRoll } from '@/components/game-session/session-quick-roll'
+import { SessionPlayerWorkspace } from '@/components/game-session/session-player-workspace'
+import { MasterViewportGuard } from '@/components/master-viewport-guard'
 import { DEFAULT_SHORTCUTS, SHORTCUT_LABELS, type ShortcutCode } from '@/lib/session-shortcut-options'
 
 type Snapshot = { archived?: boolean; sessions?: {id:string;status:'ACTIVE'|'CLOSED';startedAt:string}[]; session: { id: string; status: 'ACTIVE' | 'CLOSED'; revision: number; chronicleNightIds: string[] } | null; canManage: boolean; characters: { id: string; name: string }[] }
@@ -78,7 +79,8 @@ function SessionWorkspace({ campaignId, actorId }: Readonly<{ campaignId: string
   }
 
   return <div className="session-approved-layout">
-    <header className="session-active-header">
+    {manage && <><header className="session-narrator-topbar"><Link className="session-back-link" href={`/campaigns/${campaignId}`}>← Voltar à mesa</Link><div className="session-breadcrumb"><span>Gestão da Mesa</span><b>›</b><strong>Sessão</strong></div></header><MasterViewportGuard backHref={`/campaigns/${campaignId}`} /></>}
+    {manage && <div className="master-large-screen-only"><header className="session-active-header">
       <div className="session-active-brand"><Boxes aria-hidden="true"/><div><p className="eyebrow">Painel do Narrador</p><h1>Mesa em andamento</h1><p>Controle e condução da sessão · recursos, comunicação e rolagens da mesa.</p></div></div>
       <div className="session-active-actions">{activeSession?.status === 'ACTIVE' && <><span className="session-live-status"><i/>Sessão em andamento</span><button className="button-ghost" type="button" disabled title="Pausa temporal será implementada em etapa própria"><Pause className="size-4"/>Pausar</button>{manage && <button className="button-primary" disabled={pending} onClick={() => void command('PATCH', `/api/sessions/${activeSession.id}`, { expectedRevision: activeSession.revision })}><X className="size-4"/>Encerrar</button>}</>}{!data?.session && manage && !data?.archived && <button className="button-primary" disabled={pending} onClick={() => void command('POST', url, {})}>Iniciar sessão</button>}</div>
       {feedback && <output className="session-header-feedback">{feedback}</output>}{error && <p role="alert" className="session-header-feedback">{error.message}</p>}
@@ -172,7 +174,8 @@ function SessionWorkspace({ campaignId, actorId }: Readonly<{ campaignId: string
         {data.characters.length > 0 && <div className="session-character-links"><p className="eyebrow">Resumos de ficha</p>{data.characters.map(character => <Link key={character.id} href={`/characters/${character.id}/summary`} target="_blank" rel="noopener noreferrer"><BookOpen className="size-3.5" aria-hidden="true"/>{character.name}</Link>)}</div>}
       </aside>
     </div>}
-    {data && !manage && <section className="session-player-view"><p className="eyebrow">Sessão em andamento</p><h2 className="mt-2 font-serif text-2xl">Sua participação na mesa</h2><p className="mt-3 text-sm text-muted-foreground">A interface completa de condução é exclusiva do Narrador. Jogadores continuam com vídeo, ficha e rolagens pelos controles autorizados.</p><div className="mt-5"><LiveKitRoomLink campaignId={campaignId} master={false} /></div>{current && activeSession?.status === 'ACTIVE' && <div className="mt-5"><CharacterRolls characterId={current.id} sessionId={activeSession.id}/></div>}</section>}
+    </div>}
+    {data && !manage && <SessionPlayerWorkspace campaignId={campaignId} actorId={actorId} sessionId={activeSession?.status === 'ACTIVE' ? activeSession.id : null} characters={data.characters}/>} 
     {!snapshot && !error && <output  className="block border border-border bg-card p-5 text-sm text-muted-foreground">Carregando sessão...</output>}
     {data && !data.session && <p className="border border-border bg-card p-5 text-sm text-muted-foreground">Aguardando o Narrador iniciar uma sessão.</p>}
   </div>
