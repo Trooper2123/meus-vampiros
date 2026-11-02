@@ -141,6 +141,24 @@ describe('notas no PostgreSQL e APIs', () => {
     expect((await backlinks(new Request(`http://localhost/api/notes/links?targetType=NPC&targetId=${npcId}`))).status).toBe(404)
   })
 
+  it('cria, pesquisa e edita notas pela API com filtros de campanha e marcador', async () => {
+    const createdResponse = await POST(request(draft({ campaignId, title: 'Pista inicial', body: 'Anotação para pesquisa', marker: 'Elysium' })))
+    expect(createdResponse.status).toBe(201)
+    const created = await createdResponse.json()
+
+    const searchResponse = await GET(new Request(`http://localhost/api/notes?page=1&campaignId=${campaignId}&search=pesquisa&marker=Elysium`))
+    expect(searchResponse.status).toBe(200)
+    expect(await searchResponse.json()).toMatchObject({ notes: [{ id: created.id, title: 'Pista inicial', marker: 'Elysium' }], total: 1 })
+
+    const updateResponse = await PATCH(request({ title: 'Pista atualizada', marker: 'Torre', body: 'Texto editado', expectedRevision: created.revision }, 'PATCH'), { params: Promise.resolve({ id: created.id }) })
+    expect(updateResponse.status).toBe(200)
+    expect(await updateResponse.json()).toMatchObject({ title: 'Pista atualizada', marker: 'Torre', body: 'Texto editado', revision: created.revision + 1 })
+
+    const emptyFiltersResponse = await GET(new Request(`http://localhost/api/notes?page=1&campaignId=${campaignId}&search=&marker=`))
+    expect(emptyFiltersResponse.status).toBe(200)
+    expect(await emptyFiltersResponse.json()).toMatchObject({ total: 1, page: 1, pageSize: 20 })
+  })
+
   it('rejeita corpo grande, JSON inválido, campos indevidos e paginação abusiva', async () => {
     expect((await POST(request(draft({ body: 'x'.repeat(100001) })))).status).toBe(413)
     expect((await POST(new Request('http://localhost/api/notes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{invalid' }))).status).toBe(400)

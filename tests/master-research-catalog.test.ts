@@ -24,13 +24,13 @@ describe('catálogo de pesquisa do Narrador', () => {
 
   it('exige sessão com identidade válida no servidor', async () => {
     getSession.mockResolvedValueOnce(null)
-    await expect(MasterResearchPage()).rejects.toThrow('redirect:/auth/login?returnTo=/master/catalogo')
+    await expect(MasterResearchPage({})).rejects.toThrow('redirect:/auth/login?returnTo=/master/catalogo')
     getSession.mockResolvedValueOnce({ user: { sub: '  ' } })
-    await expect(MasterResearchPage()).rejects.toThrow('not-found')
+    await expect(MasterResearchPage({})).rejects.toThrow('not-found')
   })
 
   it('renderiza o acervo para usuário autenticado sem roles', async () => {
-    const page = await MasterResearchPage()
+    const page = await MasterResearchPage({})
     expect(page.type).toBe('main')
     expect(getMasterResearchCatalog).toHaveBeenCalledOnce()
   })
