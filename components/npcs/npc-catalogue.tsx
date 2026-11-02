@@ -198,7 +198,7 @@ export function NewNpcForm({ campaignId }: Readonly<{ campaignId?: string }>) {
   )
 }
 
-export function NpcCatalogue({ campaignId }: Readonly<{ campaignId?: string }>) {
+export function NpcCatalogue({ campaignId, hideCreate = false }: Readonly<{ campaignId?: string; hideCreate?: boolean }>) {
   const [filters, setFilters] = useState({ query: '', creatureType: '', role: '', sheetType: '', threatLevel: '', status: 'ACTIVE', sort: 'recent', campaignId: '', page: 1 })
   const [message, setMessage] = useState('')
   const [busy, setBusy] = useState(false)
@@ -214,13 +214,10 @@ export function NpcCatalogue({ campaignId }: Readonly<{ campaignId?: string }>) 
   }
   return (
     <div className="flex flex-col gap-6">
-      {/* Botão de criação via modal */}
-      <div className="flex items-center gap-4">
-        <NewNpcModal campaignId={campaignId} />
-      </div>
+      {!hideCreate && <div className="flex items-center gap-4"><NewNpcModal campaignId={campaignId} /></div>}
 
       {/* Filtros */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="campaign-module-filters">
         {!campaignId && <label className="sheet-field"><span>Mesa</span><select className="select" value={filters.campaignId} onChange={e => filter('campaignId', e.target.value)}><option value="">Todas as minhas mesas</option>{data?.campaigns.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>}
         <label className="sheet-field"><span>Ordenar NPCs</span><select className="select" value={filters.sort} onChange={e => filter('sort', e.target.value)}><option value="recent">Atualizados recentemente</option><option value="name">Nome</option><option value="threat">Maior ameaça</option></select></label>
         <label className="sheet-field"><span>Pesquisar NPCs</span><input maxLength={120} value={filters.query} onChange={e => filter('query', e.target.value)} /></label>
@@ -235,9 +232,9 @@ export function NpcCatalogue({ campaignId }: Readonly<{ campaignId?: string }>) 
       {message && <output  className="block text-sm text-muted-foreground">{message}</output>}
 
       {/* Cards */}
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="campaign-module-list">
         {data?.npcs.map(npc => (
-          <article key={npc.id} className="character-card flex flex-col gap-3">
+          <article key={npc.id} className="campaign-module-item flex flex-col gap-3">
             <div className="flex gap-4">
               {/* Retrato compacto */}
               <div className="shrink-0">

@@ -1,3 +1,32 @@
+## [2026-11-02 00:36 BRT] - fix - Corrigir fluxo de anotações com marcador
+
+**Tipo:** fix
+
+**Arquivos principais:** `lib/notes.ts`, `tests/notes.test.ts`, `tests/postgres-global-setup.ts`, `migrations/20261102_notes_markers_search.sql`.
+
+- Corrige o `INSERT` de anotações para persistir corretamente o marcador e aplica a migração de marcadores no schema isolado dos testes.
+- Aplica a migração aditiva no PostgreSQL local de desenvolvimento (`postgres/public`) em transação.
+- Valida criação, pesquisa com filtros e edição pela API na suíte focada de anotações.
+
+## [2026-11-01 23:53 BRT] - fix - Corrigir parse das páginas de campanha
+
+**Tipo:** fix
+
+**Arquivos principais:** `app/campaigns/[id]/page.tsx`.
+
+- Corrige a sessão usada no painel de anotações e remove um fechamento `div` excedente que impedia a compilação da página.
+- Validação: ESLint focado e `npx tsc --noEmit` aprovados.
+
+## [2026-11-02 01:25 BRT] - fix - Corrigir erros de tipos no hub e painel de notas
+
+**Tipo:** fix
+
+**Arquivos principais:** `components/notes/notes-panel.tsx`, `components/livekit/livekit-room.tsx`, `app/globals.css`.
+
+- Restaura o import de `Link` usado nos vínculos de anotações.
+- Usa a API compatível de `VideoConference` e evita exibir o chat nativo quando o painel customizado está ativo.
+- Validação: `npx tsc --noEmit` e lint focado.
+
 ## [2026-11-01 03:04 BRT] - chore - Validar animacao de rolagem
 
 **Tipo:** chore

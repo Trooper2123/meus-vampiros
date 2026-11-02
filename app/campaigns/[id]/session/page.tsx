@@ -1,3 +1,4 @@
+import { MasterViewportGuard } from '@/components/master-viewport-guard'
 import { redirect } from 'next/navigation'
 import { getSessionOrDev } from '@/lib/auth0'
 import { CampaignSessionWorkspace } from '@/components/game-session/session-workspace'
@@ -7,5 +8,14 @@ export default async function CampaignSessionPage({ params }: Readonly<{ params:
   const auth = await getSessionOrDev()
   if (!auth?.user?.sub) redirect('/auth/login?returnTo=/campaigns')
   const { id } = await params
-  return <main className="min-h-screen bg-background text-foreground"><div className="archive-content flex flex-col gap-4 py-8"><Link className="button-ghost self-start" href={`/campaigns/${id}`}>Voltar à mesa</Link><CampaignSessionWorkspace campaignId={id} actorId={auth.user.sub} /></div></main>
+  return <main className="session-page-shell min-h-screen bg-background text-foreground">
+    <MasterViewportGuard backHref={`/campaigns/${id}`} />
+    <div className="master-large-screen-only">
+      <header className="session-narrator-topbar">
+        <Link className="session-back-link" href={`/campaigns/${id}`}>← Voltar à mesa</Link>
+        <div className="session-breadcrumb"><span>Gestão da Mesa</span><b>›</b><strong>Sessão</strong></div>
+      </header>
+      <div className="session-page-content"><CampaignSessionWorkspace campaignId={id} actorId={auth.user.sub} /></div>
+    </div>
+  </main>
 }

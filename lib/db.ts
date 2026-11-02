@@ -66,6 +66,7 @@ export async function ensureAllTables() {
     ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS enabled_clan_codes JSONB;
     ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS creation_policy JSONB;
     ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS call_active BOOLEAN NOT NULL DEFAULT false;
+    ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS session_shortcuts JSONB NOT NULL DEFAULT '["npcs","calendar","notes"]'::jsonb;
 
     CREATE TABLE IF NOT EXISTS characters (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

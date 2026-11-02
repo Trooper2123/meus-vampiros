@@ -1,20 +1,22 @@
+import { MasterViewportGuard } from '@/components/master-viewport-guard'
+import { NotesPanel } from '@/components/notes/notes-panel'
 import { CampaignArchiveControl } from '@/components/campaign-archive-control'
-import { ArchiveHeader } from '@/components/archive-header'
 import { CampaignTools } from '@/components/campaign-calendar/campaign-tools'
+import { CampaignSessionShortcutSettings } from '@/components/campaign-session-shortcut-settings'
 import { CharacterSummary } from '@/components/character-summary/character-summary'
 import { CampaignParticipantControls } from '@/components/campaign-participant-controls'
 import { CampaignPossessionsManager } from '@/components/master-panel'
 import { CampaignXpHistory } from '@/components/campaign-xp-history'
-import { NpcCatalogue } from '@/components/npcs/npc-catalogue'
+import { NewNpcModal, NpcCatalogue } from '@/components/npcs/npc-catalogue'
 import { getCharacterSummaryData } from '@/lib/character-summary'
 import { getCharactersForCampaign } from '@/lib/characters'
 import { getCampaignsForMaster } from '@/lib/campaigns'
 import { getSessionOrDev } from '@/lib/auth0'
 import Link from 'next/link'
-import { ArrowLeft, Play, Users, BookOpen, CalendarDays } from 'lucide-react'
+import { ArrowLeft, Play, Users, BookOpen, CalendarDays, Search, NotebookPen, UserRoundCog, PackageOpen, Settings2, Shield, FolderKanban, MessagesSquare, ScrollText, ImageIcon, Target, Crown } from 'lucide-react'
 import { notFound, redirect } from 'next/navigation'
 
-export default async function CampaignDetailPage({ params, searchParams }: Readonly<{ params: Promise<{ id: string }>; searchParams?: Promise<{ xpCharacterId?: string }> }>) {
+export default async function CampaignDetailPage({ params, searchParams }: Readonly<{ params: Promise<{ id: string }>; searchParams?: Promise<{ xpCharacterId?: string; view?: string }> }>) {
   const session = await getSessionOrDev()
   if (!session?.user) redirect('/auth/login?returnTo=/campaigns')
 
@@ -26,9 +28,13 @@ export default async function CampaignDetailPage({ params, searchParams }: Reado
   const summaries = (await Promise.all(characters.map(async character => {
     const summary = await getCharacterSummaryData(character.id, session.user.sub)
     return summary ? { ...summary, status: character.status } : null
-  })))
-    .filter(summary => summary?.characterType === 'PLAYER_VAMPIRE')
-  const requestedCharacter = (await searchParams)?.xpCharacterId
+  }))).filter(summary => summary?.characterType === 'PLAYER_VAMPIRE')
+  const query = await searchParams
+  const requestedCharacter = query?.xpCharacterId
+  const allowedViews = ['overview','characters','participants','npcs','handouts','calendar','xp','possessions','limits','projects','coterie','messages','notes','research','settings'] as const
+  const requestedView = query?.view
+  const view = allowedViews.find(item => item === requestedView) ?? 'overview'
+  const viewHref = (nextView: string) => `/campaigns/${campaign.id}?view=${nextView}`
   const xpCharacterId = characters.find(character => character.id === requestedCharacter)?.id ?? ''
   const groups = [
     { title: 'Aguardando aprovação', statuses: ['PENDING_REVIEW'] },
@@ -37,69 +43,70 @@ export default async function CampaignDetailPage({ params, searchParams }: Reado
   ]
 
   return (
-    <main className="campaign-detail-ui relative min-h-screen overflow-hidden bg-background text-foreground">
+    <main className="campaign-detail-ui campaign-management-approved relative min-h-screen overflow-hidden bg-background text-foreground">
       <div className="noise" aria-hidden="true" />
-      <ArchiveHeader title="Crônicas / gerenciamento" showCampaigns />
-      <div className="archive-content campaign-detail-ui-content">
-        <section className="archive-page-heading campaign-detail-hero">
-          <p className="eyebrow">Ficha da mesa</p>
-          <h1 className="mt-3 font-serif text-4xl uppercase tracking-[0.08em] sm:text-6xl">{campaign.name}</h1>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
-            {campaign.theme ?? 'Tema não definido'} · {campaign.playerCount} jogador{campaign.playerCount === 1 ? '' : 'es'} vinculado{campaign.playerCount === 1 ? '' : 's'}.
-          </p>
-        </section>
+      <MasterViewportGuard backHref="/campaigns" />
+      <div className="master-large-screen-only">
+      <div className="archive-content campaign-detail-ui-content campaign-management-content">
+        <header className="campaign-approved-heading">
+          <div className="campaign-management-title"><p className="eyebrow">Arquivos da Noite</p><h1 className="font-serif text-4xl">{campaign.name}</h1><p className="mt-1 text-sm text-muted-foreground">Gestão da Mesa · planejamento, organização e recursos da campanha.</p></div>
+          <div className="campaign-approved-heading-actions"><Link href={`/campaigns/${campaign.id}/session`} className="button-primary"><Play className="size-4"/>Iniciar sessão</Link><Link href={viewHref('calendar')} className="button-ghost"><CalendarDays className="size-4"/>Agendar sessão</Link></div>
+        </header>
 
-        <div className="campaign-detail-metrics" aria-label="Resumo da campanha"><div><Users className="size-5 text-primary" aria-hidden="true"/><span className="eyebrow">Participantes</span><strong>{campaign.playerCount}</strong></div><div><BookOpen className="size-5 text-primary" aria-hidden="true"/><span className="eyebrow">Personagens</span><strong>{characters.length}</strong></div><div><CalendarDays className="size-5 text-primary" aria-hidden="true"/><span className="eyebrow">Último encontro</span><strong className="text-base">{campaign.lastSessionAt ? new Date(campaign.lastSessionAt).toLocaleDateString("pt-BR") : "Não registrado"}</strong></div></div>
-        <div className="mt-8 flex flex-col gap-8">
-          <nav className="archive-card-actions campaign-detail-toolbar" aria-label="Ações da mesa">
-            <Link href="/campaigns" className="button-ghost self-start"><ArrowLeft className="size-4" aria-hidden="true"/> Voltar às mesas</Link>
-            <Link href={`/campaigns/${campaign.id}/session`} className="button-primary self-start"><Play className="size-4" aria-hidden="true"/> Iniciar sessão</Link>
-            <Link href={`/notes?targetType=CAMPAIGN&targetId=${campaign.id}`} target="_blank" rel="noopener noreferrer" className="button-ghost self-start">Anotações do Narrador</Link>
-            <Link href="/master/catalogo" target="_blank" rel="noopener noreferrer" className="button-ghost self-start">Pesquisa de habilidades</Link>
-            <Link href="/master/vantagens-defeitos" target="_blank" rel="noopener noreferrer" className="button-ghost self-start">Pesquisa de vantagens e defeitos</Link>
-          </nav>
-
-          <CampaignArchiveControl id={campaign.id} name={campaign.name} archived={campaign.status==='Arquivada'} />
-          <CampaignTools campaignId={campaign.id} master />
-
-          <details className="campaign-detail-section border border-border bg-card p-5">
-            <summary className="cursor-pointer font-serif text-2xl">Gestão de NPCs</summary>
-            <div className="mt-5">
-            <p className="eyebrow">Personagens do Narrador</p>
-            <h2 id="campaign-npcs-title" className="mt-2 font-serif text-2xl">NPCs da mesa</h2>
-            <p className="mb-5 mt-2 text-sm text-muted-foreground">Consulte as fichas vinculadas a esta mesa ou crie um NPC diretamente nela.</p>
-            <NpcCatalogue campaignId={campaign.id} />
+        <div className="campaign-approved-layout">
+          <aside className="campaign-approved-sidebar">
+            <div className="campaign-approved-cover">
+              <div className="campaign-approved-cover-art"><Crown className="size-7" aria-hidden="true"/></div>
+              <strong className="font-serif text-xl">{campaign.name}</strong>
+              <span>{campaign.theme ?? 'Crônica sem tema definido'}</span>
             </div>
-          </details>
+            <nav>
+              <Link className={view === 'overview' ? 'is-active' : ''} href={viewHref('overview')}><Crown/>Gestão da Mesa</Link>
+              <Link className={view === 'characters' ? 'is-active' : ''} href={viewHref('characters')}><BookOpen/>Fichas</Link>
+              <Link className={view === 'participants' ? 'is-active' : ''} href={viewHref('participants')}><Users/>Participantes</Link>
+              <Link className={view === 'npcs' ? 'is-active' : ''} href={viewHref('npcs')}><UserRoundCog/>NPCs</Link>
+              <Link className={view === 'handouts' ? 'is-active' : ''} href={viewHref('handouts')}><ImageIcon/>Handouts / Revelações</Link>
+              <Link className={view === 'calendar' ? 'is-active' : ''} href={viewHref('calendar')}><CalendarDays/>Calendário</Link>
+              <Link className={view === 'xp' ? 'is-active' : ''} href={viewHref('xp')}><ScrollText/>XP e Evolução</Link>
+              <Link className={view === 'possessions' ? 'is-active' : ''} href={viewHref('possessions')}><PackageOpen/>Itens Restritos</Link>
+              <Link className={view === 'limits' ? 'is-active' : ''} href={viewHref('limits')}><Shield/>Limites</Link>
+              <Link className={view === 'projects' ? 'is-active' : ''} href={viewHref('projects')}><FolderKanban/>Projetos</Link>
+              <Link className={view === 'coterie' ? 'is-active' : ''} href={viewHref('coterie')}><Users/>Cotterie</Link>
+              <Link className={view === 'messages' ? 'is-active' : ''} href={viewHref('messages')}><MessagesSquare/>Mensagens da Mesa</Link>
+              <Link className={view === 'notes' ? 'is-active' : ''} href={viewHref('notes')}><NotebookPen/>Anotações</Link>
+              <Link className={view === 'research' ? 'is-active' : ''} href={viewHref('research')}><Search/>Pesquisas</Link>
+              <Link className={view === 'settings' ? 'is-active' : ''} href={viewHref('settings')}><Settings2/>Configurações</Link>
+            </nav>
+            <Link className="campaign-return-to-mesas" href="/campaigns"><ArrowLeft className="size-4" aria-hidden="true"/>Voltar para todas as mesas</Link>
+          </aside>
 
-          <details className="border border-border bg-card p-5">
-            <summary className="cursor-pointer font-serif text-2xl">Visualização de personagens</summary>
-            <div className="mt-5">
-            <p className="eyebrow">Gestão de participantes</p>
-            <h2 id="participants-title" className="mt-2 font-serif text-2xl">Fichas dos participantes</h2>
-            <div className="mt-5 flex flex-col gap-4">
-              {groups.map(group => <section key={group.title} className="flex flex-col gap-4">
-                <h3 className="font-serif text-xl">{group.title} ({summaries.filter(summary => summary && group.statuses.includes(summary.status)).length})</h3>
-              {summaries.filter(summary => summary && group.statuses.includes(summary.status)).map(summary => summary && (
-                <details key={summary.id} className="border border-border p-4">
-                  <summary className="cursor-pointer font-serif text-xl">{summary.name} · {summary.clan ?? 'Clã não definido'}</summary>
-                  <div className="mt-4 flex flex-col gap-4">
-                    <CampaignParticipantControls characterId={summary.id} />
-                    <Link className="button-ghost self-start" href={`/characters/${summary.id}/summary`} target="_blank" rel="noopener noreferrer">Ver ficha</Link>
-                    {summary.status === 'APPROVED' && <Link className="button-ghost self-start" href={`/campaigns/${campaign.id}?xpCharacterId=${summary.id}#campaign-xp-history`}>Histórico de XP</Link>}
-                    <Link className="button-ghost self-start" href={`/characters/${summary.id}/edit`}>Editar ficha e habilidades</Link>
-                    <Link className="button-ghost self-start" href={`/characters/${summary.id}/narrative`}>Perfil narrativo desta mesa</Link>
-                    <CharacterSummary data={summary} />
-                  </div>
-                </details>
-              ))}
-              </section>)}
-            </div>
-            {summaries.length === 0 && <p className="mt-3 text-sm text-muted-foreground">Nenhuma ficha de jogador vinculada.</p>}
-            </div>
-          </details>
-          <CampaignXpHistory key={xpCharacterId} campaignId={campaign.id} initialCharacterId={xpCharacterId} />
-          <details className="border border-border bg-card p-5"><summary className="cursor-pointer font-serif text-2xl">Conceder itens restritos</summary><div className="mt-5"><CampaignPossessionsManager campaignId={campaign.id} /></div></details>
+          <div className="campaign-approved-main">
+            {view === 'overview' && <>
+              <section className="campaign-preparation-banner"><div><span className="campaign-preparation-pill"><Shield className="size-4"/>Mesa em preparação</span><h2 className="mt-4 font-serif text-3xl">Nenhuma sessão ativa</h2><p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">Organize a próxima sessão, gerencie participantes, limites, handouts, anotações e eventos da campanha.</p></div><button className="button-ghost" type="button" disabled><ImageIcon className="size-4"/>Trocar imagem da mesa</button></section>
+              <div className="campaign-approved-grid">
+                <section className="campaign-approved-card"><div className="campaign-approved-card-title"><span><Users/>Participantes ({summaries.length})</span><Link href={viewHref('participants')}>Ver todos →</Link></div><div className="campaign-participant-preview">{summaries.slice(0,4).map(summary => summary && <Link key={summary.id} href={`/characters/${summary.id}/summary`} className="campaign-participant-chip"><span className="campaign-participant-avatar">{summary.name.slice(0,1)}</span><strong>{summary.name}</strong><small>{summary.clan ?? 'Clã não definido'}</small></Link>)}</div></section>
+                <section className="campaign-approved-card"><div className="campaign-approved-card-title"><span><Shield/>Limites da Mesa</span><Link href={viewHref('limits')}>Gerenciar →</Link></div><div className="campaign-empty-module"><p>Configure os limites e regras específicas da mesa.</p></div></section>
+                <section className="campaign-approved-card"><div className="campaign-approved-card-title"><span><CalendarDays/>Calendário de Eventos</span><Link href={viewHref('calendar')}>Resumo →</Link></div><div className="campaign-empty-module"><p>Acesse o calendário para consultar e agendar eventos.</p></div></section>
+                <section className="campaign-approved-card"><div className="campaign-approved-card-title"><span><ScrollText/>Resumo da Campanha</span></div><dl className="campaign-summary-list"><div><dt>Personagens</dt><dd>{summaries.length}</dd></div><div><dt>Fichas vinculadas</dt><dd>{characters.length}</dd></div><div><dt>Último encontro</dt><dd>{campaign.lastSessionAt ? new Date(campaign.lastSessionAt).toLocaleDateString('pt-BR') : '—'}</dd></div></dl></section>
+                <section className="campaign-approved-card"><div className="campaign-approved-card-title"><span><Target/>Missões Ativas</span></div><div className="campaign-empty-module"><p>O domínio de missões ainda não existe.</p></div></section>
+              </div>
+            </>}
+
+            {(view === 'characters' || view === 'participants') && <section className="campaign-module-workspace"><div className="campaign-module-header"><div className="campaign-module-heading"><Users/><div><p className="eyebrow">Gestão de participantes</p><h2>{view === 'characters' ? 'Fichas' : 'Participantes'}</h2><p>{view === 'characters' ? 'Consulte e administre as fichas vinculadas à mesa.' : 'Gerencie jogadores, aprovações e personagens participantes.'}</p></div></div></div><div className="campaign-module-body flex flex-col gap-5">{groups.map(group => <section key={group.title} className="campaign-module-subsection"><h3 className="font-serif text-xl">{group.title} <span className="text-sm text-muted-foreground">({summaries.filter(summary => summary && group.statuses.includes(summary.status)).length})</span></h3>{summaries.filter(summary => summary && group.statuses.includes(summary.status)).map(summary => summary && <details key={summary.id} className="campaign-module-character"><summary>{summary.name} · {summary.clan ?? 'Clã não definido'}</summary><div className="mt-4 flex flex-col gap-4"><CampaignParticipantControls characterId={summary.id}/><div className="archive-card-actions"><Link className="button-ghost" href={`/characters/${summary.id}/summary`}>Ver ficha</Link><Link className="button-ghost" href={`/characters/${summary.id}/edit`}>Editar ficha</Link><Link className="button-ghost" href={`/characters/${summary.id}/narrative`}>Perfil narrativo</Link></div><CharacterSummary data={summary}/></div></details>)}</section>)}</div></section>}
+            {view === 'npcs' && <section className="campaign-module-workspace"><div className="campaign-module-header"><div className="campaign-module-heading"><UserRoundCog/><div><p className="eyebrow">Personagens do Narrador</p><h2>NPCs da Mesa</h2><p>Crie, organize e gerencie os NPCs da campanha.</p></div></div><NewNpcModal campaignId={campaign.id}/></div><NpcCatalogue campaignId={campaign.id} hideCreate/></section>}
+            {view === 'calendar' && <section className="campaign-module-workspace"><div className="campaign-module-header"><div className="campaign-module-heading"><CalendarDays/><div><p className="eyebrow">Planejamento da crônica</p><h2>Calendário</h2><p>Organize eventos, disponibilidade e próximas sessões da mesa.</p></div></div></div><CampaignTools campaignId={campaign.id} master/></section>}
+            {view === 'xp' && <section className="campaign-module-workspace"><div className="campaign-module-header"><div className="campaign-module-heading"><ScrollText/><div><p className="eyebrow">Progressão</p><h2>XP e Evolução</h2><p>Acompanhe experiência distribuída, disponível e histórico dos personagens.</p></div></div></div><CampaignXpHistory key={xpCharacterId} campaignId={campaign.id} initialCharacterId={xpCharacterId}/></section>}
+            {view === 'possessions' && <section className="campaign-module-workspace"><div className="campaign-module-header"><div className="campaign-module-heading"><PackageOpen/><div><p className="eyebrow">Recursos especiais</p><h2>Itens Restritos</h2><p>Revise, conceda e administre pertences que exigem controle do Narrador.</p></div></div></div><CampaignPossessionsManager campaignId={campaign.id}/></section>}
+            {view === 'handouts' && <section className="campaign-module-workspace"><div className="campaign-module-header"><div className="campaign-module-heading"><ImageIcon/><div><p className="eyebrow">Arquivos da crônica</p><h2>Handouts / Revelações</h2><p>Organize materiais da mesa e compartilhe arquivos com jogadores.</p></div></div></div><div className="campaign-module-empty"><ImageIcon/><h3>Handouts / Revelações</h3><p>Drive de Handouts da mesa. Implementação funcional seguirá a SPEC de Vercel Blob.</p></div></section>}
+            {view === 'limits' && <section className="campaign-module-workspace"><div className="campaign-module-header"><div className="campaign-module-heading"><Shield/><div><p className="eyebrow">Segurança e acordos</p><h2>Limites da Mesa</h2><p>Configure limites e regras específicas aplicadas à crônica.</p></div></div></div><div className="campaign-module-empty"><Shield/><h3>Limites da Mesa</h3><p>O domínio de limites ainda não está implementado.</p></div></section>}
+            {view === 'projects' && <section className="campaign-module-workspace"><div className="campaign-module-header"><div className="campaign-module-heading"><FolderKanban/><div><p className="eyebrow">Planos de longo prazo</p><h2>Projetos</h2><p>Acompanhe Projects pessoais e coletivos da Coterie.</p></div></div></div><div className="campaign-module-empty"><FolderKanban/><h3>Projetos</h3><p>Módulo reservado aos Projects definidos na SPEC-SESSION-011.</p></div></section>}
+            {view === 'coterie' && <section className="campaign-module-workspace"><div className="campaign-module-header"><div className="campaign-module-heading"><Users/><div><p className="eyebrow">Estrutura coletiva</p><h2>Cotterie</h2><p>Gerencie membros, Domain, Backgrounds, Goals e recursos compartilhados.</p></div></div></div><div className="campaign-module-empty"><Users/><h3>Cotterie</h3><p>Módulo reservado à Coterie definida na SPEC-SESSION-011.</p></div></section>}
+            {view === 'messages' && <section className="campaign-module-workspace"><div className="campaign-module-header"><div className="campaign-module-heading"><MessagesSquare/><div><p className="eyebrow">Comunicação entre personagens</p><h2>Mensagens da Mesa</h2><p>Acompanhe conversas privadas entre personagens da crônica.</p></div></div></div><div className="campaign-module-empty"><MessagesSquare/><h3>Mensagens da Mesa</h3><p>Mensagens entre personagens ainda não possuem domínio persistente.</p></div></section>}
+            {view === 'notes' && <section className="campaign-module-workspace"><div className="campaign-module-header"><div className="campaign-module-heading"><NotebookPen/><div><p className="eyebrow">Registro do Narrador</p><h2>Anotações</h2><p>Organize, agrupe e pesquise registros, pistas e informações da campanha.</p></div></div></div><NotesPanel actorId={session.user.sub} initialCampaignId={campaign.id}/></section>}
+            {view === 'research' && <section className="campaign-module-workspace"><div className="campaign-module-header"><div className="campaign-module-heading"><Search/><div><p className="eyebrow">Referências de regras</p><h2>Pesquisas</h2><p>Consulte catálogos de disciplinas, habilidades, vantagens e defeitos.</p></div></div></div><div className="campaign-module-choice-grid"><Link href="/master/catalogo"><Search/><strong>Disciplinas e habilidades</strong><span>Abrir catálogo de poderes e referências.</span></Link><Link href="/master/vantagens-defeitos"><BookOpen/><strong>Vantagens e defeitos</strong><span>Abrir catálogo e itens personalizados.</span></Link></div></section>}
+            {view === 'settings' && <section className="campaign-module-workspace"><div className="campaign-module-header"><div className="campaign-module-heading"><Settings2/><div><p className="eyebrow">Administração</p><h2>Configurações da Mesa</h2><p>Gerencie o estado e as opções administrativas da campanha.</p></div></div><Link className="button-ghost campaign-settings-back" href="/campaigns"><ArrowLeft className="size-4" aria-hidden="true"/>Voltar para todas as mesas</Link></div><div className="campaign-settings-content"><CampaignTools campaignId={campaign.id} master settingsOnly/><CampaignSessionShortcutSettings campaignId={campaign.id}/><section className="campaign-module-subsection campaign-settings-danger"><p className="eyebrow">Administração da campanha</p><h3 className="mt-2 font-serif text-xl">Arquivamento</h3><p className="mt-2 mb-4 text-sm text-muted-foreground">Arquivar uma mesa impede novas sessões, preservando o histórico.</p><CampaignArchiveControl id={campaign.id} name={campaign.name} archived={campaign.status==='Arquivada'}/></section></div></section>}
+          </div>
+          </div>
         </div>
       </div>
     </main>
