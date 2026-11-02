@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, type ComponentProps } from 'react'
+import Link from 'next/link'
 import useSWR from 'swr'
-import { BookOpen, CalendarDays, Dice5, Droplet, FileText, HeartPulse, MessageCircle, NotebookPen, ScrollText, Shield, Users, X } from 'lucide-react'
+import { BookOpen, CalendarDays, Dice5, Droplet, FileText, HeartPulse, MessageCircle, NotebookPen, ScrollText, Shield, Users, LogOut, X } from 'lucide-react'
 import { LiveKitRoomLink } from '@/components/livekit/livekit-room-link'
 import { CharacterSummary } from '@/components/character-summary/character-summary'
 import { CharacterRolls } from '@/components/character-summary/character-rolls'
@@ -51,7 +52,7 @@ function PlayerQuickActions({characterId,sessionId}:Readonly<{characterId:string
   </section>
 }
 
-export function SessionPlayerWorkspace({campaignId,actorId,sessionId,characters}:Readonly<{campaignId:string;actorId:string;sessionId:string|null;characters:Character[]}>) {
+export function SessionPlayerWorkspace({campaignId,actorId,sessionId,characters,campaignName}:Readonly<{campaignId:string;actorId:string;sessionId:string|null;characters:Character[];campaignName?:string|null}>) {
   const [tab,setTab]=useState<PlayerTab>('sheet')
   const [selected,setSelected]=useState(characters[0]?.id??'')
   const current=characters.find(character=>character.id===selected)??characters[0]
@@ -62,7 +63,7 @@ export function SessionPlayerWorkspace({campaignId,actorId,sessionId,characters}
     {id:'files' as const,label:'Arquivos',Icon:FileText},
   ]
   return <div className="session-player-approved" aria-label="Modo Sessão do Jogador">
-    <div className="session-player-title"><div><p className="eyebrow">Arquivos da Noite · Visão do Jogador</p><h1>Minha Sessão</h1><p>Ficha, diário e recursos da crônica sem sair da mesa.</p></div><span className="session-player-status">{sessionId?<><i/>Sessão em andamento</>:'Aguardando início da sessão'}</span></div>
+    <div className="session-player-title"><div><p className="eyebrow">Arquivos da Noite · Visão do Jogador</p><h1>{campaignName ? `Sessão: ${campaignName}` : "Minha Sessão"}</h1><p>Ficha, diário e recursos da crônica sem sair da mesa.</p></div><div className="session-player-title-actions"><span className="session-player-status">{sessionId?<><i/>Sessão em andamento</> :'Aguardando início da sessão'}</span><Link className="session-player-exit" href="/characters"><LogOut className="size-4"/>Sair da Sessão</Link></div></div>
     <div className="session-player-columns">
       <aside className="session-player-chat" aria-label="Chat da sessão">
         <div className="session-player-column-header"><MessageCircle className="size-5"/><h2>Chat da Sessão</h2></div>
