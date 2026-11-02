@@ -2827,3 +2827,38 @@ main > .archive-header {
 .characters-encounter-details small{color:#cc8f93;font-size:10px}
 @media(max-width:980px){.characters-right-rail{position:static;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}}
 @media(max-width:700px){.characters-right-rail{grid-template-columns:1fr}}
+
+/* Indicadores de Personagens funcionam como filtros locais, sem navegação. */
+.characters-approved-content .characters-filter-stats>button.characters-filter-stat{
+  position:relative;display:flex;min-width:0;min-height:122px;flex-direction:column;align-items:flex-start;
+  justify-content:flex-start;gap:10px;border:1px solid #5c3439;border-radius:9px;
+  background:linear-gradient(140deg,#211316,#150f11);padding:19px;color:#f3e9e6;text-align:left;
+  cursor:pointer;transition:border-color .18s,box-shadow .18s,background .18s;
+}
+.characters-approved-content .characters-filter-stats>button.characters-filter-stat:hover{
+  border-color:#d44350;background:linear-gradient(145deg,#33171c,#1b1013);box-shadow:0 0 16px #af263327;
+}
+.characters-approved-content .characters-filter-stats>button.characters-filter-stat.is-selected{
+  border-color:#f04b58;background:linear-gradient(145deg,#3b141b,#200d12);
+  box-shadow:inset 0 0 0 1px #dd3948,0 0 20px #b72e393b;
+}
+.characters-approved-content .characters-filter-stats>button.characters-filter-stat:focus-visible{
+  outline:2px solid #f29ba1;outline-offset:3px;
+}
+.characters-filter-stat .characters-filter-arrow{position:absolute;right:19px;top:50%;color:#c8434e;transform:translateY(-50%);transition:transform .18s}
+.characters-filter-stat:hover .characters-filter-arrow{transform:translate(4px,-50%)}
+.characters-filter-stat .characters-filter-active{
+  position:absolute;top:14px;right:14px;display:inline-flex;align-items:center;gap:5px;
+  border:1px solid #a84049;border-radius:99px;background:#672027;padding:5px 8px;
+  color:#fff;font-family:var(--font-mono),monospace;font-size:9px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+}
+.characters-approved-content .characters-filter-stats>button.characters-filter-stat strong{font-size:36px;line-height:1}
+.characters-filter-feedback{display:flex;align-items:center;gap:10px;margin:-12px 0 24px;color:#d9b4b2;font-size:12px}
+.characters-filter-feedback button{margin-left:auto;border:1px solid #67323b;border-radius:5px;padding:7px 11px;color:#eee2de}
+.characters-filter-feedback button:hover{border-color:#cc3542;background:#34151a}
+.characters-filter-empty{margin:0 0 20px;border:1px dashed #70333b;border-radius:7px;background:#180e10;padding:18px;color:#d1bab8}
+@media(max-width:540px){
+  .characters-filter-feedback{align-items:flex-start;flex-wrap:wrap}
+  .characters-filter-feedback button{margin-left:0}
+  .characters-filter-stat .characters-filter-active{position:static}
+}
