@@ -2804,3 +2804,6 @@ main > .archive-header {
  .characters-ui-shell .archive-header-campaigns>.archive-menu{display:block}
  .characters-ui-shell .archive-header-campaigns .archive-menu .archive-nav{display:flex;flex-direction:column;gap:6px}
 }
+
+/* Sem convocação ativa, não reservar espaço para a área de comunicação em Personagens. */
+.characters-livekit-calls:empty{display:none;margin:0}
