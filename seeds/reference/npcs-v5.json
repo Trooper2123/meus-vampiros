@@ -1,0 +1,208 @@
+{
+  "schemaVersion": "1.0.0",
+  "generatedFor": "SPEC-RPG-022",
+  "scope": "Índice inicial de NPCs canônicos, com referências de páginas PDF e sem transcrição de fichas.",
+  "usage": "Não converter em ficha completa automaticamente: revisar atributos, direito de uso, e elegibilidade.",
+  "entries": [
+    {
+      "id": "chicago-by-night-naomi-stewart",
+      "name": "Naomi Stewart",
+      "source": {
+        "bookCode": "chicago-by-night",
+        "bookTitle": "Chicago by Night",
+        "pdfPage": 220,
+        "printedPage": null
+      },
+      "creatureType": "VAMPIRE",
+      "clanHint": "Ventrue",
+      "role": "UNDETERMINED",
+      "sheetCompleteness": "UNVERIFIED",
+      "statistics": null,
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "publication": "REFERENCE_ONLY",
+      "reviewStatus": "SOURCE_LOCATED",
+      "rightsStatus": "METADATA_ONLY",
+      "notes": "A menção nesta página foi localizada; a ficha completa, o início do verbete e atributos exigem revisão."
+    },
+    {
+      "id": "chicago-by-night-kevin-jackson",
+      "name": "Kevin Jackson",
+      "source": {
+        "bookCode": "chicago-by-night",
+        "bookTitle": "Chicago by Night",
+        "pdfPage": 210,
+        "printedPage": null
+      },
+      "creatureType": "VAMPIRE",
+      "clanHint": "Ventrue",
+      "role": "UNDETERMINED",
+      "sheetCompleteness": "UNVERIFIED",
+      "statistics": null,
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "publication": "REFERENCE_ONLY",
+      "reviewStatus": "SOURCE_LOCATED",
+      "rightsStatus": "METADATA_ONLY",
+      "notes": "A menção nesta página foi localizada; a ficha completa, o início do verbete e atributos exigem revisão."
+    },
+    {
+      "id": "chicago-by-night-gengis",
+      "name": "Gengis",
+      "source": {
+        "bookCode": "chicago-by-night",
+        "bookTitle": "Chicago by Night",
+        "pdfPage": 98,
+        "printedPage": null
+      },
+      "creatureType": "VAMPIRE",
+      "clanHint": "Brujah",
+      "role": "UNDETERMINED",
+      "sheetCompleteness": "UNVERIFIED",
+      "statistics": null,
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "publication": "REFERENCE_ONLY",
+      "reviewStatus": "SOURCE_LOCATED",
+      "rightsStatus": "METADATA_ONLY",
+      "notes": "A menção nesta página foi localizada; a ficha completa, o início do verbete e atributos exigem revisão."
+    },
+    {
+      "id": "chicago-by-night-alan-sovereign",
+      "name": "Alan Sovereign",
+      "source": {
+        "bookCode": "chicago-by-night",
+        "bookTitle": "Chicago by Night",
+        "pdfPage": 217,
+        "printedPage": null
+      },
+      "creatureType": "VAMPIRE",
+      "clanHint": null,
+      "role": "UNDETERMINED",
+      "sheetCompleteness": "UNVERIFIED",
+      "statistics": null,
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "publication": "REFERENCE_ONLY",
+      "reviewStatus": "SOURCE_LOCATED",
+      "rightsStatus": "METADATA_ONLY",
+      "notes": "A menção nesta página foi localizada; a ficha completa, o início do verbete e atributos exigem revisão."
+    },
+    {
+      "id": "fall-of-london-darius-shirazi",
+      "name": "Darius Shirazi",
+      "source": {
+        "bookCode": "fall-of-london",
+        "bookTitle": "The Fall of London",
+        "pdfPage": 35,
+        "printedPage": null
+      },
+      "creatureType": "VAMPIRE",
+      "clanHint": "Malkavian",
+      "role": "UNDETERMINED",
+      "sheetCompleteness": "UNVERIFIED",
+      "statistics": null,
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "publication": "REFERENCE_ONLY",
+      "reviewStatus": "SOURCE_LOCATED",
+      "rightsStatus": "METADATA_ONLY",
+      "notes": "A menção nesta página foi localizada; a ficha completa, o início do verbete e atributos exigem revisão."
+    },
+    {
+      "id": "fall-of-london-mickey-wheeler",
+      "name": "Mickey Wheeler",
+      "source": {
+        "bookCode": "fall-of-london",
+        "bookTitle": "The Fall of London",
+        "pdfPage": 42,
+        "printedPage": null
+      },
+      "creatureType": "VAMPIRE",
+      "clanHint": "Gangrel",
+      "role": "UNDETERMINED",
+      "sheetCompleteness": "UNVERIFIED",
+      "statistics": null,
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "publication": "REFERENCE_ONLY",
+      "reviewStatus": "SOURCE_LOCATED",
+      "rightsStatus": "METADATA_ONLY",
+      "notes": "A menção nesta página foi localizada; a ficha completa, o início do verbete e atributos exigem revisão."
+    },
+    {
+      "id": "let-the-streets-run-red-juggler",
+      "name": "Juggler",
+      "source": {
+        "bookCode": "let-the-streets-run-red",
+        "bookTitle": "Let the Streets Run Red",
+        "pdfPage": 157,
+        "printedPage": null
+      },
+      "creatureType": "VAMPIRE",
+      "clanHint": null,
+      "role": "UNDETERMINED",
+      "sheetCompleteness": "UNVERIFIED",
+      "statistics": null,
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "publication": "REFERENCE_ONLY",
+      "reviewStatus": "SOURCE_LOCATED",
+      "rightsStatus": "METADATA_ONLY",
+      "notes": "A menção nesta página foi localizada; a ficha completa, o início do verbete e atributos exigem revisão."
+    },
+    {
+      "id": "let-the-streets-run-red-tessa-greene",
+      "name": "Tessa Greene",
+      "source": {
+        "bookCode": "let-the-streets-run-red",
+        "bookTitle": "Let the Streets Run Red",
+        "pdfPage": 216,
+        "printedPage": null
+      },
+      "creatureType": "VAMPIRE",
+      "clanHint": null,
+      "role": "UNDETERMINED",
+      "sheetCompleteness": "UNVERIFIED",
+      "statistics": null,
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "publication": "REFERENCE_ONLY",
+      "reviewStatus": "SOURCE_LOCATED",
+      "rightsStatus": "METADATA_ONLY",
+      "notes": "A menção nesta página foi localizada; a ficha completa, o início do verbete e atributos exigem revisão."
+    },
+    {
+      "id": "let-the-streets-run-red-modius",
+      "name": "Modius",
+      "source": {
+        "bookCode": "let-the-streets-run-red",
+        "bookTitle": "Let the Streets Run Red",
+        "pdfPage": 208,
+        "printedPage": null
+      },
+      "creatureType": "VAMPIRE",
+      "clanHint": null,
+      "role": "UNDETERMINED",
+      "sheetCompleteness": "UNVERIFIED",
+      "statistics": null,
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "publication": "REFERENCE_ONLY",
+      "reviewStatus": "SOURCE_LOCATED",
+      "rightsStatus": "METADATA_ONLY",
+      "notes": "A menção nesta página foi localizada; a ficha completa, o início do verbete e atributos exigem revisão."
+    },
+    {
+      "id": "let-the-streets-run-red-alan-sovereign",
+      "name": "Alan Sovereign",
+      "source": {
+        "bookCode": "let-the-streets-run-red",
+        "bookTitle": "Let the Streets Run Red",
+        "pdfPage": 220,
+        "printedPage": null
+      },
+      "creatureType": "VAMPIRE",
+      "clanHint": null,
+      "role": "UNDETERMINED",
+      "sheetCompleteness": "UNVERIFIED",
+      "statistics": null,
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "publication": "REFERENCE_ONLY",
+      "reviewStatus": "SOURCE_LOCATED",
+      "rightsStatus": "METADATA_ONLY",
+      "notes": "A menção nesta página foi localizada; a ficha completa, o início do verbete e atributos exigem revisão."
+    }
+  ]
+}

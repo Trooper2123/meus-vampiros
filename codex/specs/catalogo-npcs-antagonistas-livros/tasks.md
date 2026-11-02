@@ -1,0 +1,72 @@
+# SPEC-RPG-022 — Backlog de implementação
+
+**Status:** proposed · **Implementação:** not_started · **Branch:** develop
+
+## Preparação
+
+- [ ] **T01 [P0]** Validar `npc_definitions`, `campaign_npcs`, `NPC_TEMPLATES`, `lib/npc-store.ts`, `NpcData` e a estrutura real de NPCs no banco; identificar componentes existentes a reutilizar.
+- [ ] **T02 [P0]** Ler `UI-GUIDE.md`, `design-system.md` e padrão do botão **Adicionar habilidade**, sem introduzir design paralelo.
+- [ ] **T03 [P0]** Definir política de licenciamento e publicação: conteúdo bibliográfico, perfis originais, estatísticas e imagens; não publicar cópias integrais não autorizadas.
+- [ ] **T04 [P0]** Definir inventário de livros, referências/páginas, integridade dos dados e processo de revisão humana; estabelecer amostra inicial de personagens com fonte exata.
+- [ ] **T05 [P0]** Documentar destino de testes: PostgreSQL de desenvolvimento isolado confirmado (não registrar valor de `DATABASE_URL`); migration/seed reproduzíveis e rollback específico. Não limpar dados automaticamente.
+
+## Catálogo e domínio
+
+- [ ] **T06 [P0]** Estender catálogo de templates atual ou criar estrutura mínima adicional para fontes, status editorial, direitos de uso, completude e classificação.
+- [ ] **T07 [P0]** Adicionar tipagem/validação dos itens; não inferir valores mecânicos ausentes.
+- [ ] **T08 [P0]** Criar seed inicial revisado de fontes autorizadas, com inventário de cobertura e indicação de lacunas.
+- [ ] **T09 [P0]** Implementar busca paginada e filtros combinados, com limites e consultas seguras.
+- [ ] **T10 [P0]** Implementar clonagem de template aprovado para NPC da campanha, reutilizando o fluxo existente e garantindo isolamento por instância.
+- [ ] **T11 [P0]** Preservar proveniência, revisão do catálogo e marcação de adaptação sem expor conteúdo não licenciado.
+- [ ] **T12 [P1]** Integrar personagem adicionado ao ciclo de vida existente (edição, arquivamento, mesa e sessão).
+
+## Interface
+
+- [ ] **T13 [P1]** Adicionar aba/rota **Biblioteca dos Livros** no catálogo de NPCs, com busca e filtros.
+- [ ] **T14 [P1]** Implementar card, prévia de dados e fonte bibliográfica com fallback textual para PDF inacessível.
+- [ ] **T15 [P1]** Implementar botão **Adicionar à mesa** e modal de escolha da mesa/visibilidade, inspirado em **Adicionar habilidade**.
+- [ ] **T16 [P1]** Sinalizar ficha completa/parcial/narrativa e necessidade de revisão manual sem gerar estatísticas arbitrárias.
+
+## Qualidade e segurança
+
+- [ ] **T17 [P0]** Testar 401/403, IDOR/BOLA, payload forjado, campanha alheia, segredo de antagonista, conteúdo não autorizado e publicação acidental de PDFs.
+- [ ] **T18 [P0]** Testar busca, paginação, clonagem, cópias isoladas, idempotência e fidelidade de proveniência.
+- [ ] **T19 [P1]** Testar acessibilidade, responsividade e UX de estados vazios/carregamento; registrar pendências.
+- [ ] **T20 [P0]** Executar testes relevantes, tipos, lint, auditoria de dependências, análise de segurança e skill `pre-commit-review`; manter status blocked se houver falhas impeditivas.
+- [ ] **T21 [P0]** Atualizar CHANGELOG com data/hora BRT, tipo, escopo efetivo e arquivos alterados na implementação.
+
+## Definition of Done
+
+Um Narrador autorizado consegue pesquisar NPCs/antagonistas com origem clara, visualizar somente informações e mecânicas verificadas, selecionar **Adicionar à mesa** e receber instância isolada e editável na campanha, sem alterar o template e sem expor informações privadas ou conteúdo não licenciado.
+
+**Escopo desta entrega documental:** apenas SPEC. Nenhuma migração, seed ou alteração de aplicação executada.
+
+
+## Ampliação v1.1 — Backlog adicional
+
+- [ ] **T22 [P0]** Criar modelos **genéricos e originais** de antagonistas/NPCs (segurança, investigador, caçador, criminoso, ocultista, carniçal e vampiro rival), com níveis de ameaça e formatos de ficha, sem atribuir origem oficial indevida.
+- [ ] **T23 [P0]** Integrar **Criar NPC/Antagonista do zero** e **Criar a partir de modelo** aos editores e catálogo já existentes; salvar sempre privado por padrão.
+- [ ] **T24 [P0]** Criar popup opcional **Quer compartilhar seu NPC com a comunidade?** depois do salvamento privado, sem caixas pré-marcadas, com recusa/fechamento não bloqueantes e limite de exibição.
+- [ ] **T25 [P0]** Implementar prévia editável da **cópia** a enviar com allowlist de campos e remoção de dados privados no backend.
+- [ ] **T26 [P0]** Definir termos de contribuição/licença, política de privacidade, declaração de autoria/direitos, consentimento de envio e consentimento **separado** para crédito público.
+- [ ] **T27 [P0]** Criar persistência e fluxo `PENDING_REVIEW`→moderação→publicação, com snapshot versionado, auditoria e idempotência.
+- [ ] **T28 [P0]** Bloquear contribuições de personagens copiados/adaptados de livros sem direitos comprovados; garantir separação entre catálogo oficial, genérico e comunitário.
+- [ ] **T29 [P1]** Permitir acompanhamento de submissão, pedido de alterações, retirada pré-publicação e solicitação de remoção após publicação, sem afetar ficha privada.
+- [ ] **T30 [P1]** Adicionar busca do catálogo comunitário, somente conteúdo aprovado, com importação por cópia e crédito opcional.
+- [ ] **T31 [P0]** Testar ausência total de envio sem opt-in, encerramento do popup, preservação de dados privados, acesso e moderação, consentimento versionado, direitos autorais, clonagem de modelos genéricos e não sincronização posterior da ficha.
+- [ ] **T32 [P0]** Incluir telas e novos contratos nos testes de segurança (401/403, IDOR/BOLA, XSS, limites, moderação e publicação), realizar revisão pré-commit e atualizar CHANGELOG quando implementar.
+
+### Definition of Done adicional
+
+A criação privada funciona independentemente do compartilhamento; o popup solicita consentimento claro, granular e revogável nos termos aplicáveis; somente snapshot revisado/permitido é submetido, e **nenhuma ficha aparece publicamente sem revisão e aprovação**. Os modelos genéricos e o catálogo comunitário nunca sobrescrevem NPCs pessoais ou personagens dos livros.
+
+**Status:** tarefas propostas, nenhuma funcionalidade implementada por esta atualização documental.
+
+## Progresso de seeds — 2026-11-02
+
+- [x] Criar seed inicial de **10 referências canônicas** com localizador de PDF, explicitamente sem estatísticas verificadas: `seeds/reference/npcs-v5.json`.
+- [x] Criar **10 arquétipos genéricos originais** adicionais em `seeds/reference/generic-antagonists-v5.json` (além dos 15 `NPC_TEMPLATES` já presentes).
+- [x] Adicionar verificador `scripts/validate-reference-seeds.mjs` e documentação de cobertura.
+- [ ] Extrair e revisar fichas integrais, blocos de estatísticas e páginas impressas dos livros; habilitar seeds no catálogo e no banco somente depois de revisão de direitos e autorização de ambiente.
+
+**Nota:** os itens T04/T07/T08 continuam abertos até a cobertura e revisão editorial completas; arquivos de referência não são fichas prontas.

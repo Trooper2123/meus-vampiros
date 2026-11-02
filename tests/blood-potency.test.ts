@@ -17,7 +17,7 @@ describe('Potência do Sangue CORE_V5', () => {
     global.__devDb = undefined; auth.actor = 'owner'
   })
   it.each([
-    [0, null, 1, null, null, 0], [1, 1, 1, null, 1, 1], [2, 1, 2, 1, 1, 1],
+    [0, 0, 1, 0, 0, 0], [1, 1, 1, 0, 1, 1], [2, 1, 2, 1, 1, 1],
     [3, 2, 2, 1, 2, 2], [4, 2, 3, 2, 2, 2], [5, 3, 3, 2, 3, 3],
   ])('calcula linha %s sem mudar estados atuais', (potency, surge, mend, power, reroll, bane) => {
     const data = { 'potencia-de-sangue': potency, fome: 4, healthDamage: { superficial: 2, aggravated: 1 } }
@@ -25,13 +25,18 @@ describe('Potência do Sangue CORE_V5', () => {
     expect(calculateBloodPotencyEffects(data)).toMatchObject({ bloodSurgeDice: surge, superficialMendAmount: mend, disciplinePowerBonusDice: power, disciplineRouseRerollMaxLevel: reroll, baneSeverity: bane })
     expect(data).toEqual(previous)
   })
-  it.each([6, 7, 8, 9, 10, -1, 1.5, 11, '', null, false, 'wrong'])('não presume valores para %j', potency => {
+  it.each([-1, 1.5, 11, '', null, false, 'wrong'])('não presume valores para %j', potency => {
     expect(() => calculateBloodPotencyEffects({ 'potencia-de-sangue': potency })).toThrow()
+  })
+  it('aceita níveis 6–10 do catálogo, sujeitos aos limites da geração e autorização', () => {
+    for (let level = 6; level <= 10; level++) expect(calculateBloodPotencyEffects({ 'potencia-de-sangue': level, characterType: 'VAMPIRE_NPC', geracao: 4 })).toMatchObject({ bloodPotency: level })
+    expect(() => calculateBloodPotencyEffects({ 'potencia-de-sangue': 6, geracao: 9 })).toThrow()
+    expect(() => calculateBloodPotencyEffects({ 'potencia-de-sangue': 6, characterType: 'PLAYER_VAMPIRE', geracao: 4 })).toThrow()
   })
   it('não aceita perfil desconhecido e trata Caitiff/sangue-ralo', () => {
     expect(() => calculateBloodPotencyEffects({ 'potencia-de-sangue': 1 }, 'COMPANION')).toThrow()
     expect(calculateBloodPotencyEffects({ 'potencia-de-sangue': 3, cla: 'Caitiff' }).baneSeverity).toBeNull()
-    expect(calculateBloodPotencyEffects({ 'potencia-de-sangue': 0, creationType: 'THIN_BLOOD' }).baneSeverity).toBe(0)
+    expect(calculateBloodPotencyEffects({ 'potencia-de-sangue': 0, creationType: 'THIN_BLOOD' }).baneSeverity).toBeNull()
     expect(() => calculateBloodPotencyEffects({ 'potencia-de-sangue': 1, isThinBlood: true })).toThrow()
   })
   it('estrutura restrições cumulativas de alimentação sem executar alimentação', () => {
@@ -77,6 +82,6 @@ describe('Potência do Sangue CORE_V5', () => {
     const html = renderToStaticMarkup(createElement(BloodPotencySummary, { draft: { 'potencia-de-sangue': 3 } }))
     expect(html).toContain('Surto de Sangue'); expect(html).toContain('Penalidade de Alimentação')
     expect(html).toContain('Disciplinas até nível 2'); expect(html).not.toContain('<input')
-    expect(renderToStaticMarkup(createElement(BloodPotencySummary, { draft: { 'potencia-de-sangue': 6 } }))).toContain('sem tabela verificada')
+    expect(renderToStaticMarkup(createElement(BloodPotencySummary, { draft: { 'potencia-de-sangue': 6 } }))).toContain('Potência 6')
   })
 })

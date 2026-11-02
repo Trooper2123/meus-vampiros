@@ -1,0 +1,227 @@
+{
+  "schemaVersion": "1.0.0",
+  "generatedFor": "SPEC-RPG-022",
+  "note": "Seeds suplementares; lib/npc-domain.ts já contém 15 NPC_TEMPLATES genéricos existentes.",
+  "entries": [
+    {
+      "id": "generic-corporate-fixer",
+      "origin": "GENERIC_TEMPLATE",
+      "rulesStatus": "ORIGINAL_HOME_BREW",
+      "data": {
+        "name": "Intermediário corporativo",
+        "sheetType": "INTERMEDIATE",
+        "creatureType": "MORTAL",
+        "role": "NEUTRAL",
+        "threatLevel": 3,
+        "concept": "Executivo que negocia influência, contratos e vazamentos.",
+        "description": "Modelo genérico original do Meus Vampiros. Ajustar para a crônica.",
+        "standardPools": {
+          "physical": 2,
+          "social": 5,
+          "mental": 5
+        },
+        "healthMax": 6,
+        "willpowerMax": 6
+      },
+      "licenseReview": "ORIGINAL_CONTENT"
+    },
+    {
+      "id": "generic-private-military-operator",
+      "origin": "GENERIC_TEMPLATE",
+      "rulesStatus": "ORIGINAL_HOME_BREW",
+      "data": {
+        "name": "Operador paramilitar",
+        "sheetType": "INTERMEDIATE",
+        "creatureType": "MORTAL",
+        "role": "ANTAGONIST",
+        "threatLevel": 4,
+        "concept": "Combatente contratado para serviços clandestinos.",
+        "description": "Modelo genérico original do Meus Vampiros. Ajustar para a crônica.",
+        "standardPools": {
+          "physical": 7,
+          "social": 3,
+          "mental": 4
+        },
+        "healthMax": 7,
+        "willpowerMax": 5
+      },
+      "licenseReview": "ORIGINAL_CONTENT"
+    },
+    {
+      "id": "generic-si-intelligence-analyst",
+      "origin": "GENERIC_TEMPLATE",
+      "rulesStatus": "ORIGINAL_HOME_BREW",
+      "data": {
+        "name": "Analista de inteligência antissobrenatural",
+        "sheetType": "INTERMEDIATE",
+        "creatureType": "MORTAL",
+        "role": "ANTAGONIST",
+        "threatLevel": 4,
+        "concept": "Analista que cruza dados de anomalias e vigilância; criação original, sem vínculo com personagem publicado.",
+        "description": "Modelo genérico original do Meus Vampiros. Ajustar para a crônica.",
+        "standardPools": {
+          "physical": 3,
+          "social": 3,
+          "mental": 7
+        },
+        "healthMax": 5,
+        "willpowerMax": 7
+      },
+      "licenseReview": "ORIGINAL_CONTENT"
+    },
+    {
+      "id": "generic-occult-archivist",
+      "origin": "GENERIC_TEMPLATE",
+      "rulesStatus": "ORIGINAL_HOME_BREW",
+      "data": {
+        "name": "Arquivista ocultista",
+        "sheetType": "INTERMEDIATE",
+        "creatureType": "MORTAL",
+        "role": "NEUTRAL",
+        "threatLevel": 3,
+        "concept": "Pesquisador de documentos, símbolos e histórias locais.",
+        "description": "Modelo genérico original do Meus Vampiros. Ajustar para a crônica.",
+        "standardPools": {
+          "physical": 2,
+          "social": 4,
+          "mental": 6
+        },
+        "healthMax": 5,
+        "willpowerMax": 6
+      },
+      "licenseReview": "ORIGINAL_CONTENT"
+    },
+    {
+      "id": "generic-neighborhood-informant",
+      "origin": "GENERIC_TEMPLATE",
+      "rulesStatus": "ORIGINAL_HOME_BREW",
+      "data": {
+        "name": "Informante de bairro",
+        "sheetType": "INTERMEDIATE",
+        "creatureType": "MORTAL",
+        "role": "NEUTRAL",
+        "threatLevel": 2,
+        "concept": "Conhece rotas, movimentos e relações de seu território.",
+        "description": "Modelo genérico original do Meus Vampiros. Ajustar para a crônica.",
+        "standardPools": {
+          "physical": 2,
+          "social": 5,
+          "mental": 4
+        },
+        "healthMax": 5,
+        "willpowerMax": 5
+      },
+      "licenseReview": "ORIGINAL_CONTENT"
+    },
+    {
+      "id": "generic-renegade-ghoul",
+      "origin": "GENERIC_TEMPLATE",
+      "rulesStatus": "ORIGINAL_HOME_BREW",
+      "data": {
+        "name": "Carniçal renegado",
+        "sheetType": "INTERMEDIATE",
+        "creatureType": "GHOUL",
+        "role": "RIVAL",
+        "threatLevel": 4,
+        "concept": "Servidor emancipado que procura sobreviver sem um domitor.",
+        "description": "Modelo genérico original do Meus Vampiros. Ajustar para a crônica.",
+        "standardPools": {
+          "physical": 6,
+          "social": 4,
+          "mental": 4
+        },
+        "healthMax": 7,
+        "willpowerMax": 5
+      },
+      "licenseReview": "ORIGINAL_CONTENT"
+    },
+    {
+      "id": "generic-anarch-organizer",
+      "origin": "GENERIC_TEMPLATE",
+      "rulesStatus": "ORIGINAL_HOME_BREW",
+      "data": {
+        "name": "Organizador anarquista vampírico",
+        "sheetType": "INTERMEDIATE",
+        "creatureType": "VAMPIRE",
+        "role": "RIVAL",
+        "threatLevel": 4,
+        "concept": "Articulador político vampírico que mobiliza aliados e disputas de território.",
+        "description": "Modelo genérico original do Meus Vampiros. Ajustar para a crônica.",
+        "standardPools": {
+          "physical": 4,
+          "social": 6,
+          "mental": 5
+        },
+        "healthMax": 7,
+        "willpowerMax": 6
+      },
+      "licenseReview": "ORIGINAL_CONTENT"
+    },
+    {
+      "id": "generic-cult-ritual-assistant",
+      "origin": "GENERIC_TEMPLATE",
+      "rulesStatus": "ORIGINAL_HOME_BREW",
+      "data": {
+        "name": "Assistente de culto noturno",
+        "sheetType": "INTERMEDIATE",
+        "creatureType": "MORTAL",
+        "role": "ANTAGONIST",
+        "threatLevel": 3,
+        "concept": "Auxiliar de sociedade secreta que conhece apenas parte dos ritos.",
+        "description": "Modelo genérico original do Meus Vampiros. Ajustar para a crônica.",
+        "standardPools": {
+          "physical": 3,
+          "social": 5,
+          "mental": 5
+        },
+        "healthMax": 5,
+        "willpowerMax": 6
+      },
+      "licenseReview": "ORIGINAL_CONTENT"
+    },
+    {
+      "id": "generic-media-investigator",
+      "origin": "GENERIC_TEMPLATE",
+      "rulesStatus": "ORIGINAL_HOME_BREW",
+      "data": {
+        "name": "Repórter investigativo",
+        "sheetType": "INTERMEDIATE",
+        "creatureType": "MORTAL",
+        "role": "NEUTRAL",
+        "threatLevel": 3,
+        "concept": "Jornalista que investiga desaparecimentos, corrupção e pistas improváveis.",
+        "description": "Modelo genérico original do Meus Vampiros. Ajustar para a crônica.",
+        "standardPools": {
+          "physical": 2,
+          "social": 5,
+          "mental": 6
+        },
+        "healthMax": 5,
+        "willpowerMax": 6
+      },
+      "licenseReview": "ORIGINAL_CONTENT"
+    },
+    {
+      "id": "generic-vampire-infiltrator",
+      "origin": "GENERIC_TEMPLATE",
+      "rulesStatus": "ORIGINAL_HOME_BREW",
+      "data": {
+        "name": "Infiltrador vampírico",
+        "sheetType": "INTERMEDIATE",
+        "creatureType": "VAMPIRE",
+        "role": "ANTAGONIST",
+        "threatLevel": 5,
+        "concept": "Operativo de facção não especificada, especializado em informação e disfarces.",
+        "description": "Modelo genérico original do Meus Vampiros. Ajustar para a crônica.",
+        "standardPools": {
+          "physical": 5,
+          "social": 5,
+          "mental": 6
+        },
+        "healthMax": 7,
+        "willpowerMax": 7
+      },
+      "licenseReview": "ORIGINAL_CONTENT"
+    }
+  ]
+}

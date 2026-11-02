@@ -1,0 +1,1348 @@
+{
+  "schemaVersion": "1.0.0",
+  "generatedFor": "SPEC-RPG-023",
+  "scope": "Seed bibliográfico inicial, não uma transcrição completa de níveis ou efeitos.",
+  "importPolicy": "REFERENCE_ONLY_UNTIL_MECHANICS_REVIEWED",
+  "levelRule": "Loresheet perk levels are independent; do not imply lower levels.",
+  "books": {
+    "CORE": "Vampire: The Masquerade V5 — Corebook",
+    "CHICAGO": "Chicago by Night",
+    "FOLIOS": "The Chicago Folios",
+    "STREETS": "Let the Streets Run Red",
+    "CULTS": "Cults of the Blood Gods",
+    "FORBIDDEN": "Forbidden Religions",
+    "SABBAT": "Sabbat: The Black Hand",
+    "LONDON": "The Fall of London",
+    "BLOOD": "Blood Sigils",
+    "MEMORIAM": "In Memoriam",
+    "SUCCUBUS": "Live from the Succubus Club"
+  },
+  "entries": [
+    {
+      "id": "core-theo-bell",
+      "nameEn": "Theo Bell",
+      "source": {
+        "bookCode": "CORE",
+        "bookTitle": "Vampire: The Masquerade V5 — Corebook",
+        "pdfPage": 385,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": null,
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "core-carna",
+      "nameEn": "Carna",
+      "source": {
+        "bookCode": "CORE",
+        "bookTitle": "Vampire: The Masquerade V5 — Corebook",
+        "pdfPage": 387,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": null,
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "core-convention-of-thorns",
+      "nameEn": "Convention of Thorns",
+      "source": {
+        "bookCode": "CORE",
+        "bookTitle": "Vampire: The Masquerade V5 — Corebook",
+        "pdfPage": 389,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": null,
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "core-golconda",
+      "nameEn": "Golconda",
+      "source": {
+        "bookCode": "CORE",
+        "bookTitle": "Vampire: The Masquerade V5 — Corebook",
+        "pdfPage": 391,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": null,
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "core-descendant-of-helena",
+      "nameEn": "Descendant of Helena",
+      "source": {
+        "bookCode": "CORE",
+        "bookTitle": "Vampire: The Masquerade V5 — Corebook",
+        "pdfPage": 393,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": null,
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "core-the-trinity",
+      "nameEn": "The Trinity",
+      "source": {
+        "bookCode": "CORE",
+        "bookTitle": "Vampire: The Masquerade V5 — Corebook",
+        "pdfPage": 395,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": null,
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "core-descendant-of-tyler",
+      "nameEn": "Descendant of Tyler",
+      "source": {
+        "bookCode": "CORE",
+        "bookTitle": "Vampire: The Masquerade V5 — Corebook",
+        "pdfPage": 399,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": null,
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "core-descendant-of-vasantasena",
+      "nameEn": "Descendant of Vasantasena",
+      "source": {
+        "bookCode": "CORE",
+        "bookTitle": "Vampire: The Masquerade V5 — Corebook",
+        "pdfPage": 401,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": null,
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "core-low-clan",
+      "nameEn": "Low Clan",
+      "source": {
+        "bookCode": "CORE",
+        "bookTitle": "Vampire: The Masquerade V5 — Corebook",
+        "pdfPage": 403,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": null,
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "chicago-annabelle",
+      "nameEn": "Annabelle",
+      "source": {
+        "bookCode": "CHICAGO",
+        "bookTitle": "Chicago by Night",
+        "pdfPage": 263,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": null,
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "chicago-ballard-industries",
+      "nameEn": "Ballard Industries",
+      "source": {
+        "bookCode": "CHICAGO",
+        "bookTitle": "Chicago by Night",
+        "pdfPage": 264,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": null,
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "chicago-blacksite-24",
+      "nameEn": "Blacksite 24",
+      "source": {
+        "bookCode": "CHICAGO",
+        "bookTitle": "Chicago by Night",
+        "pdfPage": 265,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": null,
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "chicago-the-blue-velvet",
+      "nameEn": "The Blue Velvet",
+      "source": {
+        "bookCode": "CHICAGO",
+        "bookTitle": "Chicago by Night",
+        "pdfPage": 267,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": null,
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "chicago-capone-gang",
+      "nameEn": "Capone Gang",
+      "source": {
+        "bookCode": "CHICAGO",
+        "bookTitle": "Chicago by Night",
+        "pdfPage": 269,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": null,
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "chicago-the-cobweb",
+      "nameEn": "The Cobweb",
+      "source": {
+        "bookCode": "CHICAGO",
+        "bookTitle": "Chicago by Night",
+        "pdfPage": 271,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": "MALKAVIAN",
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "chicago-cultivar",
+      "nameEn": "Cultivar",
+      "source": {
+        "bookCode": "CHICAGO",
+        "bookTitle": "Chicago by Night",
+        "pdfPage": 272,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": null,
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "chicago-cult-of-shalim",
+      "nameEn": "Cult of Shalim",
+      "source": {
+        "bookCode": "CHICAGO",
+        "bookTitle": "Chicago by Night",
+        "pdfPage": 273,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": null,
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "chicago-descendant-of-lodin",
+      "nameEn": "Descendant of Lodin",
+      "source": {
+        "bookCode": "CHICAGO",
+        "bookTitle": "Chicago by Night",
+        "pdfPage": 274,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": "VENTRUE",
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "chicago-descendant-of-montano",
+      "nameEn": "Descendant of Montano",
+      "source": {
+        "bookCode": "CHICAGO",
+        "bookTitle": "Chicago by Night",
+        "pdfPage": 275,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": "LASOMBRA",
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "chicago-fires-and-floods-and-devil-s-night",
+      "nameEn": "Fires and Floods and Devil's Night",
+      "source": {
+        "bookCode": "CHICAGO",
+        "bookTitle": "Chicago by Night",
+        "pdfPage": 276,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": null,
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "chicago-firstlight",
+      "nameEn": "FIRSTLIGHT",
+      "source": {
+        "bookCode": "CHICAGO",
+        "bookTitle": "Chicago by Night",
+        "pdfPage": 277,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": null,
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "chicago-kevin-jackson",
+      "nameEn": "Kevin Jackson",
+      "source": {
+        "bookCode": "CHICAGO",
+        "bookTitle": "Chicago by Night",
+        "pdfPage": 278,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": null,
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "chicago-kindred-iconography",
+      "nameEn": "Kindred Iconography",
+      "source": {
+        "bookCode": "CHICAGO",
+        "bookTitle": "Chicago by Night",
+        "pdfPage": 279,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": null,
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "chicago-the-labyrinth",
+      "nameEn": "The Labyrinth",
+      "source": {
+        "bookCode": "CHICAGO",
+        "bookTitle": "Chicago by Night",
+        "pdfPage": 280,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": null,
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "chicago-lupine-expert",
+      "nameEn": "Lupine Expert",
+      "source": {
+        "bookCode": "CHICAGO",
+        "bookTitle": "Chicago by Night",
+        "pdfPage": 281,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": null,
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "chicago-nathaniel-bordruff",
+      "nameEn": "Nathaniel Bordruff",
+      "source": {
+        "bookCode": "CHICAGO",
+        "bookTitle": "Chicago by Night",
+        "pdfPage": 282,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": null,
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "chicago-the-painted-lady",
+      "nameEn": "The Painted Lady",
+      "source": {
+        "bookCode": "CHICAGO",
+        "bookTitle": "Chicago by Night",
+        "pdfPage": 283,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": null,
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "chicago-revenant-family-ducheski",
+      "nameEn": "Revenant Family: Ducheski",
+      "source": {
+        "bookCode": "CHICAGO",
+        "bookTitle": "Chicago by Night",
+        "pdfPage": 284,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": "TREMERE",
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "chicago-the-society-of-st-leopold",
+      "nameEn": "The Society of St. Leopold",
+      "source": {
+        "bookCode": "CHICAGO",
+        "bookTitle": "Chicago by Night",
+        "pdfPage": 285,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": null,
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "chicago-talley",
+      "nameEn": "Talley",
+      "source": {
+        "bookCode": "CHICAGO",
+        "bookTitle": "Chicago by Night",
+        "pdfPage": 287,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": null,
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "chicago-wauneka",
+      "nameEn": "Wauneka",
+      "source": {
+        "bookCode": "CHICAGO",
+        "bookTitle": "Chicago by Night",
+        "pdfPage": 288,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": null,
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "folios-archons",
+      "nameEn": "Archons",
+      "source": {
+        "bookCode": "FOLIOS",
+        "bookTitle": "The Chicago Folios",
+        "pdfPage": 159,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": null,
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "folios-the-convention-of-chicago",
+      "nameEn": "The Convention of Chicago",
+      "source": {
+        "bookCode": "FOLIOS",
+        "bookTitle": "The Chicago Folios",
+        "pdfPage": 160,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": null,
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "folios-descendant-of-menele",
+      "nameEn": "Descendant of Menele",
+      "source": {
+        "bookCode": "FOLIOS",
+        "bookTitle": "The Chicago Folios",
+        "pdfPage": 161,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": "BRUJAH",
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "folios-goblin-roads",
+      "nameEn": "Goblin Roads",
+      "source": {
+        "bookCode": "FOLIOS",
+        "bookTitle": "The Chicago Folios",
+        "pdfPage": 162,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": null,
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "folios-justicar-lucinde",
+      "nameEn": "Justicar Lucinde",
+      "source": {
+        "bookCode": "FOLIOS",
+        "bookTitle": "The Chicago Folios",
+        "pdfPage": 163,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": null,
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "folios-khalid-al-rashid",
+      "nameEn": "Khalid al-Rashid",
+      "source": {
+        "bookCode": "FOLIOS",
+        "bookTitle": "The Chicago Folios",
+        "pdfPage": 164,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": null,
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "folios-kindred-dueling",
+      "nameEn": "Kindred Dueling",
+      "source": {
+        "bookCode": "FOLIOS",
+        "bookTitle": "The Chicago Folios",
+        "pdfPage": 165,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": null,
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "folios-malkavian-family",
+      "nameEn": "Malkavian Family",
+      "source": {
+        "bookCode": "FOLIOS",
+        "bookTitle": "The Chicago Folios",
+        "pdfPage": 166,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": "MALKAVIAN",
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "folios-occult-artifacts",
+      "nameEn": "Occult Artifacts",
+      "source": {
+        "bookCode": "FOLIOS",
+        "bookTitle": "The Chicago Folios",
+        "pdfPage": 167,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": "TREMERE|BANU_HAQIM",
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "folios-the-pony-express",
+      "nameEn": "The Pony Express",
+      "source": {
+        "bookCode": "FOLIOS",
+        "bookTitle": "The Chicago Folios",
+        "pdfPage": 168,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": null,
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "folios-sheriff-damien",
+      "nameEn": "Sheriff Damien",
+      "source": {
+        "bookCode": "FOLIOS",
+        "bookTitle": "The Chicago Folios",
+        "pdfPage": 169,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": null,
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "folios-the-wolf-pack",
+      "nameEn": "The Wolf Pack",
+      "source": {
+        "bookCode": "FOLIOS",
+        "bookTitle": "The Chicago Folios",
+        "pdfPage": 170,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": null,
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "streets-eletria",
+      "nameEn": "Eletria",
+      "source": {
+        "bookCode": "STREETS",
+        "bookTitle": "Let the Streets Run Red",
+        "pdfPage": 226,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": null,
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "streets-juggler",
+      "nameEn": "Juggler",
+      "source": {
+        "bookCode": "STREETS",
+        "bookTitle": "Let the Streets Run Red",
+        "pdfPage": 228,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": null,
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "streets-mark-decker",
+      "nameEn": "Mark Decker",
+      "source": {
+        "bookCode": "STREETS",
+        "bookTitle": "Let the Streets Run Red",
+        "pdfPage": 230,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": null,
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "streets-the-milwaukee-null-zone",
+      "nameEn": "The Milwaukee Null Zone",
+      "source": {
+        "bookCode": "STREETS",
+        "bookTitle": "Let the Streets Run Red",
+        "pdfPage": 232,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": null,
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "streets-modius",
+      "nameEn": "Modius",
+      "source": {
+        "bookCode": "STREETS",
+        "bookTitle": "Let the Streets Run Red",
+        "pdfPage": 234,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": null,
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "cults-child-of-the-angel-michael",
+      "nameEn": "Child of the Angel Michael",
+      "source": {
+        "bookCode": "CULTS",
+        "bookTitle": "Cults of the Blood Gods",
+        "pdfPage": 230,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": "EXCLUDES_NOSFERATU",
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "cults-the-promise-of-1528",
+      "nameEn": "The Promise of 1528",
+      "source": {
+        "bookCode": "CULTS",
+        "bookTitle": "Cults of the Blood Gods",
+        "pdfPage": 232,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": null,
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "forbidden-blood-asceticism",
+      "nameEn": "Blood Asceticism",
+      "source": {
+        "bookCode": "FORBIDDEN",
+        "bookTitle": "Forbidden Religions",
+        "pdfPage": 90,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": null,
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "forbidden-plagues-of-gehenna",
+      "nameEn": "Plagues of Gehenna",
+      "source": {
+        "bookCode": "FORBIDDEN",
+        "bookTitle": "Forbidden Religions",
+        "pdfPage": 92,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": null,
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "forbidden-spear-of-orthia",
+      "nameEn": "Spear of Orthia",
+      "source": {
+        "bookCode": "FORBIDDEN",
+        "bookTitle": "Forbidden Religions",
+        "pdfPage": 94,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": "VENTRUE",
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "blood-student-of-kirin-taunk",
+      "nameEn": "Student of Kirin Taunk",
+      "source": {
+        "bookCode": "BLOOD",
+        "bookTitle": "Blood Sigils",
+        "pdfPage": 180,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": "THIN_BLOOD_ALCHEMIST",
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "blood-vienna-zero",
+      "nameEn": "Vienna Zero",
+      "source": {
+        "bookCode": "BLOOD",
+        "bookTitle": "Blood Sigils",
+        "pdfPage": 182,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": "BLOOD_SORCERY_USER",
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "memoriam-childe-of-the-revolution",
+      "nameEn": "Childe of the Revolution",
+      "source": {
+        "bookCode": "MEMORIAM",
+        "bookTitle": "In Memoriam",
+        "pdfPage": 152,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": null,
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "memoriam-the-vanderbilt-ventrue",
+      "nameEn": "The Vanderbilt Ventrue",
+      "source": {
+        "bookCode": "MEMORIAM",
+        "bookTitle": "In Memoriam",
+        "pdfPage": 156,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": "VENTRUE",
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "succubus-descendant-of-idder",
+      "nameEn": "Descendant of Idder",
+      "source": {
+        "bookCode": "SUCCUBUS",
+        "bookTitle": "Live from the Succubus Club",
+        "pdfPage": 160,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": "BANU_HAQIM",
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "succubus-descendant-of-phaedyme",
+      "nameEn": "Descendant of Phaedyme",
+      "source": {
+        "bookCode": "SUCCUBUS",
+        "bookTitle": "Live from the Succubus Club",
+        "pdfPage": 162,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": "RAVNOS",
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "succubus-succubus-club-copycat",
+      "nameEn": "Succubus Club Copycat",
+      "source": {
+        "bookCode": "SUCCUBUS",
+        "bookTitle": "Live from the Succubus Club",
+        "pdfPage": 164,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": null,
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "succubus-the-pony-express",
+      "nameEn": "The Pony Express",
+      "source": {
+        "bookCode": "SUCCUBUS",
+        "bookTitle": "Live from the Succubus Club",
+        "pdfPage": 165,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": null,
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "succubus-road-courier",
+      "nameEn": "Road Courier",
+      "source": {
+        "bookCode": "SUCCUBUS",
+        "bookTitle": "Live from the Succubus Club",
+        "pdfPage": 166,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": null,
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "succubus-temple-of-boom-contract",
+      "nameEn": "Temple of Boom Contract",
+      "source": {
+        "bookCode": "SUCCUBUS",
+        "bookTitle": "Live from the Succubus Club",
+        "pdfPage": 168,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": null,
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "sabbat-lilith-the-dark-mother",
+      "nameEn": "Lilith the Dark Mother",
+      "source": {
+        "bookCode": "SABBAT",
+        "bookTitle": "Sabbat: The Black Hand",
+        "pdfPage": 216,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": null,
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "sabbat-adonia",
+      "nameEn": "Adonia",
+      "source": {
+        "bookCode": "SABBAT",
+        "bookTitle": "Sabbat: The Black Hand",
+        "pdfPage": 217,
+        "printedPage": null
+      },
+      "kind": "GROUP_LORESHEET",
+      "eligibilityHint": null,
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "sabbat-amira-al-nabigh",
+      "nameEn": "Amira al-Nabigh",
+      "source": {
+        "bookCode": "SABBAT",
+        "bookTitle": "Sabbat: The Black Hand",
+        "pdfPage": 218,
+        "printedPage": null
+      },
+      "kind": "GROUP_LORESHEET",
+      "eligibilityHint": null,
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "sabbat-jeong-bae-moon",
+      "nameEn": "Jeong-bae Moon",
+      "source": {
+        "bookCode": "SABBAT",
+        "bookTitle": "Sabbat: The Black Hand",
+        "pdfPage": 219,
+        "printedPage": null
+      },
+      "kind": "GROUP_LORESHEET",
+      "eligibilityHint": null,
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "sabbat-paris-el-jaguar",
+      "nameEn": "Paris el Jaguar",
+      "source": {
+        "bookCode": "SABBAT",
+        "bookTitle": "Sabbat: The Black Hand",
+        "pdfPage": 220,
+        "printedPage": null
+      },
+      "kind": "GROUP_LORESHEET",
+      "eligibilityHint": null,
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "sabbat-jack-dolores",
+      "nameEn": "Jack Dolores",
+      "source": {
+        "bookCode": "SABBAT",
+        "bookTitle": "Sabbat: The Black Hand",
+        "pdfPage": 221,
+        "printedPage": null
+      },
+      "kind": "GROUP_LORESHEET",
+      "eligibilityHint": null,
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "sabbat-genevra",
+      "nameEn": "Genevra",
+      "source": {
+        "bookCode": "SABBAT",
+        "bookTitle": "Sabbat: The Black Hand",
+        "pdfPage": 222,
+        "printedPage": null
+      },
+      "kind": "GROUP_LORESHEET",
+      "eligibilityHint": null,
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "sabbat-nawal-bint-hawa",
+      "nameEn": "Nawal bint Hawa",
+      "source": {
+        "bookCode": "SABBAT",
+        "bookTitle": "Sabbat: The Black Hand",
+        "pdfPage": 223,
+        "printedPage": null
+      },
+      "kind": "GROUP_LORESHEET",
+      "eligibilityHint": null,
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "sabbat-oscar-abadia",
+      "nameEn": "Oscar Abadía",
+      "source": {
+        "bookCode": "SABBAT",
+        "bookTitle": "Sabbat: The Black Hand",
+        "pdfPage": 224,
+        "printedPage": null
+      },
+      "kind": "GROUP_LORESHEET",
+      "eligibilityHint": null,
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "sabbat-the-ourobours-synod",
+      "nameEn": "The Ourobours Synod",
+      "source": {
+        "bookCode": "SABBAT",
+        "bookTitle": "Sabbat: The Black Hand",
+        "pdfPage": 225,
+        "printedPage": null
+      },
+      "kind": "GROUP_LORESHEET",
+      "eligibilityHint": null,
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "sabbat-claudia-byrd",
+      "nameEn": "Claudia Byrd",
+      "source": {
+        "bookCode": "SABBAT",
+        "bookTitle": "Sabbat: The Black Hand",
+        "pdfPage": 226,
+        "printedPage": null
+      },
+      "kind": "GROUP_LORESHEET",
+      "eligibilityHint": null,
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "sabbat-the-zantosa",
+      "nameEn": "The Zantosa",
+      "source": {
+        "bookCode": "SABBAT",
+        "bookTitle": "Sabbat: The Black Hand",
+        "pdfPage": 229,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": "SABBAT_OR_TZIMISCE",
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "sabbat-the-oaxaca-diaries",
+      "nameEn": "The Oaxaca Diaries",
+      "source": {
+        "bookCode": "SABBAT",
+        "bookTitle": "Sabbat: The Black Hand",
+        "pdfPage": 230,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": "SABBAT",
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "london-the-hunt-club",
+      "nameEn": "The Hunt Club",
+      "source": {
+        "bookCode": "LONDON",
+        "bookTitle": "The Fall of London",
+        "pdfPage": 233,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": null,
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    },
+    {
+      "id": "london-operation-antigen",
+      "nameEn": "Operation Antigen",
+      "source": {
+        "bookCode": "LONDON",
+        "bookTitle": "The Fall of London",
+        "pdfPage": 237,
+        "printedPage": null
+      },
+      "kind": "LORESHEET",
+      "eligibilityHint": null,
+      "levels": [],
+      "mechanicsStatus": "NOT_EXTRACTED",
+      "verification": "TITLE_AND_PDF_PAGE_LOCATED",
+      "publication": "REFERENCE_ONLY",
+      "notes": "Metadados de localização; conferir restrições, níveis e descrição no livro antes de habilitar seleção."
+    }
+  ]
+}
