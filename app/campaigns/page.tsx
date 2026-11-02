@@ -38,7 +38,7 @@ export default async function CampaignsPage({ searchParams }: Readonly<{ searchP
     <main className={`relative min-h-screen overflow-hidden bg-background text-foreground campaigns-reference-shell ${showInactive ? "campaigns-inactive-view" : ""}`}>
       <div className="noise" aria-hidden="true" />
 
-      <ArchiveHeader title="Campanhas" showCampaigns={allCampaigns.length > 0} variant="campaigns" />
+      <ArchiveHeader title="Campanhas" showCampaigns={allCampaigns.length > 0} variant="campaigns" campaignSection={showInactive ? "inactive" : "current"} />
 
       <div className="archive-content">
         <header className="archive-page-heading campaign-dashboard-heading">
