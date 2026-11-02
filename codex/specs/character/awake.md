@@ -3,7 +3,7 @@
 **Status:** IMPLEMENTAÇÃO PARCIAL / NÃO CONFORME (auditoria de 2026-11-02)  
 **Branch examinada:** `develop`  
 **Escopo:** personagem jogável, com mesa registrada, mesa externa ao aplicativo e tela de sessão ativa.  
-**Regra de produto:** o personagem é o centro da ação. A existência de uma campanha cadastrada no app não é pré-requisito para realizar o despertar.
+**Regra de produto:** o personagem é o centro do estado mecânico. Em mesa cadastrada, a execução do Awake é configurada pelo Narrador: rolagem do jogador ou execução forçada pelo Narrador. A existência de campanha cadastrada não é pré-requisito para fichas independentes.
 
 > Este arquivo foi criado após auditoria porque `codex/specs/character/awake.md` não estava disponível nesse caminho na branch examinada. Ele documenta requisitos confirmados pelo solicitante e divergências observadas no código, **não declara a implementação como concluída**.
 
@@ -40,11 +40,11 @@
 ### 2.2 Personagem participante de mesa registrada
 
 - [ ] Exibir ação **Despertar / Iniciar nova noite** na **visão de sessão ativa do jogador** em `components/game-session/session-workspace.tsx`, junto às rolagens e recursos de seu personagem.
-- [ ] O jogador só controla **seu próprio personagem**, mesmo que seja participante de outras mesas ou veja outros personagens na interface.
+- [ ] No modo `PLAYER_ROLLS`, o jogador só controla **seu próprio personagem**, mesmo que participe de outras mesas ou veja outros personagens na interface. No modo `NARRATOR_FORCES`, o Narrador executa os despertares dos personagens selecionados.
 - [ ] A ação deve enviar `sessionId` quando se originar da sessão ativa; o servidor verifica participação, propriedade da ficha e status da sessão.
 - [ ] O jogador visualiza resultado, Fome antes/depois, estado de torpor, noite ficcional e histórico do próprio personagem.
-- [ ] Coordenar com o atual início de noite coletivo do Narrador: **não executar dois despertares do mesmo personagem na mesma noite**. Preferir criar/ativar a noite da campanha pelo Narrador e oferecer a execução individual ao jogador; se o Narrador executar excepcionalmente, marcar como já resolvida.
-- [ ] Manter visão gerencial do Narrador somente para acompanhamento e intervenções autorizadas, sem permitir que ela substitua automaticamente a ação do jogador.
+- [ ] Coordenar o início de noite com a **política configurada na mesa**: `PLAYER_ROLLS` permite rolagem individual do jogador; `NARRATOR_FORCES` autoriza execução pelo Narrador, inclusive em lote. **Não executar dois despertares do mesmo personagem na mesma noite**, mesmo quando a política mudar entre operações.
+- [ ] Manter visão gerencial do Narrador para acompanhamento e correções; habilitar o botão de execução em lote somente quando `NARRATOR_FORCES` estiver ativo, evitando substituição silenciosa da ação do jogador no modo `PLAYER_ROLLS`.
 
 ### 2.3 Mecânica V5 comum aos dois contextos
 
@@ -130,3 +130,72 @@ A rota existente `/api/campaigns/[id]/nights/awake` pode permanecer **temporaria
 - `tests/awake-route.test.ts`
 
 **Limites da validação:** leitura estática do código da branch `develop`; não foram executados testes, build ou acesso ao banco. O conteúdo original do caminho solicitado não estava disponível, portanto este arquivo é uma especificação de correção e relatório de lacunas, não uma reconstrução literal de documento anterior.
+
+
+## 8. Configuração de mesa: responsável pelo Awake
+
+**Requisito confirmado:** cada mesa cadastrada terá uma configuração editável exclusivamente pelo Narrador indicando quem executa os testes de despertar. O valor deve ser persistido e aplicado tanto pelo backend quanto pela UI.
+
+### 8.1 Campo de configuração
+
+```ts
+type AwakeExecutionMode = 'PLAYER_ROLLS' | 'NARRATOR_FORCES'
+
+type CampaignAwakeSettings = {
+  executionMode: AwakeExecutionMode
+}
+```
+
+- **`PLAYER_ROLLS` — Jogadores realizam o Awake:** opção padrão sugerida para novas mesas. O Narrador inicia/prepara a noite, e cada jogador confirma e realiza seu Rouse Check no próprio personagem. O Narrador acompanha resultados e registra correções/decisões narrativas, mas não dispara o mesmo teste em nome do jogador por padrão.
+- **`NARRATOR_FORCES` — Narrador força o Awake:** o Narrador seleciona os personagens elegíveis e executa seus Rouse Checks individualmente ou em lote. Os jogadores visualizam resultado, Fome e condição atualizados, mas não podem disparar o mesmo Awake naquela noite.
+- **Fichas sem mesa registrada:** a configuração não se aplica; o proprietário continua podendo iniciar a noite da sua ficha e realizar seu próprio teste, identificando explicitamente “Mesa fora do aplicativo” quando esse for o contexto.
+
+**Persistência proposta:** adicionar `awake_settings` (JSONB) à tabela `campaigns`, ou campo correspondente na política de sessão já existente, com default explícito `PLAYER_ROLLS`. Verificar o esquema antes de alterar; não pressupor que o campo já exista. O modo pertence à **mesa** e não ao personagem ou à sessão isolada.
+
+### 8.2 UI de configuração da mesa
+
+- [ ] Adicionar em **Gestão da Mesa → Configurações** o grupo **“Execução do Despertar (Awake)”**.
+- [ ] Exibir seletor com duas escolhas: “Cada jogador realiza o seu despertar” e “Narrador executa os despertares”.
+- [ ] Exibir explicação de alcance da configuração, incluindo custo de Rouse, histórico e a impossibilidade de aplicar o mesmo teste duas vezes na noite.
+- [ ] Somente o Narrador da mesa pode modificar a preferência; jogadores podem **consultar** o modo efetivo na sessão.
+- [ ] Salvar alterações na API autenticada de configurações da mesa e registrar auditoria de mudança (`before`, `after`, `actorId`, `updatedAt`).
+
+### 8.3 Autorizações e lógica de execução
+
+| Contexto | `PLAYER_ROLLS` | `NARRATOR_FORCES` |
+|---|---|---|
+| Preparar/iniciar noite da mesa | Narrador | Narrador |
+| Realizar Rouse de personagem vinculado | **Proprietário** da ficha elegível | **Narrador** da campanha |
+| Execução em lote | Indisponível para resolver testes automaticamente | Narrador pode selecionar subconjunto elegível |
+| Ver resultados individuais | Jogador (sua ficha) e Narrador | Jogador (sua ficha) e Narrador |
+| Corrigir consequências com justificativa | Narrador | Narrador |
+| Ficha de mesa externa ao app | Proprietário realiza; independente da opção | Proprietário realiza; independente da opção |
+
+**Regra de servidor:** antes de gerar qualquer dado, recuperar o modo efetivo da mesa, verificar propriedade/autoridade do ator, participação do personagem e noite/sessão elegível. Nunca confiar no modo transmitido pelo frontend.
+
+**Mutação durante uma noite:** congelar `executionMode` na noite quando ela for preparada. Alterar a configuração geral da mesa modifica **noites futuras**, não altera a autorização nem redistribui testes que já começaram. Uma exceção administrativa precisa ser um comando distinto e auditado, sem repetir rolagens concluídas.
+
+**Idempotência:** a combinação `nightId + characterId` é única e prevalece independentemente de quem executou o Awake, do modo da campanha ou de mudança posterior na configuração. Em modo forçado, o Narrador não deve alterar personagens não selecionados.
+
+### 8.4 Integração à sessão e ao histórico
+
+- [ ] Na visão da sessão ativa do jogador, mostrar **“Realizar Despertar”** somente se `PLAYER_ROLLS` e noite elegível; em `NARRATOR_FORCES`, mostrar **“Despertar realizado pelo Narrador”** (ou **“Aguardando Narrador”**).
+- [ ] No painel do Narrador, mostrar a política efetiva da noite e liberar a execução em lote somente em `NARRATOR_FORCES`.
+- [ ] Exibir o resultado e os efeitos em tempo real/revalidação SWR para jogadores; registrar quem rolou, de quem era o personagem, modo de execução da noite e motivo da ação.
+- [ ] Testar troca da política entre noites, sessão ativa, retry com mesma chave, concorrência jogador/Narrador, torpor, Fome 5, seleção parcial e acesso indevido.
+
+**Critérios de aceite adicionais:**
+- [ ] Configuração salvo/restaurado por mesa, visível ao Narrador e respeitado pela API.
+- [ ] Em `PLAYER_ROLLS`, um jogador pode rolar somente para seu personagem; Narrador não pode forçar via endpoint normal.
+- [ ] Em `NARRATOR_FORCES`, apenas Narrador pode rolar; jogador vê status e resultado sem efetuar nova rolagem.
+- [ ] Mudar opção durante a noite não produz duplicidade nem muda o modo congelado daquela noite.
+- [ ] Ficha sem vínculo com mesa permanece independente dessas configurações.
+
+### 8.5 Tarefas específicas
+
+| ID | Prioridade | Atividade | Estado |
+|---|---|---|---|
+| AWK-007 | **P0** | Criar e persistir `awake_settings.executionMode` na configuração da campanha | [ ] Pendente |
+| AWK-008 | **P0** | Criar seletor da política em Gestão da Mesa → Configurações | [ ] Pendente |
+| AWK-009 | **P0** | Aplicar permissão e congelamento do modo por noite; integrar UI jogador/Narrador | [ ] Pendente |
+| AWK-010 | **P0** | Testar os dois modos, troca entre noites, segurança e não duplicidade | [ ] Pendente |
