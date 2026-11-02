@@ -11,6 +11,7 @@ declare global {
 }
 
 const connectionString = process.env.DATABASE_URL
+let schemaInitialization: Promise<void> | undefined
 const pool = (() => {
   if (!connectionString) return undefined
   if (global.__postgresPool) return global.__postgresPool
@@ -29,7 +30,9 @@ export async function ensurePossessionsTable() {
 
 export async function ensureAllTables() {
   if (!pool) throw new Error('DATABASE_URL não configurada.')
-  await pool.query(`
+  if (schemaInitialization) return schemaInitialization
+  schemaInitialization = (async () => {
+    await pool.query(`
     CREATE TABLE IF NOT EXISTS users (
       id BIGSERIAL PRIMARY KEY,
       auth0_id TEXT UNIQUE NOT NULL,
@@ -292,8 +295,13 @@ export async function ensureAllTables() {
       skill_ids JSONB NOT NULL DEFAULT '[]'::jsonb,
       payload JSONB NOT NULL
     );
-  `)
-  await ensureGameSessionsTables()
+    `)
+    await ensureGameSessionsTables()
+  })().catch(error => {
+    schemaInitialization = undefined
+    throw error
+  })
+  await schemaInitialization
 }
 
 export async function ensureGameSessionsTables() {

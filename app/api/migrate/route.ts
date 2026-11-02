@@ -31,7 +31,7 @@ export async function POST(request: Request) {
     await ensureAllTables()
     return NextResponse.json({ ok: true, message: 'Migração executada com sucesso.' })
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err)
-    return NextResponse.json({ error: 'Falha na migração.', details: message }, { status: 500 })
+    console.error('database_migration_failed', { error: err instanceof Error ? err.name : 'unknown' })
+    return NextResponse.json({ error: 'Falha na migração.' }, { status: 500 })
   }
 }

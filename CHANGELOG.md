@@ -1656,3 +1656,15 @@ Cada entrada deve incluir data, horÃ¡rio (BRT), tipo e resumo do que foi feito
 - Adicionados links de retorno contextual nas fichas, campanhas, sessão, criação/detalhe de NPC e pesquisas do Narrador.
 - Falhas de upload no Vercel Blob agora mostram orientação para conferir o token do storage do ambiente.
 - Validação: 69 testes focados passaram; typecheck passou. Um teste legado de referência visual falhou e parte da suíte V5 exige `DATABASE_URL` não configurada.
+## [2026-11-02 02:15 BRT] - fix - Corrigir build e restringir publicação no LiveKit
+
+**Tipo:** fix
+
+**Arquivos principais:** `lib/db.ts`, `lib/auth/authorization.ts`, `app/api/migrate/route.ts`, `app/master/catalogo/page.tsx`, `app/master/vantagens-defeitos/page.tsx`, `components/game-session/session-workspace.tsx`, `components/livekit/livekit-room-link.tsx`, `components/livekit/livekit-room.tsx`, `lib/livekit.ts`, `app/globals.css`, `tests/db-schema-initialization.test.ts`, `tests/migrate-route.test.ts`, `tests/livekit-token.test.ts`.
+
+- Compartilha a inicialização do schema por processo e permite nova tentativa se ela falhar, evitando repetir DDL em cada requisição.
+- Valida a permissão de gerenciamento de pertence com uma consulta SQL, sem percorrer campanhas e listas inteiras.
+- Retorna erro genérico na rota de migração e registra somente a classe do erro no servidor.
+- Corrige os erros de tipos do workspace e do componente LiveKit; restringe a publicação a câmera e microfone no token, além de ocultar o botão de compartilhamento de tela.
+- Testa a proteção da rota de migração e o escopo de publicação do token LiveKit.
+- Validação: 24 testes focados, TypeScript, lint (0 erros), build e auditoria de dependências de produção aprovados.
