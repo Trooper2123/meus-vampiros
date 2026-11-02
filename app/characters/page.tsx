@@ -112,7 +112,7 @@ export default async function PersonagensPage() {
                             key={group.label} aria-label={group.label}><h2 className="eyebrow mb-6">{group.label}</h2>
                             <div className="grid gap-5 lg:grid-cols-2">
                                 {group.characters.map((character) => (
-                                    <div key={character.id} className="archive-character-card characters-ui-card">
+                                    <div key={character.id} className="archive-character-card characters-ui-card characters-approved-card">
                                         <div className="flex items-start justify-between gap-4">
                                             <div className="flex min-w-0 items-center gap-3">
                                                 <span className="characters-ui-avatar" aria-hidden="true">{character.name?.trim().charAt(0).toUpperCase() || <UserRound className="size-6"/>}</span>
