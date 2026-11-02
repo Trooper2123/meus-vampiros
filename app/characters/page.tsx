@@ -3,7 +3,7 @@ import {CreateCharacterButton} from '@/components/character-creation-dialog'
 import Link from 'next/link'
 import {redirect} from 'next/navigation'
 import {getSessionOrDev} from '@/lib/auth0'
-import {ArrowRight, BookOpen, Plus, Skull, Users, ShieldCheck, ScrollText} from 'lucide-react'
+import {ArrowRight, BookOpen, Plus, Skull, Users, ShieldCheck, ScrollText, Clock3, Pencil, UserRound} from 'lucide-react'
 import {getCharactersForUser} from '@/lib/characters'
 import {getCampaignsForMaster, hasMasterAccess} from '@/lib/campaigns'
 import {MasterPanel} from '@/components/master-panel'
@@ -50,29 +50,30 @@ export default async function PersonagensPage() {
     const campaigns = userIsMaster ? await getCampaignsForMaster(session.user.sub) : []
 
     const storyHref = userIsMaster ? '/campaigns' : '/master'
+  const latestUpdates = characters.slice(0, 5)
 
     return (
         <main className="characters-ui-shell relative min-h-screen overflow-hidden bg-background text-foreground">
             <div className="noise" aria-hidden="true"/>
-            <ArchiveHeader title="Personagens" showCampaigns={campaigns.length > 0}/>
+            <ArchiveHeader title="Personagens" showCampaigns={campaigns.length > 0} variant="characters"/>
 
-            <div className="archive-content characters-ui-content">
+            <div className="archive-content characters-ui-content characters-approved-content">
                 <div
                     className="mb-8 flex flex-col gap-4">{[...new Map(characters.flatMap(character => character.campaignId ? [[character.campaignId, character.campaignName] as const] : []))].map(([campaignId, campaignName]) =>
                     <LiveKitRoomLink key={campaignId} campaignId={campaignId} campaignName={campaignName}
                                      master={false}/>)}</div>
                 {/* Cabeçalho da seção com os dois botões */}
-                <div className="archive-page-heading">
+                <div className="archive-page-heading characters-approved-heading">
                     <div>
                         <p className="eyebrow">Arquivo pessoal / acesso autorizado</p>
-                        <h1 className="mt-3 font-serif text-4xl uppercase tracking-[0.08em] sm:text-6xl">Suas
+                        <h1 className="mt-3 font-serif text-4xl tracking-[0.02em] sm:text-6xl">Suas
                             criaturas</h1>
                         <p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">
                             Um resumo dos personagens ligados à sua conta. Selecione uma ficha para continuar sua
                             história.
                         </p>
                     </div>
-                    <div className="archive-page-actions">
+                    <div className="archive-page-actions characters-approved-actions">
                         {campaigns.length === 0 && <Link
                             href={storyHref}
                             id="btn-conte-historia"
@@ -91,6 +92,8 @@ export default async function PersonagensPage() {
                     <div><ShieldCheck className="size-6 text-primary" aria-hidden="true" /><span className="eyebrow">Aprovadas</span><strong>{approvedCount}</strong></div>
                     <div><ScrollText className="size-6 text-primary" aria-hidden="true" /><span className="eyebrow">Vinculadas a mesas</span><strong>{linkedCount}</strong></div>
                 </section>
+                <div className="characters-approved-body">
+                  <div className="characters-approved-main">
                 {characters.length === 0 ? (
                     <section className="login-panel mx-auto max-w-2xl text-center">
                         <Skull className="mx-auto size-12 text-primary" aria-hidden="true"/>
@@ -107,12 +110,12 @@ export default async function PersonagensPage() {
                     <div className="flex flex-col gap-8">
                         {characterGroups.filter((group) => group.characters.length > 0).map((group) => <section
                             key={group.label} aria-label={group.label}><h2 className="eyebrow mb-6">{group.label}</h2>
-                            <div className="grid gap-5 lg:grid-cols-2 2xl:grid-cols-3">
+                            <div className="grid gap-5 lg:grid-cols-2">
                                 {group.characters.map((character) => (
                                     <div key={character.id} className="archive-character-card characters-ui-card">
                                         <div className="flex items-start justify-between gap-4">
                                             <div className="flex min-w-0 items-center gap-3">
-                                                <span className="characters-ui-avatar" aria-hidden="true">{character.name?.trim().charAt(0).toUpperCase() || "?"}</span>
+                                                <span className="characters-ui-avatar" aria-hidden="true">{character.name?.trim().charAt(0).toUpperCase() || <UserRound className="size-6"/>}</span>
                                                 <h3 className="break-words font-serif text-2xl">{character.name}</h3>
                                             </div>
                                             <span className={`status ${character.status === 'APPROVED' ? 'active' : ''}`}>
@@ -168,6 +171,16 @@ export default async function PersonagensPage() {
                         </section>)}
                     </div>
                 )}
+
+                  </div>
+                  <aside className="characters-update-panel" aria-labelledby="characters-updates-heading">
+                    <div className="characters-update-heading"><Clock3 className="size-5 text-primary" aria-hidden="true"/><h2 id="characters-updates-heading">Últimas atualizações</h2></div>
+                    {latestUpdates.length === 0 ? <p className="characters-updates-empty">Ainda não há atualizações de personagens para mostrar.</p> : <ol className="characters-update-list">{latestUpdates.map(character => <li key={character.id}>
+                      <span className="characters-update-icon"><Pencil className="size-4" aria-hidden="true"/></span>
+                      <div><Link href={`/characters/${character.id}/resume`} className="characters-update-link">{character.name || 'Personagem sem nome'}</Link><p>Ficha atualizada · {characterStatusLabels[character.status] ?? 'Status não definido'}</p><time dateTime={character.updatedAt}>{new Intl.DateTimeFormat('pt-BR',{dateStyle:'short',timeStyle:'short'}).format(new Date(character.updatedAt))}</time></div>
+                    </li>)}</ol>}
+                  </aside>
+                </div>
 
                 {Array.from(new Set(characters.map((character) => character.campaignId).filter((campaignId): campaignId is string => Boolean(campaignId)))).map((campaignId) => (
                     <section key={campaignId} className="mt-10">
