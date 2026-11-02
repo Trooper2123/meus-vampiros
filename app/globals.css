@@ -1977,6 +1977,12 @@ main > .archive-header {
  .catalog-ui-body { padding: 12px; }
 }
 
+/* Modo Sessão — ocupa toda a viewport sem limitar o hub a um cartão central. */
+.session-page-shell { min-height: 100dvh; }
+.session-page-content { display:flex; min-height:100dvh; flex-direction:column; gap:16px; width:100%; max-width:none; margin:0; padding:24px clamp(16px, 2.5vw, 40px) 32px; }
+.session-page-content > .session-master-shell { flex:1; }
+@media (max-width:900px) { .session-page-content { padding:16px 12px 24px; } }
+
 /* Modo Sessão — Arquivos da Noite: ferramentas, palco e câmeras. */
 .session-layout { display:grid; grid-template-columns: 210px minmax(0,1fr) minmax(260px,320px); gap:16px; align-items:start; }
 .session-tools,.session-stage,.session-cameras { min-width:0; border:1px solid var(--border); border-radius:9px; background:var(--card); }
@@ -2000,8 +2006,12 @@ main > .archive-header {
   display:grid;
   grid-template-columns:minmax(240px,300px) minmax(0,1fr) minmax(260px,320px);
   gap:14px;
-  align-items:start;
+  align-items:stretch;
+  min-height:0;
 }
+.session-master-shell > .session-chat,
+.session-master-shell > .session-center,
+.session-master-shell > .session-cameras { min-height:calc(100dvh - 220px); }
 .session-chat,.session-center,.session-cameras {
   min-width:0;
   border:1px solid var(--border);
@@ -2045,6 +2055,9 @@ main > .archive-header {
 }
 @media (max-width:900px) {
   .session-master-shell { grid-template-columns:1fr; }
+  .session-master-shell > .session-chat,
+  .session-master-shell > .session-center,
+  .session-master-shell > .session-cameras { min-height:0; }
   .session-chat,.session-cameras { position:static; }
   .session-chat-log { min-height:260px; max-height:360px; }
   .session-hub-grid { grid-template-columns:1fr; }

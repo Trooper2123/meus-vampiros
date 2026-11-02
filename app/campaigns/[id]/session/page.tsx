@@ -7,5 +7,5 @@ export default async function CampaignSessionPage({ params }: Readonly<{ params:
   const auth = await getSessionOrDev()
   if (!auth?.user?.sub) redirect('/auth/login?returnTo=/campaigns')
   const { id } = await params
-  return <main className="min-h-screen bg-background text-foreground"><div className="archive-content flex flex-col gap-4 py-8"><Link className="button-ghost self-start" href={`/campaigns/${id}`}>Voltar à mesa</Link><CampaignSessionWorkspace campaignId={id} actorId={auth.user.sub} /></div></main>
+  return <main className="session-page-shell min-h-screen bg-background text-foreground"><div className="session-page-content"><Link className="button-ghost self-start" href={`/campaigns/${id}`}>Voltar à mesa</Link><CampaignSessionWorkspace campaignId={id} actorId={auth.user.sub} /></div></main>
 }
