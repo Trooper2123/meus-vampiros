@@ -6,8 +6,6 @@ import {getSessionOrDev} from '@/lib/auth0'
 import {ArrowRight, BookOpen, Plus, Skull, Users, ShieldCheck, ScrollText, Clock3, Pencil, UserRound} from 'lucide-react'
 import {getCharactersForUser} from '@/lib/characters'
 import {getCampaignsForMaster, hasMasterAccess} from '@/lib/campaigns'
-import {MasterPanel} from '@/components/master-panel'
-import {DateAvailabilityCalendar} from '@/components/date-availability-calendar'
 import {DuplicateCharacterButton} from '@/components/duplicate-character-button'
 import {DeleteCharacterButton} from '@/components/delete-character-button'
 import {LiveKitRoomLink} from '@/components/livekit/livekit-room-link'
@@ -182,25 +180,7 @@ export default async function PersonagensPage() {
                   </aside>
                 </div>
 
-                {Array.from(new Set(characters.map((character) => character.campaignId).filter((campaignId): campaignId is string => Boolean(campaignId)))).map((campaignId) => (
-                    <section key={campaignId} className="mt-10">
-                        <DateAvailabilityCalendar campaignId={campaignId}/>
-                    </section>
-                ))}
 
-                {userIsMaster && campaigns.length > 0 && (
-                    <section className="mt-14 border-t border-border pt-10">
-                        <div className="flex items-center justify-between mb-4">
-                            <div>
-                                <p className="eyebrow">Painel do Narrador</p>
-                                <h3 className="font-serif text-2xl uppercase tracking-[0.08em] mt-1">Gerenciamento de
-                                    Mesas</h3>
-                            </div>
-                            <Link href="/campaigns" className="button-ghost text-xs">Ver tela cheia</Link>
-                        </div>
-                        <MasterPanel initialCampaigns={campaigns}/>
-                    </section>
-                )}
             </div>
         </main>
     )
