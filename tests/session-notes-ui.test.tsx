@@ -40,6 +40,6 @@ it('revalidação da API mantém mesas arquivadas fora da listagem principal', (
   const campaigns = [{ id: 'ativa', name: 'Mesa atual', status: 'Ativa', playerCount: 0 }, { id: 'arquivo', name: 'Mesa histórica', status: 'Arquivada', playerCount: 0 }]
   const fallback = { '/api/campaigns': { campaigns } }
   expect(render(<MasterPanel initialCampaigns={[]} />, fallback)).not.toContain('Mesa histórica')
-  expect(render(<MasterPanel initialCampaigns={[]} archived />, fallback)).not.toContain('Mesa atual')
-  expect(render(<MasterPanel initialCampaigns={[]} archived />, fallback)).toContain('Mesa histórica')
+  expect(render(<MasterPanel initialCampaigns={[]} view="inactive" />, fallback)).not.toContain('Mesa atual')
+  expect(render(<MasterPanel initialCampaigns={[]} view="inactive" />, fallback)).toContain('Mesa histórica')
 })

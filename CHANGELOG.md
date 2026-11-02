@@ -1,3 +1,11 @@
+## [2026-11-02 04:22 BRT] - fix - Atualizar teste da listagem de campanhas
+
+**Arquivos principais:** `tests/session-notes-ui.test.tsx`.
+
+- Substitui a propriedade removida `archived` por `view="inactive"` nas duas renderizações de MasterPanel.
+- TypeScript aprovado. Teste focado executado excluindo cópias de testes do worktree aninhado.
+- Revisão pré-commit sem bloqueios ou segredos no diff; 4 testes e lint focado aprovados. Auditoria: produção sem vulnerabilidades; 12 moderadas em ferramentas de desenvolvimento, sem altas/críticas.
+
 ## [2026-11-02 00:36 BRT] - fix - Corrigir fluxo de anotações com marcador
 
 **Tipo:** fix
