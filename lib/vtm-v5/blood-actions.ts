@@ -26,7 +26,9 @@ export function validateBloodAction(input: unknown): BloodAction {
       (value.ventruePreferenceMatched !== undefined && typeof value.ventruePreferenceMatched !== 'boolean')) throw new Error('Alimentação inválida.')
     if (value.source === 'HUMAN_HARMFUL' && value.victimHarmed !== true) throw new Error('A alimentação prejudicial deve registrar dano na vítima.')
     if (value.source !== 'HUMAN_HARMFUL' && value.servings !== 1 && !animals.has(value.source as FeedingSource)) throw new Error('Quantidade incompatível com a fonte.')
-    return value as FeedingAction
+    return { kind: 'FEED', source: value.source as FeedingSource, servings: Number(value.servings),
+      ...(value.victimHarmed !== undefined ? { victimHarmed: value.victimHarmed as boolean } : {}),
+      ...(value.ventruePreferenceMatched !== undefined ? { ventruePreferenceMatched: value.ventruePreferenceMatched as boolean } : {}) }
   }
   if (value.kind === 'MEND_SUPERFICIAL' && Object.keys(value).length === 1) return { kind: 'MEND_SUPERFICIAL' }
   if (value.kind === 'MEND_AGGRAVATED' && Object.keys(value).every(k => ['kind','nightId'].includes(k)) && typeof value.nightId === 'string' && uuid.test(value.nightId)) return { kind: 'MEND_AGGRAVATED', nightId: value.nightId }
