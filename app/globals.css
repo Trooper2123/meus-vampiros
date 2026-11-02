@@ -2807,3 +2807,23 @@ main > .archive-header {
 
 /* Sem convocação ativa, não reservar espaço para a área de comunicação em Personagens. */
 .characters-livekit-calls:empty{display:none;margin:0}
+
+/* Personagens: agenda consolidada das mesas do jogador, junto às atualizações. */
+.characters-right-rail{position:sticky;top:24px;display:flex;min-width:0;flex-direction:column;gap:18px}
+.characters-right-rail .characters-update-panel{position:static}
+.characters-encounters-panel{overflow:hidden;border:1px solid #7b323b;border-radius:9px;background:linear-gradient(160deg,#231417,#120d0f);padding:20px}
+.characters-encounters-subtitle{margin-top:12px;color:#ad9b98;font-size:12px;line-height:1.5}
+.characters-encounters-list{display:flex;flex-direction:column;gap:0;margin-top:16px}
+.characters-encounters-list li{display:flex;align-items:flex-start;gap:12px;border-bottom:1px solid #422a2f;padding:13px 0}
+.characters-encounters-list li:first-child{padding-top:2px}
+.characters-encounters-list li:last-child{border-bottom:0;padding-bottom:0}
+.characters-encounter-date{display:flex;flex:none;width:54px;min-height:61px;flex-direction:column;align-items:center;justify-content:center;border:1px solid #8a3039;border-radius:7px;background:#321018}
+.characters-encounter-date strong{color:#f2e9e6;font-family:var(--font-serif),serif;font-size:27px;line-height:1}
+.characters-encounter-date span{margin-top:4px;color:#e17680;font-size:11px;text-transform:uppercase}
+.characters-encounter-details{display:flex;min-width:0;flex-direction:column;gap:5px}
+.characters-encounter-details strong{overflow-wrap:anywhere;color:#efe5e2;font-family:var(--font-serif),serif;font-size:17px}
+.characters-encounter-details time{color:#d9b9b5;font-size:12px;text-transform:capitalize}
+.characters-encounter-details>span{color:#b3a19e;font-size:11px}
+.characters-encounter-details small{color:#cc8f93;font-size:10px}
+@media(max-width:980px){.characters-right-rail{position:static;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}}
+@media(max-width:700px){.characters-right-rail{grid-template-columns:1fr}}
