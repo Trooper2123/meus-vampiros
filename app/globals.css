@@ -2050,3 +2050,9 @@ main > .archive-header {
   .session-hub-grid { grid-template-columns:1fr; }
   .session-shared-visual { grid-column:auto; }
 }
+
+.session-research-switch { display:flex; gap:8px; flex-wrap:wrap; }
+.session-research-switch button { display:inline-flex; align-items:center; gap:8px; min-height:40px; padding:9px 12px; border:1px solid var(--border); border-radius:6px; background:var(--background); color:var(--muted-foreground); cursor:pointer; }
+.session-research-switch button.is-active { border-color:var(--primary); color:var(--foreground); background:color-mix(in srgb,var(--primary) 22%,var(--background)); }
+.session-research-frame { width:100%; min-height:640px; margin-top:14px; border:1px solid var(--border); border-radius:8px; background:var(--background); }
+.session-player-view { border:1px solid var(--border); border-radius:9px; background:var(--card); padding:20px; }
