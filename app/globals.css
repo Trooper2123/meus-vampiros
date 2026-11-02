@@ -2399,3 +2399,11 @@ main > .archive-header {
 .session-master-shell>.session-chat>.session-chat-mount{min-height:320px}
 .session-master-shell>.session-cameras{align-self:start}
 @media(min-width:1251px){.session-master-shell>.session-chat,.session-master-shell>.session-cameras{position:sticky;top:12px}}
+
+/* Pesquisa embutida: o Hub já possui cabeçalho e navegação */
+.catalog-ui-embedded{min-height:0!important;overflow-x:hidden}
+.catalog-ui-embedded .noise{display:none}
+.catalog-ui-embedded-content{width:100%;max-width:none!important;margin:0!important;padding:16px!important}
+.catalog-ui-embedded-content .catalog-ui-body{margin-top:0!important}
+.session-research-frame{min-height:640px;border:1px solid #542326;border-radius:8px;background:#120c0e}
+@media(max-width:1100px){.catalog-ui-embedded-content{padding:10px!important}}
