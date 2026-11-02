@@ -121,9 +121,9 @@ function SessionWorkspace({ campaignId, actorId }: Readonly<{ campaignId: string
               </div>
             </section>
             <section className="session-quick-roll">
-              <div className="session-panel-heading"><Dices className="size-7 text-primary"/><div><p className="eyebrow">Rolagem rápida</p><h3 className="font-serif text-xl">Rolagem rápida</h3><p className="session-panel-subtitle">Role testes, disputas e resistências de forma ágil.</p></div><span className="session-public-roll"><Eye className="size-3.5" aria-hidden="true"/>Visível aos jogadores</span></div>
-              {!current && activeSession?.status === 'ACTIVE' && <SessionQuickRoll sessionId={activeSession.id} campaignId={campaignId}/>} 
-              {current && activeSession?.status === 'ACTIVE' && <div className="mt-4"><CharacterRolls key={`hub-rolls-${current.id}`} characterId={current.id} sessionId={activeSession.id}/></div>}
+              <div className="session-panel-heading"><Dices className="size-7 text-primary"/><div><p className="eyebrow">Rolagem rápida</p><h3 className="font-serif text-xl">Rolagem rápida</h3><p className="session-panel-subtitle">Role testes, disputas e resistências de forma ágil.</p></div></div>
+              {activeSession?.status === 'ACTIVE' && <SessionQuickRoll sessionId={activeSession.id} campaignId={campaignId}/>}
+              {activeSession?.status !== 'ACTIVE' && <p className="mt-4 text-sm text-muted-foreground">Inicie uma sessão para realizar rolagens.</p>}
             </section>
             <section className="session-quick-access">
               <div className="session-panel-heading"><div><p className="eyebrow">Configurável pelo Narrador</p><h3 className="font-serif text-xl">Acesso rápido</h3></div></div>
