@@ -4,7 +4,6 @@ import { getSessionOrDev } from '@/lib/auth0'
 import { hasMasterAccess } from '@/lib/campaigns'
 import catalog from '@/lib/vtm-v5/merits-flaws-catalog.json'
 import { notFound, redirect } from 'next/navigation'
-import Link from 'next/link'
 
 export default async function MeritsFlawsResearchPage({ searchParams }: Readonly<{ searchParams?: Promise<{ embedded?: string }> }>) {
   const embedded = (await searchParams)?.embedded === "1"

@@ -229,5 +229,7 @@ export async function closeGameSession(actorId: string, sessionId: string, input
   if (!access.isMaster) { throw new CharacterCommandError(403, 'Somente o Narrador atual pode encerrar a sessão.') }
   const closed = await closePersistentSession(sessionId, actorId, key, Number(value.expectedRevision))
   if (!closed) { throw new CharacterCommandError(session.status === 'ACTIVE' ? 409 : 403, 'A sessão mudou ou a chave já foi usada. Atualize o estado antes de tentar novamente.') }
+  try { await db.execute(sql`DELETE FROM session_chat_messages WHERE session_id = ${sessionId}::uuid`) }
+  catch (error) { console.error('session_chat_cleanup_failed', { sessionId, error: error instanceof Error ? error.name : 'unknown' }) }
   return sessionProjection(closed)
 }
