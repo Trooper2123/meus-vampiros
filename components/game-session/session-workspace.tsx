@@ -1,13 +1,11 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { BookOpen, CalendarDays, Dice5, FileText, MessageCircle, NotebookPen, Search, Users, Wallet, Moon, Eye, Target, UserRoundCog } from 'lucide-react'
+import { BookOpen, CalendarDays, FileText, MessageCircle, NotebookPen, Search, Users, Wallet, Eye, Target, UserRoundCog } from 'lucide-react'
 import Link from 'next/link'
 import useSWR, { SWRConfig, useSWRConfig } from 'swr'
 import { LiveKitRoomLink } from '@/components/livekit/livekit-room-link'
-import { SessionResources } from '@/components/character-summary/session-resources'
 import { CharacterRolls } from '@/components/character-summary/character-rolls'
-import { AwakePanel } from '@/components/awake-panel'
 import { CampaignPossessionsManager } from '@/components/master-panel'
 import { NotesPanel } from '@/components/notes/notes-panel'
 import { NpcSessionPanel,SessionReveals } from '@/components/npcs/npc-session-panel'
@@ -28,13 +26,13 @@ function SessionWorkspace({ campaignId, actorId }: Readonly<{ campaignId: string
   const requestKeys = useRef<Record<string, string>>({})
   const sending = useRef(false)
   const [pending, setPending] = useState(false)
-  const [selected, setSelected] = useState('')
   const [feedback, setFeedback] = useState('')
   const [activeTool, setActiveTool] = useState('shared')
+  const [researchView, setResearchView] = useState<'skills' | 'merits'>('skills')
   const [closedNpcSession,setClosedNpcSession]=useState('')
   const manage = data?.canManage ?? false
   const activeSession = data?.session
-  const current = data?.characters.find(character => character.id === selected) ?? data?.characters[0]
+  const current = data?.characters[0]
   const notesSessionId=data?.sessions?.find(session=>session.id===closedNpcSession)?.id??data?.session?.id??data?.sessions?.[0]?.id
   const npcSessionId=notesSessionId
   useEffect(()=>{const id=new URL(window.location.href).searchParams.get('npcSessionId');if(id&&/^[0-9a-f-]{36}$/i.test(id)){ setClosedNpcSession(id) }},[])
@@ -78,7 +76,7 @@ function SessionWorkspace({ campaignId, actorId }: Readonly<{ campaignId: string
     <header className="border border-border bg-card p-5"><p className="eyebrow">Modo sessão</p><h1 className="mt-2 font-serif text-3xl">Mesa em andamento</h1><p className="mt-2 text-sm text-muted-foreground">Recursos e rolagens usam os comandos oficiais da ficha. A sala de vídeo é opcional.</p>{feedback && <output  className="block mt-3 text-sm text-muted-foreground">{feedback}</output>}{error && <p role="alert" className="mt-3 text-sm text-primary">{error.message}</p>}{!data?.session && manage && !data?.archived && <button className="button-primary mt-4 min-h-10" disabled={pending} onClick={() => void command('POST', url, {})}>Iniciar sessão</button>}{activeSession?.status === 'ACTIVE' && manage && <button className="button-ghost mt-4 min-h-10" disabled={pending} onClick={() => void command('PATCH', `/api/sessions/${activeSession.id}`, { expectedRevision: activeSession.revision })}>Encerrar sessão</button>}</header>
     {data?.archived&&<p className="border border-border bg-card p-4 text-sm">Mesa arquivada. O histórico continua disponível; restaure a mesa para iniciar novas sessões.</p>}
     {!!data?.sessions?.length&&<label className="sheet-field"><span>Sessão para consultar anotações e revelações</span><select className="select" value={notesSessionId??''} onChange={event=>{const id=event.target.value;setClosedNpcSession(id);const location=new URL(window.location.href);location.searchParams.set('npcSessionId',id);window.history.replaceState(window.history.state,'',location.toString())}}>{data.sessions.map(session=><option key={session.id} value={session.id}>{new Date(session.startedAt).toLocaleString('pt-BR')} · {session.status==='ACTIVE'?'Em andamento':'Encerrada'}</option>)}</select></label>}
-    {data && <div className="session-master-shell">
+    {data && manage && <div className="session-master-shell">
       <aside className="session-chat" aria-label="Chat da mesa">
         <div className="session-column-heading"><MessageCircle className="size-5 text-primary" aria-hidden="true"/><div><p className="eyebrow">Comunicação</p><h2 className="font-serif text-xl">Chat da mesa</h2></div></div>
         <div className="session-chat-log" aria-live="polite">
@@ -137,7 +135,7 @@ function SessionWorkspace({ campaignId, actorId }: Readonly<{ campaignId: string
 
           {activeTool === 'handouts' && <div className="session-panel"><p className="eyebrow">Drive da mesa · gerenciado pelo Narrador</p><h2 className="mt-2 font-serif text-2xl">Handouts</h2><div className="session-handouts-empty"><FileText className="size-10 text-primary" strokeWidth={1.25} aria-hidden="true"/><p className="mt-3 text-sm">Nenhum handout disponível.</p><p className="mt-2 max-w-md text-xs leading-5 text-muted-foreground">O fluxo previsto é: selecionar um arquivo e escolher em popup entre compartilhar com todos ou apenas jogadores selecionados. O backend de handouts ainda não existe no repositório.</p></div></div>}
 
-          {activeTool === 'research' && manage && <div className="session-panel"><p className="eyebrow">Pesquisas já disponíveis</p><h2 className="mt-2 font-serif text-2xl">Pesquisa da mesa</h2><div className="mt-5 grid gap-3 sm:grid-cols-2"><Link href="/master/catalogo" className="session-research-card"><Search className="size-5 text-primary" aria-hidden="true"/><span><strong>Disciplinas e habilidades</strong><small>Consultar catálogo existente</small></span></Link><Link href="/master/vantagens-defeitos" className="session-research-card"><BookOpen className="size-5 text-primary" aria-hidden="true"/><span><strong>Vantagens e defeitos</strong><small>Consultar catálogo existente</small></span></Link></div></div>}
+          {activeTool === 'research' && <div className="session-panel"><p className="eyebrow">Pesquisas já disponíveis</p><h2 className="mt-2 font-serif text-2xl">Pesquisa da mesa</h2><div className="session-research-switch mt-5"><button type="button" className={researchView === 'skills' ? 'is-active' : ''} onClick={() => setResearchView('skills')}><Search className="size-4" aria-hidden="true"/>Disciplinas e habilidades</button><button type="button" className={researchView === 'merits' ? 'is-active' : ''} onClick={() => setResearchView('merits')}><BookOpen className="size-4" aria-hidden="true"/>Vantagens e defeitos</button></div><iframe title={researchView === 'skills' ? 'Disciplinas e habilidades' : 'Vantagens e defeitos'} className="session-research-frame" src={researchView === 'skills' ? '/master/catalogo' : '/master/vantagens-defeitos'} /></div>}
 
           {activeTool === 'notes' && notesSessionId && <div className="session-panel"><p className="eyebrow">Subdivisões definidas pelo Narrador</p><h2 className="mt-2 font-serif text-2xl">Anotações da mesa</h2><div className="mt-5"><NotesPanel key={notesSessionId} actorId={actorId} initialCampaignId={campaignId} link={{targetType:'SESSION',targetId:notesSessionId}} /></div></div>}
 
@@ -158,6 +156,7 @@ function SessionWorkspace({ campaignId, actorId }: Readonly<{ campaignId: string
         {data.characters.length > 0 && <div className="session-character-links"><p className="eyebrow">Resumos de ficha</p>{data.characters.map(character => <Link key={character.id} href={`/characters/${character.id}/summary`} target="_blank" rel="noopener noreferrer"><BookOpen className="size-3.5" aria-hidden="true"/>{character.name}</Link>)}</div>}
       </aside>
     </div>}
+    {data && !manage && <section className="session-player-view"><p className="eyebrow">Sessão em andamento</p><h2 className="mt-2 font-serif text-2xl">Sua participação na mesa</h2><p className="mt-3 text-sm text-muted-foreground">A interface completa de condução é exclusiva do Narrador. Jogadores continuam com vídeo, ficha e rolagens pelos controles autorizados.</p><div className="mt-5"><LiveKitRoomLink campaignId={campaignId} master={false} /></div>{current && activeSession?.status === 'ACTIVE' && <div className="mt-5"><CharacterRolls characterId={current.id} sessionId={activeSession.id}/></div>}</section>}
     {!snapshot && !error && <output  className="block border border-border bg-card p-5 text-sm text-muted-foreground">Carregando sessão...</output>}
     {data && !data.session && <p className="border border-border bg-card p-5 text-sm text-muted-foreground">Aguardando o Narrador iniciar uma sessão.</p>}
   </div>
