@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { BookOpen, CalendarDays, FileText, MessageCircle, NotebookPen, Search, Users, Wallet, Eye, Target, UserRoundCog, House, Boxes, ImageIcon, Dices, Pause, X } from 'lucide-react'
+import { BookOpen, CalendarDays, FileText, MessageCircle, NotebookPen, Search, Users, Wallet, Eye, UserRoundCog, House, Boxes, ImageIcon, Dices, Pause, X } from 'lucide-react'
 import Link from 'next/link'
 import useSWR, { SWRConfig, useSWRConfig } from 'swr'
 import { LiveKitRoomLink } from '@/components/livekit/livekit-room-link'
@@ -11,6 +11,7 @@ import { NotesPanel } from '@/components/notes/notes-panel'
 import { NpcSessionPanel,SessionReveals } from '@/components/npcs/npc-session-panel'
 import { CampaignTools } from '@/components/campaign-calendar/campaign-tools'
 import { SessionQuickRoll } from '@/components/game-session/session-quick-roll'
+import { DEFAULT_SHORTCUTS, SHORTCUT_LABELS, type ShortcutCode } from '@/lib/session-shortcut-options'
 
 type Snapshot = { archived?: boolean; sessions?: {id:string;status:'ACTIVE'|'CLOSED';startedAt:string}[]; session: { id: string; status: 'ACTIVE' | 'CLOSED'; revision: number; chronicleNightIds: string[] } | null; canManage: boolean; characters: { id: string; name: string }[] }
 const read = async (url: string) => { const response = await fetch(url, { cache: 'no-store' }); const body = await response.json(); if (!response.ok) { throw new Error(body.error ?? 'Não foi possível carregar a sessão.'); } return body }
@@ -32,6 +33,9 @@ function SessionWorkspace({ campaignId, actorId }: Readonly<{ campaignId: string
   const [researchView, setResearchView] = useState<'skills' | 'merits'>('skills')
   const [closedNpcSession,setClosedNpcSession]=useState('')
   const manage = data?.canManage ?? false
+  const { data: shortcutSettings } = useSWR<{shortcuts: ShortcutCode[]}>(manage ? `/api/campaigns/${campaignId}/session-shortcuts` : null, read, { refreshInterval: 20000 })
+  const shortcuts = shortcutSettings?.shortcuts ?? DEFAULT_SHORTCUTS
+  const shortcutIcons = { npcs: UserRoundCog, calendar: CalendarDays, notes: NotebookPen, research: Search, handouts: FileText, visual: ImageIcon, xp: Wallet } as const
   const activeSession = data?.session
   const current = data?.characters[0]
   const notesSessionId=data?.sessions?.find(session=>session.id===closedNpcSession)?.id??data?.session?.id??data?.sessions?.[0]?.id
@@ -128,9 +132,11 @@ function SessionWorkspace({ campaignId, actorId }: Readonly<{ campaignId: string
             <section className="session-quick-access">
               <div className="session-panel-heading"><div><p className="eyebrow">Configurável pelo Narrador</p><h3 className="font-serif text-xl">Acesso rápido</h3></div></div>
               <div className="mt-4 grid gap-2">
-                <button type="button" className="session-shortcut" onClick={() => setActiveTool('npcs')}><UserRoundCog className="size-4" aria-hidden="true"/>NPCs da sessão</button>
-                <button type="button" className="session-shortcut" disabled title="Objetivos ainda não possuem módulo próprio"><Target className="size-4" aria-hidden="true"/>Objetivos da campanha</button>
-                <button type="button" className="session-shortcut" onClick={() => setActiveTool('calendar')}><CalendarDays className="size-4" aria-hidden="true"/>Calendário da mesa</button>
+                {shortcuts.map(code => {
+                  const Icon = shortcutIcons[code]
+                  return <button key={code} type="button" className="session-shortcut" onClick={() => setActiveTool(code)}><Icon className="size-4" aria-hidden="true"/>{SHORTCUT_LABELS[code]}</button>
+                })}
+                {shortcuts.length === 0 && <p className="text-xs leading-5 text-muted-foreground">Nenhum atalho selecionado. Configure os itens em Gestão da Mesa → Configurações.</p>}
               </div>
             </section>
           </div>}
