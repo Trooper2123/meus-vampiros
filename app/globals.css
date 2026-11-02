@@ -2420,3 +2420,16 @@ main > .archive-header {
 .session-notes-panel .campaign-notes-index .empty-state{margin:16px 0}
 .session-notes-panel .campaign-notes-pagination{flex-wrap:wrap}
 @media(max-width:1150px){.session-notes-panel .campaign-notes-workspace{grid-template-columns:1fr}}
+
+/* Único controle de visibilidade da rolagem: switch acessível. */
+.session-free-roll-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.session-roll-visibility{display:inline-flex;align-items:center;gap:12px;min-height:42px;cursor:pointer;border:1px solid #7e2a31;border-radius:7px;padding:7px 10px;color:#f0e3e0}
+.session-roll-visibility>span:first-child{display:inline-flex;align-items:center;gap:7px;font-size:12px}
+.session-roll-visibility input{position:absolute;width:1px;height:1px;opacity:0}
+.session-roll-switch-track{display:flex;width:43px;height:24px;align-items:center;border:1px solid #55464a;border-radius:999px;background:#3a3033;padding:2px;transition:background .15s}
+.session-roll-switch-track>span{display:block;width:18px;height:18px;border-radius:50%;background:#d8ccca;transition:transform .15s}
+.session-roll-visibility input:checked+.session-roll-switch-track{border-color:#be313a;background:#9f2029}
+.session-roll-visibility input:checked+.session-roll-switch-track>span{transform:translateX(19px);background:#fff}
+.session-roll-visibility input:focus-visible+.session-roll-switch-track{outline:2px solid #f1b4b6;outline-offset:3px}
+.session-roll-visibility:has(input:disabled){cursor:not-allowed;opacity:.55}
+.session-free-roll-actions>.button-primary{margin-top:0}
