@@ -3,8 +3,9 @@ import {CreateCharacterButton} from '@/components/character-creation-dialog'
 import Link from 'next/link'
 import {redirect} from 'next/navigation'
 import {getSessionOrDev} from '@/lib/auth0'
-import {ArrowRight, BookOpen, Plus, Skull, Users, ShieldCheck, ScrollText, Clock3, Pencil, UserRound} from 'lucide-react'
+import {ArrowRight, BookOpen, Plus, Skull, Users, ShieldCheck, ScrollText, Clock3, Pencil, UserRound, CalendarDays} from 'lucide-react'
 import {getCharactersForUser} from '@/lib/characters'
+import {getPlayerUpcomingEncounters} from '@/lib/player-upcoming-encounters'
 import {getCampaignsForMaster, hasMasterAccess} from '@/lib/campaigns'
 import {DuplicateCharacterButton} from '@/components/duplicate-character-button'
 import {DeleteCharacterButton} from '@/components/delete-character-button'
@@ -29,7 +30,10 @@ export default async function PersonagensPage() {
     const session = await getSessionOrDev()
     if (!session?.user) redirect('/auth/login?returnTo=/characters')
 
-    const characters = await getCharactersForUser(session.user.sub)
+    const [characters, upcomingEncounters] = await Promise.all([
+        getCharactersForUser(session.user.sub),
+        getPlayerUpcomingEncounters(session.user.sub),
+    ])
     const characterGroups = [
         {
             label: 'Desvinculados',
@@ -171,12 +175,23 @@ export default async function PersonagensPage() {
                 )}
 
                   </div>
-                  <aside className="characters-update-panel" aria-labelledby="characters-updates-heading">
-                    <div className="characters-update-heading"><Clock3 className="size-5 text-primary" aria-hidden="true"/><h2 id="characters-updates-heading">Últimas atualizações</h2></div>
-                    {latestUpdates.length === 0 ? <p className="characters-updates-empty">Ainda não há atualizações de personagens para mostrar.</p> : <ol className="characters-update-list">{latestUpdates.map(character => <li key={character.id}>
-                      <span className="characters-update-icon"><Pencil className="size-4" aria-hidden="true"/></span>
-                      <div><Link href={`/characters/${character.id}/resume`} className="characters-update-link">{character.name || 'Personagem sem nome'}</Link><p>Ficha atualizada · {characterStatusLabels[character.status] ?? 'Status não definido'}</p><time dateTime={character.updatedAt}>{new Intl.DateTimeFormat('pt-BR',{dateStyle:'short',timeStyle:'short'}).format(new Date(character.updatedAt))}</time></div>
-                    </li>)}</ol>}
+                  <aside className="characters-right-rail" aria-label="Agenda e atualizações dos personagens">
+                    <section className="characters-encounters-panel" aria-labelledby="characters-encounters-heading">
+                      <div className="characters-update-heading"><CalendarDays className="size-5 text-primary" aria-hidden="true"/><h2 id="characters-encounters-heading">Próximo encontro</h2></div>
+                      <p className="characters-encounters-subtitle">Datas sugeridas pelo Narrador nas mesas em que você participa.</p>
+                      {upcomingEncounters.length === 0 ? <p className="characters-updates-empty">Nenhuma data de encontro sugerida para suas mesas.</p> :
+                        <ol className="characters-encounters-list">{upcomingEncounters.map(encounter => <li key={`${encounter.campaignId}:${encounter.date}`}>
+                          <div className="characters-encounter-date" aria-hidden="true"><strong>{encounter.date.slice(8,10)}</strong><span>{new Intl.DateTimeFormat('pt-BR',{month:'short',timeZone:'UTC'}).format(new Date(`${encounter.date}T12:00:00Z`))}</span></div>
+                          <div className="characters-encounter-details"><strong>{encounter.campaignName}</strong><time dateTime={encounter.date}>{new Intl.DateTimeFormat('pt-BR',{weekday:'long',day:'numeric',month:'long',timeZone:'UTC'}).format(new Date(`${encounter.date}T12:00:00Z`))}</time>{encounter.startTime && <span>Horário previsto: {encounter.startTime}{encounter.endTime ? `–${encounter.endTime}` : ''}</span>}<small>Data sugerida · não confirmada</small></div>
+                        </li>)}</ol>}
+                    </section>
+                    <section className="characters-update-panel" aria-labelledby="characters-updates-heading">
+                      <div className="characters-update-heading"><Clock3 className="size-5 text-primary" aria-hidden="true"/><h2 id="characters-updates-heading">Últimas atualizações</h2></div>
+                      {latestUpdates.length === 0 ? <p className="characters-updates-empty">Ainda não há atualizações de personagens para mostrar.</p> : <ol className="characters-update-list">{latestUpdates.map(character => <li key={character.id}>
+                        <span className="characters-update-icon"><Pencil className="size-4" aria-hidden="true"/></span>
+                        <div><Link href={`/characters/${character.id}/resume`} className="characters-update-link">{character.name || 'Personagem sem nome'}</Link><p>Ficha atualizada · {characterStatusLabels[character.status] ?? 'Status não definido'}</p><time dateTime={character.updatedAt}>{new Intl.DateTimeFormat('pt-BR',{dateStyle:'short',timeStyle:'short'}).format(new Date(character.updatedAt))}</time></div>
+                      </li>)}</ol>}
+                    </section>
                   </aside>
                 </div>
 
