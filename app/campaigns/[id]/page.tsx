@@ -1,6 +1,5 @@
 import { MasterViewportGuard } from '@/components/master-viewport-guard'
 import { CampaignArchiveControl } from '@/components/campaign-archive-control'
-import { ArchiveHeader } from '@/components/archive-header'
 import { CampaignTools } from '@/components/campaign-calendar/campaign-tools'
 import { CharacterSummary } from '@/components/character-summary/character-summary'
 import { CampaignParticipantControls } from '@/components/campaign-participant-controls'
@@ -46,10 +45,9 @@ export default async function CampaignDetailPage({ params, searchParams }: Reado
       <div className="noise" aria-hidden="true" />
       <MasterViewportGuard backHref="/campaigns" />
       <div className="master-large-screen-only">
-      <ArchiveHeader title="Arquivos da Noite" showCampaigns />
-      <div className="archive-content campaign-detail-ui-content">
+      <div className="archive-content campaign-detail-ui-content campaign-management-content">
         <header className="campaign-approved-heading">
-          <div><h1 className="font-serif text-4xl">Gestão da Mesa</h1><p className="mt-1 text-sm text-muted-foreground">Planejamento, organização e recursos da campanha.</p></div>
+          <div className="campaign-management-title"><p className="eyebrow">Arquivos da Noite</p><h1 className="font-serif text-4xl">{campaign.name}</h1><p className="mt-1 text-sm text-muted-foreground">Gestão da Mesa · planejamento, organização e recursos da campanha.</p></div>
           <div className="campaign-approved-heading-actions"><Link href={`/campaigns/${campaign.id}/session`} className="button-primary"><Play className="size-4"/>Iniciar sessão</Link><Link href={viewHref('calendar')} className="button-ghost"><CalendarDays className="size-4"/>Agendar sessão</Link></div>
         </header>
 
