@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { BookOpen, CalendarDays, FileText, MessageCircle, NotebookPen, Search, Users, Wallet, Eye, Target, UserRoundCog, House, Boxes, ImageIcon, Dices, Send, Pause, X } from 'lucide-react'
+import { BookOpen, CalendarDays, FileText, MessageCircle, NotebookPen, Search, Users, Wallet, Eye, Target, UserRoundCog, House, Boxes, ImageIcon, Dices, Pause, X } from 'lucide-react'
 import Link from 'next/link'
 import useSWR, { SWRConfig, useSWRConfig } from 'swr'
 import { LiveKitRoomLink } from '@/components/livekit/livekit-room-link'
@@ -84,14 +84,13 @@ function SessionWorkspace({ campaignId, actorId }: Readonly<{ campaignId: string
     {data && manage && <div className="session-master-shell">
       <aside className="session-chat" aria-label="Chat da mesa">
         <div className="session-column-heading"><MessageCircle className="size-6 text-primary" aria-hidden="true"/><div><p className="eyebrow">Comunicação</p><h2 className="font-serif text-xl">Chat da Mesa</h2></div><button type="button" className="session-icon-action" aria-label="Mais opções">•••</button></div>
-        <div className="session-chat-log" aria-live="polite">
+        <div id="session-master-livekit-chat" className="session-chat-mount">
           <div className="session-chat-placeholder">
             <MessageCircle className="size-9 text-primary" strokeWidth={1.25} aria-hidden="true"/>
-            <p className="mt-3 text-sm">Chat persistente da sessão</p>
-            <p className="mt-2 text-xs leading-5 text-muted-foreground">A interface está preparada; o repositório ainda não possui armazenamento próprio de mensagens da mesa.</p>
+            <p className="mt-3 text-sm">Chat da sessão via LiveKit</p>
+            <p className="mt-2 text-xs leading-5 text-muted-foreground">Entre na mesa virtual à direita para conversar com os participantes. Mensagens não são salvas após a desconexão.</p>
           </div>
         </div>
-        <label className="session-chat-compose"><span className="sr-only">Mensagem da mesa</span><textarea rows={2} disabled placeholder="Digite uma mensagem..." /><button type="button" disabled aria-label="Enviar mensagem"><Send className="size-4"/></button></label>
       </aside>
 
       <main className="session-center">
@@ -157,7 +156,7 @@ function SessionWorkspace({ campaignId, actorId }: Readonly<{ campaignId: string
       <aside className="session-cameras" aria-label="Câmeras dos participantes">
         <div className="session-column-heading"><Users className="size-6 text-primary" aria-hidden="true"/><div><p className="eyebrow">Participantes</p><h2 className="font-serif text-xl">Participantes ({data.characters.length})</h2></div></div>
         
-        <div className="mt-4"><LiveKitRoomLink campaignId={campaignId} master={manage} compact /></div>
+        <div className="mt-4"><LiveKitRoomLink campaignId={campaignId} master={manage} compact chatTargetId="session-master-livekit-chat" /></div>
         {data.characters.length > 0 && <div className="session-character-links"><p className="eyebrow">Resumos de ficha</p>{data.characters.map(character => <Link key={character.id} href={`/characters/${character.id}/summary`} target="_blank" rel="noopener noreferrer"><BookOpen className="size-3.5" aria-hidden="true"/>{character.name}</Link>)}</div>}
       </aside>
     </div>}
