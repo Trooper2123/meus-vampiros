@@ -71,16 +71,6 @@ export default async function CampaignsPage({ searchParams }: Readonly<{ searchP
           </>}
         </section>
 
-        <div className="campaigns-filter-row">
-          <nav aria-label="Filtro de mesas" className="campaign-dashboard-tabs">
-            <Link className={showInactive ? '' : 'is-active'} aria-current={!showInactive ? 'page' : undefined} href="/campaigns">Ativas <span>{currentCampaigns.length}</span></Link>
-            <Link className={showInactive ? 'is-active' : ''} aria-current={showInactive ? 'page' : undefined} href="/campaigns?view=inactive"><Archive className="size-3.5" aria-hidden="true" /> Inativas <span>{inactiveCampaigns.length}</span></Link>
-          </nav>
-          <div className="campaigns-catalog-links">
-            <Link href="/master/catalogo">Disciplinas e habilidades</Link>
-            <Link href="/master/vantagens-defeitos">Vantagens e defeitos</Link>
-          </div>
-        </div>
         <MasterPanel initialCampaigns={campaigns} view={showInactive ? 'inactive' : 'current'} />
 
       </div>
