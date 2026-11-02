@@ -1,4 +1,5 @@
 import { randomInt } from 'node:crypto'
+import { sql } from 'drizzle-orm'
 import { CharacterCommandError, runCharacterCommand } from './character-commands'
 import { getBloodPolicy } from './blood-policy'
 import { calculateBloodPotencyEffects, type BloodContext } from './vtm-v5/blood-potency'
@@ -19,6 +20,7 @@ export async function performCharacterBloodAction(actorId: string, id: string, r
     character => actorId === character.ownerId || actorId === character.masterId,
     async (character, transaction) => {
       if (!['PLAYER_VAMPIRE','VAMPIRE_NPC'].includes(character.characterType)) throw new CharacterCommandError(422, 'Esta ação exige ficha de vampiro.')
+      if (action.kind === 'FEED' && (action.source === 'HUMAN_KILLED' || character.data.clanCode === 'VENTRUE' || String(character.data.cla ?? '').toLowerCase() === 'ventrue') && actorId !== character.masterId) throw new CharacterCommandError(403, 'Alimentação letal ou restrição Ventrue exige confirmação do Narrador.')
       const policy = await getBloodPolicy(character.campaignId)
       const context = character.gameState.bloodContext as BloodContext | undefined
       let effects
@@ -28,7 +30,7 @@ export async function performCharacterBloodAction(actorId: string, id: string, r
       let permission = false
       let already = false
       if (action.kind === 'MEND_AGGRAVATED' && character.campaignId) {
-        const rows = await transaction.execute<{id: string}>(await import('drizzle-orm').then(({sql}) => sql`SELECT n.id FROM chronicle_nights n JOIN night_awakenings a ON a.night_id = n.id WHERE n.id = ${action.nightId}::uuid AND n.campaign_id = ${character.campaignId}::uuid AND a.character_id = ${character.id}::uuid AND n.status = 'ACTIVE'`))
+        const rows = await transaction.execute<{id: string}>(sql`SELECT n.id FROM chronicle_nights n JOIN night_awakenings a ON a.night_id = n.id WHERE n.id = ${action.nightId}::uuid AND n.campaign_id = ${character.campaignId}::uuid AND a.character_id = ${character.id}::uuid AND n.status = 'ACTIVE'`)
         permission = rows.rows.length > 0
         const existing = character.gameState.lastAggravatedMendNightId
         already = existing === action.nightId
