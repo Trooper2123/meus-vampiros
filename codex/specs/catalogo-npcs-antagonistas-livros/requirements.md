@@ -1,6 +1,6 @@
 # SPEC-RPG-022 — Catálogo de NPCs e antagonistas dos livros
 
-**Status:** proposed | **Versão:** 1.0 | **Branch:** develop | **Natureza:** SPEC, não implementação
+**Status:** proposed | **Versão:** 1.1 | **Branch:** develop | **Natureza:** SPEC, não implementação
 
 ## Objetivo
 
@@ -87,3 +87,43 @@ Categoria de antagonista é **papel na crônica**, não espécie, e pode ser alt
 ## Fora de escopo
 
 Extração integral automática de todo o acervo; geração por IA de fichas ausentes; publicação de PDFs/ilustrações; modificação automática do elenco canônico; acesso à biblioteca por jogadores.
+
+
+## Expansão v1.1 — Antagonistas genéricos e contribuições da comunidade
+
+### Catálogo de antagonistas genéricos
+
+- **RF15 [P0]:** Adicionar aba/filtro **Antagonistas genéricos**, com modelos reutilizáveis e originais, separados das fichas canônicas de livros e das criações da comunidade. Exemplos de arquétipos (não fichas oficiais): segurança particular, policial, investigador, caçador, agente da Segunda Inquisição, criminoso, ocultista, carniçal e vampiro rival.
+- **RF16 [P0]:** Cada arquétipo permite escolher tipo de criatura, papel, ameaça, complexidade de ficha (`SIMPLE`, `INTERMEDIATE`, `FULL`) e variações mecânicas *validadas pelo sistema*. Estatísticas de modelos genéricos são conteúdo original do aplicativo, marcado `GENERIC_TEMPLATE`, e não atribuído a livros.
+- **RF17 [P0]:** A ação **Adicionar à mesa** clona um modelo genérico para a campanha, permitindo edição imediata sem afetar sua definição global.
+- **RF18 [P0]:** A ação **Criar NPC/Antagonista** reutiliza os editores atuais e aceita criação do zero ou baseada em modelo; salva **privadamente** sob controle do Narrador, com visibilidade `ST_ONLY` como padrão.
+- **RF19 [P0]:** Após salvar um novo NPC/antagonista personalizado, apresentar um **popup não obrigatório** perguntando se o criador quer **enviar uma cópia para análise de inclusão no catálogo comunitário do site**. A resposta padrão é **Não compartilhar**. O salvamento privado independe do consentimento e acontece antes do popup.
+- **RF20 [P0]:** O popup mostra uma **prévia exata dos campos a enviar** e permite excluir/editar nome, descrição, histórico, atributos, poderes, tags e demais dados opcionais. **Nunca** incluir automaticamente notas privadas do Narrador, informações de jogadores, nomes ou IDs de campanhas, contatos pessoais, logs, imagens, PDFs ou segredos da mesa.
+- **RF21 [P0]:** Consentimento exige ato afirmativo explícito e separado, sem caixa pré-selecionada. Opções: **Não, manter privado**, **Agora não** e **Enviar para avaliação**. Recusar/fechar não impede o NPC de ser utilizado e não autoriza envio posterior; não repetir popup insistentemente. Permitir contribuição posterior na ficha pela ação **Sugerir ao catálogo**.
+- **RF22 [P0]:** Consentimento **não publica diretamente**. A submissão vira `PENDING_REVIEW` em área restrita; moderador aprova, pede alterações ou rejeita por qualidade, segurança, dados pessoais, plágio e direitos autorais. Apenas material aprovado e autorizado pode entrar no catálogo comunitário.
+- **RF23 [P0]:** Usuário pode consultar status da contribuição e **retirar a submissão antes da publicação**; após publicação, fornecer fluxo para solicitar remoção/despublicação e política explícita de retenção e uso. Retirada não deve apagar a ficha privada nem cópias legitimamente criadas antes, conforme termos exibidos.
+- **RF24 [P0]:** Registrar versão dos termos aceitos, data, usuário, hash/snapshot da prévia aprovada, escopo da licença de compartilhamento e mudanças de status com auditoria. A licença de contribuição deve ser apresentada claramente e permitir somente usos autorizados; não assumir transferência de titularidade.
+- **RF25 [P0]:** Não convidar ao envio de personagem copiado/adaptado de livros sem autorização de redistribuição. Para derivados de obra protegida, bloquear submissão ou exigir validação editorial e direitos comprovados. Distinguir `OFFICIAL_SOURCE`, `GENERIC_TEMPLATE` e `COMMUNITY_SUBMISSION`.
+- **RF26 [P1]:** Catálogo comunitário pesquisável pelo Narrador, com autoria/crédito **opcional e autorizado**, classificação de ameaça, revisão, procedência, e importação por cópia; submissões não aprovadas nunca aparecem em busca.
+- **RF27 [P1]:** Não exigir contas públicas, rede social ou compartilhamento para criar, editar ou usar NPC. Possibilidade de optar por não exibir a pergunta novamente nas preferências, com reativação manual.
+
+### Texto proposto para o popup
+
+> **Quer compartilhar seu NPC com a comunidade?**
+>
+> Seu NPC foi salvo na sua biblioteca privada. Você pode, opcionalmente, enviar uma **cópia revisada** para avaliação e possível inclusão na biblioteca do site. **Nada será publicado automaticamente**. Confira os dados abaixo e confirme que tem direito de compartilhá-los. Sua ficha original e anotações privadas permanecerão na sua conta.
+>
+> **Não, manter privado** · **Agora não** · **Revisar e enviar para avaliação**
+
+O popup deve apresentar link para os termos/licença e a política de privacidade **antes do envio**, com consentimento separado para eventual crédito público do autor. Dados visíveis para o usuário não devem constituir autorização implícita.
+
+### Aceite adicional
+
+11. Catálogo genérico contém modelos originais identificados como genéricos; Narrador adiciona e edita cópia sem modificar template.
+12. Narrador cria NPC do zero e utiliza imediatamente, mesmo recusando o compartilhamento.
+13. Recusa, fechamento do popup, timeout, falha de rede ou opção “Agora não” não enviam nenhum dado.
+14. Envio confirmado guarda somente os campos aprovados na prévia, termos aceitos e status `PENDING_REVIEW`; a biblioteca pública não exibe submissão pendente.
+15. Moderador só publica após verificar direitos, dados pessoais e qualidade; há estado de rejeição, revisão e retirada.
+16. Mudanças posteriores na ficha privada **não** atualizam automaticamente a cópia enviada/publicada.
+17. Não há vazamento de dados de campanha, personagens dos jogadores, notas privadas ou materiais de livros sem autorização.
+18. Retirada e remoção respeitam o fluxo publicado e preservam trilha de auditoria mínima.
