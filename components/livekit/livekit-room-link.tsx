@@ -15,11 +15,11 @@ const fetcher = async (url: string): Promise<CallStatus> => {
   return body
 }
 
-export function LiveKitRoomLink({ campaignId, master, campaignName, compact = false }: Readonly<{ campaignId: string; master: boolean; campaignName?: string | null; compact?: boolean }>) {
-  return <RoomPanel key={campaignId} campaignId={campaignId} master={master} campaignName={campaignName} compact={compact} />
+export function LiveKitRoomLink({ campaignId, master, campaignName, compact = false, chatTargetId }: Readonly<{ campaignId: string; master: boolean; campaignName?: string | null; compact?: boolean; chatTargetId?: string }>) {
+  return <RoomPanel key={campaignId} campaignId={campaignId} master={master} campaignName={campaignName} compact={compact} chatTargetId={chatTargetId} />
 }
 
-function RoomPanel({ campaignId, master, campaignName, compact }: Readonly<{ campaignId: string; master: boolean; campaignName?: string | null }>) {
+function RoomPanel({ campaignId, master, campaignName, compact, chatTargetId }: Readonly<{ campaignId: string; master: boolean; campaignName?: string | null; compact?: boolean; chatTargetId?: string }>) {
   const endpoint = `/api/campaigns/${campaignId}/call`
   const { data: status, error: statusError, mutate } = useSWR(endpoint, fetcher, { refreshInterval: 5000 })
   const [room, setRoom] = useState<RoomInfo | null>(null)
@@ -84,7 +84,7 @@ function RoomPanel({ campaignId, master, campaignName, compact }: Readonly<{ cam
       }}><Copy className="size-4" aria-hidden="true" />{copied ? <><Check className="size-4" aria-hidden="true" /> Link copiado</> : 'Copiar link da chamada'}</button>
     </div>
     {canEnter && <div className={compact ? "mt-4" : joined && room ? 'mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(20rem,0.85fr)]' : 'mt-6'}>
-      {joined && room && <LiveKitRoom compact={compact} token={room.token} serverUrl={room.roomUrl} onDisconnected={() => { setJoined(false); setRoom(null) }} />}
+      {joined && room && <LiveKitRoom compact={compact} chatTargetId={chatTargetId} token={room.token} serverUrl={room.roomUrl} onDisconnected={() => { setJoined(false); setRoom(null) }} />}
       {!compact && <CallRolls campaignId={campaignId} />}
     </div>}
     {status?.canSummon && <p className="mt-3 text-xs text-muted-foreground">Prepare a sala entrando como host. Encerrar a convocação bloqueia novas entradas, mas não revoga tokens já emitidos.</p>}
