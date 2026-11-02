@@ -144,7 +144,7 @@ function ResourceForm({ data, url, sessionId, refresh, notify, focus }: Readonly
 
     <p className="text-sm text-muted-foreground">Condição: {({ ACTIVE: 'Ativo', DAY_SLEEP: 'Sono diurno', STAKED: 'Empalado', TORPOR: 'Torpor', FINAL_DEATH: 'Morte definitiva' } as Record<string, string>)[data.state.condition] ?? 'Condição não reconhecida'}</p>
     {retrying && <button type="button" className="button-primary self-start" disabled={saving} onClick={() => save()}>Reenviar alteração</button>}
-    <BloodActionsPanel characterId={url.split('/')[3]} revision={data.revision} onComplete={async () => { await refresh({ ...data, ...(await fetchResources(url)) }) }} />
+    {!focus && <BloodActionsPanel characterId={url.split('/')[3]} revision={data.revision} onComplete={async () => { await refresh({ ...data, ...(await fetchResources(url)) }) }} />}
     <dialog ref={zeroDialog} aria-labelledby="hunger-zero-title" aria-describedby="hunger-zero-description" className="m-auto w-[min(32rem,95vw)] border border-border bg-card p-6 text-foreground backdrop:bg-background/80">
       <h3 id="hunger-zero-title" className="font-serif text-2xl">Atenção: ação tabu</h3>
       <p id="hunger-zero-description" className="mt-4 text-sm leading-6">Zerar a Fome indica uma ação tabu nesta crônica e pode trazer consequências narrativas, avaliadas pelo Narrador. Deseja continuar?</p>
@@ -159,7 +159,7 @@ export function SessionResources({ characterId, sessionId, focus }: Readonly<{ c
   const [feedback, setFeedback] = useState({ message: '', error: false })
   return <section className="border border-border bg-card p-5 sm:p-6" aria-labelledby="recursos-sessao-titulo">
     <p className="eyebrow">Estado da sessão</p>
-    <h2 id="recursos-sessao-titulo" className="mb-5 mt-2 font-serif text-xl">Recursos</h2>
+    <h2 id="recursos-sessao-titulo" className="mb-5 mt-2 font-serif text-xl">{focus === "health" ? "Vitalidade" : focus === "hunger" ? "Fome" : focus === "willpower" ? "Força de Vontade" : "Recursos"}</h2>
     {feedback.message && <div className="mb-4 flex flex-col items-start gap-3"><p role={feedback.error ? 'alert' : 'status'} className="text-sm text-muted-foreground">{feedback.message}</p>{feedback.error && <button type="button" className="button-ghost" onClick={() => void mutate()}>Recarregar recursos</button>}</div>}
     {isLoading && <output className="block text-sm text-muted-foreground">Carregando recursos…</output>}
     {error && <div role="alert" className="mb-4 flex flex-col gap-3"><p className="text-sm text-primary">{error instanceof Error ? error.message : 'Falha ao carregar recursos.'}</p><button type="button" className="button-ghost self-start" onClick={() => void mutate()}>Recarregar recursos</button></div>}
