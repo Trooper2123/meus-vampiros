@@ -85,3 +85,91 @@ Cards: nome, espécie, papel, livro/página, badge de completude; ação **Visua
 ## Dependências e validações
 
 Antes de implementar: revisar exatamente `lib/npc-store.ts`, `npc-domain.ts`, `npc-options.ts`, componentes de catálogo e a estrutura de `/npcs`, contratos `campaign_npcs`, migrations e fluxo de adição de habilidades. Validar TypeScript, lint, testes e revisão pré-commit; não considerar a feature concluída somente pela criação desta SPEC.
+
+
+## Expansão v1.1 — Modelos genéricos e envio opt-in ao repositório do site
+
+### Arquitetura e tipos
+
+Reutilizar `npc_definitions`, `NPC_TEMPLATES`, editor e vínculos `campaign_npcs` para modelos genéricos e NPCs criados por usuário. Ampliar a origem com `OFFICIAL_SOURCE | GENERIC_TEMPLATE | USER_CUSTOM | COMMUNITY_SUBMISSION` em camada de catálogo, sem substituir os modelos atuais. `GENERIC_TEMPLATE` inclui somente conteúdo próprio do app ou devidamente licenciado; suas estatísticas são balanceadas e rotuladas como criação do site.
+
+Para contribuições, **separar** o dado original privado do **snapshot sanitizado** entregue à moderação. Nunca referenciar diretamente a linha privada como item publicável e nunca sincronizar mudanças automaticamente.
+
+```text
+npc_community_submissions
+  id UUID PK
+  author_user_id TEXT NOT NULL
+  source_npc_id UUID NULL             -- privado; não expor no catálogo
+  proposed_payload JSONB NOT NULL     -- snapshot revisado pelo autor
+  proposed_payload_hash TEXT NOT NULL
+  terms_version TEXT NOT NULL
+  consented_at TIMESTAMPTZ NOT NULL
+  allow_public_credit BOOLEAN NOT NULL DEFAULT FALSE
+  public_credit_name TEXT NULL
+  authorship_declaration BOOLEAN NOT NULL
+  status PENDING_REVIEW | CHANGES_REQUESTED | APPROVED | REJECTED | WITHDRAWN | PUBLISHED | UNPUBLISHED
+  moderation_reason TEXT NULL
+  reviewed_by TEXT NULL
+  reviewed_at TIMESTAMPTZ NULL
+  published_catalog_id UUID NULL
+  created_at, updated_at TIMESTAMPTZ
+
+npc_community_submission_events
+  id UUID PK
+  submission_id UUID
+  actor_id TEXT
+  action TEXT
+  old_status TEXT
+  new_status TEXT
+  created_at TIMESTAMPTZ
+```
+
+`published_catalog_id` aponta para um **registro público independente e versionado**, que contém somente os campos aprovados para distribuição. Moderadores não devem alterar fichas privadas. Evitar armazenar justificativas privadas no snapshot. Dados pessoais e informações da mesa devem ser eliminados **no backend** por allowlist, mesmo se enviados pelo cliente. Restringir edição de `terms_version`, `author_user_id` e `status` ao servidor.
+
+### Fluxo de criação e popup
+
+```text
+Criar NPC/Antagonista
+  → escolher modelo genérico / criar do zero
+  → editar e validar
+  → SALVAR PRIVADAMENTE (transação própria)
+  → popup opcional de contribuição
+      ├── Não / Agora não / fechar → termina; nenhum envio
+      └── Revisar cópia → remover dados privados / ajustar conteúdo
+            → mostrar termos, licença e declaração de autoria
+            → confirmação afirmativa → POST submissão
+                → PENDING_REVIEW
+                → moderação → APPROVED → PUBLISHED
+                           └─ REJECTED / CHANGES_REQUESTED / WITHDRAWN
+```
+
+Aparecimento do popup: após primeiro salvamento de NPC `USER_CUSTOM` elegível, no máximo uma vez por personagem por padrão. Não interromper o fluxo caso falhe a verificação de elegibilidade ou o serviço de submissão. Permitir reabrir manualmente por **Sugerir ao catálogo**. Separar consentimento de submissão de consentimento para exibir nome de autor; o padrão é sem crédito nominativo.
+
+### Endpoints sugeridos (adaptar ao padrão existente)
+
+```text
+GET  /api/npc-templates?category=GENERIC
+POST /api/npcs                              -- salvar NPC privado, já existente
+GET  /api/npcs/:id/community-preview        -- apenas proprietário; allowlist
+POST /api/npc-community-submissions         -- opt-in explícito e snapshot
+GET  /api/npc-community-submissions/mine
+POST /api/npc-community-submissions/:id/withdraw
+POST /api/npc-community-submissions/:id/request-removal
+GET  /api/moderation/npc-submissions        -- moderador
+POST /api/moderation/npc-submissions/:id/decision
+GET  /api/npc-community-catalog             -- somente PUBLISHED
+```
+
+POST usa sessão autenticada, confirmação de autoria/direitos, `termsVersion`, revisão dos campos e idempotency key. Salvar `proposed_payload` com allowlist de propriedades: sem `campaign_id`, `player_ids`, `character_ids`, `master_notes`, `private_notes`, `source_pdf`, imagens não autorizadas e outros IDs do domínio. Verificar titularidade de `source_npc_id` e recusar fontes oficiais/adaptações cujo compartilhamento não tenha base de direitos. Moderação precisa ter autorização separada de Narrador e evitar autoaprovação pelo próprio autor. Publicação e remoção são transações auditadas.
+
+### Segurança, privacidade e manutenção
+
+- Proteger 401/403 e IDOR entre usuários/campanhas; validar rate limits, tamanho de payload e sanitização de rich text; nunca confiar em checkbox ou flags isoladas do cliente.
+- Proibir publicação de dados privados mesmo com consentimento genérico; consentimento cobre **somente o snapshot mostrado**, não o restante da conta.
+- A ficha privada continua pertencendo ao criador e pode ser alterada/removida independentemente do item comunitário, conforme termos consentidos. A solicitação de remoção deve ser operacionalizada com prazo/política divulgados sem prometer remoção de cópias já importadas.
+- Guardar registro mínimo de consentimento/auditoria, observando LGPD e transparência; opção de pseudônimo/sem crédito. Não inserir material protegido dos livros na área comunitária sem direitos.
+- UX do popup: foco acessível, Escape fecha sem compartilhar, botões explícitos, prévia de dados, links para termos/privacidade e estado de erro não destrutivo.
+
+### Testes
+
+Salvar sem consentimento (nenhum POST), cancelar/fechar popup, editar prévia, submissão idempotente, catálogo oculto até publicação, campos privados descartados no servidor, perda de autorização, moderação, retirada/removal, restrição a NPC canônico não licenciado e isolamento entre campanhas. Testar também clonagem e ajuste de modelos genéricos.
