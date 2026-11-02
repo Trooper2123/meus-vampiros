@@ -2927,3 +2927,18 @@ main > .archive-header {
 @media(max-width:1250px){.session-player-columns{grid-template-columns:220px minmax(0,1fr) 230px}.session-player-chat,.session-player-cameras{padding:11px}.session-player-tabs button{padding:8px 11px}.session-player-action-buttons{gap:5px}}
 @media(max-width:1050px){.session-player-columns{grid-template-columns:240px minmax(0,1fr)}.session-player-cameras{grid-column:1/-1;min-height:180px}.session-player-cameras>.session-video-panel{flex:unset}.session-player-cameras .session-video-grid{min-height:230px}.session-player-diary .campaign-notes-workspace{grid-template-columns:1fr}}
 @media(max-width:700px){.session-player-approved{padding:10px}.session-player-title{flex-wrap:wrap}.session-player-columns{display:flex;flex-direction:column}.session-player-center{order:1}.session-player-cameras{order:2}.session-player-chat{order:3;min-height:300px}.session-player-tabs{flex-wrap:nowrap;overflow-x:auto}.session-player-tabs button{flex:none}.session-player-action-buttons{grid-template-columns:repeat(2,minmax(0,1fr))}.session-player-chat .session-chat-mount{min-height:240px}}
+
+/* A lateral de câmeras permanece sempre à direita, inclusive em telas menores. */
+@media(max-width:1050px){
+  .session-player-approved{overflow-x:auto}
+  .session-player-columns{display:grid;grid-template-columns:200px minmax(400px,1fr) 220px;min-width:860px;align-items:stretch}
+  .session-player-cameras{grid-column:auto;order:initial;min-height:640px}
+  .session-player-chat{order:initial;min-height:640px}
+  .session-player-center{order:initial}
+  .session-player-diary .campaign-notes-workspace{grid-template-columns:minmax(180px,.8fr) minmax(0,1.2fr)}
+}
+@media(max-width:700px){
+  .session-player-columns{display:grid;grid-template-columns:180px minmax(360px,1fr) 200px;min-width:780px}
+  .session-player-cameras,.session-player-chat{min-height:550px}
+  .session-player-tabs{flex-wrap:wrap;overflow-x:visible}
+}
