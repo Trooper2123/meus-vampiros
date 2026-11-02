@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { BookOpen, CalendarDays, FileText, MessageCircle, NotebookPen, Search, Users, Wallet, Eye, Target, UserRoundCog } from 'lucide-react'
+import { BookOpen, CalendarDays, FileText, MessageCircle, NotebookPen, Search, Users, Wallet, Eye, Target, UserRoundCog, House, Boxes, ImageIcon, Dices, Send, Pause, X } from 'lucide-react'
 import Link from 'next/link'
 import useSWR, { SWRConfig, useSWRConfig } from 'swr'
 import { LiveKitRoomLink } from '@/components/livekit/livekit-room-link'
@@ -72,13 +72,17 @@ function SessionWorkspace({ campaignId, actorId }: Readonly<{ campaignId: string
     }
   }
 
-  return <div className="flex flex-col gap-6">
-    <header className="border border-border bg-card p-5"><p className="eyebrow">Modo sessão</p><h1 className="mt-2 font-serif text-3xl">Mesa em andamento</h1><p className="mt-2 text-sm text-muted-foreground">Recursos e rolagens usam os comandos oficiais da ficha. A sala de vídeo é opcional.</p>{feedback && <output  className="block mt-3 text-sm text-muted-foreground">{feedback}</output>}{error && <p role="alert" className="mt-3 text-sm text-primary">{error.message}</p>}{!data?.session && manage && !data?.archived && <button className="button-primary mt-4 min-h-10" disabled={pending} onClick={() => void command('POST', url, {})}>Iniciar sessão</button>}{activeSession?.status === 'ACTIVE' && manage && <button className="button-ghost mt-4 min-h-10" disabled={pending} onClick={() => void command('PATCH', `/api/sessions/${activeSession.id}`, { expectedRevision: activeSession.revision })}>Encerrar sessão</button>}</header>
+  return <div className="session-approved-layout">
+    <header className="session-active-header">
+      <div className="session-active-brand"><Boxes aria-hidden="true"/><div><p className="eyebrow">Painel do Narrador</p><h1>Mesa em andamento</h1><p>Controle e condução da sessão · recursos, comunicação e rolagens da mesa.</p></div></div>
+      <div className="session-active-actions">{activeSession?.status === 'ACTIVE' && <><span className="session-live-status"><i/>Sessão em andamento</span><button className="button-ghost" type="button" disabled title="Pausa temporal será implementada em etapa própria"><Pause className="size-4"/>Pausar</button>{manage && <button className="button-primary" disabled={pending} onClick={() => void command('PATCH', `/api/sessions/${activeSession.id}`, { expectedRevision: activeSession.revision })}><X className="size-4"/>Encerrar</button>}</>}{!data?.session && manage && !data?.archived && <button className="button-primary" disabled={pending} onClick={() => void command('POST', url, {})}>Iniciar sessão</button>}</div>
+      {feedback && <output className="session-header-feedback">{feedback}</output>}{error && <p role="alert" className="session-header-feedback">{error.message}</p>}
+    </header>
     {data?.archived&&<p className="border border-border bg-card p-4 text-sm">Mesa arquivada. O histórico continua disponível; restaure a mesa para iniciar novas sessões.</p>}
     {!!data?.sessions?.length&&<label className="sheet-field"><span>Sessão para consultar anotações e revelações</span><select className="select" value={notesSessionId??''} onChange={event=>{const id=event.target.value;setClosedNpcSession(id);const location=new URL(window.location.href);location.searchParams.set('npcSessionId',id);window.history.replaceState(window.history.state,'',location.toString())}}>{data.sessions.map(session=><option key={session.id} value={session.id}>{new Date(session.startedAt).toLocaleString('pt-BR')} · {session.status==='ACTIVE'?'Em andamento':'Encerrada'}</option>)}</select></label>}
     {data && manage && <div className="session-master-shell">
       <aside className="session-chat" aria-label="Chat da mesa">
-        <div className="session-column-heading"><MessageCircle className="size-5 text-primary" aria-hidden="true"/><div><p className="eyebrow">Comunicação</p><h2 className="font-serif text-xl">Chat da mesa</h2></div></div>
+        <div className="session-column-heading"><MessageCircle className="size-6 text-primary" aria-hidden="true"/><div><p className="eyebrow">Comunicação</p><h2 className="font-serif text-xl">Chat da Mesa</h2></div><button type="button" className="session-icon-action" aria-label="Mais opções">•••</button></div>
         <div className="session-chat-log" aria-live="polite">
           <div className="session-chat-placeholder">
             <MessageCircle className="size-9 text-primary" strokeWidth={1.25} aria-hidden="true"/>
@@ -86,19 +90,19 @@ function SessionWorkspace({ campaignId, actorId }: Readonly<{ campaignId: string
             <p className="mt-2 text-xs leading-5 text-muted-foreground">A interface está preparada; o repositório ainda não possui armazenamento próprio de mensagens da mesa.</p>
           </div>
         </div>
-        <label className="session-chat-compose"><span className="sr-only">Mensagem da mesa</span><textarea rows={2} disabled placeholder="Chat será habilitado quando o serviço de mensagens estiver disponível." /></label>
+        <label className="session-chat-compose"><span className="sr-only">Mensagem da mesa</span><textarea rows={2} disabled placeholder="Digite uma mensagem..." /><button type="button" disabled aria-label="Enviar mensagem"><Send className="size-4"/></button></label>
       </aside>
 
       <main className="session-center">
         <div className="session-center-heading">
-          <div><p className="eyebrow">Painel do Narrador</p><h2 className="font-serif text-2xl">Hub da sessão</h2></div>
+          <div className="session-hub-title"><House className="size-7 text-primary"/><div><h2 className="font-serif text-2xl">Hub da Sessão</h2><p>Visão geral, comunicação e principais recursos da mesa.</p></div></div>
           <p className="text-xs text-muted-foreground">As abas trocam apenas o conteúdo central.</p>
         </div>
 
         <nav className="session-tabs" aria-label="Seções do modo sessão">
           {[
-            { id: 'shared', label: 'Hub', Icon: Eye },
-            { id: 'visual', label: 'Mesa visual', Icon: Eye },
+            { id: 'shared', label: 'Hub', Icon: House },
+            { id: 'visual', label: 'Mesa Visual', Icon: Boxes },
             { id: 'handouts', label: 'Handouts', Icon: FileText },
             { id: 'research', label: 'Pesquisas', Icon: Search },
             { id: 'notes', label: 'Anotações', Icon: NotebookPen },
@@ -111,14 +115,14 @@ function SessionWorkspace({ campaignId, actorId }: Readonly<{ campaignId: string
         <section className="session-stage" aria-label="Conteúdo da seção selecionada">
           {activeTool === 'shared' && <div className="session-hub-grid">
             <section className="session-shared-visual">
-              <div className="session-panel-heading"><div><p className="eyebrow">Compartilhamento visual mútuo</p><h3 className="font-serif text-xl">Espaço visual da mesa</h3></div><Eye className="size-5 text-primary" aria-hidden="true"/></div>
+              <div className="session-panel-heading"><ImageIcon className="size-7 text-primary"/><div><p className="eyebrow">Compartilhamento visual mútuo</p><h3 className="font-serif text-xl">Espaço visual compartilhado</h3><p className="session-panel-subtitle">Visual da sessão visível para toda a mesa (gerenciado pelo Narrador).</p></div><Eye className="ml-auto size-5 text-primary" aria-hidden="true"/></div>
               <div className="session-visual-stage session-visual-stage-compact">
-                <p className="max-w-lg text-sm leading-6 text-muted-foreground">Área preparada para mapas, imagens e handouts compartilhados. Não depende de compartilhamento de tela.</p>
+                <div className="session-visual-placeholder"><ImageIcon/><span>Mapas, imagens e handouts compartilhados aparecem aqui.</span></div>
               </div>
             </section>
             <section className="session-quick-roll">
-              <div className="session-panel-heading"><div><p className="eyebrow">Rolagem rápida</p><h3 className="font-serif text-xl">Teste da sessão</h3></div><span className="session-public-roll"><Eye className="size-3.5" aria-hidden="true"/>Visível aos jogadores</span></div>
-              {!current && <p className="empty-state mt-4">Nenhuma ficha disponível nesta sessão.</p>}
+              <div className="session-panel-heading"><Dices className="size-7 text-primary"/><div><p className="eyebrow">Rolagem rápida</p><h3 className="font-serif text-xl">Rolagem rápida</h3><p className="session-panel-subtitle">Role testes, disputas e resistências de forma ágil.</p></div><span className="session-public-roll"><Eye className="size-3.5" aria-hidden="true"/>Visível aos jogadores</span></div>
+              {!current && <div className="session-free-roll"><div><label>Pool de dados<input type="number" min="1" max="30" defaultValue="5"/></label><label>Fome<input type="number" min="0" max="5" defaultValue="0"/></label><label>Dificuldade<input type="number" min="0" max="10" defaultValue="1"/></label></div><button type="button" className="button-primary" disabled title="Rolagem avulsa será ligada ao domínio de dados em etapa própria"><Dices className="size-4"/>Rolar</button><p>Rolagem avulsa não exige ficha vinculada.</p></div>}
               {current && activeSession?.status === 'ACTIVE' && <div className="mt-4"><CharacterRolls key={`hub-rolls-${current.id}`} characterId={current.id} sessionId={activeSession.id}/></div>}
             </section>
             <section className="session-quick-access">
@@ -150,8 +154,8 @@ function SessionWorkspace({ campaignId, actorId }: Readonly<{ campaignId: string
       </main>
 
       <aside className="session-cameras" aria-label="Câmeras dos participantes">
-        <div className="session-column-heading"><Users className="size-5 text-primary" aria-hidden="true"/><div><p className="eyebrow">Participantes</p><h2 className="font-serif text-xl">Câmeras da mesa</h2></div></div>
-        <p className="mt-3 text-xs leading-5 text-muted-foreground">Vídeo e áudio permanecem fixos nesta lateral; compartilhamento de tela não é necessário.</p>
+        <div className="session-column-heading"><Users className="size-6 text-primary" aria-hidden="true"/><div><p className="eyebrow">Participantes</p><h2 className="font-serif text-xl">Participantes ({data.characters.length})</h2></div></div>
+        
         <div className="mt-4"><LiveKitRoomLink campaignId={campaignId} master={manage} compact /></div>
         {data.characters.length > 0 && <div className="session-character-links"><p className="eyebrow">Resumos de ficha</p>{data.characters.map(character => <Link key={character.id} href={`/characters/${character.id}/summary`} target="_blank" rel="noopener noreferrer"><BookOpen className="size-3.5" aria-hidden="true"/>{character.name}</Link>)}</div>}
       </aside>
