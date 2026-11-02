@@ -3,6 +3,7 @@
 **Projeto:** Meus Vampiros  
 **Branch de referência:** `develop`  
 **Criado em:** 2026-11-02  
+**Atualizado em:** 2026-11-02  
 **Estado:** PLANEJADO — tarefas ainda não concluídas  
 **Origem:** auditoria e evolução da [SPEC de autopreenchimento da Potência de Sangue](../regras/spec-autopreenchimento-potencia-sangue-vtm-v5.md).
 
@@ -20,7 +21,9 @@
 | SG-006 | **P1** | Alimentação entre vampiros com efeitos na vítima | [ ] Pendente | SG-001 |
 | SG-007 | **P1** | Fluxo específico de Diablerie e transição Sangue-Ralo | [ ] Pendente | SG-006 |
 | SG-008 | **P1** | Refinar regras de alimentação, vantagens/defeitos e política efetiva | [ ] Pendente | SG-001 |
-| SG-009 | **P2** | QA ponta a ponta, acessibilidade e fontes clicáveis | [ ] Pendente | SG-001 a SG-008 |
+| SG-009 | **P2** | QA ponta a ponta, acessibilidade e fontes clicáveis | [ ] Pendente | SG-001 a SG-008, SG-010, SG-011 |
+| SG-010 | **P1** | Rolagens de poderes de Disciplinas para jogadores | [ ] Pendente | SG-001, integração com catálogo de Disciplinas e motor de dados |
+| SG-011 | **P1** | Trilha sonora integrada ao Modo Sessão | [ ] Pendente | Modo Sessão existente, permissões de mesa; levantamento de provedores/licenças |
 
 ### Decisões arquiteturais comuns
 
@@ -125,6 +128,42 @@
 
 **Aceite:** o mesmo cenário no motor e na UI retorna valores idênticos, com rastreabilidade das opções aplicadas.
 
+### SG-010 — Rolagem de poderes de Disciplinas para jogadores
+
+**Objetivo:** permitir que jogadores executem testes relacionados aos poderes de suas Disciplinas diretamente da ficha ou do Modo Sessão, sem precisar compor manualmente a parada.
+
+**Atividades**
+- [ ] Integrar catálogo de Disciplinas e poderes já associados à ficha, mantendo o nome original em inglês e a tradução/explicação em português quando disponível.
+- [ ] Exibir ação **Rolar poder** apenas para poderes efetivamente adquiridos e utilizáveis pelo personagem; validar a elegibilidade novamente no servidor, incluindo nível, pré-requisitos e condições.
+- [ ] Exibir ao jogador um resumo da rolagem: poder, atributo + habilidade (ou outra fórmula prevista), quantidade de dados comuns e dados de Fome, dificuldade quando pública, custo em Rouse e modificadores conhecidos.
+- [ ] Resolver a fórmula de cada poder com metadados verificáveis do catálogo; **não** aplicar uma fórmula genérica a poderes com testes diferentes, automáticos, resistidos ou que dependam de interpretação do Narrador.
+- [ ] Aplicar o bônus de dados por Potência de Sangue somente às rolagens elegíveis; verificar a política Core/Companion da campanha e efeitos temporários vigentes.
+- [ ] Integrar custo de Rouse, eventual rerrolagem de Rouse em Disciplinas permitidas, regras de Fome 5 e possíveis decisões assistidas, sem duplicar o custo em tentativas/reenvios.
+- [ ] Respeitar sucesso, crítico, crítico bagunçado, falha bestial, teste resistido, testes secretos e custos mecânicos conforme o motor de dados vigente; separar rolagem do poder e consequências narrativas.
+- [ ] Na mesa, respeitar visibilidade pública/secreta, revisão pelo Narrador quando exigida e integração ao histórico do Modo Sessão; na ficha independente, permitir execução pelo proprietário sem exigir campanha.
+- [ ] Persistir pedido, resultado, dados rolados, fontes do cálculo, custo e efeito aplicado via comandos idempotentes e ledger.
+- [ ] Adicionar testes unitários e de integração para poderes com fórmulas diferentes, Rouse, níveis proibidos, dados de Fome, segredo/visibilidade, autorização, concorrência e histórico.
+
+**Aceite:** jogador pode escolher um poder adquirido e realizar a rolagem correta pelo servidor, com custos e dados de Fome calculados de forma consistente, histórico auditável e funcionamento tanto em mesa quanto em ficha independente. Poder sem fórmula mecânica verificável deve indicar uso narrativo/assistido, não inventar resultado.
+
+### SG-011 — Trilha sonora integrada ao Modo Sessão
+
+**Objetivo:** oferecer ambientação sonora na sessão já existente, sem recriar videoconferência, mesa ou sistema de personagens.
+
+**Atividades**
+- [ ] Avaliar fontes e licenciamento: biblioteca de áudio própria/licenciada e integrações com provedores que permitam reprodução e sincronização conforme seus termos; não presumir que um link de streaming autorize retransmissão de áudio.
+- [ ] Definir opção inicial de trilhas/ambiências com permissões verificáveis, incluindo catálogo de faixas, categorias, duração, origem/licença e metadados.
+- [ ] Implementar player no Modo Sessão com play/pausa, próxima faixa, fila/playlist, volume individual, mute e indicação da trilha atual; respeitar restrições de autoplay do navegador.
+- [ ] Permitir ao Narrador selecionar faixas, playlists e ambientações por cena; jogadores acompanham o estado da sessão, podendo ajustar ou silenciar seu próprio volume.
+- [ ] Sincronizar os comandos da trilha entre participantes da mesma sessão (incluindo quem entra atrasado e reconexão), com controle de ordem/versão e sem sincronizar volume pessoal.
+- [ ] Integrar de forma compatível com o módulo de videochamada existente, evitando áudio duplicado, conflitos com voz e reproduções inesperadas após mudança de sessão.
+- [ ] Usar armazenamento/streaming seguro e econômico, limites de tamanho/banda e controle de acesso; avaliar custo e impacto antes de escolher armazenamento ou provedor.
+- [ ] Preservar privacidade: não expor URLs privadas ou credenciais de provedores, nem tornar playlists restritas acessíveis a outra mesa.
+- [ ] Adicionar testes de autorização do Narrador, sincronização, reconexão, participante removido, restrição por sessão, autoplay, controle de volume local e fallback quando mídia/provedor estiver indisponível.
+- [ ] Documentar o funcionamento em desktop/mobile, acessibilidade dos controles, fontes licenciadas e limites de integração.
+
+**Aceite:** em uma sessão ativa, Narrador inicia/pausa uma trilha permitida e participantes autorizados recebem o estado sincronizado, com controle individual de volume e sem interferência na chamada de vídeo. Não implementar transmissão de conteúdo comercial sem autorização/licença.
+
 ## 4. P2 — Qualidade e documentação
 
 ### SG-009 — Homologação ponta a ponta
@@ -133,6 +172,7 @@
 - [ ] Testar responsividade, acessibilidade, mensagens e estados pendentes da UI.
 - [ ] Testar identidade/autorização, concorrência, transações, políticas de campanha e persistência PostgreSQL.
 - [ ] Documentar referências com obra e página; usar link para página exata somente onde permitido e tecnicamente disponível.
+- [ ] Validar rolagens de poderes de Disciplinas e trilha sonora com participantes reais, reconexão e permissões de sessão.
 - [ ] Atualizar SPEC e CHANGELOG com resultados **efetivamente executados**.
 
 ## 5. Ordem de entrega proposta
@@ -141,7 +181,9 @@
 **Entrega B — Ficha independente:** SG-002 + SG-003; SG-004 junto ao fluxo de Rouse.  
 **Entrega C — Experiência da mesa:** SG-005.  
 **Entrega D — Interações entre vampiros:** SG-006, seguida de SG-007.  
-**Entrega E — Regras adicionais e homologação:** SG-008 + SG-009.
+**Entrega E — Rolagens de Disciplinas:** SG-010 (integrando catálogo, Potência de Sangue e motor de dados).  
+**Entrega F — Ambientação da mesa:** SG-011 (após avaliação de licenças e provedores).  
+**Entrega G — Regras adicionais e homologação:** SG-008 + SG-009.
 
 ### Definição de pronto (DoD)
 Cada tarefa só pode ser marcada como concluída após código integrado à `develop`, testes pertinentes executados e aprovados, controles de autorização revisados, histórico transacional verificado, documentação atualizada e eventuais limitações explicitamente registradas. Escrever um teste ou criar um componente não equivale a homologação.
@@ -155,3 +197,4 @@ Cada tarefa só pode ser marcada como concluída após código integrado à `dev
 - `lib/character-resources.ts`: ajustes manuais, que devem continuar separados.
 - `lib/chronicle-nights.ts`: noites de mesa, **não** substituir diretamente por noites independentes.
 - `docs/regras/spec-autopreenchimento-potencia-sangue-vtm-v5.md`: SPEC de origem.
+- Módulos existentes de catálogo de Disciplinas, motor de rolagem, Modo Sessão e videochamada: localizar contratos exatos antes de implementar SG-010 e SG-011; referências aqui são requisitos, não comprovação de funcionalidade já concluída.
