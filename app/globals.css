@@ -2371,3 +2371,24 @@ main > .archive-header {
 .session-shortcut{border-color:#5b3438!important;border-radius:6px!important;background:#1a1113!important;padding:12px!important}.session-shortcut:hover:not(:disabled){border-color:#9c3036!important;background:#281216!important}
 .session-cameras .session-character-links a{border-color:#4c3033!important;background:#140e10!important}
 @media(max-width:1300px){.session-master-shell{grid-template-columns:240px minmax(540px,1fr) 260px!important}.session-page-content{padding-inline:18px!important}}
+
+/* Chat efêmero do LiveKit: portal para a coluna esquerda do painel */
+.session-chat-mount{display:flex;flex:1;min-height:0;flex-direction:column}
+.session-chat-mount>.session-chat-placeholder{flex:1;padding:22px}
+.session-livekit-chat{display:flex;flex:1;min-height:0;flex-direction:column}
+.session-livekit-chat-status{display:flex;align-items:center;gap:8px;border-bottom:1px solid #43282a;padding:10px 14px;color:#b8aaa8;font-size:10px}
+.session-livekit-online{width:7px;height:7px;flex:none;border-radius:50%;background:#27c99c;box-shadow:0 0 7px #27c99c}
+.session-livekit-chat-log{display:flex;flex:1;min-height:240px;max-height:calc(100dvh - 360px);flex-direction:column;gap:13px;overflow-y:auto!important;padding:14px!important}
+.session-chat-empty{margin:auto;color:#928584;font-size:12px;line-height:1.6;text-align:center}
+.session-livekit-message{display:flex;flex-direction:column;gap:5px;border-bottom:1px solid #322124;padding-bottom:10px}
+.session-livekit-message-meta{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.session-livekit-message-meta strong{overflow:hidden;color:#daa7c9;font-family:var(--font-serif),serif;font-size:14px;text-overflow:ellipsis;white-space:nowrap}
+.session-livekit-message-meta time{flex:none;color:#8e8280;font-size:10px;font-variant-numeric:tabular-nums}
+.session-livekit-message>p{overflow-wrap:anywhere;color:#ede5e2;font-size:12px;line-height:1.6;white-space:pre-wrap}
+.session-livekit-message-own .session-livekit-message-meta strong{color:#f28b90}
+.session-livekit-compose{position:relative;margin-top:auto;border-top:1px solid #563036;padding:10px}
+.session-livekit-compose textarea{display:block;width:100%;min-height:64px;resize:vertical;border:1px solid #563036;border-radius:7px;background:#1b1215;padding:12px 48px 12px 12px;color:#eee4e2;font-size:12px}
+.session-livekit-compose textarea:focus{outline:1px solid #b7353c}
+.session-livekit-compose button{position:absolute;right:17px;bottom:19px;display:grid;width:34px;height:34px;place-items:center;border:1px solid #c3373d;border-radius:6px;background:#99222a;color:#fff}
+.session-livekit-compose button:disabled{cursor:not-allowed;opacity:.35}
+.session-chat-error{padding:8px 12px;color:#ffb6b8;font-size:11px}
