@@ -26,7 +26,11 @@ export function NotesPanel({ actorId, link, initialCampaignId = '' }: Readonly<{
 
 function NotesEditor({ link, initialCampaignId }: Readonly<{ link?: NoteLink; initialCampaignId: string }>) {
   const [page, setPage] = useState(1)
-  const endpoint = link ? `/api/notes/links?targetType=${link.targetType}&targetId=${link.targetId}&page=${page}` : `/api/notes?page=${page}${initialCampaignId?`&campaignId=${initialCampaignId}`:""}`
+  const [search, setSearch] = useState('')
+  const [markerFilter, setMarkerFilter] = useState('')
+  const [marker, setMarker] = useState('')
+  const filters = `&search=${encodeURIComponent(search)}&marker=${encodeURIComponent(markerFilter)}`
+  const endpoint = link ? `/api/notes/links?targetType=${link.targetType}&targetId=${link.targetId}&page=${page}` : `/api/notes?page=${page}${initialCampaignId?`&campaignId=${initialCampaignId}`:""}${filters}`
   const { data, error, mutate } = useSWR<{ notes: NoteView[]; total: number }>(endpoint, fetcher, { refreshInterval: 5000 })
   const { data: context } = useSWR<Context>('/api/notes/context', fetcher)
   const [current, setCurrent] = useState<NoteView | null>(null)
@@ -44,7 +48,7 @@ function NotesEditor({ link, initialCampaignId }: Readonly<{ link?: NoteLink; in
   const campaign = context?.campaigns.find(entry => entry.id === campaignId)
   const targets = context?.targets.filter(target => target.campaignId === (campaignId || null)) ?? []
 
-  function reset() { setCurrent(null); setTitle(''); setBody(''); setCampaignId(initialCampaignId); setVisibility('PRIVATE'); setRecipients([]); setLinks(link?[link]:[]); setMessage(''); creationKey.current = crypto.randomUUID() }
+  function reset() { setCurrent(null); setTitle(''); setBody(''); setMarker(''); setCampaignId(initialCampaignId); setVisibility('PRIVATE'); setRecipients([]); setLinks(link?[link]:[]); setMessage(''); creationKey.current = crypto.randomUUID() }
 
   useEffect(() => {
     if ([error?.status, accessError?.status].some(status => [401, 403, 404].includes(status))) {
@@ -58,7 +62,7 @@ function NotesEditor({ link, initialCampaignId }: Readonly<{ link?: NoteLink; in
     setBusy(true)
     try {
       const note: NoteView = await fetcher(`/api/notes/${id}`)
-      setCurrent(note); setTitle(note.title); setBody(note.body ?? ''); setCampaignId(note.campaignId ?? ''); setVisibility(note.visibility); setRecipients(note.recipientUserIds ?? []); setLinks((note.links ?? []).map(({ targetType, targetId }) => ({ targetType, targetId }))); setMessage('')
+      setCurrent(note); setTitle(note.title); setBody(note.body ?? ''); setMarker(note.marker ?? ''); setCampaignId(note.campaignId ?? ''); setVisibility(note.visibility); setRecipients(note.recipientUserIds ?? []); setLinks((note.links ?? []).map(({ targetType, targetId }) => ({ targetType, targetId }))); setMessage('')
     } catch (error_) { setMessage(error_ instanceof Error ? error_.message : 'Não foi possível abrir a anotação.') }
     finally { setBusy(false) }
   }
@@ -69,7 +73,7 @@ function NotesEditor({ link, initialCampaignId }: Readonly<{ link?: NoteLink; in
     setBusy(true)
     try {
       const url = current ? `/api/notes/${current.id}` : '/api/notes'
-      const { requestMethod,payload }=prepareNoteRequest(title,body,visibility,recipients,links,current,campaignId,creationKey,remove)
+      const { requestMethod,payload }=prepareNoteRequest(title,body,marker,visibility,recipients,links,current,campaignId,creationKey,remove)
       const response = await fetch(url, { method: requestMethod, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
       const saved = await response.json()
       if (!response.ok) { throw new Error(saved.error ?? 'Não foi possível salvar. Seu texto foi preservado.') }
@@ -85,7 +89,7 @@ function NotesEditor({ link, initialCampaignId }: Readonly<{ link?: NoteLink; in
   if ([401, 403].includes(error?.status)) { return <p role="alert">Sua sessão não permite acessar as anotações. Recarregue após entrar novamente.</p> }
   return <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
     <section className="border border-border bg-card p-5"><h2 className="font-serif text-xl">Suas anotações</h2><p className="mt-2 text-sm text-muted-foreground">Privadas por padrão, sem acesso implícito do Narrador.</p>
-      <button type="button" className="button-ghost mt-4" disabled={busy} onClick={() => { if (!(title || body) || window.confirm('Descartar alterações não salvas?')) { reset() } }}>Nova anotação</button>
+      <div className="mt-4 grid gap-3"><label className="sheet-field"><span>Pesquisar nas notas</span><input value={search} placeholder="Título, conteúdo ou marcador" onChange={event => { setSearch(event.target.value); setPage(1) }}/></label><label className="sheet-field"><span>Filtrar por marcador</span><input value={markerFilter} placeholder="Ex.: Elysium" onChange={event => { setMarkerFilter(event.target.value); setPage(1) }}/></label></div><button type="button" className="button-ghost mt-4" disabled={busy} onClick={() => { if (!(title || body) || window.confirm('Descartar alterações não salvas?')) { reset() } }}>Nova anotação</button>
       {error && <p role="alert">{error.message}</p>}{!data && !error && <output>Carregando...</output>}{data?.total === 0 && <p className="empty-state mt-4">Nenhuma anotação disponível.</p>}
       <ul className="mt-4 flex flex-col gap-2">{data?.notes.map(note => {
         let visibilityLabel
@@ -96,14 +100,14 @@ function NotesEditor({ link, initialCampaignId }: Readonly<{ link?: NoteLink; in
         } else {
           visibilityLabel = 'Exclusiva do Narrador'
         }
-        return <li key={note.id}><button type="button" className="button-ghost w-full text-left" disabled={busy} onClick={() => void open(note.id)}>{note.title} · {visibilityLabel}</button></li>
+        return <li key={note.id}><button type="button" className="button-ghost w-full text-left" disabled={busy} onClick={() => void open(note.id)}>{note.title}{note.marker ? ` · #${note.marker}` : ''} · {visibilityLabel}</button></li>
       })}</ul>
       <div className="mt-4 flex gap-3"><button type="button" className="button-ghost" disabled={busy || page === 1} onClick={() => setPage(value => value - 1)}>Anterior</button><button type="button" className="button-ghost" disabled={busy || !data || page * 20 >= data.total} onClick={() => setPage(value => value + 1)}>Próxima</button></div>
       {link && <Link className="button-ghost mt-3 inline-flex" href="/notes">Ver todas as anotações</Link>}
     </section>
     <section className="border border-border bg-card p-5"><h2 className="font-serif text-xl">{current ? 'Anotação selecionada' : 'Nova anotação'}</h2><form className="mt-4 flex flex-col gap-4" onSubmit={event => { event.preventDefault(); void save() }}>
       <label className="sheet-field"><span>Título</span><input required maxLength={120} value={title} disabled={busy} readOnly={current !== null && !current.canEdit} onChange={event => setTitle(event.target.value)} /></label>
-      <label className="sheet-field"><span>Texto</span><textarea rows={8} maxLength={20000} value={body} disabled={busy} readOnly={current !== null && !current.canEdit} onChange={event => setBody(event.target.value)} /></label>
+      <label className="sheet-field"><span>Marcador / grupo</span><input maxLength={80} value={marker} placeholder="Ex.: Elysium, Pistas, Príncipe" disabled={readOnly} onChange={event => setMarker(event.target.value)} /></label><label className="sheet-field"><span>Texto</span><textarea rows={8} maxLength={20000} value={body} disabled={busy} readOnly={current !== null && !current.canEdit} onChange={event => setBody(event.target.value)} /></label>
       <label className="sheet-field"><span>Mesa</span><select className="select" value={campaignId} disabled={readOnly || Boolean(current?.campaignId)} onChange={event => { setCampaignId(event.target.value); setRecipients([]); setLinks([]); setVisibility('PRIVATE') }}><option value="">Independente</option>{context?.campaigns.map(entry => <option key={entry.id} value={entry.id}>{entry.name}</option>)}</select></label>
       <label className="sheet-field"><span>Quem pode ler</span><select className="select" value={visibility} disabled={readOnly || !!current?.reveal || current?.visibility === 'NARRATOR_ONLY'} onChange={event => { setVisibility(event.target.value); if (event.target.value !== 'SHARED') { setRecipients([]) } }}><option value="PRIVATE">Somente eu</option>{campaignId && <option value="SHARED">Destinatários escolhidos (somente leitura)</option>}{campaign?.isNarrator && (!current || current.visibility === 'NARRATOR_ONLY') && <option value="NARRATOR_ONLY">Somente o Narrador atual da mesa</option>}</select></label>
       {visibility === 'SHARED' && <fieldset><legend>Destinatários autorizados</legend>{campaign?.recipients.map(user => <label key={user} className="mt-2 flex gap-2 text-sm"><input type="checkbox" disabled={readOnly} checked={recipients.includes(user)} onChange={event => setRecipients(values => event.target.checked ? [...values, user] : values.filter(value => value !== user))} />{user}</label>)}</fieldset>}
@@ -114,8 +118,8 @@ function NotesEditor({ link, initialCampaignId }: Readonly<{ link?: NoteLink; in
   </div>
 }
 
-function prepareNoteRequest(title: string,body: string,visibility: string,recipients: string[],links: NoteLink[],current: { recipientUserIds?: string[]; body?: string; links?: { label: string; targetType: "CHARACTER"|"NPC"|"EVENT"|"SESSION"; targetId: string }[]; id: string; title: string; campaignId: string|null; visibility: "PRIVATE"|"NARRATOR_ONLY"|"SHARED"; revision: number; createdAt: string; updatedAt: string; canEdit: boolean; canDelete: boolean; canShare: boolean }|null,campaignId: string,creationKey: {current:string},remove: boolean) {
-  const fields={ title,body,visibility,recipientUserIds: recipients,links,...(!current?.campaignId? { campaignId: campaignId||null }:{}) }
+function prepareNoteRequest(title: string,body: string,marker: string,visibility: string,recipients: string[],links: NoteLink[],current: { recipientUserIds?: string[]; body?: string; links?: { label: string; targetType: "CHARACTER"|"NPC"|"EVENT"|"SESSION"; targetId: string }[]; id: string; title: string; campaignId: string|null; visibility: "PRIVATE"|"NARRATOR_ONLY"|"SHARED"; revision: number; createdAt: string; updatedAt: string; canEdit: boolean; canDelete: boolean; canShare: boolean }|null,campaignId: string,creationKey: {current:string},remove: boolean) {
+  const fields={ title,body,marker: marker.trim() || null,visibility,recipientUserIds: recipients,links,...(!current?.campaignId? { campaignId: campaignId||null }:{}) }
   const revision=current? { expectedRevision: current.revision }:{ idempotencyKey: creationKey.current }
   const payload=remove? { expectedRevision: current?.revision }:{ ...fields,...revision }
   const requestMethod=noteRequestMethod(remove,current)
