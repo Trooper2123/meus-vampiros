@@ -47,7 +47,7 @@ function PlayerQuickActions({characterId,sessionId}:Readonly<{characterId:string
     </div>
     {active && <div className="session-player-action-panel">
       {active==='roll' ? <CharacterRolls characterId={characterId} sessionId={sessionId}/> :
-      <><p className="mb-3 text-xs text-muted-foreground">Ajustes de {active==='health'?'Vitalidade':active==='hunger'?'Fome':'Força de Vontade'} seguem as regras de dano e persistência da ficha.</p><SessionResources characterId={characterId} sessionId={sessionId}/></>}
+      <><p className="mb-3 text-xs text-muted-foreground">Ajustes de {active==='health'?'Vitalidade':active==='hunger'?'Fome':'Força de Vontade'} seguem as regras de dano e persistência da ficha.</p><SessionResources characterId={characterId} sessionId={sessionId} focus={active}/></>}
     </div>}
   </section>
 }
