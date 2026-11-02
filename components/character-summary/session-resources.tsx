@@ -38,7 +38,7 @@ function ResourceButtons({ label, onReduce, onIncrease, disabled, cannotReduce, 
   </div>
 }
 
-function ResourceForm({ data, url, sessionId, refresh, notify }: Readonly<{ data: ResourceResponse; url: string; sessionId?: string; refresh: (updated: ResourceResponse) => Promise<unknown>; notify: (message: string, error?: boolean) => void }>) {
+function ResourceForm({ data, url, sessionId, refresh, notify, focus }: Readonly<{ data: ResourceResponse; url: string; sessionId?: string; focus?: 'health' | 'hunger' | 'willpower'; refresh: (updated: ResourceResponse) => Promise<unknown>; notify: (message: string, error?: boolean) => void }>) {
   const [saving, setSaving] = useState(false)
   const [retrying, setRetrying] = useState(false)
   const pending = useRef<ResourceCommand | null>(null)
@@ -153,7 +153,7 @@ function ResourceForm({ data, url, sessionId, refresh, notify }: Readonly<{ data
   </div>
 }
 
-export function SessionResources({ characterId, sessionId }: Readonly<{ characterId: string; sessionId?: string }>) {
+export function SessionResources({ characterId, sessionId, focus }: Readonly<{ characterId: string; sessionId?: string; focus?: 'health' | 'hunger' | 'willpower' }>) {
   const url = `/api/characters/${characterId}/resources`
   const { data, error, isLoading, mutate } = useSWR<ResourceResponse>(url, fetchResources, { revalidateOnFocus: false })
   const [feedback, setFeedback] = useState({ message: '', error: false })
@@ -163,6 +163,6 @@ export function SessionResources({ characterId, sessionId }: Readonly<{ characte
     {feedback.message && <div className="mb-4 flex flex-col items-start gap-3"><p role={feedback.error ? 'alert' : 'status'} className="text-sm text-muted-foreground">{feedback.message}</p>{feedback.error && <button type="button" className="button-ghost" onClick={() => void mutate()}>Recarregar recursos</button>}</div>}
     {isLoading && <output className="block text-sm text-muted-foreground">Carregando recursos…</output>}
     {error && <div role="alert" className="mb-4 flex flex-col gap-3"><p className="text-sm text-primary">{error instanceof Error ? error.message : 'Falha ao carregar recursos.'}</p><button type="button" className="button-ghost self-start" onClick={() => void mutate()}>Recarregar recursos</button></div>}
-    {data && !error && <ResourceForm key={`${characterId}:${data.revision}`} data={data} url={url} sessionId={sessionId} refresh={updated => mutate(updated, { revalidate: false })} notify={(message, error = false) => setFeedback({ message, error })} />}
+    {data && !error && <ResourceForm key={`${characterId}:${data.revision}`} data={data} url={url} sessionId={sessionId} focus={focus} refresh={updated => mutate(updated, { revalidate: false })} notify={(message, error = false) => setFeedback({ message, error })} />}
   </section>
 }
