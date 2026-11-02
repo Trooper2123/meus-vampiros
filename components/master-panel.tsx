@@ -309,8 +309,8 @@ export function CampaignPossessionsManager({ campaignId, sessionId }: Readonly<{
   const filteredPossessions = selectedCharacterId ? pendingPossessions.filter(item => item.characterId === selectedCharacterId) : pendingPossessions
 
   return (
-    <div className="border border-border bg-card p-6 flex flex-col gap-6">
-      <div className="flex items-center justify-between border-b border-border pb-3">
+    <div className="campaign-module-body flex flex-col gap-6">
+      <div className="campaign-module-subheading">
         <div>
           <h3 className="font-serif text-lg uppercase text-foreground">Revisão e Gestão da Mesa</h3>
           <p className="text-xs text-muted-foreground mt-0.5">Gerencie os personagens e aprove os pertences da crônica.</p>
@@ -323,7 +323,7 @@ export function CampaignPossessionsManager({ campaignId, sessionId }: Readonly<{
       {sessionId && <label className="flex flex-col gap-2 text-sm">Motivo da concessão de XP<input className="input" value={xpReason} maxLength={500} onChange={(event) => setXpReason(event.target.value)} required /></label>}
       {sessionId && xpRetry && <p className="text-xs text-muted-foreground">Há uma concessão incompleta. Reenviar usa a mesma operação, sem duplicar XP.</p>}
       {sessionId && characters.length > 0 && (
-        <form onSubmit={handleGrantXpToAll} className="border border-border bg-card p-4 flex flex-wrap items-center justify-between gap-4">
+        <form onSubmit={handleGrantXpToAll} className="campaign-module-subsection flex flex-wrap items-center justify-between gap-4">
           <div>
             <p className="text-xs font-mono font-semibold uppercase text-foreground">Atribuir XP Geral da Sessão</p>
             <p className="text-[11px] text-muted-foreground">Conceda experiência simultaneamente para todos os personagens da mesa.</p>
@@ -432,7 +432,7 @@ export function CampaignPossessionsManager({ campaignId, sessionId }: Readonly<{
             {filteredPossessions.map((item) => {
               const ownerChar = characters.find((c) => c.id === item.characterId)
               return (
-                <div key={item.id} className="border border-border bg-card p-4 flex flex-col gap-3">
+                <div key={item.id} className="campaign-module-item flex flex-col gap-3">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
                       <span className="font-semibold text-sm">{item.label}</span>
