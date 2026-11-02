@@ -15,6 +15,7 @@ export default async function setup() {
     await ensureAllTables()
     await schemaPool.query(await readFile(new URL('../migrations/20261023_npcs_sheet_narrative.sql', import.meta.url), 'utf8'))
     await schemaPool.query(await readFile(new URL('../migrations/20261029_session_notes_images.sql', import.meta.url), 'utf8'))
+    await schemaPool.query(await readFile(new URL('../migrations/20261102_notes_markers_search.sql', import.meta.url), 'utf8'))
   } finally {
     await schemaPool.end()
     await pool?.end()

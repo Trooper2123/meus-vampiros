@@ -145,7 +145,7 @@ export async function createNote(actorId: string, input: unknown) {
       const duplicate = await tx.execute<{ request_hash: string; note_id: string }>(sql`SELECT request_hash, note_id FROM note_requests WHERE author_user_id = ${actorId} AND idempotency_key = ${requestId}::uuid`)
       return duplicate.rows[0]
     }
-    await tx.execute(sql`INSERT INTO notes (id, author_user_id, campaign_id, visibility, title, body, recipient_user_ids, links) VALUES (${created.id}::uuid, ${actorId}, ${created.campaignId}::uuid, ${created.visibility}, ${created.title}, ${created.body}, ${created.marker}, ${JSON.stringify(created.recipientUserIds)}::jsonb, ${JSON.stringify(created.links)}::jsonb)`)
+    await tx.execute(sql`INSERT INTO notes (id, author_user_id, campaign_id, visibility, title, body, marker, recipient_user_ids, links) VALUES (${created.id}::uuid, ${actorId}, ${created.campaignId}::uuid, ${created.visibility}, ${created.title}, ${created.body}, ${created.marker}, ${JSON.stringify(created.recipientUserIds)}::jsonb, ${JSON.stringify(created.links)}::jsonb)`)
     return { request_hash: hash, note_id: created.id }
   })
   if (result.request_hash !== hash) { fail(409, 'Chave já utilizada com outro conteúdo.') }

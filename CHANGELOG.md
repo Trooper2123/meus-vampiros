@@ -1,3 +1,13 @@
+## [2026-11-02 00:36 BRT] - fix - Corrigir fluxo de anotações com marcador
+
+**Tipo:** fix
+
+**Arquivos principais:** `lib/notes.ts`, `tests/notes.test.ts`, `tests/postgres-global-setup.ts`, `migrations/20261102_notes_markers_search.sql`.
+
+- Corrige o `INSERT` de anotações para persistir corretamente o marcador e aplica a migração de marcadores no schema isolado dos testes.
+- Aplica a migração aditiva no PostgreSQL local de desenvolvimento (`postgres/public`) em transação.
+- Valida criação, pesquisa com filtros e edição pela API na suíte focada de anotações.
+
 ## [2026-11-01 03:04 BRT] - chore - Validar animacao de rolagem
 
 **Tipo:** chore
