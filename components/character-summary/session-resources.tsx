@@ -2,6 +2,7 @@
 
 import { useRef, useState } from 'react'
 import useSWR from 'swr'
+import { BloodActionsPanel } from './blood-actions-panel'
 
 type Damage = { superficial: number; aggravated: number }
 type ResourceState = {
@@ -143,6 +144,7 @@ function ResourceForm({ data, url, sessionId, refresh, notify }: Readonly<{ data
 
     <p className="text-sm text-muted-foreground">Condição: {({ ACTIVE: 'Ativo', DAY_SLEEP: 'Sono diurno', STAKED: 'Empalado', TORPOR: 'Torpor', FINAL_DEATH: 'Morte definitiva' } as Record<string, string>)[data.state.condition] ?? 'Condição não reconhecida'}</p>
     {retrying && <button type="button" className="button-primary self-start" disabled={saving} onClick={() => save()}>Reenviar alteração</button>}
+    <BloodActionsPanel characterId={url.split('/')[3]} revision={data.revision} onComplete={async () => { await refresh({ ...data, ...(await fetchResources(url)) }) }} />
     <dialog ref={zeroDialog} aria-labelledby="hunger-zero-title" aria-describedby="hunger-zero-description" className="m-auto w-[min(32rem,95vw)] border border-border bg-card p-6 text-foreground backdrop:bg-background/80">
       <h3 id="hunger-zero-title" className="font-serif text-2xl">Atenção: ação tabu</h3>
       <p id="hunger-zero-description" className="mt-4 text-sm leading-6">Zerar a Fome indica uma ação tabu nesta crônica e pode trazer consequências narrativas, avaliadas pelo Narrador. Deseja continuar?</p>
