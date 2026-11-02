@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useUser } from '@auth0/nextjs-auth0/client'
 import useSWR, { SWRConfig, useSWRConfig } from 'swr'
+import Link from 'next/link'
 import { SheetMediaPanel } from '@/components/sheet-media-panel'
 import type { getNote, notesContext, NoteLink } from '@/lib/notes'
 
