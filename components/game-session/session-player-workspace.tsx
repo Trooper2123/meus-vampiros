@@ -1,9 +1,8 @@
 'use client'
 
 import { useState, type ComponentProps } from 'react'
-import Link from 'next/link'
 import useSWR from 'swr'
-import { BookOpen, CalendarDays, Dice5, Droplet, FileText, HeartPulse, MessageCircle, NotebookPen, ScrollText, Shield, Users, Wallet, X } from 'lucide-react'
+import { BookOpen, CalendarDays, Dice5, Droplet, FileText, HeartPulse, MessageCircle, NotebookPen, ScrollText, Shield, Users, X } from 'lucide-react'
 import { LiveKitRoomLink } from '@/components/livekit/livekit-room-link'
 import { CharacterSummary } from '@/components/character-summary/character-summary'
 import { CharacterRolls } from '@/components/character-summary/character-rolls'
