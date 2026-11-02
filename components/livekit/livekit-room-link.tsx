@@ -81,7 +81,7 @@ function RoomPanel({ campaignId, master, campaignName, compact, chatTargetId }: 
       {!compact && <button type="button" className="button-ghost inline-flex items-center gap-2" onClick={async () => {
         try { await navigator.clipboard.writeText(`${window.location.origin}/campaigns/${campaignId}/session`); setCopied(true); window.setTimeout(() => setCopied(false), 1800) }
         catch { setError('Não foi possível copiar o link.') }
-      }}><Copy className="size-4" aria-hidden="true" />{copied ? <><Check className="size-4" aria-hidden="true" /> Link copiado</> : 'Copiar link da chamada'}</button>}}
+      }}><Copy className="size-4" aria-hidden="true" />{copied ? <><Check className="size-4" aria-hidden="true" /> Link copiado</> : 'Copiar link da chamada'}</button>}
     </div>
     {canEnter && <div className={compact ? "mt-4" : joined && room ? 'mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(20rem,0.85fr)]' : 'mt-6'}>
       {joined && room && <LiveKitRoom compact={compact} chatTargetId={chatTargetId} token={room.token} serverUrl={room.roomUrl} onDisconnected={() => { setJoined(false); setRoom(null) }} />}
