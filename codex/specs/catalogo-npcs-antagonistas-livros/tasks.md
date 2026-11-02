@@ -61,3 +61,12 @@ Um Narrador autorizado consegue pesquisar NPCs/antagonistas com origem clara, vi
 A criação privada funciona independentemente do compartilhamento; o popup solicita consentimento claro, granular e revogável nos termos aplicáveis; somente snapshot revisado/permitido é submetido, e **nenhuma ficha aparece publicamente sem revisão e aprovação**. Os modelos genéricos e o catálogo comunitário nunca sobrescrevem NPCs pessoais ou personagens dos livros.
 
 **Status:** tarefas propostas, nenhuma funcionalidade implementada por esta atualização documental.
+
+## Progresso de seeds — 2026-11-02
+
+- [x] Criar seed inicial de **10 referências canônicas** com localizador de PDF, explicitamente sem estatísticas verificadas: `seeds/reference/npcs-v5.json`.
+- [x] Criar **10 arquétipos genéricos originais** adicionais em `seeds/reference/generic-antagonists-v5.json` (além dos 15 `NPC_TEMPLATES` já presentes).
+- [x] Adicionar verificador `scripts/validate-reference-seeds.mjs` e documentação de cobertura.
+- [ ] Extrair e revisar fichas integrais, blocos de estatísticas e páginas impressas dos livros; habilitar seeds no catálogo e no banco somente depois de revisão de direitos e autorização de ambiente.
+
+**Nota:** os itens T04/T07/T08 continuam abertos até a cobertura e revisão editorial completas; arquivos de referência não são fichas prontas.
