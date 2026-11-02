@@ -4,7 +4,6 @@ import { getSessionOrDev } from '@/lib/auth0'
 import { hasMasterAccess } from '@/lib/campaigns'
 import { getMasterResearchCatalog } from '@/lib/db'
 import { notFound, redirect } from 'next/navigation'
-import Link from 'next/link'
 
 export default async function MasterResearchPage() {
   const session = await getSessionOrDev()

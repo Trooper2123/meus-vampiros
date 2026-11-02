@@ -19,7 +19,7 @@ export function LiveKitRoomLink({ campaignId, master, campaignName, compact = fa
   return <RoomPanel key={campaignId} campaignId={campaignId} master={master} campaignName={campaignName} compact={compact} />
 }
 
-function RoomPanel({ campaignId, master, campaignName, compact }: Readonly<{ campaignId: string; master: boolean; campaignName?: string | null }>) {
+function RoomPanel({ campaignId, master, campaignName, compact }: Readonly<{ campaignId: string; master: boolean; campaignName?: string | null; compact?: boolean }>) {
   const endpoint = `/api/campaigns/${campaignId}/call`
   const { data: status, error: statusError, mutate } = useSWR(endpoint, fetcher, { refreshInterval: 5000 })
   const [room, setRoom] = useState<RoomInfo | null>(null)

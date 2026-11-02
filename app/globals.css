@@ -1992,5 +1992,6 @@ main > .archive-header {
 .session-video-panel { padding:12px; border:1px solid var(--border); border-radius:7px; background:var(--background); }
 .session-video-grid { min-height:260px; }
 .session-video-grid .lk-video-conference { min-height:260px; }
+.session-livekit-conference [data-lk-source="screen_share"] { display:none; }
 @media (max-width:1150px) { .session-layout { grid-template-columns:170px minmax(0,1fr); } .session-cameras { grid-column:2; position:static; } }
 @media (max-width:700px) { .session-layout { display:flex; flex-direction:column; } .session-tools { width:100%; flex-direction:row; overflow-x:auto; padding:10px; } .session-tool { width:auto; flex:none; white-space:nowrap; } .session-stage,.session-cameras { width:100%; } .session-panel { padding:16px; } .session-visual-stage { min-height:300px; } }
