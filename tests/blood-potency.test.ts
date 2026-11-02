@@ -17,7 +17,7 @@ describe('Potência do Sangue CORE_V5', () => {
     global.__devDb = undefined; auth.actor = 'owner'
   })
   it.each([
-    [0, 0, 1, 0, 0, null], [1, 1, 1, 0, 1, 1], [2, 1, 2, 1, 1, 1],
+    [0, 0, 1, 0, 0, 0], [1, 1, 1, 0, 1, 1], [2, 1, 2, 1, 1, 1],
     [3, 2, 2, 1, 2, 2], [4, 2, 3, 2, 2, 2], [5, 3, 3, 2, 3, 3],
   ])('calcula linha %s sem mudar estados atuais', (potency, surge, mend, power, reroll, bane) => {
     const data = { 'potencia-de-sangue': potency, fome: 4, healthDamage: { superficial: 2, aggravated: 1 } }
