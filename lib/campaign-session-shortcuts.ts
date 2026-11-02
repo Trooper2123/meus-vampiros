@@ -2,18 +2,7 @@ import { sql } from 'drizzle-orm'
 import { db, ensureAllTables } from '@/lib/db'
 import { CharacterCommandError } from '@/lib/character-commands'
 
-export const SHORTCUT_CODES = ['npcs', 'calendar', 'notes', 'research', 'handouts', 'visual', 'xp'] as const
-export type ShortcutCode = (typeof SHORTCUT_CODES)[number]
-export const DEFAULT_SHORTCUTS: ShortcutCode[] = ['npcs', 'calendar', 'notes']
-export const SHORTCUT_LABELS: Record<ShortcutCode, string> = {
-  npcs: 'NPCs da sessão',
-  calendar: 'Calendário da mesa',
-  notes: 'Anotações',
-  research: 'Pesquisas',
-  handouts: 'Handouts',
-  visual: 'Mesa visual',
-  xp: 'XP e pertences',
-}
+import { SHORTCUT_CODES, DEFAULT_SHORTCUTS, type ShortcutCode } from '@/lib/session-shortcut-options'
 const validUuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 export function parseShortcutCodes(value: unknown): ShortcutCode[] {
   if (!Array.isArray(value) || value.length > SHORTCUT_CODES.length || value.some(code => typeof code !== 'string' || !SHORTCUT_CODES.includes(code as ShortcutCode)) || new Set(value).size !== value.length) {
