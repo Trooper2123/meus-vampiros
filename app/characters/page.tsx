@@ -59,9 +59,9 @@ export default async function PersonagensPage() {
 
             <div className="archive-content characters-ui-content characters-approved-content">
                 <div
-                    className="mb-8 flex flex-col gap-4">{[...new Map(characters.flatMap(character => character.campaignId ? [[character.campaignId, character.campaignName] as const] : []))].map(([campaignId, campaignName]) =>
+                    className="characters-livekit-calls mb-8 flex flex-col gap-4">{[...new Map(characters.flatMap(character => character.campaignId ? [[character.campaignId, character.campaignName] as const] : []))].map(([campaignId, campaignName]) =>
                     <LiveKitRoomLink key={campaignId} campaignId={campaignId} campaignName={campaignName}
-                                     master={false}/>)}</div>
+                                     master={false} activeOnly />)}</div>
                 {/* Cabeçalho da seção com os dois botões */}
                 <div className="archive-page-heading characters-approved-heading">
                     <div>
