@@ -2942,3 +2942,11 @@ main > .archive-header {
   .session-player-cameras,.session-player-chat{min-height:550px}
   .session-player-tabs{flex-wrap:wrap;overflow-x:visible}
 }
+
+/* Topo do jogador e estado de conexão do chat */
+.session-player-title-actions{display:flex;align-items:center;gap:15px;flex-wrap:wrap;justify-content:flex-end}
+.session-player-exit{display:inline-flex;align-items:center;gap:8px;border:1px solid #a23b40;border-radius:6px;background:linear-gradient(180deg,#84202a,#511017);padding:10px 13px;color:#f8e8e5;font-family:var(--font-serif),serif;font-size:13px;text-decoration:none}
+.session-player-exit:hover{border-color:#ef4c55;background:#8b2531}
+.session-chat-mount:has(.session-livekit-chat)>.session-player-chat-placeholder,
+.session-chat-mount:has(.session-livekit-chat)>.session-chat-placeholder{display:none}
+@media(max-width:700px){.session-player-title-actions{width:100%;justify-content:space-between}}
