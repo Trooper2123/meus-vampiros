@@ -40,3 +40,24 @@
 Um Narrador autorizado consegue pesquisar NPCs/antagonistas com origem clara, visualizar somente informações e mecânicas verificadas, selecionar **Adicionar à mesa** e receber instância isolada e editável na campanha, sem alterar o template e sem expor informações privadas ou conteúdo não licenciado.
 
 **Escopo desta entrega documental:** apenas SPEC. Nenhuma migração, seed ou alteração de aplicação executada.
+
+
+## Ampliação v1.1 — Backlog adicional
+
+- [ ] **T22 [P0]** Criar modelos **genéricos e originais** de antagonistas/NPCs (segurança, investigador, caçador, criminoso, ocultista, carniçal e vampiro rival), com níveis de ameaça e formatos de ficha, sem atribuir origem oficial indevida.
+- [ ] **T23 [P0]** Integrar **Criar NPC/Antagonista do zero** e **Criar a partir de modelo** aos editores e catálogo já existentes; salvar sempre privado por padrão.
+- [ ] **T24 [P0]** Criar popup opcional **Quer compartilhar seu NPC com a comunidade?** depois do salvamento privado, sem caixas pré-marcadas, com recusa/fechamento não bloqueantes e limite de exibição.
+- [ ] **T25 [P0]** Implementar prévia editável da **cópia** a enviar com allowlist de campos e remoção de dados privados no backend.
+- [ ] **T26 [P0]** Definir termos de contribuição/licença, política de privacidade, declaração de autoria/direitos, consentimento de envio e consentimento **separado** para crédito público.
+- [ ] **T27 [P0]** Criar persistência e fluxo `PENDING_REVIEW`→moderação→publicação, com snapshot versionado, auditoria e idempotência.
+- [ ] **T28 [P0]** Bloquear contribuições de personagens copiados/adaptados de livros sem direitos comprovados; garantir separação entre catálogo oficial, genérico e comunitário.
+- [ ] **T29 [P1]** Permitir acompanhamento de submissão, pedido de alterações, retirada pré-publicação e solicitação de remoção após publicação, sem afetar ficha privada.
+- [ ] **T30 [P1]** Adicionar busca do catálogo comunitário, somente conteúdo aprovado, com importação por cópia e crédito opcional.
+- [ ] **T31 [P0]** Testar ausência total de envio sem opt-in, encerramento do popup, preservação de dados privados, acesso e moderação, consentimento versionado, direitos autorais, clonagem de modelos genéricos e não sincronização posterior da ficha.
+- [ ] **T32 [P0]** Incluir telas e novos contratos nos testes de segurança (401/403, IDOR/BOLA, XSS, limites, moderação e publicação), realizar revisão pré-commit e atualizar CHANGELOG quando implementar.
+
+### Definition of Done adicional
+
+A criação privada funciona independentemente do compartilhamento; o popup solicita consentimento claro, granular e revogável nos termos aplicáveis; somente snapshot revisado/permitido é submetido, e **nenhuma ficha aparece publicamente sem revisão e aprovação**. Os modelos genéricos e o catálogo comunitário nunca sobrescrevem NPCs pessoais ou personagens dos livros.
+
+**Status:** tarefas propostas, nenhuma funcionalidade implementada por esta atualização documental.
