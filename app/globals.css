@@ -2433,3 +2433,24 @@ main > .archive-header {
 .session-roll-visibility input:focus-visible+.session-roll-switch-track{outline:2px solid #f1b4b6;outline-offset:3px}
 .session-roll-visibility:has(input:disabled){cursor:not-allowed;opacity:.55}
 .session-free-roll-actions>.button-primary{margin-top:0}
+
+/* Configurações da Mesa — calendários e atalhos do Modo Sessão */
+.campaign-return-to-mesas{display:flex;align-items:center;justify-content:center;gap:10px;margin:18px 14px 16px;border:1px solid #69343b;border-radius:7px;background:#1b1114;padding:12px;color:#e9d8d4;font-family:var(--font-serif),serif;text-decoration:none;transition:border-color .15s,background .15s}
+.campaign-return-to-mesas:hover{border-color:#bd3b43;background:#2b1217}
+.campaign-settings-content{display:flex;flex-direction:column;gap:20px}
+.campaign-settings-content>.campaign-module-subsection,.campaign-settings-content>.campaign-module-subsection.campaign-calendar-settings-section{background:#150f11;border:1px solid #582c32;border-radius:9px;padding:22px}
+.campaign-shortcuts-settings .campaign-shortcuts-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:20px}
+.campaign-shortcuts-options label{display:flex;align-items:center;gap:12px;border:1px solid #563137;border-radius:7px;background:#130e10;padding:12px;cursor:pointer}
+.campaign-shortcuts-options label:has(input:checked){border-color:#a33037;background:#261115}
+.campaign-shortcuts-options input{accent-color:#b62832;width:17px;height:17px;flex:none}
+.campaign-shortcuts-options span{font-size:13px}
+.campaign-shortcuts-order{display:flex;flex-direction:column;gap:8px;margin-top:22px}
+.campaign-shortcuts-order>.eyebrow{margin-bottom:2px}
+.campaign-shortcuts-order>div{display:flex;align-items:center;justify-content:space-between;gap:12px;border:1px solid #4b3033;border-radius:6px;background:#100d0f;padding:8px 12px}
+.campaign-shortcuts-order>div>span{font-family:var(--font-serif),serif;font-size:14px}
+.campaign-shortcuts-order>div>div{display:flex;gap:6px}
+.campaign-shortcuts-order button{width:31px;height:31px;border:1px solid #6b353c;border-radius:4px;background:#251317;color:#ebd5d5}
+.campaign-shortcuts-order button:disabled{opacity:.3;cursor:not-allowed}
+.campaign-shortcuts-order button:not(:disabled):hover{border-color:#c33943;background:#38131a}
+.campaign-settings-danger{border-color:#5d3034!important}
+@media(max-width:1000px){.campaign-shortcuts-settings .campaign-shortcuts-options{grid-template-columns:1fr}}
