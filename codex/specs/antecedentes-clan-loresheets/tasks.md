@@ -47,3 +47,11 @@
 Jogador/Narrador pesquisa Loresheets e opções específicas de clã, escolhe benefícios independentes, recebe avaliação de elegibilidade e custo, adiciona à ficha dentro das regras da campanha e consulta a origem bibliográfica. XP e pontos de criação são consumidos uma única vez; referências e exceções são auditáveis; conteúdo secreto não é exposto; testes de autorização/consistência aprovados.
 
 **Limitações:** esta SPEC não entrega seeds completas, não valida individualmente todas as obras e não implementa UI ou banco.
+
+## Progresso de seeds — 2026-11-02
+
+- [x] Gerar índice inicial de **78 referências de Loresheets** em `seeds/reference/loresheets-v5.json`, com 11 livros e páginas ordinais de PDF.
+- [x] Adicionar validação de integridade e políticas que impedem tratar entradas não revisadas como benefícios selecionáveis.
+- [ ] Completar inventário das publicações, revisar páginas impressas, extrair nomes/requisitos/efeitos/custos de cada nível independente e validar licença antes de criar seeds mecânicos utilizáveis.
+
+**Nota:** T02/T07 seguem em progresso, não concluídos. Nenhuma Loresheet foi ativada automaticamente no aplicativo.
