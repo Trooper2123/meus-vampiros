@@ -21,14 +21,14 @@ export function ArchiveHeader({ title, showCampaigns, variant = 'default', campa
     {sidebar ? <details className="campaign-nav-group" open={variant === 'campaigns'}>
       <summary><Layers3 className="size-4" aria-hidden="true"/><span>Campanhas</span><ChevronDown className="campaign-nav-chevron size-4" aria-hidden="true"/></summary>
       <div className="campaign-nav-subitems">
-        <Link href="/campaigns" aria-current={!onInactive ? 'page' : undefined} className={!onInactive ? 'is-active' : ''}><CirclePlay className="size-4" aria-hidden="true"/>Ativas</Link>
-        <Link href="/campaigns?view=inactive" aria-current={onInactive ? 'page' : undefined} className={onInactive ? 'is-active' : ''}><Archive className="size-4" aria-hidden="true"/>Inativas</Link>
+        <Link href="/campaigns" aria-current={variant === 'campaigns' && !onInactive ? 'page' : undefined} className={variant === 'campaigns' && !onInactive ? 'is-active' : ''}><CirclePlay className="size-4" aria-hidden="true"/>Ativas</Link>
+        <Link href="/campaigns?view=inactive" aria-current={variant === 'campaigns' && onInactive ? 'page' : undefined} className={variant === 'campaigns' && onInactive ? 'is-active' : ''}><Archive className="size-4" aria-hidden="true"/>Inativas</Link>
       </div>
     </details> : hasCampaigns && <Link href="/campaigns" className="button-ghost">Mesas</Link>}
     <Link href="/master/catalogo" className="button-ghost">{sidebar && <BookOpen className="size-4" aria-hidden="true"/>}Disciplinas e habilidades</Link>
-    <Link href="/master/vantagens-defeitos" className="button-ghost">{variant === 'campaigns' && <Star className="size-4" aria-hidden="true"/>}Vantagens e defeitos</Link>
-    <Link href="/notes" className="button-ghost">{variant === 'campaigns' && <NotebookPen className="size-4" aria-hidden="true"/>}Anotações</Link>
-    <a href="/auth/logout" className="button-ghost">{variant === 'campaigns' && <LogOut className="size-4" aria-hidden="true"/>}Sair</a>
+    <Link href="/master/vantagens-defeitos" className="button-ghost">{sidebar && <Star className="size-4" aria-hidden="true"/>}Vantagens e defeitos</Link>
+    <Link href="/notes" className="button-ghost">{sidebar && <NotebookPen className="size-4" aria-hidden="true"/>}Anotações</Link>
+    <a href="/auth/logout" className="button-ghost">{sidebar && <LogOut className="size-4" aria-hidden="true"/>}Sair</a>
   </>
 
   return <header className={`sheet-header archive-header ${sidebar ? 'archive-header-campaigns' : ''}`}>
