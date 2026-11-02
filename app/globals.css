@@ -2273,3 +2273,14 @@ main > .archive-header {
 .campaign-calendar-workspace>details+details{margin-top:0}
 @media(max-width:1300px){.campaign-module-filters-five{grid-template-columns:repeat(3,minmax(140px,1fr))}}
 @media(max-width:1000px){.campaign-module-filters-five{grid-template-columns:repeat(2,minmax(140px,1fr))}}
+
+/* Cabeçalho exclusivo da Gestão da Mesa: navegação global sai desta experiência */
+.campaign-management-content{padding-top:24px}
+.campaign-management-title{min-width:0}
+.campaign-management-title .eyebrow{margin-bottom:7px;color:#d84a50}
+.campaign-management-title h1{max-width:760px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.campaign-management-approved .campaign-approved-heading{align-items:flex-end;border-bottom:1px solid #4c2023;padding-bottom:20px}
+@media(max-width:1000px){
+  .campaign-management-approved .campaign-approved-heading{align-items:flex-start;flex-direction:column}
+  .campaign-approved-heading-actions{width:100%}
+}
