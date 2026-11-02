@@ -2,6 +2,7 @@ import { MasterViewportGuard } from '@/components/master-viewport-guard'
 import { NotesPanel } from '@/components/notes/notes-panel'
 import { CampaignArchiveControl } from '@/components/campaign-archive-control'
 import { CampaignTools } from '@/components/campaign-calendar/campaign-tools'
+import { CampaignSessionShortcutSettings } from '@/components/campaign-session-shortcut-settings'
 import { CharacterSummary } from '@/components/character-summary/character-summary'
 import { CampaignParticipantControls } from '@/components/campaign-participant-controls'
 import { CampaignPossessionsManager } from '@/components/master-panel'
@@ -12,7 +13,7 @@ import { getCharactersForCampaign } from '@/lib/characters'
 import { getCampaignsForMaster } from '@/lib/campaigns'
 import { getSessionOrDev } from '@/lib/auth0'
 import Link from 'next/link'
-import { Play, Users, BookOpen, CalendarDays, Search, NotebookPen, UserRoundCog, PackageOpen, Settings2, Shield, FolderKanban, MessagesSquare, ScrollText, ImageIcon, Target, Crown } from 'lucide-react'
+import { ArrowLeft, Play, Users, BookOpen, CalendarDays, Search, NotebookPen, UserRoundCog, PackageOpen, Settings2, Shield, FolderKanban, MessagesSquare, ScrollText, ImageIcon, Target, Crown } from 'lucide-react'
 import { notFound, redirect } from 'next/navigation'
 
 export default async function CampaignDetailPage({ params, searchParams }: Readonly<{ params: Promise<{ id: string }>; searchParams?: Promise<{ xpCharacterId?: string; view?: string }> }>) {
@@ -76,6 +77,7 @@ export default async function CampaignDetailPage({ params, searchParams }: Reado
               <Link className={view === 'research' ? 'is-active' : ''} href={viewHref('research')}><Search/>Pesquisas</Link>
               <Link className={view === 'settings' ? 'is-active' : ''} href={viewHref('settings')}><Settings2/>Configurações</Link>
             </nav>
+            <Link className="campaign-return-to-mesas" href="/campaigns"><ArrowLeft className="size-4" aria-hidden="true"/>Voltar para todas as mesas</Link>
           </aside>
 
           <div className="campaign-approved-main">
@@ -102,7 +104,7 @@ export default async function CampaignDetailPage({ params, searchParams }: Reado
             {view === 'messages' && <section className="campaign-module-workspace"><div className="campaign-module-header"><div className="campaign-module-heading"><MessagesSquare/><div><p className="eyebrow">Comunicação entre personagens</p><h2>Mensagens da Mesa</h2><p>Acompanhe conversas privadas entre personagens da crônica.</p></div></div></div><div className="campaign-module-empty"><MessagesSquare/><h3>Mensagens da Mesa</h3><p>Mensagens entre personagens ainda não possuem domínio persistente.</p></div></section>}
             {view === 'notes' && <section className="campaign-module-workspace"><div className="campaign-module-header"><div className="campaign-module-heading"><NotebookPen/><div><p className="eyebrow">Registro do Narrador</p><h2>Anotações</h2><p>Organize, agrupe e pesquise registros, pistas e informações da campanha.</p></div></div></div><NotesPanel actorId={session.user.sub} initialCampaignId={campaign.id}/></section>}
             {view === 'research' && <section className="campaign-module-workspace"><div className="campaign-module-header"><div className="campaign-module-heading"><Search/><div><p className="eyebrow">Referências de regras</p><h2>Pesquisas</h2><p>Consulte catálogos de disciplinas, habilidades, vantagens e defeitos.</p></div></div></div><div className="campaign-module-choice-grid"><Link href="/master/catalogo"><Search/><strong>Disciplinas e habilidades</strong><span>Abrir catálogo de poderes e referências.</span></Link><Link href="/master/vantagens-defeitos"><BookOpen/><strong>Vantagens e defeitos</strong><span>Abrir catálogo e itens personalizados.</span></Link></div></section>}
-            {view === 'settings' && <section className="campaign-module-workspace"><div className="campaign-module-header"><div className="campaign-module-heading"><Settings2/><div><p className="eyebrow">Administração</p><h2>Configurações da Mesa</h2><p>Gerencie o estado e as opções administrativas da campanha.</p></div></div></div><CampaignArchiveControl id={campaign.id} name={campaign.name} archived={campaign.status==='Arquivada'}/></section>}
+            {view === 'settings' && <section className="campaign-module-workspace"><div className="campaign-module-header"><div className="campaign-module-heading"><Settings2/><div><p className="eyebrow">Administração</p><h2>Configurações da Mesa</h2><p>Gerencie o estado e as opções administrativas da campanha.</p></div></div></div><div className="campaign-settings-content"><CampaignTools campaignId={campaign.id} master settingsOnly/><CampaignSessionShortcutSettings campaignId={campaign.id}/><section className="campaign-module-subsection campaign-settings-danger"><p className="eyebrow">Administração da campanha</p><h3 className="mt-2 font-serif text-xl">Arquivamento</h3><p className="mt-2 mb-4 text-sm text-muted-foreground">Arquivar uma mesa impede novas sessões, preservando o histórico.</p><CampaignArchiveControl id={campaign.id} name={campaign.name} archived={campaign.status==='Arquivada'}/></section></div></section>}
           </div>
           </div>
         </div>
