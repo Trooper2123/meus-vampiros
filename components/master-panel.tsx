@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react'
 import useSWR from 'swr'
-import { Check, Copy, Plus, Users, Search, CalendarDays, BookOpen, ArrowRight } from 'lucide-react'
+import { Check, Copy, Plus, Users, Search, CalendarDays, BookOpen, ArrowRight, Archive, History } from 'lucide-react'
 import Link from 'next/link'
 
 export type CampaignSummary = {
@@ -100,11 +100,11 @@ export function NewCampaignForm({ onCreated }: Readonly<{ onCreated: (campaign: 
   )
 }
 
-export function MasterPanel({ initialCampaigns, archived = false }: Readonly<{ initialCampaigns: CampaignSummary[]; archived?: boolean }>) {
+export function MasterPanel({ initialCampaigns, view = 'current' }: Readonly<{ initialCampaigns: CampaignSummary[]; view?: 'current' | 'inactive' }>) {
   const { data } = useSWR('/api/campaigns', fetcher)
   const [query, setQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('Todas')
-  const campaigns: CampaignSummary[] = (Array.isArray(data?.campaigns) ? data.campaigns : initialCampaigns).filter((campaign: CampaignSummary) => (campaign.status === 'Arquivada') === archived)
+  const campaigns: CampaignSummary[] = (Array.isArray(data?.campaigns) ? data.campaigns : initialCampaigns).filter((campaign: CampaignSummary) => (['Arquivada', 'Pausada', 'Encerrada'].includes(campaign.status)) === (view === 'inactive'))
   const statuses = Array.from(new Set(campaigns.map(campaign => campaign.status)))
   const visibleCampaigns = campaigns.filter(campaign =>
     (statusFilter === 'Todas' || campaign.status === statusFilter) &&
@@ -130,13 +130,13 @@ export function MasterPanel({ initialCampaigns, archived = false }: Readonly<{ i
     {visibleCampaigns.length === 0 ? <div className="campaigns-empty-state">
       <BookOpen className="size-11 text-primary" strokeWidth={1.5} aria-hidden="true" />
       <p className="eyebrow mt-5">{campaigns.length === 0 ? 'Nenhuma crônica registrada' : 'Nenhuma campanha encontrada'}</p>
-      <h3 className="mt-3 font-serif text-2xl sm:text-3xl">{campaigns.length === 0 ? (archived ? 'O arquivo está vazio' : 'A noite ainda não começou') : 'Nenhuma correspondência'}</h3>
-      <p className="mt-3 max-w-md text-sm leading-6 text-muted-foreground">{campaigns.length === 0 ? (archived ? 'Ainda não há campanhas arquivadas.' : 'Crie sua primeira campanha e comece a tecer sua história.') : 'Tente outra busca ou remova os filtros.'}</p>
-      {campaigns.length === 0 && !archived ? <Link href="/campaigns/new" className="button-primary mt-6"><Plus className="size-4" /> Criar primeira campanha</Link> : campaigns.length > 0 ? <button type="button" className="button-ghost mt-6" onClick={() => { setQuery(''); setStatusFilter('Todas') }}>Limpar filtros</button> : null}
+      <h3 className="mt-3 font-serif text-2xl sm:text-3xl">{campaigns.length === 0 ? (view === 'inactive' ? 'Nenhuma mesa inativa' : 'A noite ainda não começou') : 'Nenhuma correspondência'}</h3>
+      <p className="mt-3 max-w-md text-sm leading-6 text-muted-foreground">{campaigns.length === 0 ? (view === 'inactive' ? 'Mesas pausadas, encerradas ou arquivadas serão exibidas aqui.' : 'Crie sua primeira campanha e comece a tecer sua história.') : 'Tente outra busca ou remova os filtros.'}</p>
+      {campaigns.length === 0 && view !== 'inactive' ? <Link href="/campaigns/new" className="button-primary mt-6"><Plus className="size-4" /> Criar primeira campanha</Link> : campaigns.length > 0 ? <button type="button" className="button-ghost mt-6" onClick={() => { setQuery(''); setStatusFilter('Todas') }}>Limpar filtros</button> : null}
     </div> :
     <div className="campaigns-dossier-list mt-5">
       {visibleCampaigns.map(campaign => <article key={campaign.id} className="campaign-dossier-card">
-        <div className="campaign-dossier-art" aria-hidden="true"><BookOpen className="size-12" strokeWidth={1} /><span>ARQUIVO DA NOITE</span></div>
+        <div className="campaign-dossier-art" aria-hidden="true">{view === 'inactive' ? <Archive className="size-12" strokeWidth={1} /> : <BookOpen className="size-12" strokeWidth={1} />}<span>ARQUIVO DA NOITE</span></div>
         <div className="campaign-dossier-main">
           <div className="flex flex-wrap items-center gap-3">
             <h3 className="font-serif text-2xl sm:text-3xl">{campaign.name}</h3>
@@ -150,11 +150,10 @@ export function MasterPanel({ initialCampaigns, archived = false }: Readonly<{ i
           </div>
         </div>
         <div className="campaign-dossier-next">
-          <p className="eyebrow">Próxima sessão sugerida</p>
-          <MasterReminderItem campaign={campaign} />
+          {view === 'inactive' ? <><p className="eyebrow">Último encontro registrado</p><p className="mt-2 text-sm text-muted-foreground"><History className="mr-1 inline size-4" aria-hidden="true"/>{formatDate(campaign.lastSessionAt)}</p><p className="mt-2 text-xs text-muted-foreground">Situação: {campaign.status}</p></> : <><p className="eyebrow">Próxima sessão sugerida</p><MasterReminderItem campaign={campaign} /></>}
         </div>
         <div className="campaign-dossier-actions">
-          <Link href={`/campaigns/${campaign.id}`} className="button-primary"><ArrowRight className="size-4" aria-hidden="true" /> Gerenciar mesa</Link>
+          <Link href={`/campaigns/${campaign.id}`} className="button-primary"><ArrowRight className="size-4" aria-hidden="true" /> {view === 'inactive' ? 'Ver mesa' : 'Gerenciar mesa'}</Link>
           <CopyCampaignId id={campaign.id} />
         </div>
       </article>)}
