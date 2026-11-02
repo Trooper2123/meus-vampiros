@@ -1994,3 +1994,59 @@ main > .archive-header {
 .session-video-grid .lk-video-conference { min-height:260px; }
 @media (max-width:1150px) { .session-layout { grid-template-columns:170px minmax(0,1fr); } .session-cameras { grid-column:2; position:static; } }
 @media (max-width:700px) { .session-layout { display:flex; flex-direction:column; } .session-tools { width:100%; flex-direction:row; overflow-x:auto; padding:10px; } .session-tool { width:auto; flex:none; white-space:nowrap; } .session-stage,.session-cameras { width:100%; } .session-panel { padding:16px; } .session-visual-stage { min-height:300px; } }
+
+/* Modo Sessão — Hub aprovado do Narrador */
+.session-master-shell {
+  display:grid;
+  grid-template-columns:minmax(240px,300px) minmax(0,1fr) minmax(260px,320px);
+  gap:14px;
+  align-items:start;
+}
+.session-chat,.session-center,.session-cameras {
+  min-width:0;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:var(--card);
+}
+.session-chat,.session-cameras { position:sticky; top:16px; }
+.session-column-heading,.session-center-heading,.session-panel-heading {
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+}
+.session-column-heading { padding:16px; border-bottom:1px solid var(--border); }
+.session-center-heading { padding:16px 18px 12px; }
+.session-chat-log { min-height:430px; max-height:58vh; overflow:auto; padding:14px; }
+.session-chat-placeholder { display:flex; min-height:350px; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
+.session-chat-compose { display:block; border-top:1px solid var(--border); padding:12px; }
+.session-chat-compose textarea { width:100%; resize:none; border:1px solid var(--border); border-radius:7px; background:var(--background); padding:10px; color:var(--foreground); }
+.session-tabs { display:flex; gap:7px; overflow-x:auto; padding:0 12px 12px; border-bottom:1px solid var(--border); }
+.session-tab { display:inline-flex; flex:none; align-items:center; gap:7px; min-height:38px; padding:8px 11px; border:1px solid var(--border); border-radius:6px; background:var(--background); color:var(--muted-foreground); font-size:12px; white-space:nowrap; cursor:pointer; }
+.session-tab:hover { color:var(--foreground); border-color:var(--border-accent); }
+.session-tab-active { color:var(--foreground); border-color:var(--primary); background:color-mix(in srgb,var(--primary) 24%,var(--background)); }
+.session-hub-grid { display:grid; grid-template-columns:minmax(0,1.35fr) minmax(230px,.65fr); gap:12px; padding:12px; }
+.session-shared-visual { grid-column:1 / -1; border:1px solid var(--border); border-radius:8px; overflow:hidden; background:var(--background); }
+.session-shared-visual .session-panel-heading { padding:14px 16px; border-bottom:1px solid var(--border); }
+.session-quick-roll,.session-quick-access { border:1px solid var(--border); border-radius:8px; background:var(--background); padding:16px; }
+.session-public-roll { display:inline-flex; align-items:center; gap:6px; border:1px solid var(--primary); border-radius:999px; padding:6px 9px; color:var(--foreground); font-size:11px; }
+.session-shortcut { display:flex; align-items:center; gap:9px; width:100%; min-height:42px; padding:10px 12px; border:1px solid var(--border); border-radius:6px; background:var(--card); color:var(--foreground); text-align:left; cursor:pointer; }
+.session-shortcut:hover:not(:disabled) { border-color:var(--primary); }
+.session-shortcut:disabled { color:var(--muted-foreground); }
+.session-visual-stage-compact { min-height:270px; }
+.session-handouts-empty { display:flex; min-height:300px; flex-direction:column; align-items:center; justify-content:center; margin-top:20px; border:1px dashed var(--border); border-radius:8px; padding:28px; text-align:center; }
+.session-research-card { display:flex; align-items:center; gap:12px; border:1px solid var(--border); border-radius:8px; background:var(--background); padding:16px; text-decoration:none; }
+.session-research-card:hover { border-color:var(--primary); }
+.session-research-card span { display:flex; min-width:0; flex-direction:column; gap:4px; }
+.session-research-card small { color:var(--muted-foreground); font-size:11px; }
+.session-character-links { display:flex; flex-direction:column; gap:7px; margin-top:16px; padding-top:16px; border-top:1px solid var(--border); }
+.session-character-links a { display:flex; align-items:center; gap:8px; min-height:36px; border:1px solid var(--border); border-radius:6px; padding:8px 10px; font-size:12px; text-decoration:none; }
+.session-character-links a:hover { border-color:var(--primary); }
+@media (max-width:1250px) {
+  .session-master-shell { grid-template-columns:230px minmax(0,1fr); }
+  .session-cameras { grid-column:1 / -1; position:static; }
+}
+@media (max-width:900px) {
+  .session-master-shell { grid-template-columns:1fr; }
+  .session-chat,.session-cameras { position:static; }
+  .session-chat-log { min-height:260px; max-height:360px; }
+  .session-hub-grid { grid-template-columns:1fr; }
+  .session-shared-visual { grid-column:auto; }
+}
