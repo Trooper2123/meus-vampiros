@@ -2392,3 +2392,9 @@ main > .archive-header {
 .session-livekit-compose button{position:absolute;right:17px;bottom:19px;display:grid;width:34px;height:34px;place-items:center;border:1px solid #c3373d;border-radius:6px;background:#99222a;color:#fff}
 .session-livekit-compose button:disabled{cursor:not-allowed;opacity:.35}
 .session-chat-error{padding:8px 12px;color:#ffb6b8;font-size:11px}
+
+/* Mantém chat e câmeras em colunas separadas e fixas na sessão ativa. */
+.session-master-shell>.session-chat{display:flex;flex-direction:column;overflow:hidden}
+.session-master-shell>.session-chat>.session-chat-mount{min-height:320px}
+.session-master-shell>.session-cameras{align-self:start}
+@media(min-width:1251px){.session-master-shell>.session-chat,.session-master-shell>.session-cameras{position:sticky;top:12px}}
