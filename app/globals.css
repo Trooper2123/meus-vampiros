@@ -2339,3 +2339,35 @@ main > .archive-header {
 .campaign-notes-actions .action-delete{margin-left:auto}
 .campaign-note-media{margin-top:20px;border-top:1px solid #45272a;padding-top:18px}
 @media(max-width:1050px){.campaign-notes-meta-grid{grid-template-columns:1fr}}
+
+
+/* Modo Sessão — UI canônica aprovada */
+.session-narrator-topbar{display:flex;min-height:72px;align-items:center;gap:48px;border-bottom:1px solid #6f2026;background:linear-gradient(90deg,#13090b,#25080c 55%,#12090a);padding:12px 28px}
+.session-back-link{border:1px solid #694247;border-radius:7px;padding:10px 18px;color:#f1e7e4;font-family:var(--font-serif),serif;text-decoration:none}
+.session-breadcrumb{display:flex;align-items:center;gap:18px;color:#bba9a6}.session-breadcrumb strong{color:#f3e9e6}.session-breadcrumb b{color:#e13d43}
+.session-page-content{max-width:none!important;padding:14px 28px 28px!important}
+.session-approved-layout{display:flex;flex-direction:column;gap:14px}
+.session-active-header{position:relative;display:flex;min-height:112px;align-items:center;justify-content:space-between;gap:24px;border:1px solid #5d282d;border-radius:10px;background:linear-gradient(105deg,#1b0b0e,#260d11 65%,#160a0c);padding:20px 26px}
+.session-active-brand{display:flex;align-items:center;gap:20px}.session-active-brand>svg{width:44px;height:44px;color:#e13a42}.session-active-brand h1{margin-top:4px;font-family:var(--font-serif),serif;font-size:2rem}.session-active-brand p:last-child{margin-top:5px;color:#a99b99;font-size:13px}
+.session-active-actions{display:flex;align-items:center;gap:10px}.session-active-actions button{display:flex;align-items:center;gap:8px}
+.session-live-status{display:flex;align-items:center;gap:8px;color:#4ad9b2;font-size:13px}.session-live-status i{width:10px;height:10px;border-radius:50%;background:#2de1b0;box-shadow:0 0 9px #2de1b0}
+.session-header-feedback{position:absolute;bottom:5px;left:90px;color:#c9b6b3;font-size:11px}
+.session-master-shell{grid-template-columns:280px minmax(600px,1fr) 300px!important;gap:14px!important;align-items:stretch}
+.session-chat,.session-center,.session-cameras{border-color:#67262b!important;border-radius:10px!important;background:linear-gradient(145deg,#160b0d,#100b0c)!important}
+.session-chat,.session-cameras{min-height:650px}
+.session-column-heading{display:flex;align-items:center;gap:12px;border-bottom:1px solid #482529;padding-bottom:14px}.session-column-heading>div{flex:1}.session-icon-action{border:0;background:transparent;color:#d7c9c6;font-size:18px}
+.session-chat-log{min-height:470px!important}
+.session-chat-compose{position:relative}.session-chat-compose textarea{padding-right:48px!important}.session-chat-compose button{position:absolute;right:7px;bottom:7px;display:grid;width:34px;height:34px;place-items:center;border:1px solid #9b3036;border-radius:5px;background:#8c1d24;color:#fff}
+.session-center-heading{align-items:center!important}.session-hub-title{display:flex;align-items:center;gap:13px}.session-hub-title p{margin-top:2px;color:#a99b99;font-family:var(--font-serif),serif;font-size:12px;font-style:italic}
+.session-tabs{border-bottom:1px solid #5c252a!important;padding-bottom:12px}.session-tab{border-radius:6px!important;padding:9px 14px!important}.session-tab-active{box-shadow:0 0 12px #c22d3444}
+.session-hub-grid{grid-template-columns:minmax(0,1.7fr) minmax(260px,.85fr)!important}
+.session-shared-visual{grid-column:1/-1!important}
+.session-panel-heading{align-items:center!important}.session-panel-heading>div{min-width:0}.session-panel-subtitle{margin-top:2px;color:#a99b99;font-family:var(--font-serif),serif;font-size:11px;font-style:italic}
+.session-visual-stage-compact{min-height:220px!important;background:radial-gradient(circle at 50% 30%,#261419,#0e0a0b 72%)!important}
+.session-visual-placeholder{display:flex;flex-direction:column;align-items:center;gap:10px;color:#746a69;font-size:12px}.session-visual-placeholder svg{width:36px;height:36px}
+.session-quick-roll,.session-quick-access,.session-shared-visual{border-color:#67262b!important;border-radius:9px!important;background:linear-gradient(135deg,#160c0e,#100b0c)!important}
+.session-public-roll{margin-left:auto!important;border-color:#9b3036!important}
+.session-free-roll{margin-top:14px;border:1px dashed #5b393c;border-radius:7px;padding:16px}.session-free-roll>div{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.session-free-roll label{display:flex;flex-direction:column;gap:6px;color:#c9bab7;font-size:11px}.session-free-roll input{min-height:38px;border:1px solid #49373a;background:#100d0f;padding:0 10px;color:#fff}.session-free-roll button{display:flex;align-items:center;gap:8px;margin-top:12px}.session-free-roll>p{margin-top:9px;color:#817574;font-size:10px}
+.session-shortcut{border-color:#5b3438!important;border-radius:6px!important;background:#1a1113!important;padding:12px!important}.session-shortcut:hover:not(:disabled){border-color:#9c3036!important;background:#281216!important}
+.session-cameras .session-character-links a{border-color:#4c3033!important;background:#140e10!important}
+@media(max-width:1300px){.session-master-shell{grid-template-columns:240px minmax(540px,1fr) 260px!important}.session-page-content{padding-inline:18px!important}}
