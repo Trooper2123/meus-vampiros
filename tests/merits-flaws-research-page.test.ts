@@ -9,13 +9,13 @@ beforeEach(() => { vi.clearAllMocks(); mocks.session.mockResolvedValue({ user: {
 
 it('exige autenticação antes de consultar permissões e retornar o catálogo', async () => {
   mocks.session.mockResolvedValue(null)
-  await expect(MeritsFlawsResearchPage()).rejects.toThrow('redirect:/auth/login?returnTo=/master/vantagens-defeitos')
+  await expect(MeritsFlawsResearchPage({})).rejects.toThrow('redirect:/auth/login?returnTo=/master/vantagens-defeitos')
 })
 it('impede acesso com identidade inválida', async () => {
   mocks.session.mockResolvedValue({ user: { sub: '  ' } })
-  await expect(MeritsFlawsResearchPage()).rejects.toThrow('not-found')
+  await expect(MeritsFlawsResearchPage({})).rejects.toThrow('not-found')
 })
 it('entrega a página ao usuário autenticado sem roles', async () => {
-  const page = await MeritsFlawsResearchPage()
+  const page = await MeritsFlawsResearchPage({})
   expect(page.type).toBe('main')
 })
