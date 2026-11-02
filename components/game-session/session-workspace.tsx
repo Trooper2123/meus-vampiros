@@ -141,7 +141,13 @@ function SessionWorkspace({ campaignId, actorId }: Readonly<{ campaignId: string
 
           {activeTool === 'research' && <div className="session-panel"><p className="eyebrow">Acervo de regras</p><h2 className="mt-2 font-serif text-2xl">Pesquisa rápida</h2><div className="session-research-switch mt-5"><button type="button" className={researchView === 'skills' ? 'is-active' : ''} onClick={() => setResearchView('skills')}><Search className="size-4" aria-hidden="true"/>Disciplinas e habilidades</button><button type="button" className={researchView === 'merits' ? 'is-active' : ''} onClick={() => setResearchView('merits')}><BookOpen className="size-4" aria-hidden="true"/>Vantagens e defeitos</button></div><iframe title={researchView === 'skills' ? 'Disciplinas e habilidades' : 'Vantagens e defeitos'} className="session-research-frame" src={researchView === 'skills' ? '/master/catalogo?embedded=1' : '/master/vantagens-defeitos?embedded=1'} /></div>}
 
-          {activeTool === 'notes' && notesSessionId && <div className="session-panel"><p className="eyebrow">Subdivisões definidas pelo Narrador</p><h2 className="mt-2 font-serif text-2xl">Anotações da mesa</h2><div className="mt-5"><NotesPanel key={notesSessionId} actorId={actorId} initialCampaignId={campaignId} link={{targetType:'SESSION',targetId:notesSessionId}} /></div></div>}
+          {activeTool === 'notes' && <div className="session-panel session-notes-panel">
+            <div className="session-notes-heading">
+              <div><p className="eyebrow">Registros da crônica</p><h2 className="mt-2 font-serif text-2xl">Anotações da Mesa</h2><p className="mt-2 text-sm text-muted-foreground">Organize por pastas virtuais, pesquise dentro do texto e edite anotações sem sair da sessão.</p></div>
+              {activeSession?.status === 'ACTIVE' && <span className="session-notes-context">Sessão ativa</span>}
+            </div>
+            <NotesPanel key={campaignId} actorId={actorId} initialCampaignId={campaignId} />
+          </div>}
 
           {activeTool === 'npcs' && npcSessionId && <div className="session-panel"><h2 className="font-serif text-2xl">NPCs da sessão</h2><div className="mt-5"><NpcSessionPanel sessionId={npcSessionId} campaignId={campaignId}/></div></div>}
 
