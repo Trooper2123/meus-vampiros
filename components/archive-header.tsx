@@ -3,7 +3,6 @@
 import Link from 'next/link'
 import useSWR from 'swr'
 import { BookOpen, Layers3, Star, NotebookPen, LogOut, UserRound, ChevronDown, CirclePlay, Archive } from 'lucide-react'
-import { useSearchParams } from 'next/navigation'
 
 async function fetchCampaigns(url: string): Promise<{ campaigns: { id: string }[] }> {
   const response = await fetch(url)
@@ -11,11 +10,10 @@ async function fetchCampaigns(url: string): Promise<{ campaigns: { id: string }[
   return response.json()
 }
 
-export function ArchiveHeader({ title, showCampaigns, variant = 'default' }: Readonly<{ title: string; showCampaigns?: boolean; variant?: 'default' | 'campaigns' }>) {
+export function ArchiveHeader({ title, showCampaigns, variant = 'default', campaignSection = 'current' }: Readonly<{ title: string; showCampaigns?: boolean; variant?: 'default' | 'campaigns'; campaignSection?: 'current' | 'inactive' }>) {
   const { data } = useSWR(showCampaigns === undefined ? '/api/campaigns' : null, fetchCampaigns)
   const hasCampaigns = showCampaigns ?? Boolean(data?.campaigns?.length)
-  const searchParams = useSearchParams()
-  const onInactive = searchParams.get('view') === 'inactive' || searchParams.get('archived') === 'true'
+  const onInactive = campaignSection === 'inactive'
   const links = <>
     <Link href="/characters" className="button-ghost">{variant === 'campaigns' && <UserRound className="size-4" aria-hidden="true"/>}Personagens</Link>
     {variant === 'campaigns' ? <details className="campaign-nav-group" open>
