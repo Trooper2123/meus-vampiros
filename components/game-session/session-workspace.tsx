@@ -10,6 +10,7 @@ import { CampaignPossessionsManager } from '@/components/master-panel'
 import { NotesPanel } from '@/components/notes/notes-panel'
 import { NpcSessionPanel,SessionReveals } from '@/components/npcs/npc-session-panel'
 import { CampaignTools } from '@/components/campaign-calendar/campaign-tools'
+import { SessionQuickRoll } from '@/components/game-session/session-quick-roll'
 
 type Snapshot = { archived?: boolean; sessions?: {id:string;status:'ACTIVE'|'CLOSED';startedAt:string}[]; session: { id: string; status: 'ACTIVE' | 'CLOSED'; revision: number; chronicleNightIds: string[] } | null; canManage: boolean; characters: { id: string; name: string }[] }
 const read = async (url: string) => { const response = await fetch(url, { cache: 'no-store' }); const body = await response.json(); if (!response.ok) { throw new Error(body.error ?? 'Não foi possível carregar a sessão.'); } return body }
@@ -122,7 +123,7 @@ function SessionWorkspace({ campaignId, actorId }: Readonly<{ campaignId: string
             </section>
             <section className="session-quick-roll">
               <div className="session-panel-heading"><Dices className="size-7 text-primary"/><div><p className="eyebrow">Rolagem rápida</p><h3 className="font-serif text-xl">Rolagem rápida</h3><p className="session-panel-subtitle">Role testes, disputas e resistências de forma ágil.</p></div><span className="session-public-roll"><Eye className="size-3.5" aria-hidden="true"/>Visível aos jogadores</span></div>
-              {!current && <div className="session-free-roll"><div><label>Pool de dados<input type="number" min="1" max="30" defaultValue="5"/></label><label>Fome<input type="number" min="0" max="5" defaultValue="0"/></label><label>Dificuldade<input type="number" min="0" max="10" defaultValue="1"/></label></div><button type="button" className="button-primary" disabled title="Rolagem avulsa será ligada ao domínio de dados em etapa própria"><Dices className="size-4"/>Rolar</button><p>Rolagem avulsa não exige ficha vinculada.</p></div>}
+              {!current && activeSession?.status === 'ACTIVE' && <SessionQuickRoll sessionId={activeSession.id} campaignId={campaignId}/>} 
               {current && activeSession?.status === 'ACTIVE' && <div className="mt-4"><CharacterRolls key={`hub-rolls-${current.id}`} characterId={current.id} sessionId={activeSession.id}/></div>}
             </section>
             <section className="session-quick-access">
