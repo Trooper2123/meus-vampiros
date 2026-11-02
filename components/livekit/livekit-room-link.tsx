@@ -15,11 +15,11 @@ const fetcher = async (url: string): Promise<CallStatus> => {
   return body
 }
 
-export function LiveKitRoomLink({ campaignId, master, campaignName, compact = false, chatTargetId }: Readonly<{ campaignId: string; master: boolean; campaignName?: string | null; compact?: boolean; chatTargetId?: string }>) {
-  return <RoomPanel key={campaignId} campaignId={campaignId} master={master} campaignName={campaignName} compact={compact} chatTargetId={chatTargetId} />
+export function LiveKitRoomLink({ campaignId, master, campaignName, compact = false, chatTargetId, activeOnly = false }: Readonly<{ campaignId: string; master: boolean; campaignName?: string | null; compact?: boolean; chatTargetId?: string; activeOnly?: boolean }>) {
+  return <RoomPanel key={campaignId} campaignId={campaignId} master={master} campaignName={campaignName} compact={compact} chatTargetId={chatTargetId} activeOnly={activeOnly} />
 }
 
-function RoomPanel({ campaignId, master, campaignName, compact, chatTargetId }: Readonly<{ campaignId: string; master: boolean; campaignName?: string | null; compact?: boolean; chatTargetId?: string }>) {
+function RoomPanel({ campaignId, master, campaignName, compact, chatTargetId, activeOnly }: Readonly<{ campaignId: string; master: boolean; campaignName?: string | null; compact?: boolean; chatTargetId?: string; activeOnly?: boolean }>) {
   const endpoint = `/api/campaigns/${campaignId}/call`
   const { data: status, error: statusError, mutate } = useSWR(endpoint, fetcher, { refreshInterval: 5000 })
   const [room, setRoom] = useState<RoomInfo | null>(null)
@@ -61,6 +61,8 @@ function RoomPanel({ campaignId, master, campaignName, compact, chatTargetId }: 
     finally { setLoading(false) }
   }
 
+  // Pages outside Modo Sessão must only surface a call when the Narrator has summoned the table.
+  if (activeOnly && !status?.active) return null
   if (!master && !status?.canSummon && !canEnter) return null
 
   let roomLabel
