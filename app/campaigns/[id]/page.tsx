@@ -1,4 +1,4 @@
-import { CampaignArchiveControl } from '@/components/campaign-archive-control'
+import { MasterViewportGuard } from '@/components/master-viewport-guard'\nimport { CampaignArchiveControl } from '@/components/campaign-archive-control'
 import { ArchiveHeader } from '@/components/archive-header'
 import { CampaignTools } from '@/components/campaign-calendar/campaign-tools'
 import { CharacterSummary } from '@/components/character-summary/character-summary'
@@ -38,6 +38,8 @@ export default async function CampaignDetailPage({ params, searchParams }: Reado
   return (
     <main className="campaign-detail-ui campaign-management-approved relative min-h-screen overflow-hidden bg-background text-foreground">
       <div className="noise" aria-hidden="true" />
+      <MasterViewportGuard backHref="/campaigns" />
+      <div className="master-large-screen-only">
       <ArchiveHeader title="Arquivos da Noite" showCampaigns />
       <div className="archive-content campaign-detail-ui-content">
         <header className="campaign-approved-heading">
@@ -123,6 +125,7 @@ export default async function CampaignDetailPage({ params, searchParams }: Reado
             <section id="settings" className="campaign-management-section"><div className="campaign-management-section-heading"><Settings2 className="size-5 text-primary"/><h2 className="font-serif text-2xl">Configurações da mesa</h2></div><CampaignArchiveControl id={campaign.id} name={campaign.name} archived={campaign.status==='Arquivada'}/></section>
           </div>
         </div>
+      </div>
       </div>
     </main>
   )
