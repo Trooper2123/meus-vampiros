@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import useSWR from 'swr'
-import { DEFAULT_SHORTCUTS, SHORTCUT_CODES, SHORTCUT_LABELS, type ShortcutCode } from '@/lib/campaign-session-shortcuts'
+import { DEFAULT_SHORTCUTS, SHORTCUT_CODES, SHORTCUT_LABELS, type ShortcutCode } from '@/lib/session-shortcut-options'
 
 const fetcher=async(url:string):Promise<{shortcuts:ShortcutCode[]}>=>{
  const response=await fetch(url)
