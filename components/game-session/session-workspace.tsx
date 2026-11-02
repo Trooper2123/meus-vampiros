@@ -17,11 +17,11 @@ import { DEFAULT_SHORTCUTS, SHORTCUT_LABELS, type ShortcutCode } from '@/lib/ses
 type Snapshot = { archived?: boolean; sessions?: {id:string;status:'ACTIVE'|'CLOSED';startedAt:string}[]; session: { id: string; status: 'ACTIVE' | 'CLOSED'; revision: number; chronicleNightIds: string[] } | null; canManage: boolean; characters: { id: string; name: string }[] }
 const read = async (url: string) => { const response = await fetch(url, { cache: 'no-store' }); const body = await response.json(); if (!response.ok) { throw new Error(body.error ?? 'Não foi possível carregar a sessão.'); } return body }
 
-export function CampaignSessionWorkspace({ campaignId, actorId }: Readonly<{ campaignId: string; actorId: string }>) {
-  return <SWRConfig key={`${actorId}:${campaignId}`} value={{ provider: () => new Map() }}><SessionWorkspace campaignId={campaignId} actorId={actorId} /></SWRConfig>
+export function CampaignSessionWorkspace({ campaignId, actorId, campaignName }: Readonly<{ campaignId: string; actorId: string; campaignName?: string | null }>) {
+  return <SWRConfig key={`${actorId}:${campaignId}`} value={{ provider: () => new Map() }}><SessionWorkspace campaignId={campaignId} actorId={actorId} campaignName={campaignName} /></SWRConfig>
 }
 
-function SessionWorkspace({ campaignId, actorId }: Readonly<{ campaignId: string; actorId: string }>) {
+function SessionWorkspace({ campaignId, actorId, campaignName }: Readonly<{ campaignId: string; actorId: string; campaignName?: string | null }>) {
   const url = `/api/campaigns/${campaignId}/sessions`
   const { data: snapshot, error, mutate } = useSWR<Snapshot>(url, read, { refreshInterval: 5000 })
   const data = error ? undefined : snapshot
@@ -38,8 +38,7 @@ function SessionWorkspace({ campaignId, actorId }: Readonly<{ campaignId: string
   const shortcuts = shortcutSettings?.shortcuts ?? DEFAULT_SHORTCUTS
   const shortcutIcons = { npcs: UserRoundCog, calendar: CalendarDays, notes: NotebookPen, research: Search, handouts: FileText, visual: ImageIcon, xp: Wallet } as const
   const activeSession = data?.session
-  const current = data?.characters[0]
-  const notesSessionId=data?.sessions?.find(session=>session.id===closedNpcSession)?.id??data?.session?.id??data?.sessions?.[0]?.id
+    const notesSessionId=data?.sessions?.find(session=>session.id===closedNpcSession)?.id??data?.session?.id??data?.sessions?.[0]?.id
   const npcSessionId=notesSessionId
   useEffect(()=>{const id=new URL(window.location.href).searchParams.get('npcSessionId');if(id&&/^[0-9a-f-]{36}$/i.test(id)){ setClosedNpcSession(id) }},[])
 
@@ -175,7 +174,7 @@ function SessionWorkspace({ campaignId, actorId }: Readonly<{ campaignId: string
       </aside>
     </div>}
     </div>}
-    {data && !manage && <SessionPlayerWorkspace campaignId={campaignId} actorId={actorId} sessionId={activeSession?.status === 'ACTIVE' ? activeSession.id : null} characters={data.characters}/>} 
+    {data && !manage && <SessionPlayerWorkspace campaignId={campaignId} actorId={actorId} campaignName={campaignName} sessionId={activeSession?.status === 'ACTIVE' ? activeSession.id : null} characters={data.characters}/>} 
     {!snapshot && !error && <output  className="block border border-border bg-card p-5 text-sm text-muted-foreground">Carregando sessão...</output>}
     {data && !data.session && <p className="border border-border bg-card p-5 text-sm text-muted-foreground">Aguardando o Narrador iniciar uma sessão.</p>}
   </div>
