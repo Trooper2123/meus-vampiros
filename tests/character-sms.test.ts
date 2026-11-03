@@ -49,6 +49,10 @@ describe('SMS persistente e permissões', () => {
       if (query.includes('master_user_id,character_sms_enabled')) {
         return result([{ master_user_id: 'narrator', character_sms_enabled: false }])
       }
+      if (query.includes('SELECT t.*,COALESCE')) return result([{
+        id:threadId,kind:'DIRECT',character_a_id:senderId,character_b_id:recipientId,
+        name_a:'A',name_b:'B',coterie_id:null,
+      }])
       return result()
     })
 
@@ -85,7 +89,7 @@ describe('SMS persistente e permissões', () => {
     mocks.clientQuery.mockImplementation(async (query: string) => {
       if (query.includes('master_user_id,character_sms_enabled')) return result([{ master_user_id: 'narrator', character_sms_enabled: true }])
       if (query.includes('SELECT 1 FROM characters WHERE campaign_id=')) return result([{ member: 1 }])
-      if (query.includes('SELECT t.*,ca.name')) return result([{
+      if (query.includes('SELECT t.*,COALESCE')) return result([{
         id: threadId, character_a_id: senderId, character_b_id: recipientId,
         name_a: 'A', name_b: 'B',
       }])
