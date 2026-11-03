@@ -254,6 +254,7 @@ export async function smsMessages(campaignId:string,actorId:string,threadId:stri
 
 export async function smsStart(campaignId:string,actorId:string,input:Record<string,unknown>,view?:'player'){
   const senderId=input.senderCharacterId
+  if(input.kind!==undefined && input.kind!=='DIRECT' && input.kind!=='COTERIE')fail(422,'Tipo de conversa inválido.')
   const kind=input.kind==='COTERIE'?'COTERIE':'DIRECT'
   const recipientId=input.recipientCharacterId
   const coterieId=input.coterieId
