@@ -125,6 +125,40 @@ export async function setSmsSettings(campaignId: string, actorId: string, enable
   } catch(e) { await client.query('ROLLBACK'); throw e } finally { client.release() }
 }
 
+type CoterieContact = { id: string; name: string }
+
+async function smsCoteriesReady(client: PoolClient) {
+  const result = await client.query<{ ready:boolean }>(
+    "SELECT to_regclass('coteries') IS NOT NULL AND to_regclass('coterie_members') IS NOT NULL AS ready")
+  return result.rows[0]?.ready === true
+}
+
+async function smsAvailableCoteries(client:PoolClient,campaignId:string,actorId:string,role:Role):Promise<CoterieContact[]> {
+  if(!await smsCoteriesReady(client))return []
+  const result=await client.query<CoterieContact>(`
+    SELECT co.id,co.name FROM coteries co
+    WHERE co.campaign_id=$1::uuid AND ($3::boolean OR EXISTS (
+      SELECT 1 FROM coterie_members cm
+      JOIN characters ch ON ch.id=cm.character_id
+      WHERE cm.coterie_id=co.id AND ch.user_id=$2 AND ch.campaign_id=co.campaign_id
+        AND ch.character_type='PLAYER_VAMPIRE' AND ch.status='APPROVED'
+        AND cm.joined_at<=now() AND (cm.left_at IS NULL OR cm.left_at>now())))
+    ORDER BY co.name`,[campaignId,actorId,role==='narrator'])
+  return result.rows
+}
+
+async function smsMember(client:PoolClient,campaignId:string,coterieId:string,characterId:string){
+  if(!smsUuid(coterieId)||!await smsCoteriesReady(client))return false
+  const result=await client.query(`
+    SELECT 1 FROM coterie_members cm JOIN coteries co ON co.id=cm.coterie_id
+    JOIN characters ch ON ch.id=cm.character_id
+    WHERE co.campaign_id=$1::uuid AND co.id=$2::uuid AND cm.character_id=$3::uuid
+      AND ch.campaign_id=co.campaign_id AND ch.status='APPROVED'
+      AND cm.joined_at<=now() AND (cm.left_at IS NULL OR cm.left_at>now()) LIMIT 1`,
+      [campaignId,coterieId,characterId])
+  return Boolean(result.rowCount)
+}
+
 export async function smsContacts(campaignId: string, actorId: string, view?: 'player') {
   await ensureSmsSchema()
   const client=await pool!.connect()
@@ -136,7 +170,7 @@ export async function smsContacts(campaignId: string, actorId: string, view?: 'p
          AND ($3::boolean OR (character_type='PLAYER_VAMPIRE' AND status='APPROVED')
            OR (character_type<>'PLAYER_VAMPIRE' AND visibility='PLAYER_VISIBLE'))
        ORDER BY name`,[campaignId,actorId,a.role==='narrator'])
-    return { ...a, characters:characters.rows }
+    return { ...a, characters:characters.rows, coteries: await smsAvailableCoteries(client,campaignId,actorId,a.role) }
   } finally { client.release() }
 }
 
