@@ -20,7 +20,7 @@ type Project={
  stakes:{characterId:string|null;coterieId:string|null;trait:string;dots:number;releasedAt:string|null}[]
  events:{type:string;description:string;createdAt:string}[]
 }
-type Data={projects:Project[];characters:CharacterOption[];roster:CharacterOption[];coteries:CharacterOption[];canManage:boolean;archived:boolean}
+type Data={projects:Project[];characters:CharacterOption[];roster:CharacterOption[];npcOptions:CharacterOption[];coteries:CharacterOption[];canManage:boolean;archived:boolean}
 const statuses:Record<Project['status'],string>={DRAFT:'Rascunho',AWAITING_APPROVAL:'Aguardando aprovação',ACTIVE:'Ativo',SUCCESS:'Concluído',FAILED:'Falhou',ABANDONED:'Abandonado'}
 const statusStyle:Record<Project['status'],string>={
  DRAFT:'border-white/20 bg-white/5 text-muted-foreground',
@@ -65,7 +65,7 @@ export function CampaignProjectsPanel({campaignId}:Readonly<{campaignId:string}>
  }),[projects,scope,status,search])
  const selected=projects.find(p=>p.id===expanded)
  const isStakePending=(p:Project)=>p.status==='AWAITING_APPROVAL'&&p.launchResult?.outcome==='WIN'
- const isCreator=(p:Project)=>Boolean(data?.canManage||p.createdByMe||p.projectType==='PERSONAL'&&data?.characters.some(ch=>ch.id===p.ownerCharacterId))
+ const isCreator=(p:Project)=>Boolean(data?.canManage||(p.projectType==='COTERIE'?p.createdByMe&&data?.coteries.some(co=>co.id===p.coterieId):data?.characters.some(ch=>ch.id===p.ownerCharacterId)))
  const readStake=async(projectId:string)=>{
   setStakeOptions(null);setStakeChoices([])
   try {const result:{options:StakeOption[]}=await fetcher(endpoint+'/stakes?projectId='+encodeURIComponent(projectId));setStakeOptions(result.options.filter(o=>o.available>0))}
@@ -173,8 +173,16 @@ export function CampaignProjectsPanel({campaignId}:Readonly<{campaignId:string}>
       setDraft(d=>({...d,participants:[...new Set(next)].join(',')}))
      }}/>{person.name}</label>)}
     </div>
-    <button type="button" className="button-ghost mt-3" disabled={busy} onClick={()=>void command('SET_PARTICIPANTS',selected,{participantIds:(draft.participants??selected.participants.map(p=>p.characterId).join(',')).split(',').filter(Boolean)})}>Salvar participantes</button>
-    {data?.canManage&&<p className="mt-2 text-xs text-muted-foreground">Parceiros NPC devem ser vinculados pelo Narrador a NPCs cadastrados nesta mesa; a integração visual de seleção de NPCs será adicionada à edição avançada.</p>}
+    {data?.canManage&&<div className="mt-4 border-t border-border/60 pt-4">
+     <h5 className="mb-2 text-sm font-semibold">Parceiros NPC da mesa</h5>
+     {data.npcOptions.length===0&&<p className="text-xs text-muted-foreground">Nenhum NPC vinculado a esta mesa. Cadastre ou vincule um NPC antes de selecioná-lo.</p>}
+     <div className="grid max-h-44 grid-cols-1 gap-2 overflow-y-auto sm:grid-cols-2">{data.npcOptions.map(npc=><label key={npc.id} className="flex items-center gap-2 text-sm">
+      <input type="checkbox" checked={(draft.npcs??selected.npcParticipants.map(p=>p.campaignNpcId).join(',')).split(',').includes(npc.id)} disabled={busy} onChange={e=>{
+       const values=(draft.npcs??selected.npcParticipants.map(p=>p.campaignNpcId).join(',')).split(',').filter(Boolean)
+       setDraft(d=>({...d,npcs:[...new Set(e.target.checked?[...values,npc.id]:values.filter(id=>id!==npc.id))].join(',')}))
+      }}/>{npc.name}</label>)}</div>
+    </div>}
+    <button type="button" className="button-ghost mt-3" disabled={busy} onClick={()=>void command('SET_PARTICIPANTS',selected,{participantIds:(draft.participants??selected.participants.map(p=>p.characterId).join(',')).split(',').filter(Boolean),...(data?.canManage?{npcParticipantIds:(draft.npcs??selected.npcParticipants.map(p=>p.campaignNpcId).join(',')).split(',').filter(Boolean)}:{})})}>Salvar participantes</button>
    </div>}
    {selected.status==='DRAFT'&&isCreator(selected)&&<div className="flex flex-wrap gap-2">
     <button className="button-primary" type="button" disabled={busy} onClick={()=>void command('SUBMIT',selected)}><ShieldCheck className="size-4"/>Enviar para aprovação</button>
