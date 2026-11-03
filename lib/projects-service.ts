@@ -42,9 +42,10 @@ async function changeRevision(tx:Session11Tx,projectId:string){
  await tx.execute(sql`UPDATE character_projects SET revision=revision+1,updated_at=now() WHERE id=${projectId}::uuid`)
 }
 async function participantAccess(tx:Session11Tx,project:ProjectRow,actorId:string,access:CampaignAccess){
- if(access.is_master||project.created_by_user_id===actorId)return true
+ if(access.is_master)return true
  if(project.project_type==='PERSONAL'){
-   const own=await tx.execute<{id:string}>(sql`SELECT id FROM characters WHERE id=${project.owner_character_id}::uuid AND user_id=${actorId}`)
+   if(project.created_by_user_id===actorId)return true
+   const own=await tx.execute<{id:string}>(sql`SELECT ch.id FROM characters ch WHERE ch.user_id=${actorId} AND (ch.id=${project.owner_character_id}::uuid OR EXISTS (SELECT 1 FROM project_participants pp WHERE pp.project_id=${project.id}::uuid AND pp.character_id=ch.id)) LIMIT 1`)
    return Boolean(own.rows[0])
  }
  const rows=await tx.execute<{id:string}>(sql`SELECT cm.id FROM coterie_members cm JOIN characters ch ON ch.id=cm.character_id WHERE cm.coterie_id=${project.coterie_id}::uuid AND ch.user_id=${actorId} AND cm.left_at IS NULL LIMIT 1`)
@@ -131,7 +132,7 @@ export async function getCampaignProjects(actorId:string,campaignId:string){
  requireUuid(campaignId,'Mesa inválida.')
  return db.transaction(async tx=>{
    const access=await campaignAccess(tx,actorId,campaignId)
-   const result=await tx.execute<{id:string;name:string;status:ProjectStatus;projectDie:number|null;projectType:string}>(sql`SELECT p.id,p.name,p.description,p.goal_description AS "goalDescription",p.project_type AS "projectType",p.status,p.owner_character_id AS "ownerCharacterId",p.coterie_id AS "coterieId",p.created_by_user_id AS "createdBy",p.target_trait AS "targetTrait",p.target_current_dots AS "currentDots",p.target_final_dots AS "finalDots",p.scope,p.increment_unit AS "incrementUnit",p.increment_value AS "incrementValue",p.project_die AS "projectDie",p.launch_difficulty AS "launchDifficulty",p.launch_result AS "launchResult",p.launch_pool AS "launchPool",p.goal_roll_requested AS "goalRollRequested",p.revision,p.updated_at AS "updatedAt" FROM character_projects p WHERE p.campaign_id=${campaignId}::uuid AND (${access.is_master} OR p.created_by_user_id=${actorId} OR EXISTS (SELECT 1 FROM characters c WHERE c.id=p.owner_character_id AND c.user_id=${actorId}) OR EXISTS(SELECT 1 FROM coterie_members cm JOIN characters ch ON ch.id=cm.character_id WHERE cm.coterie_id=p.coterie_id AND ch.user_id=${actorId} AND cm.left_at IS NULL)) ORDER BY p.updated_at DESC`)
+   const result=await tx.execute<{id:string;name:string;status:ProjectStatus;projectDie:number|null;projectType:string}>(sql`SELECT p.id,p.name,p.description,p.goal_description AS "goalDescription",p.project_type AS "projectType",p.status,p.owner_character_id AS "ownerCharacterId",p.coterie_id AS "coterieId",p.created_by_user_id AS "createdBy",p.target_trait AS "targetTrait",p.target_current_dots AS "currentDots",p.target_final_dots AS "finalDots",p.scope,p.increment_unit AS "incrementUnit",p.increment_value AS "incrementValue",p.project_die AS "projectDie",p.launch_difficulty AS "launchDifficulty",p.launch_result AS "launchResult",p.launch_pool AS "launchPool",p.goal_roll_requested AS "goalRollRequested",p.revision,p.updated_at AS "updatedAt" FROM character_projects p WHERE p.campaign_id=${campaignId}::uuid AND (${access.is_master} OR (p.project_type='PERSONAL' AND p.created_by_user_id=${actorId}) OR EXISTS (SELECT 1 FROM characters c WHERE c.id=p.owner_character_id AND c.user_id=${actorId}) OR EXISTS(SELECT 1 FROM project_participants pp JOIN characters ch ON ch.id=pp.character_id WHERE pp.project_id=p.id AND ch.user_id=${actorId}) OR EXISTS(SELECT 1 FROM coterie_members cm JOIN characters ch ON ch.id=cm.character_id WHERE cm.coterie_id=p.coterie_id AND ch.user_id=${actorId} AND cm.left_at IS NULL)) ORDER BY p.updated_at DESC`)
    const projects=[]
    for(const row of result.rows){
      const id=(row as {id:string}).id
