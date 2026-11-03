@@ -176,6 +176,7 @@ export async function commandProject(actorId:string,campaignId:string,input:Proj
      return {ok:true,projectId:p.rows[0].id,status:'DRAFT'}
    }
    const project=await requireProject(tx,campaignId,input.projectId!)
+   if(!(await participantAccess(tx,project,actorId,access)))throw new CharacterCommandError(403,'Sem permissão para consultar ou alterar este projeto.')
    expectRevision(project,input.expectedRevision)
    const reason=optionalText(input.reason,'Justificativa',1000)
    if(input.action==='UPDATE_DRAFT'){
