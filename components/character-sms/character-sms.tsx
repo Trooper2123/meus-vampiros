@@ -10,7 +10,7 @@ type Message = {id:string;body:string;senderCharacterId:string;senderName:string
 type Inbox = {enabled:boolean;isNarrator:boolean;threads:Thread[]}
 type Coterie = {id:string;name:string;ownedCharacterIds:string[]}
 type Contacts = {enabled:boolean;isNarrator:boolean;characters:Contact[];coteries:Coterie[]}
-type History = {enabled:boolean;isNarrator:boolean;thread:{id:string;kind:'DIRECT'|'COTERIE';characterA:string;characterB:string;characterAId:string|null;characterBId:string|null};messages:Message[]}
+type History = {enabled:boolean;isNarrator:boolean;thread:{id:string;kind:'DIRECT'|'COTERIE';coterieId:string|null;characterA:string;characterB:string;characterAId:string|null;characterBId:string|null};messages:Message[]}
 const get = async (url:string) => {
   const r=await fetch(url,{cache:'no-store'})
   const body=await r.json().catch(()=>({}))
@@ -45,7 +45,7 @@ export function CharacterSms({campaignId,mode='player'}:Readonly<{campaignId:str
   const currentSender=newSenders.some(c=>c.id===senderId)?senderId:(newSenders[0]?.id??'')
   const recipients=allContacts.filter(c=>c.id!==currentSender)
   const selectedRecipient=recipients.some(c=>c.id===recipientId)?recipientId:(recipients[0]?.id??'')
-  const replySenders=isNarrator?senders:senders.filter(c=>history?.thread && (history.thread.kind==='COTERIE' ? coteries.find(co=>co.id===inbox?.threads.find(t=>t.id===threadId)?.id)?.ownedCharacterIds.includes(c.id) : [history.thread.characterAId,history.thread.characterBId].includes(c.id)))
+  const replySenders=isNarrator?senders:senders.filter(c=>history?.thread && (history.thread.kind==='COTERIE' ? coteries.find(co=>co.id===history.thread.coterieId)?.ownedCharacterIds.includes(c.id) : [history.thread.characterAId,history.thread.characterBId].includes(c.id)))
   const replySender=replySenders.some(c=>c.id===senderId)?senderId:(replySenders[0]?.id??'')
   const count=useMemo(()=>inbox?.threads.reduce((sum,t)=>sum+Number(t.unreadCount??0),0)??0,[inbox])
   const messages=history?.messages??[]
