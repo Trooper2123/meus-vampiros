@@ -146,11 +146,8 @@ export async function getCampaignProjects(actorId:string,campaignId:string){
    for(const row of result.rows){
      const id=(row as {id:string}).id
      const participants=await tx.execute(sql`SELECT p.character_id AS "characterId",ch.name FROM project_participants p JOIN characters ch ON ch.id=p.character_id WHERE p.project_id=${id}::uuid`)
-     const npcParticipants=await tx.execute<{campaignNpcId:string;name:string;role:string}>(sql`SELECT pn.campaign_npc_id AS "campaignNpcId", n.name, pn.participation_role AS role
-       FROM project_npc_participants pn
-       LEFT JOIN campaign_npcs cn ON cn.id=pn.campaign_npc_id
-       LEFT JOIN npc_definitions n ON n.id=cn.npc_id
-       WHERE pn.project_id=${id}::uuid ORDER BY n.name`)
+     const npcParticipants=await tx.execute<{campaignNpcId:string;name:string;role:string}>(sql`SELECT campaign_npc_id AS "campaignNpcId",display_name AS name,participation_role AS role
+       FROM project_npc_participants WHERE project_id=${id}::uuid ORDER BY display_name`)
      const stakes=await tx.execute(sql`SELECT character_id AS "characterId",coterie_id AS "coterieId",trait,dots,released_at AS "releasedAt" FROM project_stakes WHERE project_id=${id}::uuid`)
      const events=await tx.execute(sql`SELECT type,previous_project_die AS "previousProjectDie",new_project_die AS "newProjectDie",description,created_at AS "createdAt" FROM project_events WHERE project_id=${id}::uuid ORDER BY created_at DESC LIMIT 50`)
      projects.push({...row,participants:participants.rows,npcParticipants:npcParticipants.rows,stakes:stakes.rows,events:events.rows})
