@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { useState, useRef } from 'react'
 import useSWR from 'swr'
-import { BookOpen, Castle, ChevronDown, ChevronRight, Crown, FolderKanban, Handshake, Home, Landmark, MapPin, Plus, ScrollText, Shield, Sparkles, Target, Users, X } from 'lucide-react'
+import { ChevronRight, Crown, FolderKanban, Handshake, Home, MapPin, Plus, ScrollText, Shield, Sparkles, Target, Users, X } from 'lucide-react'
 
 type CoterieType={id:string;code:string;name:string;description:string;source:string;suggestedMechanics:Record<string,unknown>}
 type Member={id:string;characterId:string;name:string;role:string|null}
@@ -59,7 +59,7 @@ export function CampaignCoteriePanel({campaignId}:Readonly<{campaignId:string}>)
  const set=(name:string,value:string)=>{setForm(previous=>({...previous,[name]:value}));pending.current=null}
  const openForm=(next:Action,co?:Coterie,preselect?:FormState)=>{
   setAction(next);setFeedback('');pending.current=null
-  setForm({...defaultForm,...(next==='UPDATE'&&co?{
+  setForm({...defaultForm,...(next==='ADD_BOON'?{kind:'BOON_OWED_TO_COTERIE'}:{}),...(next==='ADD_HAVEN_TRAIT'?{kind:'MERIT'}:{}),...(next==='UPDATE'&&co?{
     name:co.name,typeId:co.typeId??'',description:co.description,chronicle:co.chronicle??'',city:co.city??'',
     hasDomain:String(co.hasDomain),domainDescription:co.domainDescription,chasse:String(co.chasse),lien:String(co.lien),portillon:String(co.portillon),
     domainResonance:co.domainResonance,chronicleTenets:co.chronicleTenets
