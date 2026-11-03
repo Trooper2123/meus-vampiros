@@ -20,7 +20,7 @@ export function DisciplineRollPanel({characterId,sessionId}:Readonly<{characterI
   if(!pending.current)pending.current={powerId:selected.id,difficulty:Number(difficulty),expectedRevision:data.revision,idempotencyKey:crypto.randomUUID(),...(sessionId?{sessionId}:{})}
   setBusy(true);setFeedback('')
   try{const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(pending.current)});const body=await response.json().catch(()=>null)
-   if(!response.ok){if(response.status<500)pending.current=null;throw new Error(body?.error??'Falha na rolagem.')}
+   if(!response.ok){if(response.status<500){pending.current=null;if(response.status===409)await mutate()};throw new Error(body?.error??'Falha na rolagem.')}
    setResult(body);pending.current=null
    setFeedback('Rolagem de poder registrada.')
    await Promise.allSettled([mutate(),refresh(`/api/characters/${characterId}/rolls`),refresh(`/api/characters/${characterId}/resources`)])
