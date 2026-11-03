@@ -1,3 +1,14 @@
+## [2026-11-03] - feat - Projetos separados de Coterie; colaboração entre jogadores e NPCs
+
+**Branch:** `feat/session-011-projects-coterie`.
+
+- Corrige a SPEC-SESSION-011 para exigir páginas separadas e papéis definidos: Narrador visualiza/cria todos os Projects; jogador consulta apenas projetos do próprio personagem, dos quais participa ou de sua Coterie.
+- Backend recebe `npcParticipantIds` apenas no comando do Narrador, valida `campaign_npcs` da mesma mesa, registra parceiros NPC na entidade `project_npc_participants` e preserva o nome de apresentação.
+- Diferencia permissão de consulta e edição: colaborador pode acompanhar; somente proprietário/responsável ou Narrador altera rascunhos.
+- Teste de integração novo para acesso de Narrador, dois jogadores parceiros, NPC e impedimento de alteração por colaborador.
+- Interface real mantida sem alterações até os dois mockups em estilo existente serem apresentados/aprovados.
+- Revalidar CI após esses commits antes de declarar homologação.
+
 ## [2026-11-03 12:30 BRT] - feat - Iniciar SPEC-SESSION-011: Projects e Coterie
 
 **Branch:** `feat/session-011-projects-coterie`. **Estado:** implementação experimental; **não homologada**.
