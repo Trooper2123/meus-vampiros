@@ -12,7 +12,7 @@ export default async function PlayerCampaignPage({params}:Readonly<{params:Promi
   if(!campaign) notFound()
   return <main className="campaigns-reference-shell player-campaign-portal relative min-h-screen bg-background text-foreground">
     <div className="noise" aria-hidden="true"/>
-    <ArchiveHeader title="Campanhas" variant="campaigns" campaignRole="player" campaignSection={isInactiveCampaign(campaign.status)?'inactive':'current'}/>
+    <ArchiveHeader title="Campanhas" variant="campaigns" campaignSection={isInactiveCampaign(campaign.status)?'inactive':'current'}/>
     <div className="archive-content player-campaign-portal-content">
       <PlayerCampaignPortal campaign={campaign} actorId={session.user.sub}/>
     </div>
