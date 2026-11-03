@@ -24,9 +24,7 @@ export async function saveCampaignAwakeSettings(actorId: string, campaignId: str
     if (previous !== mode) {
       await tx.execute(sql`UPDATE campaigns SET awake_execution_mode = ${mode} WHERE id = ${campaignId}::uuid`)
       // Mudança de política afeta somente novas noites.
-      await tx.execute(sql`INSERT INTO character_ledger_events (character_id,event_type,origin,payload,created_by_user_id)
-        SELECT ch.id, 'AWAKE_POLICY_CHANGED', 'CAMPAIGN', ${JSON.stringify({ previous, mode, campaignId })}::jsonb, ${actorId}
-        FROM characters ch WHERE ch.campaign_id = ${campaignId}::uuid AND ch.user_id = ${actorId} LIMIT 1`)
+      await tx.execute(sql`INSERT INTO campaign_awake_setting_events (campaign_id, actor_user_id, previous_mode, new_mode) VALUES (${campaignId}::uuid, ${actorId}, ${previous}, ${mode})`)
     }
     return { executionMode: mode }
   })
