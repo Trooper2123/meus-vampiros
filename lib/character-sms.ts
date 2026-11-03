@@ -336,7 +336,7 @@ export async function smsSend(campaignId:string,actorId:string,threadId:string,i
     const insert=await client.query<{id:string}>(`INSERT INTO character_messages
       (campaign_id,thread_id,sender_character_id,created_by_actor_id,impersonated_by_narrator,body,idempotency_key)
       VALUES($1::uuid,$2::uuid,$3::uuid,$4,$5,$6,$7::uuid) RETURNING id`,
-      [campaignId,threadId,senderId,actorId,a.role==='narrator'&&sender.user_id!==actorId,body.trim(),key])
+      [campaignId,threadId,senderId,actorId,a.role==='narrator',body.trim(),key])
     const id=insert.rows[0].id
     let receivers:string[]
     if(thread.kind==='COTERIE'){
