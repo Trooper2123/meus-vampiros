@@ -216,9 +216,11 @@ export async function smsThreads(campaignId:string,actorId:string,view?:'player'
     const coteries=await smsAvailableCoteries(client,campaignId,actorId,a.role)
     const results=await client.query(`SELECT t.id,t.kind,t.updated_at AS "updatedAt",
       COALESCE(ca.name,t.coterie_name) AS "characterA",COALESCE(cb.name,'Grupo') AS "characterB",
-      (SELECT count(*)::int FROM character_messages m JOIN character_message_deliveries d ON d.message_id=m.id
-        JOIN characters ch ON ch.id=d.recipient_character_id
-        WHERE m.thread_id=t.id AND d.read_at IS NULL AND ch.user_id=$2 AND ch.character_type='PLAYER_VAMPIRE' AND ch.status<>'DELETED') AS "unreadCount"
+      CASE WHEN $3::boolean THEN 0 ELSE
+        (SELECT count(*)::int FROM character_messages m JOIN character_message_deliveries d ON d.message_id=m.id
+          JOIN characters ch ON ch.id=d.recipient_character_id
+          WHERE m.thread_id=t.id AND d.read_at IS NULL AND ch.user_id=$2 AND ch.character_type='PLAYER_VAMPIRE' AND ch.status<>'DELETED')
+      END AS "unreadCount"
       FROM character_message_threads t
       LEFT JOIN characters ca ON ca.id=t.character_a_id LEFT JOIN characters cb ON cb.id=t.character_b_id
       WHERE t.campaign_id=$1::uuid AND ($3::boolean OR t.coterie_id=ANY($4::uuid[]) OR EXISTS (
