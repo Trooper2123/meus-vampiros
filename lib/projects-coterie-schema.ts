@@ -117,6 +117,8 @@ CREATE TABLE IF NOT EXISTS character_projects (
   launch_pool INT CHECK(launch_pool BETWEEN 1 AND 50),
   launch_difficulty INT CHECK(launch_difficulty BETWEEN 3 AND 7),
   launch_result JSONB,
+  approved_at TIMESTAMPTZ,
+  approved_by_user_id TEXT,
   launch_failure_count INT NOT NULL DEFAULT 0 CHECK(launch_failure_count BETWEEN 0 AND 50),
   goal_roll_requested BOOLEAN NOT NULL DEFAULT false,
   private_narrator_notes TEXT NOT NULL DEFAULT '',
