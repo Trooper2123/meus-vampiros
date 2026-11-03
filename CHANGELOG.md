@@ -1,3 +1,13 @@
+## [2026-11-03] - feat - Página Coterie independente, visão do Narrador e jogador
+
+**Branch:** `feat/session-011-projects-coterie`.
+
+- Rota `/campaigns/[id]/coterie` com identidade gótica e navegação da campanha, independente de Projects.
+- Painel completo com apresentação de membros, domínio, Backgrounds, vantagens/defeitos, Havens e seus traits, favores/dívidas e objetivos coletivos.
+- Narrador cria e administra Coteries e recursos, jogador membro consulta e propõe objetivos e Projects coletivos sem alterar recursos.
+- API restringe listagem às Coteries das quais o jogador é membro ativo; administrador de mesa consulta todas.
+- Testes de integração ampliados, CI configurada para incluir os novos arquivos; **resultado da execução desta revisão ainda não confirmado**.
+
 ## [2026-11-03] - feat - Projetos na visão do jogador
 
 **Branch:** `feat/session-011-projects-coterie`.
