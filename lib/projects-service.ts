@@ -21,10 +21,18 @@ export type ProjectCommand={
  name?:string;description?:string;goalDescription?:string;
  targetTrait?:string;currentDots?:number;finalDots?:number;incrementUnit?:string;incrementValue?:number;
  launchPool?:number;goalPool?:number;rollingCharacterId?:string;stakes?:Stake[];
- participantIds?:string[];expectedRevision?:number;reason?:string
+ participantIds?:string[];npcParticipantIds?:string[];expectedRevision?:number;reason?:string
 }
 async function assertOwner(tx:Session11Tx,project:ProjectRow,access:CampaignAccess,actorId:string){
- if(!(await participantAccess(tx,project,actorId,access)))throw new CharacterCommandError(403,'Somente o proprietário, integrantes autorizados ou o Narrador podem modificar este projeto.')
+ if(access.is_master)return
+ if(project.project_type==='PERSONAL'){
+   const own=await tx.execute<{id:string}>(sql`SELECT id FROM characters WHERE id=${project.owner_character_id}::uuid AND user_id=${actorId} AND status NOT IN ('DELETED','ARCHIVED')`)
+   if(own.rows[0])return
+ }else if(project.created_by_user_id===actorId){
+   const member=await tx.execute<{id:string}>(sql`SELECT cm.id FROM coterie_members cm JOIN characters ch ON ch.id=cm.character_id WHERE cm.coterie_id=${project.coterie_id}::uuid AND ch.user_id=${actorId} AND cm.left_at IS NULL LIMIT 1`)
+   if(member.rows[0])return
+ }
+ throw new CharacterCommandError(403,'Participar de um projeto permite acompanhar, mas somente o responsável ou Narrador pode editá-lo.')
 }
 async function requireProject(tx:Session11Tx,campaignId:string,id:string){
  requireUuid(id,'Projeto inválido.')
@@ -43,9 +51,10 @@ async function changeRevision(tx:Session11Tx,projectId:string){
 }
 async function participantAccess(tx:Session11Tx,project:ProjectRow,actorId:string,access:CampaignAccess){
  if(access.is_master)return true
+ const linked=await tx.execute<{id:string}>(sql`SELECT ch.id FROM project_participants pp JOIN characters ch ON ch.id=pp.character_id WHERE pp.project_id=${project.id}::uuid AND ch.user_id=${actorId} AND ch.status NOT IN ('DELETED','ARCHIVED') LIMIT 1`)
+ if(linked.rows[0])return true
  if(project.project_type==='PERSONAL'){
-   if(project.created_by_user_id===actorId)return true
-   const own=await tx.execute<{id:string}>(sql`SELECT ch.id FROM characters ch WHERE ch.user_id=${actorId} AND (ch.id=${project.owner_character_id}::uuid OR EXISTS (SELECT 1 FROM project_participants pp WHERE pp.project_id=${project.id}::uuid AND pp.character_id=ch.id)) LIMIT 1`)
+   const own=await tx.execute<{id:string}>(sql`SELECT id FROM characters WHERE id=${project.owner_character_id}::uuid AND user_id=${actorId} AND status NOT IN ('DELETED','ARCHIVED')`)
    return Boolean(own.rows[0])
  }
  const rows=await tx.execute<{id:string}>(sql`SELECT cm.id FROM coterie_members cm JOIN characters ch ON ch.id=cm.character_id WHERE cm.coterie_id=${project.coterie_id}::uuid AND ch.user_id=${actorId} AND cm.left_at IS NULL LIMIT 1`)
@@ -137,9 +146,14 @@ export async function getCampaignProjects(actorId:string,campaignId:string){
    for(const row of result.rows){
      const id=(row as {id:string}).id
      const participants=await tx.execute(sql`SELECT p.character_id AS "characterId",ch.name FROM project_participants p JOIN characters ch ON ch.id=p.character_id WHERE p.project_id=${id}::uuid`)
+     const npcParticipants=await tx.execute<{campaignNpcId:string;name:string;role:string}>(sql`SELECT pn.campaign_npc_id AS "campaignNpcId", n.name, pn.participation_role AS role
+       FROM project_npc_participants pn
+       LEFT JOIN campaign_npcs cn ON cn.id=pn.campaign_npc_id
+       LEFT JOIN npc_definitions n ON n.id=cn.npc_id
+       WHERE pn.project_id=${id}::uuid ORDER BY n.name`)
      const stakes=await tx.execute(sql`SELECT character_id AS "characterId",coterie_id AS "coterieId",trait,dots,released_at AS "releasedAt" FROM project_stakes WHERE project_id=${id}::uuid`)
      const events=await tx.execute(sql`SELECT type,previous_project_die AS "previousProjectDie",new_project_die AS "newProjectDie",description,created_at AS "createdAt" FROM project_events WHERE project_id=${id}::uuid ORDER BY created_at DESC LIMIT 50`)
-     projects.push({...row,participants:participants.rows,stakes:stakes.rows,events:events.rows})
+     projects.push({...row,participants:participants.rows,npcParticipants:npcParticipants.rows,stakes:stakes.rows,events:events.rows})
    }
    return {projects,canManage:access.is_master&&access.status!=='Arquivada',archived:access.status==='Arquivada'}
  })
@@ -186,6 +200,18 @@ export async function commandProject(actorId:string,campaignId:string,input:Proj
          const membership=await tx.execute<{id:string}>(sql`SELECT id FROM coterie_members WHERE coterie_id=${project.coterie_id}::uuid AND character_id=${id}::uuid AND left_at IS NULL`)
          if(!membership.rows[0])throw new CharacterCommandError(422,'Um dos participantes não é membro ativo da Coterie.')
        }
+     }
+     if(input.npcParticipantIds!==undefined){
+       requireMaster(access)
+       const ids=input.npcParticipantIds
+       if(!Array.isArray(ids)||ids.length>12||new Set(ids).size!==ids.length)throw new CharacterCommandError(400,'Participantes NPC inválidos.')
+       for(const id of ids){
+         requireUuid(id,'NPC inválido.')
+         const npc=await tx.execute<{id:string}>(sql`SELECT id FROM campaign_npcs WHERE id=${id}::uuid AND campaign_id=${campaignId}::uuid`)
+         if(!npc.rows[0])throw new CharacterCommandError(422,'O NPC precisa estar cadastrado nesta mesma mesa.')
+       }
+       await tx.execute(sql`DELETE FROM project_npc_participants WHERE project_id=${project.id}::uuid`)
+       for(const id of ids)await tx.execute(sql`INSERT INTO project_npc_participants (project_id,campaign_npc_id) VALUES (${project.id}::uuid,${id}::uuid)`)
      }
      await tx.execute(sql`DELETE FROM project_participants WHERE project_id=${project.id}::uuid`)
      for(const id of input.participantIds)await tx.execute(sql`INSERT INTO project_participants (project_id,character_id) VALUES (${project.id}::uuid,${id}::uuid)`)
