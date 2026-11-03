@@ -77,6 +77,10 @@ describe('SPEC-SESSION-011: domínio persistente em PostgreSQL isolado',()=>{
    const owner=await createTestCharacter('owner-011',camp.id,'Dono da ficha')
    const partner=await createTestCharacter('partner-011',camp.id,'Aliado jogador')
    const outsider=await createTestCharacter('outsider-011',camp.id,'Fora do projeto')
+   // A migração de NPCs é opcional; nesta suíte criamos somente as tabelas
+   // necessárias dentro do schema PostgreSQL de teste isolado.
+   await db.execute(sql`CREATE TABLE IF NOT EXISTS npc_definitions (id UUID PRIMARY KEY, owner_id TEXT NOT NULL, name TEXT NOT NULL, sheet_type TEXT NOT NULL, creature_type TEXT NOT NULL, role TEXT NOT NULL, threat_level INTEGER, payload JSONB NOT NULL, status TEXT NOT NULL DEFAULT 'ACTIVE')`)
+   await db.execute(sql`CREATE TABLE IF NOT EXISTS campaign_npcs (id UUID PRIMARY KEY, campaign_id UUID NOT NULL REFERENCES campaigns(id), npc_id UUID NOT NULL REFERENCES npc_definitions(id))`)
    const npcId=randomUUID(),campaignNpcId=randomUUID()
    await db.execute(sql`UPDATE characters SET status='APPROVED',character_type='PLAYER_VAMPIRE' WHERE id IN (${owner.id}::uuid,${partner.id}::uuid,${outsider.id}::uuid)`)
    await db.execute(sql`INSERT INTO npc_definitions (id,owner_id,name,sheet_type,creature_type,role,threat_level,payload)
@@ -122,6 +126,9 @@ describe('SPEC-SESSION-011: domínio persistente em PostgreSQL isolado',()=>{
   await commandProject('narrator-011',camp.id,command('COMMIT_STAKE',{projectId:second,expectedRevision:3,stakes:[{characterId:ch.id,trait:'Resources',dots:1}]}) as any)
   expect((await getProjectStakeOptions('narrator-011',camp.id,second)).options).toEqual(expect.arrayContaining([expect.objectContaining({trait:'RESOURCES',available:0,reserved:2})]))
   await expect(getProjectStakeOptions('player-011',camp.id,second)).rejects.toMatchObject({status:403})
+ })
+ it('Stake rejeita merits e aceita nomes PT-BR de Background',()=>{
+   expect(backgroundDots({vantagens:[{name:'Persuasão Sobrenatural',level:3},{name:'Recursos',level:2},{name:'Influência',dots:1}]})).toEqual([{trait:'RESOURCES',dots:2},{trait:'INFLUENCE',dots:1}])
  })
  it('normaliza nomes e pontos de Background sem duplicar fontes',()=>{
   expect(backgroundDots({vantagens:[{name:'Resources',level:2},{name:'Resources',level:3}],backgrounds:[{name:'Resources',dots:5}]})).toEqual([{trait:'RESOURCES',dots:3}])
