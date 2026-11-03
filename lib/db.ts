@@ -328,6 +328,24 @@ export async function ensureGameSessionsTables() {
       chronicle_night_id UUID NOT NULL REFERENCES chronicle_nights(id) ON DELETE RESTRICT,
       PRIMARY KEY (session_id, chronicle_night_id)
     );
+    CREATE TABLE IF NOT EXISTS session_soundtrack_state (
+      session_id UUID PRIMARY KEY REFERENCES game_sessions(id) ON DELETE CASCADE,
+      mood TEXT NOT NULL DEFAULT 'DREAD' CHECK(mood IN ('DREAD','NOIR','RITUAL')),
+      playing BOOLEAN NOT NULL DEFAULT false,
+      started_at TIMESTAMPTZ,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_by_user_id TEXT,
+      revision INTEGER NOT NULL DEFAULT 0
+    );
+    CREATE TABLE IF NOT EXISTS session_soundtrack_commands (
+      session_id UUID NOT NULL REFERENCES game_sessions(id) ON DELETE CASCADE,
+      command_key UUID NOT NULL,
+      actor_user_id TEXT NOT NULL,
+      request_hash TEXT NOT NULL,
+      result JSONB NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      PRIMARY KEY(session_id, command_key)
+    );
     CREATE TABLE IF NOT EXISTS game_session_close_operations (
       idempotency_key UUID PRIMARY KEY,
       session_id UUID NOT NULL REFERENCES game_sessions(id) ON DELETE CASCADE,
