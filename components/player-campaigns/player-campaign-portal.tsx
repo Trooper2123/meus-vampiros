@@ -111,11 +111,11 @@ export function PlayerCampaignPortal({campaign,actorId}:Readonly<{campaign:Playe
         <p>Quando o módulo da Coterie for implementado pelo Narrador, você poderá consultar membros, Domain, Backgrounds compartilhados, Haven, Goals e Boons/Debts autorizados para os jogadores.</p>
       </div>
     </PortalPanel>}
-    {tab==='projects'&&<PortalPanel title="Projetos" subtitle="Projects pessoais e coletivos, distintos das missões do Narrador." icon={FolderKanban}><Link className="button-primary" href={'/campaigns/'+campaign.id+'/projects'}>Abrir página de Projetos</Link>
-      <div className="player-portal-module-pending" role="status">
-        <FolderKanban className="size-9" aria-hidden="true"/>
-        <h3>Os Projects ainda não estão disponíveis</h3>
-        <p>Esta área exibirá seus projetos pessoais e os da Coterie após a implementação das regras de Scope, Stake, Increment e Project Die, com aprovação e resolução mecânica pelo Narrador.</p>
+    {tab==='projects'&&<PortalPanel title="Projetos" subtitle="Projetos pessoais, em parceria ou da Coterie." icon={FolderKanban}>
+      <div className="flex flex-col items-start gap-3 rounded-lg border border-border bg-card p-5">
+        <FolderKanban className="size-8 text-primary" aria-hidden="true"/>
+        <p className="text-sm text-muted-foreground">Consulte os Projects em que seu personagem participa, acompanhe o Project Die e proponha novos objetivos.</p>
+        <Link className="button-primary" href={'/campaigns/'+campaign.id+'/projects'}>Abrir página de Projetos</Link>
       </div>
     </PortalPanel>}
   </div>
