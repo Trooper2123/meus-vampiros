@@ -12,6 +12,24 @@ CREATE TABLE IF NOT EXISTS coterie_type_catalog (
   suggested_mechanics JSONB NOT NULL DEFAULT '{}'::jsonb,
   active BOOLEAN NOT NULL DEFAULT true
 );
+INSERT INTO coterie_type_catalog (id,code,name,description,source,suggested_mechanics)
+VALUES
+('BLOOD_CULT','Blood Cult','Culto de sangue; atrai seguidores mortais.','V5 Corebook pp. 197–199','{"lien":1,"portillon":2,"herd":3}'::jsonb),
+('CERBERUS','Cerberus','Guarda local, relíquia ou passagem importante.','V5 Corebook pp. 197–199','{}'::jsonb),
+('CHAMPIONS','Champions','Defende uma causa reconhecível dentro ou fora da sociedade vampírica.','V5 Corebook pp. 197–199','{"chasse":1,"lien":3}'::jsonb),
+('COMMANDO','Commando','Grupo de combate e operações de um patrono.','V5 Corebook pp. 197–199','{"chasse":1,"portillon":2}'::jsonb),
+('DAY_WATCH','Day Watch','Protege a cidade de ameaças mortais durante o dia.','V5 Corebook pp. 197–199','{"chasse":1,"portillon":2}'::jsonb),
+('FANG_GANG','Fang Gang','Quadrilha de crimes ou golpes.','V5 Corebook pp. 197–199','{"chasse":1,"lien":1,"portillon":1}'::jsonb),
+('HUNTING_PARTY','Hunting Party','Caça e captura humanos com características específicas de sangue.','V5 Corebook pp. 197–199','{"chasse":3}'::jsonb),
+('MARECHAL','Maréchal','Serve e guarda Príncipe ou Barão.','V5 Corebook pp. 197–199','{}'::jsonb),
+('NOMADS','Nomads','Coterie itinerante; pode operar sem Domain.','V5 Corebook pp. 197–199','{"hasDomain":false}'::jsonb),
+('PLUMAIRES','Plumaires','Coterie social ligada a interesses e subculturas.','V5 Corebook pp. 197–199','{"chasse":2,"lien":2}'::jsonb),
+('QUESTARI','Questari','Busca um objetivo, artefato ou mistério de longo prazo.','V5 Corebook pp. 197–199','{"chasse":1,"lien":3}'::jsonb),
+('REGENCY','Regency','Administra a posição de um ancião ausente.','V5 Corebook pp. 197–199','{"chasse":2,"portillon":3}'::jsonb),
+('SBIRRI','Sbirri','Serve secretamente outra autoridade usando identidade de fachada.','V5 Corebook pp. 197–199','{}'::jsonb),
+('VEHME','Vehme','Reforça a Máscara e contém infratores.','V5 Corebook pp. 197–199','{"chasse":1}'::jsonb),
+('WATCHMEN','Watchmen','Patrulha a cidade contra intrusos.','V5 Corebook pp. 197–199','{"chasse":1,"lien":2,"portillon":1}'::jsonb)
+ON CONFLICT (id) DO NOTHING;
 CREATE TABLE IF NOT EXISTS coteries (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   campaign_id UUID NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
