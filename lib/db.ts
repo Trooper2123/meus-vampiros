@@ -66,7 +66,8 @@ export async function ensureAllTables() {
     ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS enabled_clan_codes JSONB;
     ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS creation_policy JSONB;
     ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS call_active BOOLEAN NOT NULL DEFAULT false;
-    ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS session_shortcuts JSONB NOT NULL DEFAULT '["npcs","calendar","notes"]'::jsonb;\n    ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS awake_execution_mode TEXT NOT NULL DEFAULT 'NARRATOR_FORCES';
+    ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS session_shortcuts JSONB NOT NULL DEFAULT '["npcs","calendar","notes"]'::jsonb;
+    ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS awake_execution_mode TEXT NOT NULL DEFAULT 'NARRATOR_FORCES';
 
     CREATE TABLE IF NOT EXISTS characters (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -178,7 +179,8 @@ export async function ensureAllTables() {
     UNIQUE(campaign_id, night_number),
     UNIQUE(campaign_id, idempotency_key)
   );
-  ALTER TABLE chronicle_nights ADD COLUMN IF NOT EXISTS execution_mode TEXT NOT NULL DEFAULT 'NARRATOR_FORCES';\n  CREATE UNIQUE INDEX IF NOT EXISTS chronicle_nights_processing_idx ON chronicle_nights(campaign_id) WHERE status = 'PROCESSING';
+  ALTER TABLE chronicle_nights ADD COLUMN IF NOT EXISTS execution_mode TEXT NOT NULL DEFAULT 'NARRATOR_FORCES';
+  CREATE UNIQUE INDEX IF NOT EXISTS chronicle_nights_processing_idx ON chronicle_nights(campaign_id) WHERE status = 'PROCESSING';
   CREATE TABLE IF NOT EXISTS night_awakenings (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     night_id UUID NOT NULL REFERENCES chronicle_nights(id),
