@@ -46,7 +46,7 @@ export async function executeCharacterAwake(actorId: string, characterId: string
       if (night?.id !== nightId) throw new CharacterCommandError(409, 'Inicie uma noite válida para esta ficha.')
       if ((character.gameState.lastAwakening as { nightId?: string } | undefined)?.nightId === nightId) throw new CharacterCommandError(409, 'Este personagem já despertou nesta noite.')
     } else {
-      const rows = await transaction.execute<{ execution_mode: string }>(sql`SELECT execution_mode FROM chronicle_nights WHERE id = ${nightId}::uuid AND campaign_id = ${character.campaignId}::uuid AND status = 'ACTIVE' FOR SHARE`)
+      const rows = await transaction.execute<{ execution_mode: string }>(sql`SELECT execution_mode FROM chronicle_nights WHERE id = ${nightId}::uuid AND campaign_id = ${character.campaignId}::uuid AND status = 'ACTIVE' AND night_number = (SELECT MAX(night_number) FROM chronicle_nights WHERE campaign_id = ${character.campaignId}::uuid AND status = 'ACTIVE') FOR SHARE`)
       if (rows.rows[0]?.execution_mode !== 'PLAYER_ROLLS') throw new CharacterCommandError(403, 'O Narrador executa o despertar nesta noite, ou a noite não está preparada.')
       if (!input.sessionId) throw new CharacterCommandError(403, 'Abra a sessão ativa da mesa para despertar.')
       const sessions = await transaction.execute<{ id: string }>(sql`SELECT s.id FROM game_sessions s WHERE s.id = ${input.sessionId}::uuid AND s.campaign_id = ${character.campaignId}::uuid AND s.status = 'ACTIVE'`)
