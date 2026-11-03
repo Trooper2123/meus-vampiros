@@ -61,3 +61,18 @@
 - **12 testes aprovados (2 arquivos)**. Auditoria de dependências de produção: **0 vulnerabilidades** relatadas. Dependências de desenvolvimento podem ter avisos moderados independentes desta feature.
 - Nenhum banco de produção, staging compartilhado ou ambiente não identificado foi migrado, alterado ou limpo nesta sessão.
 - Persistem as limitações mecânicas e o gate de aprovação visual acima; merge em `develop` continua bloqueado até revisão humana.
+
+## Revisão funcional — páginas separadas e acesso a Projects (2026-11-03)
+
+**Requisitos confirmados pelo usuário:** Projetos e Coterie são páginas distintas; Projects pertencem a um personagem jogável ou à Coterie, mas admitem parceiros jogadores e NPCs; o Narrador consulta todos os Projects e pode criá-los; jogadores só veem os Projects do seu personagem, dos quais seu personagem participa ou da Coterie da qual são membros.
+
+- [x] Backend: projetos do Narrador podem indicar personagem de outro jogador ou Coterie como proprietário.
+- [x] Backend: `project_participants` vincula jogadores por personagens e `project_npc_participants` registra NPCs existentes na mesma mesa.
+- [x] Backend: a listagem e operações consultam autorização individual por recurso, não apenas filtros da UI.
+- [x] Backend: parceiro tem acesso à consulta, mas não recebe automaticamente permissão de editar o projeto.
+- [ ] Interface: substituir placeholders por **duas rotas diferentes**, `/campaigns/[id]/projects` e `/campaigns/[id]/coterie`, na navegação do Narrador e do jogador. A divisão atual por views/tabs é provisória, não a entrega de páginas separadas.
+- [ ] Criar **dois mockups** coerentes com a identidade gótica real (preto/vermelho profundo/molduras douradas) antes de implementar layouts; a composição anterior lado a lado não atende aos requisitos.
+- [ ] Reexecutar CI depois das alterações de autorização e de relacionamento de NPCs, incluindo testes de colaboração e isolamento entre campanhas.
+- [ ] Garantir que as políticas de visibilidade do catálogo NPC sejam refletidas na apresentação dos parceiros, sem expor anotações privadas do Narrador.
+
+**Dependência técnica:** a integração opcional de NPCs exige `campaign_npcs`/`npc_definitions` da migração `20261023_npcs_sheet_narrative.sql`. A nova tabela armazena UUID do vínculo e nome de apresentação; não impõe FK direta sobre a migração opcional no bootstrap. O comando valida a existência do NPC vinculado à mesa antes de persistir sua participação.
