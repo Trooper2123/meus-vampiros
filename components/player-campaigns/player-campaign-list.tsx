@@ -7,7 +7,7 @@ export async function PlayerCampaignList({actorId,inactive}:Readonly<{actorId:st
   const campaigns = (await getPlayerCampaigns(actorId)).filter(campaign => isInactiveCampaign(campaign.status) === inactive)
   return <main className="campaigns-reference-shell player-campaign-portal relative min-h-screen bg-background text-foreground">
     <div className="noise" aria-hidden="true"/>
-    <ArchiveHeader title="Campanhas" variant="campaigns" campaignRole="player" campaignSection={inactive?'inactive':'current'}/>
+    <ArchiveHeader title="Campanhas" variant="campaigns" campaignSection={inactive?'inactive':'current'}/>
     <div className="archive-content player-campaign-list-content">
       <div className="player-portal-heading">
         <p className="eyebrow">Arquivos da Noite / Visão do Jogador</p>
