@@ -44,7 +44,8 @@ function Section({title,icon:Icon,children,action}:Readonly<{title:string;icon:t
  </section>
 }
 function Empty({children}:Readonly<{children:React.ReactNode}>){return <p className="text-sm text-muted-foreground">{children}</p>}
-export function CampaignCoteriePanel({campaignId}:Readonly<{campaignId:string}>){
+export function CampaignCoteriePanel({campaignId,projectsHref,onOpenProjects}:Readonly<{campaignId:string;projectsHref?:string;onOpenProjects?:()=>void}>){
+ const linkedProjects=projectsHref??('/campaigns/'+campaignId+'?view=projects')
  const endpoint='/api/campaigns/'+campaignId+'/coteries'
  const {data,error,isLoading,mutate}=useSWR<Data>(endpoint,get,{refreshInterval:30000})
  const [selectedId,setSelectedId]=useState<string|null>(null)
@@ -112,7 +113,7 @@ export function CampaignCoteriePanel({campaignId}:Readonly<{campaignId:string}>)
     <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
      {[{label:'Integrantes',value:selected.members.length},{label:'Backgrounds',value:selected.backgrounds.reduce((sum,b)=>sum+b.dots,0)},{label:'Projetos',value:selected.projectCounts?.total??0},{label:'Refúgios',value:selected.havens.length}].map(item=><div key={item.label} className="rounded-lg border border-border/70 bg-background/55 p-3"><p className="text-xs text-muted-foreground">{item.label}</p><strong className="font-serif text-2xl">{item.value}</strong></div>)}
     </div>
-    <div className="mt-4 flex flex-wrap gap-2"><Link href={'/campaigns/'+campaignId+'/projects'} className="button-ghost"><FolderKanban className="size-4"/>Projetos da Coterie <ChevronRight className="size-4"/></Link>{selected.chronicle&&<span className="rounded-full border border-border px-3 py-2 text-xs text-muted-foreground">{selected.chronicle}</span>}</div>
+    <div className="mt-4 flex flex-wrap gap-2">{onOpenProjects?<button type="button" className="button-ghost" onClick={onOpenProjects}><FolderKanban className="size-4"/>Projetos da Coterie <ChevronRight className="size-4"/></button>:<Link href={linkedProjects} className="button-ghost"><FolderKanban className="size-4"/>Projetos da Coterie <ChevronRight className="size-4"/></Link>}{selected.chronicle&&<span className="rounded-full border border-border px-3 py-2 text-xs text-muted-foreground">{selected.chronicle}</span>}</div>
    </div>
    <div className="grid gap-4 xl:grid-cols-2">
     <Section title="Integrantes" icon={Users} action={button('Adicionar', 'ADD_MEMBER')}>
@@ -142,7 +143,7 @@ export function CampaignCoteriePanel({campaignId}:Readonly<{campaignId:string}>)
     </Section>
    </div>
    <Section title="Objetivos da Coterie" icon={Target} action={canPropose?<button className="button-ghost text-xs" type="button" onClick={()=>openForm('ADD_GOAL',selected)}><Plus className="size-3.5"/>Propor objetivo</button>:null}>
-    {selected.goals.length?<div className="space-y-3">{selected.goals.map(g=><div key={g.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border/60 bg-background/35 p-3"><div className="min-w-0 flex-1"><p className="font-medium">{g.title}</p><p className="text-xs text-muted-foreground">{g.description||'Sem descrição'} · {g.status==='OPEN'?'Aberto':g.status}</p></div>{g.projectId?<Link className="button-ghost text-xs" href={'/campaigns/'+campaignId+'/projects'}><FolderKanban className="size-4"/>Ver Project</Link>:!data.archived&&g.status==='OPEN'?<button className="button-ghost text-xs" disabled={busy} type="button" onClick={()=>void submit('GOAL_TO_PROJECT',{goalId:g.id},selected)}><FolderKanban className="size-4"/>Criar Project</button>:null}</div>)}</div>:<Empty>Nenhum objetivo coletivo proposto. Integrantes podem sugerir objetivos; a transformação em Project é explícita.</Empty>}
+    {selected.goals.length?<div className="space-y-3">{selected.goals.map(g=><div key={g.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border/60 bg-background/35 p-3"><div className="min-w-0 flex-1"><p className="font-medium">{g.title}</p><p className="text-xs text-muted-foreground">{g.description||'Sem descrição'} · {g.status==='OPEN'?'Aberto':g.status}</p></div>{g.projectId?{onOpenProjects?<button type="button" className="button-ghost text-xs" onClick={onOpenProjects}><FolderKanban className="size-4"/>Ver Project</button>:<Link className="button-ghost text-xs" href={linkedProjects}><FolderKanban className="size-4"/>Ver Project</Link>}:!data.archived&&g.status==='OPEN'?<button className="button-ghost text-xs" disabled={busy} type="button" onClick={()=>void submit('GOAL_TO_PROJECT',{goalId:g.id},selected)}><FolderKanban className="size-4"/>Criar Project</button>:null}</div>)}</div>:<Empty>Nenhum objetivo coletivo proposto. Integrantes podem sugerir objetivos; a transformação em Project é explícita.</Empty>}
    </Section>
   </>}
   {isEditorAction&&<div className="rounded-xl border border-primary/50 bg-card p-4 sm:p-5">
