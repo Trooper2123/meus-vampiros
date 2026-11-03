@@ -309,7 +309,8 @@ export async function smsSend(campaignId:string,actorId:string,threadId:string,i
     if(!a.enabled) fail(409,'SMS_DISABLED')
     const sender=await character(client,campaignId,senderId)
     if(!canActAs(sender,a.role,actorId)) fail(403,'Você não pode enviar como este personagem.')
-    if(a.role==='player' && sender.id!==thread.character_a_id && sender.id!==thread.character_b_id) fail(403,'O personagem não participa desta conversa.')
+    if(a.role==='player' && thread.kind==='DIRECT' && sender.id!==thread.character_a_id && sender.id!==thread.character_b_id) fail(403,'O personagem não participa desta conversa.')
+    if(a.role==='player' && thread.kind==='COTERIE' && (!thread.coterie_id || !await smsMember(client,campaignId,thread.coterie_id,sender.id))) fail(403,'O personagem não pertence a essa Coterie.')
     // A narrator may speak as an NPC or third character; only the two original thread
     // participants and the character whose voice was used receive this specific message.
     const exists=await client.query<{id:string;body:string;thread_id:string;sender_character_id:string}>(
@@ -326,10 +327,24 @@ export async function smsSend(campaignId:string,actorId:string,threadId:string,i
       VALUES($1::uuid,$2::uuid,$3::uuid,$4,$5,$6,$7::uuid) RETURNING id`,
       [campaignId,threadId,senderId,actorId,a.role==='narrator'&&sender.user_id!==actorId,body.trim(),key])
     const id=insert.rows[0].id
-    const receivers=[thread.character_a_id,thread.character_b_id]
-    if(sender.id!==thread.character_a_id&&sender.id!==thread.character_b_id)receivers.push(sender.id)
+    let receivers:string[]
+    if(thread.kind==='COTERIE'){
+      if(!thread.coterie_id || !await smsCoteriesReady(client))fail(409,'COTERIE_UNAVAILABLE')
+      const members=await client.query<{id:string}>(`
+        SELECT DISTINCT ch.id FROM coterie_members cm
+        JOIN coteries co ON co.id=cm.coterie_id
+        JOIN characters ch ON ch.id=cm.character_id
+        WHERE co.id=$1::uuid AND co.campaign_id=$2::uuid
+          AND ch.campaign_id=co.campaign_id AND ch.character_type='PLAYER_VAMPIRE' AND ch.status='APPROVED'
+          AND cm.joined_at<=now() AND (cm.left_at IS NULL OR cm.left_at>now())`,
+        [thread.coterie_id,campaignId])
+      receivers=members.rows.map(member=>member.id)
+    }else{
+      receivers=[thread.character_a_id,thread.character_b_id].filter((id):id is string=>Boolean(id))
+    }
+    if(!receivers.includes(sender.id))receivers.push(sender.id)
     for(const receiver of new Set(receivers)){
-      const reason=receiver===sender.id ? (a.role==='narrator'&&sender.user_id!==actorId?'NARRATOR_AS_CHARACTER':'SENDER_COPY') : 'DIRECT_RECIPIENT'
+      const reason=receiver===sender.id ? (a.role==='narrator'&&sender.user_id!==actorId?'NARRATOR_AS_CHARACTER':'SENDER_COPY') : (thread.kind==='COTERIE'?'COTERIE_MEMBER':'DIRECT_RECIPIENT')
       await client.query(`INSERT INTO character_message_deliveries(message_id,recipient_character_id,reason,read_at)
         VALUES($1::uuid,$2::uuid,$3,CASE WHEN $4::boolean THEN now() ELSE NULL END)`,
         [id,receiver,reason,receiver===sender.id&&a.role==='player'])
