@@ -16,7 +16,7 @@ type ProjectRow={
 }
 type Stake={characterId?:string;coterieId?:string;trait:string;dots:number}
 export type ProjectCommand={
- action:'CREATE'|'UPDATE_DRAFT'|'SUBMIT'|'APPROVE'|'LAUNCH'|'INCREMENT'|'REQUEST_GOAL'|'RESOLVE_GOAL'|'ABANDON';
+ action:'CREATE'|'UPDATE_DRAFT'|'SUBMIT'|'APPROVE'|'LAUNCH'|'COMMIT_STAKE'|'INCREMENT'|'REQUEST_GOAL'|'RESOLVE_GOAL'|'ABANDON';
  idempotencyKey:string; projectId?:string; ownerCharacterId?:string; coterieId?:string;
  name?:string;description?:string;goalDescription?:string;
  targetTrait?:string;currentDots?:number;finalDots?:number;incrementUnit?:string;incrementValue?:number;
@@ -203,7 +203,7 @@ export async function commandProject(actorId:string,campaignId:string,input:Proj
      await event(tx,project.id,'APPROVED',actorId,null,null,`Scope ${scope}, Increment ${increment} ${unit}, Launch Difficulty ${scope+2}.`)
    }else if(input.action==='LAUNCH'){
      requireMaster(access)
-     if(project.status!=='AWAITING_APPROVAL'||!project.approved_at||!project.scope||!project.launch_pool)throw new CharacterCommandError(409,'Projeto precisa de aprovação antes do Launch Roll.')
+     if(project.status!=='AWAITING_APPROVAL'||!project.approved_at||!project.scope||!project.launch_pool||project.launch_result && ['WIN','CRITICAL'].includes((project.launch_result as {outcome?:string}).outcome??''))throw new CharacterCommandError(409,'Projeto precisa de aprovação e não pode repetir um lançamento bem-sucedido.')
      const rollingId=input.rollingCharacterId??project.owner_character_id
      if(!rollingId)throw new CharacterCommandError(400,'Escolha um personagem participante para lançar o projeto.')
      const ch=await requireCharacterOfCampaign(tx,campaignId,rollingId)
@@ -217,15 +217,26 @@ export async function commandProject(actorId:string,campaignId:string,input:Proj
      if(launchDifficulty(project.scope,project.launch_failure_count)>50)throw new CharacterCommandError(422,'Dificuldade do Launch Roll ultrapassa o limite do motor.')
      const result=resolveProjectLaunch(dice,project.launch_pool,Math.min(hunger,project.launch_pool),project.scope,project.launch_failure_count)
      if(result.outcome==='WIN'||result.outcome==='CRITICAL'){
-       await commitStakes(tx,project,input.stakes??[],result.stakeRequired)
-       await tx.execute(sql`UPDATE character_projects SET status='ACTIVE',project_die=10,launch_difficulty=${result.launchDifficulty},launch_result=${JSON.stringify(result)}::jsonb,launched_at=now() WHERE id=${project.id}::uuid`)
-       await event(tx,project.id,'LAUNCHED',actorId,null,10,reason||'Projeto lançado.',{...result,rollingCharacterId:rollingId})
+       if(result.outcome==='CRITICAL'){
+         await tx.execute(sql`UPDATE character_projects SET status='ACTIVE',project_die=10,launch_difficulty=${result.launchDifficulty},launch_result=${JSON.stringify(result)}::jsonb,launched_at=now() WHERE id=${project.id}::uuid`)
+         await event(tx,project.id,'LAUNCHED',actorId,null,10,reason||'Projeto lançado sem Stake: vitória crítica.',{...result,rollingCharacterId:rollingId})
+       }else{
+         await tx.execute(sql`UPDATE character_projects SET launch_difficulty=${result.launchDifficulty},launch_result=${JSON.stringify(result)}::jsonb WHERE id=${project.id}::uuid`)
+         await event(tx,project.id,'APPROVED',actorId,null,null,'Launch Roll bem-sucedido. Aguardando compromisso de Stake.',{...result,rollingCharacterId:rollingId})
+       }
      }else{
        await tx.execute(sql`UPDATE character_projects SET launch_failure_count=launch_failure_count+1,launch_difficulty=${result.launchDifficulty+1},launch_result=${JSON.stringify(result)}::jsonb WHERE id=${project.id}::uuid`)
        await event(tx,project.id,'LAUNCH_FAILED',actorId,null,null,reason||'Launch Roll falhou; próxima tentativa aumenta a dificuldade.',result)
      }
      await changeRevision(tx,project.id)
-     return {ok:true,projectId:project.id,launchResult:result,status:result.outcome==='WIN'||result.outcome==='CRITICAL'?'ACTIVE':'AWAITING_APPROVAL',revision:project.revision+1}
+     return {ok:true,projectId:project.id,launchResult:result,status:result.outcome==='CRITICAL'?'ACTIVE':'AWAITING_APPROVAL',revision:project.revision+1}
+   }else if(input.action==='COMMIT_STAKE'){
+     requireMaster(access)
+     const launch=project.launch_result as {outcome?:string;stakeRequired?:number}|null
+     if(project.status!=='AWAITING_APPROVAL'||launch?.outcome!=='WIN'||!Number.isSafeInteger(launch.stakeRequired))throw new CharacterCommandError(409,'Não há Launch Roll bem-sucedido aguardando Stake.')
+     await commitStakes(tx,project,input.stakes??[],launch.stakeRequired!)
+     await tx.execute(sql`UPDATE character_projects SET status='ACTIVE',project_die=10,launched_at=now() WHERE id=${project.id}::uuid`)
+     await event(tx,project.id,'LAUNCHED',actorId,null,10,reason||'Stake confirmado e projeto iniciado.',{requiredStake:launch.stakeRequired})
    }else if(input.action==='INCREMENT'){
      requireMaster(access)
      if(project.status!=='ACTIVE'||!project.project_die)throw new CharacterCommandError(409,'O projeto não está ativo.')
