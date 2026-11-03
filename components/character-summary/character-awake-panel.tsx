@@ -2,8 +2,8 @@
 import { useRef, useState } from 'react'
 import useSWR, { useSWRConfig } from 'swr'
 
-type AwakeView = { context: 'EXTERNAL_TABLE' | 'CAMPAIGN'; night: { id: string; number?: number; night_number?: number; execution_mode?: string; inGameDate?: string | null } | null; completed?: { outcome: string; roll: number | null } | null; last?: { nightId: string; outcome: string; roll: number | null } | null; revision: number; hunger: number; condition: string; eligible: boolean }
-type Intent = { action: 'AWAKE' | 'START_NIGHT'; expectedRevision: number; idempotencyKey: string; nightId?: string; inGameDate?: string; sessionId?: string }
+type AwakeView = { context: 'EXTERNAL_TABLE' | 'CAMPAIGN' | 'UNLINKED'; night: { id: string; number?: number; night_number?: number; execution_mode?: string; inGameDate?: string | null } | null; completed?: { outcome: string; roll: number | null } | null; last?: { nightId: string; outcome: string; roll: number | null } | null; revision: number; hunger: number; condition: string; eligible: boolean }
+type Intent = { action: 'AWAKE' | 'START_NIGHT' | 'DECLARE_EXTERNAL'; expectedRevision: number; idempotencyKey: string; nightId?: string; inGameDate?: string; sessionId?: string }
 async function read(url: string): Promise<AwakeView> { const response = await fetch(url,{cache:'no-store'}); const data = await response.json(); if (!response.ok) throw new Error(data.error ?? 'Falha ao consultar o despertar.'); return data }
 export function CharacterAwakePanel({ characterId, sessionId }: Readonly<{ characterId: string; sessionId?: string }>) {
   const url = `/api/characters/${characterId}/awake`
@@ -16,7 +16,7 @@ export function CharacterAwakePanel({ characterId, sessionId }: Readonly<{ chara
   async function command(action: Intent['action']) {
     if (!data || busy) return
     if (!pending.current) {
-      pending.current = {action,expectedRevision:data.revision,idempotencyKey:crypto.randomUUID(),...(action==='AWAKE' ? {nightId:data.night?.id,...(sessionId ? {sessionId}:{})} : (date ? {inGameDate:date}:{}))}
+      pending.current = {action,expectedRevision:data.revision,idempotencyKey:crypto.randomUUID(),...(action==='AWAKE' ? {nightId:data.night?.id,...(sessionId ? {sessionId}:{})} : (action==='START_NIGHT'&&date ? {inGameDate:date}:{}))}
     }
     setBusy(true); setFeedback('')
     try {
@@ -27,7 +27,7 @@ export function CharacterAwakePanel({ characterId, sessionId }: Readonly<{ chara
         throw new Error(result?.error ?? 'Falha ao processar a operação.')
       }
       pending.current=null
-      setFeedback(action==='START_NIGHT' ? 'Nova noite ficcional registrada.' : `Despertar: ${result.outcome}. D10: ${result.roll ?? 'não rolado'}. Fome: ${result.after?.hunger ?? '—'}.`)
+      setFeedback(action==='DECLARE_EXTERNAL' ? 'Ficha identificada como pertencente a uma mesa fora do aplicativo.' : action==='START_NIGHT' ? 'Nova noite ficcional registrada.' : `Despertar: ${result.outcome}. D10: ${result.roll ?? 'não rolado'}. Fome: ${result.after?.hunger ?? '—'}.`)
       await Promise.allSettled([mutate(),refresh(`/api/characters/${characterId}/resources`)])
     }catch(e){setFeedback(e instanceof Error ? e.message:'Falha de conexão; reenviar preserva a operação.')}finally{setBusy(false)}
   }
@@ -39,8 +39,9 @@ export function CharacterAwakePanel({ characterId, sessionId }: Readonly<{ chara
     {error && <p role="alert">{error.message}</p>}
     {!data && !error && <p>Carregando despertar…</p>}
     {data && <div className="mt-3 flex flex-col gap-3 text-sm">
-      <p>{data.context==='EXTERNAL_TABLE' ? 'Mesa fora do aplicativo · controle do jogador' : data.night?.execution_mode==='NARRATOR_FORCES' ? 'O Narrador executa os despertares desta mesa.' : 'O jogador realiza seu despertar na sessão ativa.'}</p>
+      <p>{data.context==='UNLINKED' ? 'Ficha sem mesa vinculada. Indique se joga em uma mesa fora do aplicativo.' : data.context==='EXTERNAL_TABLE' ? 'Mesa fora do aplicativo · controle do jogador' : data.night?.execution_mode==='NARRATOR_FORCES' ? 'O Narrador executa os despertares desta mesa.' : 'O jogador realiza seu despertar na sessão ativa.'}</p>
       <p>Fome: {data.hunger}/5 · Condição: {data.condition}{data.hunger===5 ? ' · Risco de torpor se falhar' : ''}</p>
+      {data.context==='UNLINKED' && <button className="button-ghost self-start" disabled={busy} type="button" onClick={()=>void command('DECLARE_EXTERNAL')}>Indicar mesa fora do aplicativo</button>}
       {data.context==='EXTERNAL_TABLE' && <div className="flex flex-wrap items-end gap-3">
         <label className="flex flex-col gap-1">Data ficcional (opcional)<input className="input" type="date" value={date} onChange={e=>setDate(e.target.value)} disabled={busy || Boolean(pending.current)}/></label>
         <button className="button-ghost" type="button" disabled={busy} onClick={()=>void command('START_NIGHT')}>{busy?'Processando…':'Iniciar próxima noite'}</button>
