@@ -5,8 +5,9 @@ import { getSessionOrDev } from '@/lib/auth0'
 import { BookOpen, Plus, Layers, Users, CalendarDays, Archive, PauseCircle, CheckCircle2, ArrowLeft } from 'lucide-react'
 import { getCampaignsForMaster, hasMasterAccess } from '@/lib/campaigns'
 import { MasterPanel } from '@/components/master-panel'
+import { PlayerCampaignList } from '@/components/player-campaigns/player-campaign-list'
 
-export default async function CampaignsPage({ searchParams }: Readonly<{ searchParams: Promise<{ archived?: string; view?: string }> }>) {
+export default async function CampaignsPage({ searchParams }: Readonly<{ searchParams: Promise<{ archived?: string; view?: string; role?: string }> }>) {
   const query = await searchParams
   const showInactive = query?.view === 'inactive' || query?.archived === 'true'
   if (!process.env.AUTH0_DOMAIN || !process.env.AUTH0_CLIENT_ID || !process.env.AUTH0_SECRET || !process.env.AUTH0_CLIENT_SECRET) {
@@ -16,6 +17,8 @@ export default async function CampaignsPage({ searchParams }: Readonly<{ searchP
 
   const session = await getSessionOrDev()
   if (!session?.user) redirect('/auth/login?returnTo=/campaigns')
+
+  if (query?.role === 'player') return <PlayerCampaignList actorId={session.user.sub} inactive={showInactive}/>
 
   const userIsMaster = await hasMasterAccess(session.user)
 
@@ -38,7 +41,7 @@ export default async function CampaignsPage({ searchParams }: Readonly<{ searchP
     <main className={`relative min-h-screen overflow-hidden bg-background text-foreground campaigns-reference-shell ${showInactive ? "campaigns-inactive-view" : ""}`}>
       <div className="noise" aria-hidden="true" />
 
-      <ArchiveHeader title="Campanhas" showCampaigns={allCampaigns.length > 0} variant="campaigns" campaignSection={showInactive ? "inactive" : "current"} />
+      <ArchiveHeader title="Campanhas" showCampaigns={allCampaigns.length > 0} variant="campaigns" campaignRole="master" campaignSection={showInactive ? "inactive" : "current"} />
 
       <div className="archive-content">
         <header className="archive-page-heading campaign-dashboard-heading">
