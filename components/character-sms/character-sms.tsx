@@ -20,15 +20,19 @@ function displayError(error:unknown){return error instanceof Error?error.message
 
 export function CharacterSms({campaignId,mode='player'}:Readonly<{campaignId:string;mode?:'player'|'narrator'}>) {
   const base=`/api/campaigns/${campaignId}/character-sms`
+  const viewSuffix=mode==='player'?'?view=player':''
+  const threadUrl=(id:string)=>base+'/'+id+viewSuffix
+  const contactsUrl=base+'/contacts'+viewSuffix
+  const inboxUrl=base+viewSuffix
   const [threadId,setThreadId]=useState<string|null>(null)
   const [senderId,setSenderId]=useState('')
   const [recipientId,setRecipientId]=useState('')
   const [body,setBody]=useState('')
   const [busy,setBusy]=useState(false)
   const [error,setError]=useState('')
-  const {data:inbox,error:inboxError,mutate:refreshInbox}=useSWR<Inbox>(base,get,{refreshInterval:10000})
-  const {data:contacts,error:contactsError}=useSWR<Contacts>(base+'/contacts',get,{refreshInterval:30000})
-  const {data:history,error:historyError,mutate:refreshHistory}=useSWR<History>(threadId?base+'/'+threadId:null,get,{refreshInterval:10000})
+  const {data:inbox,error:inboxError,mutate:refreshInbox}=useSWR<Inbox>(inboxUrl,get,{refreshInterval:10000})
+  const {data:contacts,error:contactsError}=useSWR<Contacts>(contactsUrl,get,{refreshInterval:30000})
+  const {data:history,error:historyError,mutate:refreshHistory}=useSWR<History>(threadId?threadUrl(threadId):null,get,{refreshInterval:10000})
   const isNarrator=mode==='narrator' && inbox?.isNarrator===true
   const allContacts=contacts?.characters??[]
   const senders=isNarrator?allContacts:allContacts.filter(c=>c.owned&&c.characterType==='PLAYER_VAMPIRE')
@@ -43,7 +47,7 @@ export function CharacterSms({campaignId,mode='player'}:Readonly<{campaignId:str
     if(!threadId||!latestMessageId||!inbox?.enabled)return
     let active=true
     async function markRead(){
-      const response=await fetch(base+'/'+threadId,{method:'PATCH',headers:{'Content-Type':'application/json'},body:'{}'})
+      const response=await fetch(threadUrl(threadId),{method:'PATCH',headers:{'Content-Type':'application/json'},body:'{}'})
       if(active&&response.ok)void refreshInbox()
     }
     void markRead()
@@ -54,7 +58,7 @@ export function CharacterSms({campaignId,mode='player'}:Readonly<{campaignId:str
     if(!currentSender||!selectedRecipient||busy)return
     setBusy(true);setError('')
     try{
-      const response=await fetch(base,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({senderCharacterId:currentSender,recipientCharacterId:selectedRecipient})})
+      const response=await fetch(inboxUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({senderCharacterId:currentSender,recipientCharacterId:selectedRecipient})})
       const data=await response.json().catch(()=>({}))
       if(!response.ok)throw new Error(data.error??'Não foi possível criar a conversa.')
       setThreadId(data.id);setBody('')
@@ -66,7 +70,7 @@ export function CharacterSms({campaignId,mode='player'}:Readonly<{campaignId:str
     if(!threadId||!currentSender||!body.trim()||busy)return
     setBusy(true);setError('')
     try{
-      const response=await fetch(base+'/'+threadId,{method:'POST',headers:{'Content-Type':'application/json'},
+      const response=await fetch(threadUrl(threadId),{method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({senderCharacterId:currentSender,body:body.trim(),idempotencyKey:crypto.randomUUID()})})
       const data=await response.json().catch(()=>({}))
       if(!response.ok)throw new Error(data.error==='SMS_DISABLED'?'Mensagens desativadas pelo Narrador.':data.error??'Não foi possível enviar.')
@@ -82,10 +86,10 @@ export function CharacterSms({campaignId,mode='player'}:Readonly<{campaignId:str
     {inboxError&&<p role="alert" className="sms-error">{displayError(inboxError)}</p>}
     {contactsError&&<p role="alert" className="sms-error">{displayError(contactsError)}</p>}
     <div className="sms-layout">
-      <aside className="sms-inbox"><h3>Conversas {count>0&&<span className="sms-unread">{count}</span>}</h3>
+      <aside className="sms-inbox"><h3>Conversas {count>0&&!disabled&&<span className="sms-unread">{count}</span>}</h3>
         {!inbox&&!inboxError&&<p className="sms-muted">Carregando...</p>}
         {inbox&&inbox.threads.length===0&&<p className="sms-muted">Nenhuma conversa disponível.</p>}
-        {inbox?.threads.map(t=><button key={t.id} type="button" className={threadId===t.id?'sms-thread active':'sms-thread'} onClick={()=>{setThreadId(t.id);setError('')}}><UserRound className="size-5"/><span><strong>{t.characterA} · {t.characterB}</strong><small>{new Date(t.updatedAt).toLocaleString('pt-BR')}</small></span>{Number(t.unreadCount)>0&&<b className="sms-unread">{t.unreadCount}</b>}</button>)}
+        {inbox?.threads.map(t=><button key={t.id} type="button" className={threadId===t.id?'sms-thread active':'sms-thread'} onClick={()=>{setThreadId(t.id);setError('')}}><UserRound className="size-5"/><span><strong>{t.characterA} · {t.characterB}</strong><small>{new Date(t.updatedAt).toLocaleString('pt-BR')}</small></span>{Number(t.unreadCount)>0&&!disabled&&<b className="sms-unread">{t.unreadCount}</b>}</button>)}
       </aside>
       <div className="sms-conversation">
         <div className="sms-compose-new">
