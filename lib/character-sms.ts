@@ -138,7 +138,7 @@ export async function smsContacts(campaignId: string, actorId: string) {
 }
 
 type Thread = {id:string;kind:string;character_a_id:string;character_b_id:string;updated_at:Date;name_a:string;name_b:string}
-async function threadAndAccess(client:PoolClient,campaignId:string,actorId:string,threadId:string) {
+async function threadAndAccess(client:PoolClient,campaignId:string,actorId:string,threadId:string,allowEmptyParticipant=false) {
   if (!smsUuid(threadId)) fail(404,'Conversa não encontrada.')
   const a=await access(client,campaignId,actorId)
   const record=await client.query<Thread>(`SELECT t.*,ca.name AS name_a,cb.name AS name_b
@@ -152,7 +152,10 @@ async function threadAndAccess(client:PoolClient,campaignId:string,actorId:strin
       JOIN character_message_deliveries d ON d.message_id=m.id
       JOIN characters ch ON ch.id=d.recipient_character_id
       WHERE m.thread_id=$1::uuid AND ch.user_id=$2 AND ch.status<>'DELETED' LIMIT 1`,[threadId,actorId])
-    if(!delivered.rowCount) fail(404,'Conversa não encontrada.')
+    if(!delivered.rowCount){
+      const owner=allowEmptyParticipant && (await client.query('SELECT 1 FROM characters WHERE id=ANY($1::uuid[]) AND user_id=$2 AND status=\'APPROVED\' LIMIT 1',[[thread.character_a_id,thread.character_b_id],actorId])).rowCount
+      if(!owner) fail(404,'Conversa não encontrada.')
+    }
   }
   return {a,thread}
 }
@@ -208,6 +211,7 @@ export async function smsStart(campaignId:string,actorId:string,input:Record<str
   const client=await pool!.connect()
   try{
     await client.query('BEGIN')
+    await client.query('SELECT id FROM campaigns WHERE id=$1::uuid FOR UPDATE',[campaignId])
     const a=await access(client,campaignId,actorId)
     if(!a.enabled) fail(409,'SMS_DISABLED')
     const sender=await character(client,campaignId,senderId)
@@ -236,13 +240,12 @@ export async function smsSend(campaignId:string,actorId:string,threadId:string,i
     // Lock the campaign row so disable and send cannot race each other.
     const locked=await client.query('SELECT id FROM campaigns WHERE id=$1::uuid FOR UPDATE',[campaignId])
     if(!locked.rowCount) fail(404,'Mesa não encontrada.')
-    const {a,thread}=await threadAndAccess(client,campaignId,actorId,threadId)
+    const {a,thread}=await threadAndAccess(client,campaignId,actorId,threadId,true)
     if(!a.enabled) fail(409,'SMS_DISABLED')
     const sender=await character(client,campaignId,senderId)
     if(!canActAs(sender,a.role,actorId)) fail(403,'Você não pode enviar como este personagem.')
     // A narrator may speak as an NPC or third character; only the two original thread
     // participants and the character whose voice was used receive this specific message.
-    const fingerprint=JSON.stringify({threadId,senderId,body:body.trim()})
     const exists=await client.query<{id:string;body:string;thread_id:string;sender_character_id:string}>(
       'SELECT id,body,thread_id,sender_character_id FROM character_messages WHERE campaign_id=$1::uuid AND created_by_actor_id=$2 AND idempotency_key=$3::uuid',
       [campaignId,actorId,key])
