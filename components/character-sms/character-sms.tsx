@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import useSWR from 'swr'
 import { MessageSquareText, Send, Shield, UserRound, Users, RefreshCw } from 'lucide-react'
 
@@ -21,7 +21,7 @@ function displayError(error:unknown){return error instanceof Error?error.message
 export function CharacterSms({campaignId,mode='player'}:Readonly<{campaignId:string;mode?:'player'|'narrator'}>) {
   const base=`/api/campaigns/${campaignId}/character-sms`
   const viewSuffix=mode==='player'?'?view=player':''
-  const threadUrl=(id:string)=>base+'/'+id+viewSuffix
+  const threadUrl=useCallback((id:string)=>base+'/'+id+viewSuffix,[base,viewSuffix])
   const contactsUrl=base+'/contacts'+viewSuffix
   const inboxUrl=base+viewSuffix
   const [threadId,setThreadId]=useState<string|null>(null)
@@ -52,7 +52,7 @@ export function CharacterSms({campaignId,mode='player'}:Readonly<{campaignId:str
     }
     void markRead()
     return ()=>{active=false}
-  },[threadId,latestMessageId,base,inbox?.enabled,refreshInbox])
+  },[threadId,latestMessageId,threadUrl,inbox?.enabled,refreshInbox])
 
   async function createConversation(){
     if(!currentSender||!selectedRecipient||busy)return
