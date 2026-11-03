@@ -149,7 +149,7 @@ export async function getCampaignProjects(actorId:string,campaignId:string){
      const participants=await tx.execute(sql`SELECT p.character_id AS "characterId",ch.name FROM project_participants p JOIN characters ch ON ch.id=p.character_id WHERE p.project_id=${id}::uuid`)
      const stakes=await tx.execute(sql`SELECT character_id AS "characterId",coterie_id AS "coterieId",trait,dots,released_at AS "releasedAt" FROM project_stakes WHERE project_id=${id}::uuid`)
      const events=await tx.execute(sql`SELECT type,previous_project_die AS "previousProjectDie",new_project_die AS "newProjectDie",description,created_at AS "createdAt" FROM project_events WHERE project_id=${id}::uuid ORDER BY created_at DESC LIMIT 50`)
-     projects.push({...row as object,participants:participants.rows,stakes:stakes.rows,events:events.rows})
+     projects.push({...(row as object),participants:participants.rows,stakes:stakes.rows,events:events.rows})
    }
    return {projects,canManage:access.is_master}
  })
@@ -172,6 +172,7 @@ export async function commandProject(actorId:string,campaignId:string,input:Proj
      }
      const kind=input.ownerCharacterId?'PERSONAL':'COTERIE'
      const p=await tx.execute<{id:string}>(sql`INSERT INTO character_projects (campaign_id,owner_character_id,coterie_id,name,description,goal_description,project_type,created_by_user_id) VALUES (${campaignId}::uuid,${input.ownerCharacterId??null}::uuid,${input.coterieId??null}::uuid,${requireText(input.name,'Nome',140)},${optionalText(input.description,'Descrição',2000)},${requireText(input.goalDescription,'Objetivo',1000)},${kind},${actorId}) RETURNING id`)
+     if(input.ownerCharacterId)await tx.execute(sql`INSERT INTO project_participants (project_id,character_id) VALUES (${p.rows[0].id}::uuid,${input.ownerCharacterId}::uuid)`)
      await event(tx,p.rows[0].id,'CREATED',actorId,null,null,'Projeto criado.')
      return {ok:true,projectId:p.rows[0].id,status:'DRAFT'}
    }
@@ -224,7 +225,8 @@ export async function commandProject(actorId:string,campaignId:string,input:Proj
      if(!rollingId)throw new CharacterCommandError(400,'Escolha um personagem participante para lançar o projeto.')
      const listed=await tx.execute<{character_id:string}>(sql`SELECT character_id FROM project_participants WHERE project_id=${project.id}::uuid`)
      const participants=listed.rows.map(row=>row.character_id)
-     if(participants.length>0&&!participants.includes(rollingId))throw new CharacterCommandError(403,'Personagem não participa do Project Launch.')
+     if(!participants.length)throw new CharacterCommandError(422,'Defina participantes do projeto antes do Launch Roll.')
+     if(!participants.includes(rollingId))throw new CharacterCommandError(403,'Personagem não participa do Project Launch.')
      const ch=await requireCharacterOfCampaign(tx,campaignId,rollingId)
      if(project.project_type==='COTERIE'){
        const m=await tx.execute<{id:string}>(sql`SELECT id FROM coterie_members WHERE coterie_id=${project.coterie_id}::uuid AND character_id=${rollingId}::uuid AND left_at IS NULL`)
@@ -255,9 +257,10 @@ export async function commandProject(actorId:string,campaignId:string,input:Proj
      if(project.status!=='AWAITING_APPROVAL'||launch?.outcome!=='WIN'||!Number.isSafeInteger(launch.stakeRequired))throw new CharacterCommandError(409,'Não há Launch Roll bem-sucedido aguardando Stake.')
      const people=await tx.execute<{character_id:string}>(sql`SELECT character_id FROM project_participants WHERE project_id=${project.id}::uuid`)
      const participantIds=people.rows.map(row=>row.character_id)
+     if(!participantIds.length)throw new CharacterCommandError(422,'Defina os participantes antes de comprometer o Stake.')
      const stakes=input.stakes??[]
      for(const stake of stakes){
-       if(stake.characterId&&participantIds.length>0&&!participantIds.includes(stake.characterId))throw new CharacterCommandError(403,'Stake associado a personagem que não participa do projeto.')
+       if(stake.characterId&&!participantIds.includes(stake.characterId))throw new CharacterCommandError(403,'Stake associado a personagem que não participa do projeto.')
      }
      const allShared=stakes.length>0&&stakes.every(stake=>Boolean(stake.coterieId))
      const required=allShared?launch.stakeRequired!:Math.max(launch.stakeRequired!,participantIds.length)
@@ -291,6 +294,8 @@ export async function commandProject(actorId:string,campaignId:string,input:Proj
      const pool=dots(input.goalPool,'Pool de Goal Roll',1,50)
      const rollingId=input.rollingCharacterId??project.owner_character_id
      if(!rollingId)throw new CharacterCommandError(400,'Escolha personagem para a disputa.')
+     const selected=await tx.execute<{character_id:string}>(sql`SELECT character_id FROM project_participants WHERE project_id=${project.id}::uuid`)
+     if(!selected.rows.some(row=>row.character_id===rollingId))throw new CharacterCommandError(403,'Personagem não selecionado para este Goal Roll.')
      const ch=await requireCharacterOfCampaign(tx,campaignId,rollingId)
      if(project.coterie_id){
        const membership=await tx.execute<{id:string}>(sql`SELECT id FROM coterie_members WHERE coterie_id=${project.coterie_id}::uuid AND character_id=${rollingId}::uuid AND left_at IS NULL`)
