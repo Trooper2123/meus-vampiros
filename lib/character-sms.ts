@@ -198,7 +198,7 @@ export async function smsMessages(campaignId:string,actorId:string,threadId:stri
           WHERE d.message_id=m.id AND ch.user_id=$2 AND ch.character_type='PLAYER_VAMPIRE' AND ch.status<>'DELETED'))
         AND ($4::uuid IS NULL OR (m.created_at,m.id)<(SELECT created_at,id FROM character_messages WHERE id=$4::uuid AND thread_id=$1::uuid))
       ORDER BY m.created_at DESC,m.id DESC LIMIT 50`,[threadId,actorId,a.role==='narrator',cursor??null])
-    return { ...a, thread:{id:thread.id,characterA:thread.name_a,characterB:thread.name_b},
+    return { ...a, thread:{id:thread.id,characterA:thread.name_a,characterB:thread.name_b,characterAId:thread.character_a_id,characterBId:thread.character_b_id},
       messages:rows.rows.reverse() }
   } finally {client.release()}
 }
