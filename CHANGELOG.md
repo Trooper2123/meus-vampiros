@@ -1,3 +1,15 @@
+## [2026-11-03] - feat - Tela independente Projetos da Mesa e Stake vinculado à ficha
+
+**Branch:** `feat/session-011-projects-coterie`.
+
+- Implementada a página `/campaigns/[id]/projects` usando estrutura e identidade visual da campanha, com filtros, busca, tabela, dossiê, criação e ações de resolução.
+- Narrador pode consultar/criar projetos de toda a campanha; jogador consulta apenas Projects autorizados de seu personagem, colaboração ou Coterie.
+- Interface para relacionar jogadores e NPCs existentes na mesa, com atualização auditada por comando.
+- Mecânica de Stake agora consulta os pontos de Background da ficha, desconta reservas de outros Projects, valida a escolha no servidor e registra reserva/liberação no ledger de personagem. Não usa vantagens gerais como Stake.
+- Incluído endpoint de saldo de Stake com acesso exclusivo ao Narrador e testes de prevenção de reserva duplicada.
+- Não altera a página Coterie; homologação final, QA visual e enforcement de Stake em todos os consumidores externos do atributo ainda pendentes.
+- **Validação pendente para este HEAD:** a CI verde registrada anteriormente cobre uma revisão anterior desta feature, não os novos arquivos.
+
 ## [2026-11-03] - feat - Projetos separados de Coterie; colaboração entre jogadores e NPCs
 
 **Branch:** `feat/session-011-projects-coterie`.
