@@ -248,27 +248,49 @@ export async function smsMessages(campaignId:string,actorId:string,threadId:stri
 
 export async function smsStart(campaignId:string,actorId:string,input:Record<string,unknown>,view?:'player'){
   const senderId=input.senderCharacterId
+  const kind=input.kind==='COTERIE'?'COTERIE':'DIRECT'
   const recipientId=input.recipientCharacterId
-  if(!smsUuid(senderId)||!smsUuid(recipientId)||senderId===recipientId) fail(422,'Remetente ou destinatário inválido.')
+  const coterieId=input.coterieId
+  if(!smsUuid(senderId))fail(422,'Remetente inválido.')
+  if(kind==='DIRECT'&&(!smsUuid(recipientId)||senderId===recipientId))fail(422,'Destinatário inválido.')
+  if(kind==='COTERIE'&&!smsUuid(coterieId))fail(422,'Coterie inválida.')
   await ensureSmsSchema()
   const client=await pool!.connect()
   try{
     await client.query('BEGIN')
     await client.query('SELECT id FROM campaigns WHERE id=$1::uuid FOR UPDATE',[campaignId])
     const a=await access(client,campaignId,actorId,view)
-    if(!a.enabled) fail(409,'SMS_DISABLED')
+    if(!a.enabled)fail(409,'SMS_DISABLED')
     const sender=await character(client,campaignId,senderId)
-    const recipient=await character(client,campaignId,recipientId)
-    if(!canActAs(sender,a.role,actorId)) fail(403,'Não é possível enviar por este personagem.')
-    if(!validRecipient(recipient,a.role)) fail(404,'Destinatário indisponível.')
-    const [left,right]=[sender.id,recipient.id].sort()
-    const t=await client.query<{id:string}>(`INSERT INTO character_message_threads(campaign_id,kind,character_a_id,character_b_id)
-      VALUES($1::uuid,'DIRECT',$2::uuid,$3::uuid)
-      ON CONFLICT (campaign_id,character_a_id,character_b_id) WHERE kind='DIRECT'
-      DO UPDATE SET updated_at=character_message_threads.updated_at RETURNING id`,[campaignId,left,right])
+    if(!canActAs(sender,a.role,actorId))fail(403,'Não é possível enviar por este personagem.')
+    let threadId:string
+    if(kind==='COTERIE'){
+      if(!await smsCoteriesReady(client))fail(409,'COTERIE_UNAVAILABLE')
+      const co=(await smsAvailableCoteries(client,campaignId,actorId,a.role)).find(row=>row.id===coterieId)
+      if(!co)fail(404,'Coterie indisponível.')
+      if(a.role==='player'&&!await smsMember(client,campaignId,co.id,sender.id))fail(403,'Seu personagem não pertence a essa Coterie.')
+      const thread=await client.query<{id:string}>(`INSERT INTO character_message_threads
+        (campaign_id,kind,coterie_id,coterie_name)
+        VALUES($1::uuid,'COTERIE',$2::uuid,$3)
+        ON CONFLICT(campaign_id,coterie_id) WHERE kind='COTERIE'
+        DO UPDATE SET coterie_name=EXCLUDED.coterie_name RETURNING id`,
+        [campaignId,co.id,co.name])
+      threadId=thread.rows[0].id
+    }else{
+      const recipient=await character(client,campaignId,recipientId as string)
+      if(!validRecipient(recipient,a.role))fail(404,'Destinatário indisponível.')
+      const [left,right]=[sender.id,recipient.id].sort()
+      const thread=await client.query<{id:string}>(`INSERT INTO character_message_threads
+        (campaign_id,kind,character_a_id,character_b_id)
+        VALUES($1::uuid,'DIRECT',$2::uuid,$3::uuid)
+        ON CONFLICT(campaign_id,character_a_id,character_b_id) WHERE kind='DIRECT'
+        DO UPDATE SET updated_at=character_message_threads.updated_at RETURNING id`,
+        [campaignId,left,right])
+      threadId=thread.rows[0].id
+    }
     await client.query('COMMIT')
-    return {id:t.rows[0].id}
-  } catch(e){await client.query('ROLLBACK');throw e} finally{client.release()}
+    return {id:threadId}
+  }catch(e){await client.query('ROLLBACK');throw e}finally{client.release()}
 }
 
 export async function smsSend(campaignId:string,actorId:string,threadId:string,input:Record<string,unknown>,view?:'player'){
