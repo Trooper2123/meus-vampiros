@@ -48,6 +48,7 @@ export async function executeCharacterAwake(actorId: string, characterId: string
     }
     let nightId = input.nightId!
     if (!character.campaignId) {
+      if (input.sessionId) throw new CharacterCommandError(400, 'Fichas de mesa externa não possuem sessão do aplicativo.')
       const night = character.gameState.independentNight as { id?: string } | undefined
       if (night?.id !== nightId) throw new CharacterCommandError(409, 'Inicie uma noite válida para esta ficha.')
       if ((character.gameState.lastAwakening as { nightId?: string } | undefined)?.nightId === nightId) throw new CharacterCommandError(409, 'Este personagem já despertou nesta noite.')
