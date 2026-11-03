@@ -58,6 +58,19 @@ describe('SPEC-SESSION-011: domínio persistente em PostgreSQL isolado',()=>{
    expect(view.projects[0].status).toBe('ACTIVE')
    expect(view.projects[0].projectDie).toBe(10)
  })
+ it('não expõe projeto coletivo ao ex-integrante da Coterie',async()=>{
+   const camp=await createTestCampaign('narrator-011')
+   const ch=await createTestCharacter('player-011',camp.id,'Vampiro convidado')
+   await db.execute(sql`UPDATE characters SET status='APPROVED',character_type='PLAYER_VAMPIRE' WHERE id=${ch.id}::uuid`)
+   const co=await commandCoterie('narrator-011',camp.id,command('CREATE',{name:'Coterie privada'}) as any)
+   await commandCoterie('narrator-011',camp.id,command('ADD_MEMBER',{coterieId:co.coterieId,characterId:ch.id}) as any)
+   const project=await commandProject('player-011',camp.id,command('CREATE',{coterieId:co.coterieId,name:'Influência sigilosa',goalDescription:'Ganhar Influence'}) as any)
+   expect((await getCampaignProjects('player-011',camp.id)).projects).toHaveLength(1)
+   const member=(await getCampaignCoteries('narrator-011',camp.id)).coteries[0].members[0] as {id:string}
+   await commandCoterie('narrator-011',camp.id,command('REMOVE_MEMBER',{coterieId:co.coterieId,memberId:member.id}) as any)
+   expect((await getCampaignProjects('player-011',camp.id)).projects).toHaveLength(0)
+   await expect(commandProject('player-011',camp.id,command('SUBMIT',{projectId:project.projectId,expectedRevision:0}) as any)).rejects.toMatchObject({status:403})
+ })
  it('Objetivo coletivo vira Project apenas por comando explícito',async()=>{
    const campaign=await createTestCampaign('narrator-011')
    const c=await commandCoterie('narrator-011',campaign.id,command('CREATE',{name:'Guardas do porto'}) as any)
