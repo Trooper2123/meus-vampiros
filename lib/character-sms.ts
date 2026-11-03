@@ -125,7 +125,7 @@ export async function setSmsSettings(campaignId: string, actorId: string, enable
   } catch(e) { await client.query('ROLLBACK'); throw e } finally { client.release() }
 }
 
-type CoterieContact = { id: string; name: string }
+type CoterieContact = { id: string; name: string; ownedCharacterIds: string[] }
 
 async function smsCoteriesReady(client: PoolClient) {
   const result = await client.query<{ ready:boolean }>(
@@ -136,7 +136,13 @@ async function smsCoteriesReady(client: PoolClient) {
 async function smsAvailableCoteries(client:PoolClient,campaignId:string,actorId:string,role:Role):Promise<CoterieContact[]> {
   if(!await smsCoteriesReady(client))return []
   const result=await client.query<CoterieContact>(`
-    SELECT co.id,co.name FROM coteries co
+    SELECT co.id,co.name,
+      ARRAY(SELECT cm2.character_id::text FROM coterie_members cm2
+        JOIN characters ch2 ON ch2.id=cm2.character_id
+        WHERE cm2.coterie_id=co.id AND ch2.user_id=$2
+          AND ch2.character_type='PLAYER_VAMPIRE' AND ch2.status='APPROVED'
+          AND cm2.joined_at<=now() AND (cm2.left_at IS NULL OR cm2.left_at>now())) AS "ownedCharacterIds"
+    FROM coteries co
     WHERE co.campaign_id=$1::uuid AND ($3::boolean OR EXISTS (
       SELECT 1 FROM coterie_members cm
       JOIN characters ch ON ch.id=cm.character_id
