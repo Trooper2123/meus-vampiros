@@ -76,3 +76,21 @@
 - [ ] Garantir que as políticas de visibilidade do catálogo NPC sejam refletidas na apresentação dos parceiros, sem expor anotações privadas do Narrador.
 
 **Dependência técnica:** a integração opcional de NPCs exige `campaign_npcs`/`npc_definitions` da migração `20261023_npcs_sheet_narrative.sql`. A nova tabela armazena UUID do vínculo e nome de apresentação; não impõe FK direta sobre a migração opcional no bootstrap. O comando valida a existência do NPC vinculado à mesa antes de persistir sua participação.
+
+## Entrega incremental — Página Projetos da Mesa e Stake do jogador (2026-11-03)
+
+**Autorização de UI confirmada:** referência visual enviada pelo usuário para a **página Projetos**, distinta da página Coterie. O layout foi implementado em `/campaigns/[id]/projects`; o módulo de Coterie continua independente e pendente de aprovação visual específica.
+
+- [x] Página dedicada com a estrutura de navegação da aplicação, tabela com Projeto, Proprietário, Tipo, Progresso, Project Die, Increment, Status e Ações.
+- [x] Filtros por projetos pessoais, da Coterie, com NPCs, status e busca textual.
+- [x] Acesso do Narrador a todos os Projects da mesa; acesso do jogador somente aos seus, aos que envolvem seu personagem e aos de sua Coterie.
+- [x] Criação de projetos pessoais ou da Coterie, envio para aprovação, aprovação mecânica, Launch Roll, Increment e solicitação/execução de Goal Roll.
+- [x] Edição de participantes jogadores no rascunho; seleção de NPCs vinculados à campanha no painel do Narrador.
+- [x] Exibição do Stake reservado; API `/api/campaigns/[id]/projects/stakes?projectId=` lista dots existentes, reservados e disponíveis para cada jogador/Coterie participante.
+- [x] Confirmação do Stake com bloqueio transacional de dupla reserva entre Projects, persistência em `project_stakes` e eventos no ledger da ficha (reserva, perda e liberação).
+- [x] Verificação de que Stake utiliza apenas Backgrounds elegíveis (incluindo nomes ingleses e traduções PT-BR reconhecidas) e não qualquer vantagem da ficha.
+- [ ] Homologar a implementação visual com testes de navegador e revisar acessibilidade, responsividade e integração da seleção de NPCs.
+- [ ] Integrar as reservas de Background às **outras mecânicas fora do módulo Projects** que possam consumir esses mesmos dots. Hoje o bloqueio cobre Projects concorrentes, não toda a aplicação.
+- [ ] Validar a versão atual na CI. A última CI verde anterior não inclui todos os commits desta entrega.
+
+**Arquivos principais:** `components/projects/campaign-projects-panel.tsx`, `app/campaigns/[id]/projects/page.tsx`, `lib/project-stake-options.ts`, `lib/projects-service.ts`, `app/api/campaigns/[id]/projects/stakes/route.ts`, `tests/session11-projects-coterie.test.ts`.
