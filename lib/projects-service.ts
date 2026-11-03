@@ -16,12 +16,12 @@ type ProjectRow={
 }
 type Stake={characterId?:string;coterieId?:string;trait:string;dots:number}
 export type ProjectCommand={
- action:'CREATE'|'UPDATE_DRAFT'|'SUBMIT'|'APPROVE'|'LAUNCH'|'COMMIT_STAKE'|'INCREMENT'|'REQUEST_GOAL'|'RESOLVE_GOAL'|'ABANDON';
+ action:'CREATE'|'UPDATE_DRAFT'|'SET_PARTICIPANTS'|'SUBMIT'|'APPROVE'|'LAUNCH'|'COMMIT_STAKE'|'INCREMENT'|'REQUEST_GOAL'|'RESOLVE_GOAL'|'ABANDON';
  idempotencyKey:string; projectId?:string; ownerCharacterId?:string; coterieId?:string;
  name?:string;description?:string;goalDescription?:string;
  targetTrait?:string;currentDots?:number;finalDots?:number;incrementUnit?:string;incrementValue?:number;
  launchPool?:number;goalPool?:number;rollingCharacterId?:string;stakes?:Stake[];
- expectedRevision?:number;reason?:string
+ participantIds?:string[];expectedRevision?:number;reason?:string
 }
 async function assertOwner(tx:Session11Tx,project:ProjectRow,access:CampaignAccess,actorId:string){
  if(!(await participantAccess(tx,project,actorId,access)))throw new CharacterCommandError(403,'Somente o proprietário, integrantes autorizados ou o Narrador podem modificar este projeto.')
@@ -142,7 +142,7 @@ export async function getCampaignProjects(actorId:string,campaignId:string){
  requireUuid(campaignId,'Mesa inválida.')
  return db.transaction(async tx=>{
    const access=await campaignAccess(tx,actorId,campaignId)
-   const result=await tx.execute(sql`SELECT p.id,p.name,p.description,p.goal_description AS "goalDescription",p.project_type AS "projectType",p.status,p.owner_character_id AS "ownerCharacterId",p.coterie_id AS "coterieId",p.created_by_user_id AS "createdBy",p.target_trait AS "targetTrait",p.target_current_dots AS "currentDots",p.target_final_dots AS "finalDots",p.scope,p.increment_unit AS "incrementUnit",p.increment_value AS "incrementValue",p.project_die AS "projectDie",p.launch_difficulty AS "launchDifficulty",p.goal_roll_requested AS "goalRollRequested",p.revision,p.updated_at AS "updatedAt" FROM character_projects p WHERE p.campaign_id=${campaignId}::uuid AND (${access.is_master} OR p.created_by_user_id=${actorId} OR EXISTS (SELECT 1 FROM characters c WHERE c.id=p.owner_character_id AND c.user_id=${actorId}) OR EXISTS(SELECT 1 FROM coterie_members cm JOIN characters ch ON ch.id=cm.character_id WHERE cm.coterie_id=p.coterie_id AND ch.user_id=${actorId} AND cm.left_at IS NULL)) ORDER BY p.updated_at DESC`)
+   const result=await tx.execute(sql`SELECT p.id,p.name,p.description,p.goal_description AS "goalDescription",p.project_type AS "projectType",p.status,p.owner_character_id AS "ownerCharacterId",p.coterie_id AS "coterieId",p.created_by_user_id AS "createdBy",p.target_trait AS "targetTrait",p.target_current_dots AS "currentDots",p.target_final_dots AS "finalDots",p.scope,p.increment_unit AS "incrementUnit",p.increment_value AS "incrementValue",p.project_die AS "projectDie",p.launch_difficulty AS "launchDifficulty",p.launch_result AS "launchResult",p.launch_pool AS "launchPool",p.goal_roll_requested AS "goalRollRequested",p.revision,p.updated_at AS "updatedAt" FROM character_projects p WHERE p.campaign_id=${campaignId}::uuid AND (${access.is_master} OR p.created_by_user_id=${actorId} OR EXISTS (SELECT 1 FROM characters c WHERE c.id=p.owner_character_id AND c.user_id=${actorId}) OR EXISTS(SELECT 1 FROM coterie_members cm JOIN characters ch ON ch.id=cm.character_id WHERE cm.coterie_id=p.coterie_id AND ch.user_id=${actorId} AND cm.left_at IS NULL)) ORDER BY p.updated_at DESC`)
    const projects=[]
    for(const row of result.rows){
      const id=(row as {id:string}).id
@@ -184,6 +184,21 @@ export async function commandProject(actorId:string,campaignId:string,input:Proj
      if(project.status!=='DRAFT')throw new CharacterCommandError(409,'Somente rascunhos podem ser editados.')
      await tx.execute(sql`UPDATE character_projects SET name=${requireText(input.name,'Nome',140)},description=${optionalText(input.description,'Descrição',2000)},goal_description=${requireText(input.goalDescription,'Objetivo',1000)} WHERE id=${project.id}::uuid`)
      await event(tx,project.id,'UPDATED',actorId,null,null,'Rascunho editado.')
+   }else if(input.action==='SET_PARTICIPANTS'){
+     await assertOwner(tx,project,access,actorId)
+     if(project.status!=='DRAFT')throw new CharacterCommandError(409,'Defina os participantes enquanto o projeto é rascunho.')
+     if(!Array.isArray(input.participantIds)||input.participantIds.length<1||input.participantIds.length>12||new Set(input.participantIds).size!==input.participantIds.length)throw new CharacterCommandError(400,'Lista de participantes inválida.')
+     if(project.project_type==='PERSONAL'&&!input.participantIds.includes(project.owner_character_id!))throw new CharacterCommandError(422,'O proprietário do projeto pessoal precisa participar.')
+     for(const id of input.participantIds){
+       await requireCharacterOfCampaign(tx,campaignId,id)
+       if(project.coterie_id){
+         const membership=await tx.execute<{id:string}>(sql`SELECT id FROM coterie_members WHERE coterie_id=${project.coterie_id}::uuid AND character_id=${id}::uuid AND left_at IS NULL`)
+         if(!membership.rows[0])throw new CharacterCommandError(422,'Um dos participantes não é membro ativo da Coterie.')
+       }
+     }
+     await tx.execute(sql`DELETE FROM project_participants WHERE project_id=${project.id}::uuid`)
+     for(const id of input.participantIds)await tx.execute(sql`INSERT INTO project_participants (project_id,character_id) VALUES (${project.id}::uuid,${id}::uuid)`)
+     await event(tx,project.id,'UPDATED',actorId,null,null,'Participantes do projeto atualizados.',{participantCount:input.participantIds.length})
    }else if(input.action==='SUBMIT'){
      await assertOwner(tx,project,access,actorId)
      if(project.status!=='DRAFT')throw new CharacterCommandError(409,'O projeto não está em rascunho.')
@@ -207,6 +222,9 @@ export async function commandProject(actorId:string,campaignId:string,input:Proj
      if(project.status!=='AWAITING_APPROVAL'||!project.approved_at||!project.scope||!project.launch_pool||project.launch_result && ['WIN','CRITICAL'].includes((project.launch_result as {outcome?:string}).outcome??''))throw new CharacterCommandError(409,'Projeto precisa de aprovação e não pode repetir um lançamento bem-sucedido.')
      const rollingId=input.rollingCharacterId??project.owner_character_id
      if(!rollingId)throw new CharacterCommandError(400,'Escolha um personagem participante para lançar o projeto.')
+     const listed=await tx.execute<{character_id:string}>(sql`SELECT character_id FROM project_participants WHERE project_id=${project.id}::uuid`)
+     const participants=listed.rows.map(row=>row.character_id)
+     if(participants.length>0&&!participants.includes(rollingId))throw new CharacterCommandError(403,'Personagem não participa do Project Launch.')
      const ch=await requireCharacterOfCampaign(tx,campaignId,rollingId)
      if(project.project_type==='COTERIE'){
        const m=await tx.execute<{id:string}>(sql`SELECT id FROM coterie_members WHERE coterie_id=${project.coterie_id}::uuid AND character_id=${rollingId}::uuid AND left_at IS NULL`)
@@ -235,7 +253,19 @@ export async function commandProject(actorId:string,campaignId:string,input:Proj
      requireMaster(access)
      const launch=project.launch_result as {outcome?:string;stakeRequired?:number}|null
      if(project.status!=='AWAITING_APPROVAL'||launch?.outcome!=='WIN'||!Number.isSafeInteger(launch.stakeRequired))throw new CharacterCommandError(409,'Não há Launch Roll bem-sucedido aguardando Stake.')
-     await commitStakes(tx,project,input.stakes??[],launch.stakeRequired!)
+     const people=await tx.execute<{character_id:string}>(sql`SELECT character_id FROM project_participants WHERE project_id=${project.id}::uuid`)
+     const participantIds=people.rows.map(row=>row.character_id)
+     const stakes=input.stakes??[]
+     for(const stake of stakes){
+       if(stake.characterId&&participantIds.length>0&&!participantIds.includes(stake.characterId))throw new CharacterCommandError(403,'Stake associado a personagem que não participa do projeto.')
+     }
+     const allShared=stakes.length>0&&stakes.every(stake=>Boolean(stake.coterieId))
+     const required=allShared?launch.stakeRequired!:Math.max(launch.stakeRequired!,participantIds.length)
+     if(participantIds.length>1&&!allShared){
+       const contributing=new Set(stakes.filter(stake=>stake.characterId&&stake.dots>=1).map(stake=>stake.characterId))
+       if(!participantIds.every(id=>contributing.has(id)))throw new CharacterCommandError(422,'Cada participante cooperante deve comprometer pelo menos um dot ou utilizar apenas Stake compartilhado da Coterie.')
+     }
+     await commitStakes(tx,project,stakes,required)
      await tx.execute(sql`UPDATE character_projects SET status='ACTIVE',project_die=10,launched_at=now() WHERE id=${project.id}::uuid`)
      await event(tx,project.id,'LAUNCHED',actorId,null,10,reason||'Stake confirmado e projeto iniciado.',{requiredStake:launch.stakeRequired})
    }else if(input.action==='INCREMENT'){
