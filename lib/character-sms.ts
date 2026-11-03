@@ -185,7 +185,7 @@ export async function smsMessages(campaignId:string,actorId:string,threadId:stri
   await ensureSmsSchema()
   const client=await pool!.connect()
   try{
-    const {a,thread}=await threadAndAccess(client,campaignId,actorId,threadId)
+    const {a,thread}=await threadAndAccess(client,campaignId,actorId,threadId,true)
     if(cursor && !smsUuid(cursor)) fail(400,'Cursor inválido.')
     const rows=await client.query(`SELECT m.id,m.body,m.sender_character_id AS "senderCharacterId",
       c.name AS "senderName",m.created_at AS "createdAt",
