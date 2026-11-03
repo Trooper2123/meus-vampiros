@@ -106,8 +106,8 @@ describe('SPEC-SESSION-011: domínio persistente em PostgreSQL isolado',()=>{
   const launch=async(name:string)=>{
    const p=await commandProject('player-011',camp.id,command('CREATE',{ownerCharacterId:ch.id,name,goalDescription:'Aumentar contatos'}) as any)
    await commandProject('player-011',camp.id,command('SUBMIT',{projectId:p.projectId,expectedRevision:0}) as any)
-   await commandProject('narrator-011',camp.id,command('APPROVE',{projectId:p.projectId,expectedRevision:1,targetTrait:'Contacts',currentDots:0,finalDots:1,incrementUnit:'MONTH',incrementValue:1,launchPool:3}) as any)
-   const roll=await commandProject('narrator-011',camp.id,command('LAUNCH',{projectId:p.projectId,expectedRevision:2,rollingCharacterId:ch.id}) as any,{rollD10:()=>[6,6,6]})
+   await commandProject('narrator-011',camp.id,command('APPROVE',{projectId:p.projectId,expectedRevision:1,targetTrait:'Contacts',currentDots:0,finalDots:1,incrementUnit:'MONTH',incrementValue:1,launchPool:4}) as any)
+   const roll=await commandProject('narrator-011',camp.id,command('LAUNCH',{projectId:p.projectId,expectedRevision:2,rollingCharacterId:ch.id}) as any,{rollD10:()=>[6,6,6,6]})
    expect(roll.launchResult).toMatchObject({outcome:'WIN',stakeRequired:1})
    return p.projectId
   }
