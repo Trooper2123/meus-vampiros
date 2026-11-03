@@ -3,7 +3,7 @@ import {CreateCharacterButton} from '@/components/character-creation-dialog'
 import Link from 'next/link'
 import {redirect} from 'next/navigation'
 import {getSessionOrDev} from '@/lib/auth0'
-import {ArrowRight, BookOpen, Plus, Skull, Clock3, Pencil, UserRound, CalendarDays} from 'lucide-react'
+import {ArrowRight, BookOpen, Plus, Skull, Clock3, Pencil, UserRound, CalendarDays, Layers3} from 'lucide-react'
 import {getCharactersForUser} from '@/lib/characters'
 import {getPlayerUpcomingEncounters} from '@/lib/player-upcoming-encounters'
 import {CharacterFilterDashboard, CharacterFilterGroup, CharacterFilterCard} from '@/components/characters/character-filter-dashboard'
@@ -157,6 +157,7 @@ export default async function PersonagensPage() {
                                                 <dd className="mt-1">{character.spentXp ?? '0'} / {character.totalXp ?? '0'}</dd>
                                             </div>
                                         </dl>
+                                        {character.campaignId && character.characterType === 'PLAYER_VAMPIRE' && character.status !== 'ARCHIVED' && <Link href={`/campaigns/player/${character.campaignId}`} className="characters-access-campaign" aria-label={`Acessar a mesa ${character.campaignName ?? ''} como jogador`}><Layers3 className="size-4" aria-hidden="true"/><span>Acessar mesa</span><ArrowRight className="size-4" aria-hidden="true"/></Link>}
                                         <div className="archive-card-actions characters-ui-actions">
                                             {character.characterType === 'PLAYER_VAMPIRE' &&
                                                 <GetResumeCharacterButton characterId={character.id}/>}
