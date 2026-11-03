@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import useSWR from 'swr'
-import { BookOpen, CalendarClock, Check, ChevronDown, CircleAlert, Clock3, Dices, FolderKanban, Handshake, Layers, LockKeyhole, MoreVertical, Plus, Search, ShieldCheck, Target, Users, X } from 'lucide-react'
+import { CalendarClock, ChevronDown, CircleAlert, Dices, FolderKanban, Handshake, Layers, LockKeyhole, MoreVertical, Plus, Search, ShieldCheck, Target, Users, X } from 'lucide-react'
 
 type CharacterOption={id:string;name:string}
 type StakeOption={ownerType:'CHARACTER'|'COTERIE';ownerId:string;ownerName:string;trait:string;dots:number;reserved:number;available:number}
@@ -20,7 +20,7 @@ type Project={
  stakes:{characterId:string|null;coterieId:string|null;trait:string;dots:number;releasedAt:string|null}[]
  events:{type:string;description:string;createdAt:string}[]
 }
-type Data={projects:Project[];characters:CharacterOption[];coteries:CharacterOption[];canManage:boolean;archived:boolean}
+type Data={projects:Project[];characters:CharacterOption[];roster:CharacterOption[];coteries:CharacterOption[];canManage:boolean;archived:boolean}
 const statuses:Record<Project['status'],string>={DRAFT:'Rascunho',AWAITING_APPROVAL:'Aguardando aprovação',ACTIVE:'Ativo',SUCCESS:'Concluído',FAILED:'Falhou',ABANDONED:'Abandonado'}
 const statusStyle:Record<Project['status'],string>={
  DRAFT:'border-white/20 bg-white/5 text-muted-foreground',
@@ -163,6 +163,19 @@ export function CampaignProjectsPanel({campaignId}:Readonly<{campaignId:string}>
    </div>
    <div className="text-sm"><p className="font-semibold"><Users className="mr-2 inline size-4"/>Participantes</p><p className="mt-1 text-muted-foreground">{selected.participants.map(p=>p.name).concat(selected.npcParticipants.map(p=>p.name+' (NPC)')).join(', ')||'Nenhum participante definido.'}</p></div>
    {selected.stakes.length>0&&<div className="rounded-lg border border-border/70 p-3"><h4 className="font-semibold">Pontos em Stake</h4><ul className="mt-2 space-y-1 text-xs">{selected.stakes.map((s,i)=><li key={i}>{s.trait} · {s.dots} ponto(s) · {s.characterId?'Personagem':'Coterie'} · {s.releasedAt?'Liberado':'Reservado'}</li>)}</ul><p className="mt-2 text-xs text-muted-foreground"><LockKeyhole className="mr-1 inline size-3"/>Pontos reservados não podem ser comprometidos em outro Project. Perdas definitivas dependem da resolução de regras.</p></div>}
+   {selected.status==='DRAFT'&&isCreator(selected)&&<div className="rounded-lg border border-border p-4">
+    <h4 className="mb-3 font-semibold">Personagens em parceria</h4>
+    <p className="mb-3 text-xs text-muted-foreground">Selecione os personagens envolvidos antes de enviar ou lançar o projeto. A presença na lista permite acompanhar a evolução; não transfere a propriedade.</p>
+    <div className="grid max-h-44 grid-cols-1 gap-2 overflow-y-auto sm:grid-cols-2">
+     {(data?.roster??[]).map(person=><label key={person.id} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={(draft.participants??selected.participants.map(p=>p.characterId).join(',')).split(',').includes(person.id)} disabled={busy||selected.projectType==='PERSONAL'&&person.id===selected.ownerCharacterId} onChange={e=>{
+      const values=(draft.participants??selected.participants.map(p=>p.characterId).join(',')).split(',').filter(Boolean)
+      const next=e.target.checked?[...values,person.id]:values.filter(id=>id!==person.id)
+      setDraft(d=>({...d,participants:[...new Set(next)].join(',')}))
+     }}/>{person.name}</label>)}
+    </div>
+    <button type="button" className="button-ghost mt-3" disabled={busy} onClick={()=>void command('SET_PARTICIPANTS',selected,{participantIds:(draft.participants??selected.participants.map(p=>p.characterId).join(',')).split(',').filter(Boolean)})}>Salvar participantes</button>
+    {data?.canManage&&<p className="mt-2 text-xs text-muted-foreground">Parceiros NPC devem ser vinculados pelo Narrador a NPCs cadastrados nesta mesa; a integração visual de seleção de NPCs será adicionada à edição avançada.</p>}
+   </div>}
    {selected.status==='DRAFT'&&isCreator(selected)&&<div className="flex flex-wrap gap-2">
     <button className="button-primary" type="button" disabled={busy} onClick={()=>void command('SUBMIT',selected)}><ShieldCheck className="size-4"/>Enviar para aprovação</button>
    </div>}
@@ -179,7 +192,7 @@ export function CampaignProjectsPanel({campaignId}:Readonly<{campaignId:string}>
     {stakeOptions&&<div className="space-y-2">{stakeOptions.map(o=>{
       const key=o.ownerType+':'+o.ownerId+':'+o.trait;const chosen=stakeChoices.find(row=>row.key===key)?.dots??0
       return <label key={key} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-background/50 p-2 text-sm"><span>{o.ownerName} · {o.trait} <span className="text-xs text-muted-foreground">({o.dots} totais, {o.reserved} reservados, {o.available} disponíveis)</span></span><input className="input w-20" type="number" min={0} max={o.available} step={1} aria-label={'Pontos de '+o.trait+' de '+o.ownerName} value={chosen} onChange={e=>setStakeChoices(rows=>[...rows.filter(row=>row.key!==key),{key,dots:Math.max(0,Math.min(o.available,Number(e.target.value)||0))}])}/></label>
-    })}<p className="text-sm">Selecionados: <strong>{totalStake}</strong> / {required} pontos mínimos do lançamento. Para projetos cooperativos, podem existir exigências adicionais de participação.</p><button className="button-primary" type="button" disabled={busy||!selectedChoices.length||totalStake<required} onClick={()=>void command('COMMIT_STAKE',selected,{stakes:selectedChoices})}><LockKeyhole className="size-4"/>Reservar Stake e iniciar Project</button></div>}
+    })}<p className="text-sm">Selecionados: <strong>{totalStake}</strong> / {required} pontos mínimos do lançamento. Para projetos cooperativos, podem existir exigências adicionais de participação.</p><button className="button-primary" type="button" disabled={busy||!selectedChoices.length||totalStake!==required} onClick={()=>void command('COMMIT_STAKE',selected,{stakes:selectedChoices})}><LockKeyhole className="size-4"/>Reservar Stake e iniciar Project</button></div>}
    </div>}
    {selected.status==='ACTIVE'&&<div className="flex flex-wrap gap-2">
     {data?.canManage&&<button className="button-ghost" type="button" disabled={busy} onClick={()=>void command('INCREMENT',selected,{reason:'Increment ficcional realizado'})}><CalendarClock className="size-4"/>Registrar Increment</button>}
