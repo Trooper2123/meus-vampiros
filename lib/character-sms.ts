@@ -244,6 +244,7 @@ export async function smsSend(campaignId:string,actorId:string,threadId:string,i
     if(!a.enabled) fail(409,'SMS_DISABLED')
     const sender=await character(client,campaignId,senderId)
     if(!canActAs(sender,a.role,actorId)) fail(403,'Você não pode enviar como este personagem.')
+    if(a.role==='player' && sender.id!==thread.character_a_id && sender.id!==thread.character_b_id) fail(403,'O personagem não participa desta conversa.')
     // A narrator may speak as an NPC or third character; only the two original thread
     // participants and the character whose voice was used receive this specific message.
     const exists=await client.query<{id:string;body:string;thread_id:string;sender_character_id:string}>(
