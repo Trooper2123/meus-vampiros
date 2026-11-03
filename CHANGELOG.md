@@ -14,6 +14,14 @@
 - **UI não implementada:** conforme SPEC §25, primeiro apresentar mockup para aprovação; backend e estrutura de dados não constituem implementação integral.
 - Pendências: integrar reserva de Stakes a todos os outros usos de Backgrounds, fontes suplementares do catálogo, XP/consequências narrativas avançadas, adversários NPC/FACTION, automação temporal, teste real de build/DB e revisão de segurança.
 
+## [2026-11-03 — validação da SPEC-SESSION-011] - test - CI focada aprovada
+
+**Arquivos principais:** `lib/projects-service.ts`, `lib/session11-common.ts`, `lib/coterie-service.ts`, `tests/session11-projects-coterie.test.ts`, `docs/implementation/session-011-projects-coterie-status.md`.
+
+- Correções de controle de acesso: ex-membro não consulta Projects coletivos, participantes pessoais autorizados acompanham seus projetos, mesa arquivada permite leitura sem permitir mutações e IDs Auth0 não são expostos na listagem de Projects.
+- GitHub Actions run `41670212248`: TypeScript, lint focado, 12 testes (2 arquivos), build de produção e auditoria de dependências de produção **aprovados**; auditoria reportou zero vulnerabilidades de produção.
+- A interface permanece **bloqueada por aprovação visual** prevista na SPEC §25. Integração de Stake nos módulos externos, regras narrativas especiais e QA manual ainda pendentes; PR #61 permanece draft.
+
 ## [2026-11-02 04:22 BRT] - fix - Atualizar teste da listagem de campanhas
 
 **Arquivos principais:** `tests/session-notes-ui.test.tsx`.
