@@ -39,6 +39,8 @@ export function PlayerCampaignPortal({campaign,actorId}:Readonly<{campaign:Playe
   const {data:eventsData,error:eventsError}=useSWR<{events:CampaignEvent[]}>(`/api/campaign-events?campaignId=${campaign.id}`,fetcher,{refreshInterval:60000})
   const {data:notesData}=useSWR<{notes:NotePreview[]}>(`/api/notes?page=1&campaignId=${campaign.id}`,fetcher,{refreshInterval:30000})
   const {data:sessionData}=useSWR<SessionResponse>(`/api/campaigns/${campaign.id}/sessions`,fetcher,{refreshInterval:10000})
+  const {data:smsInbox}=useSWR<{enabled:boolean;threads:Array<{unreadCount:number}>}>(`/api/campaigns/${campaign.id}/character-sms?view=player`,fetcher,{refreshInterval:10000})
+  const smsUnread=smsInbox?.enabled?smsInbox.threads.reduce((sum,thread)=>sum+Number(thread.unreadCount??0),0):0
   const active = sessionData?.session?.status === 'ACTIVE'
   const files = filesData?.files ?? []
   const events = (eventsData?.events ?? []).filter(e=>e.visibility==='everyone')
@@ -52,7 +54,7 @@ export function PlayerCampaignPortal({campaign,actorId}:Readonly<{campaign:Playe
     {id:'calendar' as const,label:'Calendário',Icon:CalendarDays},
     {id:'coterie' as const,label:'Coterie',Icon:Users},
     {id:'projects' as const,label:'Projetos',Icon:FolderKanban},
-    {id:'messages' as const,label:'Mensagens',Icon:MessageSquareText},
+    {id:'messages' as const,label:smsUnread>0?`Mensagens (${smsUnread})`:'Mensagens',Icon:MessageSquareText},
   ]
   return <div className="player-portal-workspace">
     <div className="player-portal-campaign-banner">
