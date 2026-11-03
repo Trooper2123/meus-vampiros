@@ -328,6 +328,10 @@ export async function smsSend(campaignId:string,actorId:string,threadId:string,i
       await client.query('COMMIT')
       return {id:old.id,replayed:true}
     }
+    const quota=await client.query<{count:number}>(`SELECT count(*)::int AS count FROM character_messages
+      WHERE campaign_id=$1::uuid AND created_by_actor_id=$2
+        AND created_at>now()-interval '1 minute'`,[campaignId,actorId])
+    if((quota.rows[0]?.count??0)>=30)fail(429,'Limite de 30 mensagens por minuto atingido.')
     const insert=await client.query<{id:string}>(`INSERT INTO character_messages
       (campaign_id,thread_id,sender_character_id,created_by_actor_id,impersonated_by_narrator,body,idempotency_key)
       VALUES($1::uuid,$2::uuid,$3::uuid,$4,$5,$6,$7::uuid) RETURNING id`,
