@@ -23,8 +23,8 @@ export type ProjectCommand={
  launchPool?:number;goalPool?:number;rollingCharacterId?:string;stakes?:Stake[];
  expectedRevision?:number;reason?:string
 }
-function assertOwner(project:ProjectRow,access:CampaignAccess,actorId:string){
- if(!access.is_master&&project.created_by_user_id!==actorId)throw new CharacterCommandError(403,'Somente quem propôs ou o Narrador pode modificar este projeto.')
+async function assertOwner(tx:Session11Tx,project:ProjectRow,access:CampaignAccess,actorId:string){
+ if(!(await participantAccess(tx,project,actorId,access)))throw new CharacterCommandError(403,'Somente o proprietário, integrantes autorizados ou o Narrador podem modificar este projeto.')
 }
 async function requireProject(tx:Session11Tx,campaignId:string,id:string){
  requireUuid(id,'Projeto inválido.')
@@ -179,12 +179,12 @@ export async function commandProject(actorId:string,campaignId:string,input:Proj
    expectRevision(project,input.expectedRevision)
    const reason=optionalText(input.reason,'Justificativa',1000)
    if(input.action==='UPDATE_DRAFT'){
-     assertOwner(project,access,actorId)
+     await assertOwner(tx,project,access,actorId)
      if(project.status!=='DRAFT')throw new CharacterCommandError(409,'Somente rascunhos podem ser editados.')
      await tx.execute(sql`UPDATE character_projects SET name=${requireText(input.name,'Nome',140)},description=${optionalText(input.description,'Descrição',2000)},goal_description=${requireText(input.goalDescription,'Objetivo',1000)} WHERE id=${project.id}::uuid`)
      await event(tx,project.id,'UPDATED',actorId,null,null,'Rascunho editado.')
    }else if(input.action==='SUBMIT'){
-     assertOwner(project,access,actorId)
+     await assertOwner(tx,project,access,actorId)
      if(project.status!=='DRAFT')throw new CharacterCommandError(409,'O projeto não está em rascunho.')
      await tx.execute(sql`UPDATE character_projects SET status='AWAITING_APPROVAL' WHERE id=${project.id}::uuid`)
      await event(tx,project.id,'SUBMITTED',actorId,null,null,'Enviado para aprovação do Narrador.')
@@ -271,7 +271,7 @@ export async function commandProject(actorId:string,campaignId:string,input:Proj
      const result=resolveProjectGoal(dice,pool,project.project_die,Math.min(hunger,pool))
      if(result.won){
        const next=project.project_die-result.projectDieDamage
-       if(next<1)await finalize(tx,project.id,'SUCCESS')
+       if(next<1){await finalize(tx,project.id,'SUCCESS');await tx.execute(sql`UPDATE character_projects SET project_die=NULL WHERE id=${project.id}::uuid`)}
        else await tx.execute(sql`UPDATE character_projects SET project_die=${next},goal_roll_requested=false WHERE id=${project.id}::uuid`)
        await event(tx,project.id,next<1?'COMPLETED':'GOAL_ROLL',actorId,project.project_die,next<1?null:next,reason||'Goal Roll bem-sucedido.',result)
      }else{
@@ -288,7 +288,7 @@ export async function commandProject(actorId:string,campaignId:string,input:Proj
      await changeRevision(tx,project.id)
      return {ok:true,projectId:project.id,goalResult:result,revision:project.revision+1}
    }else if(input.action==='ABANDON'){
-     assertOwner(project,access,actorId)
+     await assertOwner(tx,project,access,actorId)
      if(['SUCCESS','FAILED','ABANDONED'].includes(project.status))throw new CharacterCommandError(409,'Projeto já encerrado.')
      await finalize(tx,project.id,'ABANDONED')
      await event(tx,project.id,'ABANDONED',actorId,project.project_die,project.project_die,reason||'Projeto abandonado.')
