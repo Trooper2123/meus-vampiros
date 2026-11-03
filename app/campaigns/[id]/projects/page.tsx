@@ -17,7 +17,7 @@ export default async function CampaignProjectsPage({params}:Readonly<{params:Pro
  const campaign=masterCampaign??await getPlayerCampaign(auth.user.sub,id)
  if(!campaign)notFound()
  try {await getCampaignProjects(auth.user.sub,id)}catch{notFound()}
- const root=masterCampaign?'/campaigns/'+id:'/campaigns/'+id+'/player'
+ const root=masterCampaign?'/campaigns/'+id:'/campaigns/player/'+id
  return <main className="campaign-detail-ui campaign-management-approved relative min-h-screen overflow-hidden bg-background text-foreground">
   <div className="noise" aria-hidden="true"/>
   <div className="archive-content campaign-detail-ui-content campaign-management-content">
