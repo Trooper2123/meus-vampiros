@@ -2999,3 +2999,7 @@ main > .archive-header {
 .sms-toggle.active .sms-toggle-track>span{transform:translateX(19px)}
 .sms-toggle:disabled{opacity:.6;cursor:not-allowed}
 @media(max-width:900px){.sms-layout{grid-template-columns:1fr}.sms-inbox{max-height:220px;overflow:auto}}
+
+.sms-reply-as{display:flex;flex-direction:column;gap:5px;min-width:125px;max-width:190px;color:#c5aba5;font-size:11px}
+.sms-reply-as select{min-width:0;width:100%;border:1px solid #815056;border-radius:6px;background:#1f1014;padding:9px;color:#f7e6e0;font-size:12px}
+@media(max-width:640px){.sms-write{flex-wrap:wrap}.sms-reply-as{max-width:none;flex:1 1 100%}.sms-write textarea{flex:1 1 100%}}
