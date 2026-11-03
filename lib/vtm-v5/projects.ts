@@ -37,7 +37,7 @@ export function resolveProjectGoal(dice:DiceProvider,playerPool:number,oppositio
     playerDice,oppositionDice,playerSuccesses,oppositionSuccesses:opposition.successes,
     opponentCriticalPairs:opposition.pairs,margin,won,
     projectDieDamage:won?margin:0,
-    stakeDamage:won?0:Math.max(1,-margin),
+    stakeDamage:won?0:Math.max(0,-margin),
     hungerDice:playerDice.slice(playerPool-hunger),
     normalDice:playerDice.slice(0,playerPool-hunger),
   }
