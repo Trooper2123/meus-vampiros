@@ -2,7 +2,7 @@
 
 **Branch:** `feat/session-011-projects-coterie` (criada diretamente de `develop`)  
 **Data de início:** 2026-11-03  
-**Status:** `in_progress` / backend validado por CI focada, UI ainda não aprovada
+**Status:** `in_progress` / interface de Projetos e Coterie incorporada como abas do hub; validação atual pendente
 
 ## Estratégia de persistência e validação
 
@@ -122,3 +122,18 @@
 - [ ] Melhorias posteriores: edição/baixa de favores e dívidas, exclusão de registros com histórico, seleção catalogada amigável de vantagens e gestão de recursos considerando reservas de Stake em toda a aplicação.
 
 **Arquivos:** `app/campaigns/[id]/coterie/page.tsx`, `components/coterie/campaign-coterie-panel.tsx`, `lib/coterie-service.ts`, `tests/session11-projects-coterie.test.ts`.
+
+## Revisão de navegação — Coterie e Projetos como abas do hub (2026-11-03)
+
+A orientação mais recente do usuário substitui o requisito anterior de páginas independentes: **Projetos e Coterie são abas distintas do hub da mesa**. A divisão entre módulos permanece funcional, mas não exige saída do portal.
+
+- [x] Narrador: `/campaigns/[id]?view=projects` monta `CampaignProjectsPanel`; `?view=coterie` monta `CampaignCoteriePanel`. Links da sidebar usam `viewHref` e permanecem no mesmo hub.
+- [x] Jogador: as tabs de `PlayerCampaignPortal` passam a renderizar `PlayerProjectsPanel` e `CampaignCoteriePanel` diretamente, preservando o banner, tabs e contexto de mesa.
+- [x] Deep links do jogador `/campaigns/player/[id]?tab=projects|coterie` abrem a tab correta após validação do parâmetro.
+- [x] Links internos da Coterie abrem o painel de Projetos como aba, com troca de estado no portal do jogador ou navegação por query no hub do Narrador.
+- [x] URLs legadas `/campaigns/[id]/projects` e `/campaigns/[id]/coterie` redirecionam para o hub do perfil apropriado após autenticação e verificação de acesso.
+- [x] Nenhuma alteração na API, mecânica de Stake, catálogo, identidade visual ou permissões; a refatoração é de composição/navegação.
+- [ ] Validar compilação, lint, testes de integração e build por CI nesta revisão.
+- [ ] Verificar em navegador a alternância de abas nas visões Narrador e Jogador, inclusive campanha arquivada, tela estreita e links legados.
+
+**Nota de histórico:** os parágrafos anteriores que solicitam páginas independentes refletem versões superadas da SPEC. A decisão deste registro é a vigente.
