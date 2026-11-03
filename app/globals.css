@@ -2940,3 +2940,11 @@ main > .archive-header {
 @media(max-width:1150px){.player-portal-overview{grid-template-columns:1fr}.player-portal-campaign-banner{flex-wrap:wrap}.player-portal-banner-actions{justify-content:flex-start;max-width:none}}
 @media(max-width:760px){.player-campaign-list-card{grid-template-columns:75px minmax(0,1fr)}.player-campaign-card-art{height:90px}.player-campaign-list-card>.button-primary{grid-column:1/-1}.player-portal-cover-art{width:85px;height:85px}.player-portal-tabs{overflow-x:auto;flex-wrap:nowrap}.player-portal-tabs button{flex:none;padding:11px 13px}.player-portal-see-all{position:static;display:block;margin-bottom:8px}}
 @media(max-width:480px){.player-portal-campaign-banner{gap:12px}.player-portal-banner-info{flex-basis:100%}.player-portal-banner-actions{width:100%}.player-portal-card{padding:15px}}
+
+/* Hub do jogador: abas reservadas para Coterie e Projects (SPEC-SESSION-011). */
+.player-portal-module-pending{display:flex;min-height:240px;flex-direction:column;align-items:center;justify-content:center;gap:13px;border:1px dashed #713b3c;border-radius:8px;background:linear-gradient(145deg,#210e13,#12090b);padding:30px;text-align:center}
+.player-portal-module-pending>svg{color:#dc4550}
+.player-portal-module-pending h3{font-family:var(--font-serif),Georgia,serif;font-size:24px;color:#f1ddd8}
+.player-portal-module-pending p{max-width:620px;color:#c7a9a4;font-size:13px;line-height:1.7}
+.player-portal-tabs{row-gap:6px}
+@media(max-width:760px){.player-portal-tabs{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:thin}}
