@@ -3,7 +3,7 @@ import { db } from './db'
 import { CharacterCommandError } from './character-commands'
 import { campaignAccess,dots,optionalText,requireCharacterOfCampaign,requireText,requireUuid,runCampaignCommand,type Session11Tx,type CampaignAccess } from './session11-common'
 import { advanceProjectDie,launchDifficulty,projectScope,resolveProjectGoal,resolveProjectLaunch } from './vtm-v5/projects'
-import { stakeOptionsForProject } from './project-stake-options'
+import { backgroundCode, stakeOptionsForProject } from './project-stake-options'
 import { serverDiceProvider,type DiceProvider } from './vtm-v5/dice-provider'
 
 type ProjectStatus='DRAFT'|'AWAITING_APPROVAL'|'ACTIVE'|'SUCCESS'|'FAILED'|'ABANDONED'
@@ -63,7 +63,8 @@ async function participantAccess(tx:Session11Tx,project:ProjectRow,actorId:strin
 }
 function requireMaster(access:CampaignAccess){if(!access.is_master)throw new CharacterCommandError(403,'Ação exclusiva do Narrador da mesa.')}
 async function availableStake(tx:Session11Tx,project:ProjectRow,item:Stake){
- const trait=requireText(item.trait,'Background',80).toUpperCase()
+ const trait=backgroundCode(requireText(item.trait,'Background',80))
+ if(!trait)throw new CharacterCommandError(422,'Apenas pontos de Background podem ser comprometidos como Stake.')
  const amount=dots(item.dots,'Pontos comprometidos',1)
  const hasCharacter=typeof item.characterId==='string',hasCoterie=typeof item.coterieId==='string'
  if(hasCharacter===hasCoterie)throw new CharacterCommandError(400,'Stake precisa pertencer a um personagem ou à Coterie.')
@@ -114,7 +115,7 @@ async function applyStakeLoss(tx:Session11Tx,project:ProjectRow,loss:number){
      const revised=list.map(item=>{
        if(remainingDots<=0||!item||typeof item!=='object'||Array.isArray(item))return item
        const v=item as {name?:string;level?:number;dots?:number;pontos?:number}
-       if(v.name?.toUpperCase()!==stake.trait.toUpperCase())return item
+       if(!v.name||backgroundCode(v.name)!==stake.trait.toUpperCase())return item
        const points=Number(v.level??v.dots??v.pontos??0)
        const debit=Math.min(points,remainingDots);remainingDots-=debit
        return 'level' in v?{...v,level:points-debit}:'dots' in v?{...v,dots:points-debit}:{...v,pontos:points-debit}
