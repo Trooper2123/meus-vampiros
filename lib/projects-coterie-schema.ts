@@ -144,7 +144,7 @@ CREATE TABLE IF NOT EXISTS project_stakes (
   character_id UUID REFERENCES characters(id) ON DELETE RESTRICT,
   coterie_id UUID REFERENCES coteries(id) ON DELETE RESTRICT,
   trait TEXT NOT NULL,
-  dots INT NOT NULL CHECK(dots BETWEEN 1 AND 5),
+  dots INT NOT NULL CHECK(dots BETWEEN 0 AND 5),
   available BOOLEAN NOT NULL DEFAULT false,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   released_at TIMESTAMPTZ,
