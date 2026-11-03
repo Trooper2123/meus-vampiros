@@ -70,7 +70,7 @@ export default async function CampaignDetailPage({ params, searchParams }: Reado
               <Link className={view === 'xp' ? 'is-active' : ''} href={viewHref('xp')}><ScrollText/>XP e Evolução</Link>
               <Link className={view === 'possessions' ? 'is-active' : ''} href={viewHref('possessions')}><PackageOpen/>Itens Restritos</Link>
               <Link className={view === 'limits' ? 'is-active' : ''} href={viewHref('limits')}><Shield/>Limites</Link>
-              <Link className={view === 'projects' ? 'is-active' : ''} href={viewHref('projects')}><FolderKanban/>Projetos</Link>
+              <Link className={view === 'projects' ? 'is-active' : ''} href={'/campaigns/'+campaign.id+'/projects'}><FolderKanban/>Projetos</Link>
               <Link className={view === 'coterie' ? 'is-active' : ''} href={viewHref('coterie')}><Users/>Cotterie</Link>
               <Link className={view === 'messages' ? 'is-active' : ''} href={viewHref('messages')}><MessagesSquare/>Mensagens da Mesa</Link>
               <Link className={view === 'notes' ? 'is-active' : ''} href={viewHref('notes')}><NotebookPen/>Anotações</Link>
