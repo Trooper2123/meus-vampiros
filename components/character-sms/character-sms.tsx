@@ -31,6 +31,9 @@ export function CharacterSms({campaignId,mode='player'}:Readonly<{campaignId:str
   const [newKind,setNewKind]=useState<'DIRECT'|'COTERIE'>('DIRECT')
   const [coterieId,setCoterieId]=useState('')
   const [body,setBody]=useState('')
+  const [older,setOlder]=useState<Message[]>([])
+  const [hasMore,setHasMore]=useState(true)
+  const [loadingOlder,setLoadingOlder]=useState(false)
   const [busy,setBusy]=useState(false)
   const [error,setError]=useState('')
   const {data:inbox,error:inboxError,mutate:refreshInbox}=useSWR<Inbox>(inboxUrl,get,{refreshInterval:10000})
@@ -48,8 +51,10 @@ export function CharacterSms({campaignId,mode='player'}:Readonly<{campaignId:str
   const replySenders=isNarrator?senders:senders.filter(c=>history?.thread && (history.thread.kind==='COTERIE' ? coteries.find(co=>co.id===history.thread.coterieId)?.ownedCharacterIds.includes(c.id) : [history.thread.characterAId,history.thread.characterBId].includes(c.id)))
   const replySender=replySenders.some(c=>c.id===senderId)?senderId:(replySenders[0]?.id??'')
   const count=useMemo(()=>inbox?.threads.reduce((sum,t)=>sum+Number(t.unreadCount??0),0)??0,[inbox])
-  const messages=history?.messages??[]
-  const latestMessageId=messages.at(-1)?.id
+  const messages=[...new Map([...older,...(history?.messages??[])].map(message=>[message.id,message])).values()]
+  const latestMessageId=history?.messages.at(-1)?.id
+
+  useEffect(()=>{setOlder([]);setHasMore(true)},[threadId])
 
   useEffect(()=>{
     if(!threadId||!latestMessageId||!inbox?.enabled)return
@@ -72,6 +77,18 @@ export function CharacterSms({campaignId,mode='player'}:Readonly<{campaignId:str
       setThreadId(data.id);setBody('')
       await refreshInbox()
     }catch(e){setError(displayError(e))}finally{setBusy(false)}
+  }
+
+  async function loadOlder(){
+    if(!threadId||loadingOlder||!hasMore||!history?.messages.length)return
+    const cursor=older[0]?.id??history.messages[0].id
+    setLoadingOlder(true);setError('')
+    try{
+      const url=threadUrl(threadId)+(viewSuffix?'&':'?')+'cursor='+encodeURIComponent(cursor)
+      const page=await get(url) as History
+      setOlder(previous=>[...page.messages,...previous])
+      setHasMore(page.messages.length===50)
+    }catch(e){setError(displayError(e))}finally{setLoadingOlder(false)}
   }
 
   async function send(){
@@ -115,6 +132,7 @@ export function CharacterSms({campaignId,mode='player'}:Readonly<{campaignId:str
           {historyError&&<p role="alert" className="sms-error">{displayError(historyError)}</p>}
           {!history&&!historyError&&<p className="sms-muted">Carregando conversa...</p>}
           <div className="sms-messages" role="log" aria-live="polite">
+            {hasMore&&history?.messages.length===50&&<button type="button" className="sms-load-older" disabled={loadingOlder} onClick={()=>void loadOlder()}>{loadingOlder?'Carregando...':'Carregar mensagens anteriores'}</button>}
             {history&&messages.length===0&&<p className="sms-muted">Envie a primeira mensagem.</p>}
             {messages.map(m=><article key={m.id} className={m.senderCharacterId===replySender?'sms-bubble mine':'sms-bubble'}><strong>{m.senderName}</strong><p>{m.body}</p><small>{new Date(m.createdAt).toLocaleString('pt-BR')}{isNarrator&&m.narratorOperated?' · Enviado pelo Narrador':''}</small></article>)}
           </div>
