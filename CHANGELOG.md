@@ -1,3 +1,13 @@
+## [2026-11-03] - feat - Projetos na visão do jogador
+
+**Branch:** `feat/session-011-projects-coterie`.
+
+- Novo painel `PlayerProjectsPanel` utilizado somente na área do jogador, na mesma rota exclusiva de Projects, sem reutilizar a tabela administrativa do Narrador.
+- Cards e filtros correspondentes à referência do usuário: Todos, Meus, Em parceria, Da Coterie, status, progresso e Project Die.
+- Classificação dos projetos por vínculo real com personagem e Coterie calculada no backend; nenhuma visibilidade nova é concedida só por um filtro do navegador.
+- Jogador cria, edita e submete rascunhos próprios, acompanha seus Projects e solicita Goal Roll. Operações de Stake, aprovação, Launch e Increment continuam exclusivas do Narrador.
+- Testes adicionais cobrem permissões e os três tipos de vínculo. **Homologação da versão atual ainda depende de CI e QA.**
+
 ## [2026-11-03] - feat - Tela independente Projetos da Mesa e Stake vinculado à ficha
 
 **Branch:** `feat/session-011-projects-coterie`.
