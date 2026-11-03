@@ -1,3 +1,19 @@
+## [2026-11-03 12:30 BRT] - feat - Iniciar SPEC-SESSION-011: Projects e Coterie
+
+**Branch:** `feat/session-011-projects-coterie`. **Estado:** implementação experimental; **não homologada**.
+
+**Arquivos principais:** `lib/projects-coterie-schema.ts`, `lib/db.ts`, `lib/session11-common.ts`, `lib/coterie-service.ts`, `lib/projects-service.ts`, `lib/vtm-v5/projects.ts`, `app/api/campaigns/[id]/coteries/route.ts`, `app/api/campaigns/[id]/projects/route.ts`, `tests/project-mechanics.test.ts`, `tests/session11-projects-coterie.test.ts`, `.github/workflows/spec-session-011-ci.yml`.
+
+- Adiciona schema aditivo para múltiplas Coteries por campanha, membros, Domain (Chasse, Lien, Portillon), Backgrounds compartilhados, vantagens/defeitos, Haven/Hangout, Boons/Debts e Goals. Registra histórico e idempotência de comandos.
+- Semear 15 tipos iniciais do Corebook com sugestões de configuração (não concede pontos automaticamente); catálogo é extensível.
+- Projetos pessoais e de Coterie: criação por jogador, envio, aprovação do Narrador, Scope, Increment, Launch Roll no servidor, confirmação posterior de Stake, Project Die, Goal Roll resistido e encerramento.
+- Define membros participantes; restringe Stakes a participantes ou recursos compartilhados e impede reservas incompatíveis entre diferentes Projects.
+- Goal Roll usa Project Die como tamanho do pool de oposição; dez do jogador contam um sucesso sem crítico, enquanto a oposição pode fazer crítico.
+- Adiciona rotas autenticadas com verificação de vínculo com mesa, acesso por recurso, revisão otimista e comandos idempotentes.
+- Adiciona testes e CI com PostgreSQL isolado; **não foram executados neste ambiente**. Não aplicar migrações em produção sem aprovação/backup.
+- **UI não implementada:** conforme SPEC §25, primeiro apresentar mockup para aprovação; backend e estrutura de dados não constituem implementação integral.
+- Pendências: integrar reserva de Stakes a todos os outros usos de Backgrounds, fontes suplementares do catálogo, XP/consequências narrativas avançadas, adversários NPC/FACTION, automação temporal, teste real de build/DB e revisão de segurança.
+
 ## [2026-11-02 04:22 BRT] - fix - Atualizar teste da listagem de campanhas
 
 **Arquivos principais:** `tests/session-notes-ui.test.tsx`.
