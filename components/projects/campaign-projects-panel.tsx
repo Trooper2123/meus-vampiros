@@ -37,7 +37,7 @@ const numberOr=(value:string,fallback=0)=>value.trim()===''?fallback:Number(valu
 export function CampaignProjectsPanel({campaignId}:Readonly<{campaignId:string}>) {
  const endpoint='/api/campaigns/'+campaignId+'/projects'
  const {data,error,mutate,isLoading}=useSWR<Data>(endpoint,fetcher)
- const [scope,setScope]=useState<'ALL'|'PERSONAL'|'COTERIE'|'INVOLVED'>('ALL')
+ const [scope,setScope]=useState<'ALL'|'PERSONAL'|'COTERIE'|'NPC'>('ALL')
  const [status,setStatus]=useState('ALL')
  const [search,setSearch]=useState('')
  const [expanded,setExpanded]=useState<string|null>(null)
@@ -54,11 +54,11 @@ export function CampaignProjectsPanel({campaignId}:Readonly<{campaignId:string}>
  const [stakeChoices,setStakeChoices]=useState<StakeChoice[]>([])
  const [pendingKey,setPendingKey]=useState<string|null>(null)
  const projects=data?.projects??[]
- const counts={all:projects.length,personal:projects.filter(p=>p.projectType==='PERSONAL').length,coterie:projects.filter(p=>p.projectType==='COTERIE').length}
+ const counts={all:projects.length,personal:projects.filter(p=>p.projectType==='PERSONAL').length,coterie:projects.filter(p=>p.projectType==='COTERIE').length,npc:projects.filter(p=>p.npcParticipants.length>0).length}
  const filtered=useMemo(()=>projects.filter(p=>{
   if(scope==='PERSONAL'&&p.projectType!=='PERSONAL')return false
   if(scope==='COTERIE'&&p.projectType!=='COTERIE')return false
-  if(scope==='INVOLVED'&&!p.participants.length&&!p.npcParticipants.length)return false
+  if(scope==='NPC'&&!p.npcParticipants.length)return false
   if(status!=='ALL'&&p.status!==status)return false
   const q=search.trim().toLocaleLowerCase('pt-BR')
   return !q||[p.name,p.goalDescription,p.ownerName,p.coterieName,...p.participants.map(part=>part.name),...p.npcParticipants.map(npc=>npc.name)].some(value=>value?.toLocaleLowerCase('pt-BR').includes(q))
@@ -127,7 +127,7 @@ export function CampaignProjectsPanel({campaignId}:Readonly<{campaignId:string}>
   {data&&<div className="mt-5 space-y-4">
    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card/70 p-3">
     <div className="flex flex-wrap gap-2" role="group" aria-label="Tipo de projeto">
-     {([{id:'ALL',label:'Todos',count:counts.all},{id:'PERSONAL',label:'Pessoais',count:counts.personal},{id:'COTERIE',label:'Da Coterie',count:counts.coterie}] as const).map(item=><button key={item.id} type="button" aria-pressed={scope===item.id} onClick={()=>setScope(item.id)} className={'rounded-full border px-4 py-2 text-xs font-medium transition '+(scope===item.id?'border-rose-500 bg-red-950/70 text-rose-100 shadow-[0_0_12px_#9f123944]':'border-border bg-background/60 text-muted-foreground hover:text-foreground')}>{item.label} ({item.count})</button>)}
+     {([{id:'ALL',label:'Todos',count:counts.all},{id:'PERSONAL',label:'Pessoais',count:counts.personal},{id:'COTERIE',label:'Da Coterie',count:counts.coterie},{id:'NPC',label:'Com NPCs',count:counts.npc}] as const).map(item=><button key={item.id} type="button" aria-pressed={scope===item.id} onClick={()=>setScope(item.id)} className={'rounded-full border px-4 py-2 text-xs font-medium transition '+(scope===item.id?'border-rose-500 bg-red-950/70 text-rose-100 shadow-[0_0_12px_#9f123944]':'border-border bg-background/60 text-muted-foreground hover:text-foreground')}>{item.label} ({item.count})</button>)}
     </div>
     <div className="flex flex-wrap gap-2">
      <label className="relative"><span className="sr-only">Filtrar status</span><select className="input min-w-44 pr-8 text-sm" value={status} onChange={e=>setStatus(e.target.value)}><option value="ALL">Status: Todos</option>{Object.entries(statuses).map(([key,label])=><option key={key} value={key}>{label}</option>)}</select><ChevronDown aria-hidden="true" className="pointer-events-none absolute right-3 top-3 size-4 opacity-50"/></label>
