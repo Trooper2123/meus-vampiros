@@ -38,7 +38,7 @@ function ResourceButtons({ label, onReduce, onIncrease, disabled, cannotReduce, 
   </div>
 }
 
-function ResourceForm({ data, url, sessionId, refresh, notify }: Readonly<{ data: ResourceResponse; url: string; sessionId?: string; refresh: (updated: ResourceResponse) => Promise<unknown>; notify: (message: string, error?: boolean) => void }>) {
+function ResourceForm({ data, url, sessionId, refresh, notify, focus }: Readonly<{ data: ResourceResponse; url: string; sessionId?: string; focus?: 'health' | 'hunger' | 'willpower'; refresh: (updated: ResourceResponse) => Promise<unknown>; notify: (message: string, error?: boolean) => void }>) {
   const [saving, setSaving] = useState(false)
   const [retrying, setRetrying] = useState(false)
   const pending = useRef<ResourceCommand | null>(null)
@@ -135,16 +135,16 @@ function ResourceForm({ data, url, sessionId, refresh, notify }: Readonly<{ data
   return <div aria-busy={saving} className="flex flex-col gap-5">
     <output className="block text-sm text-muted-foreground">{savingMessage}</output>
     <dl className="archive-resource-strip archive-session-resources">
-      <div><dt>Humanidade</dt><dd><span className="block font-serif text-4xl">{data.state.humanity}</span><div className="mt-4"><ResourceButtons label="Humanidade" onReduce={() => changeScalar('humanity', -1)} cannotReduce={data.state.humanity <= 0} onIncrease={() => changeScalar('humanity', 1)} disabled={locked || !data.canEditNarrative} cannotIncrease={data.state.humanity >= 10} /></div></dd></div>
-      {damageResource('willpower', 'Força de vontade', data.maxima.willpowerMax)}
-      {damageResource('health', 'Vitalidade', data.maxima.healthMax)}
-      <div><dt>Fome</dt><dd><span className="archive-hunger" aria-label={`${data.state.hunger} de 5`}>{Array.from({ length: 5 }, (_, index) => <span key={index} aria-hidden="true" className={`dot ${index < data.state.hunger ? 'is-filled' : ''}`} />)}</span><span className="mt-2 block font-sans text-xs text-muted-foreground">{data.state.hunger} de 5</span><div className="mt-4"><ResourceButtons label="Fome" onReduce={() => changeScalar('hunger', -1)} onIncrease={() => changeScalar('hunger', 1)} disabled={locked} cannotReduce={data.state.hunger <= 0} cannotIncrease={data.state.hunger >= 5} /></div><p className="mt-2 font-sans text-xs text-muted-foreground">Sem custo de XP.</p></dd></div>
-      <div><dt>Manchas</dt><dd><span className="block font-serif text-4xl">{data.state.stains} <span className="font-sans text-xs text-muted-foreground">de 10</span></span><div className="mt-4"><ResourceButtons label="Manchas" onReduce={() => changeScalar('stains', -1)} onIncrease={() => changeScalar('stains', 1)} disabled={locked || !data.canEditNarrative} cannotReduce={data.state.stains <= 0} cannotIncrease={data.state.stains >= 10} /></div></dd></div>
+      {!focus && <div><dt>Humanidade</dt><dd><span className="block font-serif text-4xl">{data.state.humanity}</span><div className="mt-4"><ResourceButtons label="Humanidade" onReduce={() => changeScalar('humanity', -1)} cannotReduce={data.state.humanity <= 0} onIncrease={() => changeScalar('humanity', 1)} disabled={locked || !data.canEditNarrative} cannotIncrease={data.state.humanity >= 10} /></div></dd></div>}
+      {(!focus || focus === 'willpower') && damageResource('willpower', 'Força de vontade', data.maxima.willpowerMax)}
+      {(!focus || focus === 'health') && damageResource('health', 'Vitalidade', data.maxima.healthMax)}
+      {(!focus || focus === 'hunger') && <div><dt>Fome</dt><dd><span className="archive-hunger" aria-label={`${data.state.hunger} de 5`}>{Array.from({ length: 5 }, (_, index) => <span key={index} aria-hidden="true" className={`dot ${index < data.state.hunger ? 'is-filled' : ''}`} />)}</span><span className="mt-2 block font-sans text-xs text-muted-foreground">{data.state.hunger} de 5</span><div className="mt-4"><ResourceButtons label="Fome" onReduce={() => changeScalar('hunger', -1)} onIncrease={() => changeScalar('hunger', 1)} disabled={locked} cannotReduce={data.state.hunger <= 0} cannotIncrease={data.state.hunger >= 5} /></div><p className="mt-2 font-sans text-xs text-muted-foreground">Sem custo de XP.</p></dd></div>}
+      {!focus && <div><dt>Manchas</dt><dd><span className="block font-serif text-4xl">{data.state.stains} <span className="font-sans text-xs text-muted-foreground">de 10</span></span><div className="mt-4"><ResourceButtons label="Manchas" onReduce={() => changeScalar('stains', -1)} onIncrease={() => changeScalar('stains', 1)} disabled={locked || !data.canEditNarrative} cannotReduce={data.state.stains <= 0} cannotIncrease={data.state.stains >= 10} /></div></dd></div>}
     </dl>
 
     <p className="text-sm text-muted-foreground">Condição: {({ ACTIVE: 'Ativo', DAY_SLEEP: 'Sono diurno', STAKED: 'Empalado', TORPOR: 'Torpor', FINAL_DEATH: 'Morte definitiva' } as Record<string, string>)[data.state.condition] ?? 'Condição não reconhecida'}</p>
     {retrying && <button type="button" className="button-primary self-start" disabled={saving} onClick={() => save()}>Reenviar alteração</button>}
-    <BloodActionsPanel characterId={url.split('/')[3]} revision={data.revision} onComplete={async () => { await refresh({ ...data, ...(await fetchResources(url)) }) }} />
+    {!focus && <BloodActionsPanel characterId={url.split('/')[3]} revision={data.revision} onComplete={async () => { await refresh({ ...data, ...(await fetchResources(url)) }) }} />}
     <dialog ref={zeroDialog} aria-labelledby="hunger-zero-title" aria-describedby="hunger-zero-description" className="m-auto w-[min(32rem,95vw)] border border-border bg-card p-6 text-foreground backdrop:bg-background/80">
       <h3 id="hunger-zero-title" className="font-serif text-2xl">Atenção: ação tabu</h3>
       <p id="hunger-zero-description" className="mt-4 text-sm leading-6">Zerar a Fome indica uma ação tabu nesta crônica e pode trazer consequências narrativas, avaliadas pelo Narrador. Deseja continuar?</p>
@@ -153,16 +153,16 @@ function ResourceForm({ data, url, sessionId, refresh, notify }: Readonly<{ data
   </div>
 }
 
-export function SessionResources({ characterId, sessionId }: Readonly<{ characterId: string; sessionId?: string }>) {
+export function SessionResources({ characterId, sessionId, focus }: Readonly<{ characterId: string; sessionId?: string; focus?: 'health' | 'hunger' | 'willpower' }>) {
   const url = `/api/characters/${characterId}/resources`
   const { data, error, isLoading, mutate } = useSWR<ResourceResponse>(url, fetchResources, { revalidateOnFocus: false })
   const [feedback, setFeedback] = useState({ message: '', error: false })
   return <section className="border border-border bg-card p-5 sm:p-6" aria-labelledby="recursos-sessao-titulo">
     <p className="eyebrow">Estado da sessão</p>
-    <h2 id="recursos-sessao-titulo" className="mb-5 mt-2 font-serif text-xl">Recursos</h2>
+    <h2 id="recursos-sessao-titulo" className="mb-5 mt-2 font-serif text-xl">{focus === "health" ? "Vitalidade" : focus === "hunger" ? "Fome" : focus === "willpower" ? "Força de Vontade" : "Recursos"}</h2>
     {feedback.message && <div className="mb-4 flex flex-col items-start gap-3"><p role={feedback.error ? 'alert' : 'status'} className="text-sm text-muted-foreground">{feedback.message}</p>{feedback.error && <button type="button" className="button-ghost" onClick={() => void mutate()}>Recarregar recursos</button>}</div>}
     {isLoading && <output className="block text-sm text-muted-foreground">Carregando recursos…</output>}
     {error && <div role="alert" className="mb-4 flex flex-col gap-3"><p className="text-sm text-primary">{error instanceof Error ? error.message : 'Falha ao carregar recursos.'}</p><button type="button" className="button-ghost self-start" onClick={() => void mutate()}>Recarregar recursos</button></div>}
-    {data && !error && <ResourceForm key={`${characterId}:${data.revision}`} data={data} url={url} sessionId={sessionId} refresh={updated => mutate(updated, { revalidate: false })} notify={(message, error = false) => setFeedback({ message, error })} />}
+    {data && !error && <ResourceForm key={`${characterId}:${data.revision}`} data={data} url={url} sessionId={sessionId} focus={focus} refresh={updated => mutate(updated, { revalidate: false })} notify={(message, error = false) => setFeedback({ message, error })} />}
   </section>
 }
