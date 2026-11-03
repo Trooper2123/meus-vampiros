@@ -160,6 +160,7 @@ CREATE TABLE IF NOT EXISTS project_npc_participants (
   project_id UUID NOT NULL REFERENCES character_projects(id) ON DELETE CASCADE,
   campaign_npc_id UUID NOT NULL,
   participation_role TEXT NOT NULL DEFAULT 'PARTNER' CHECK(participation_role IN ('PARTNER','ALLY','ADVERSARY','OTHER')),
+  display_name TEXT NOT NULL,
   PRIMARY KEY(project_id,campaign_npc_id)
 );
 CREATE TABLE IF NOT EXISTS project_stakes (
