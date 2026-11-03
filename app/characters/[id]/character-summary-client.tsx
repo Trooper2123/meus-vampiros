@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 
 import { CharacterSummary } from '@/components/character-summary/character-summary'
-import { SessionResources } from '@/components/character-summary/session-resources'
+import { CharacterAwakePanel } from '@/components/character-summary/character-awake-panel'\nimport { SessionResources } from '@/components/character-summary/session-resources'
 import { CharacterRolls } from '@/components/character-summary/character-rolls'
 import { PlayerPredatorSummary } from '@/components/predator-types/player-predator-selector'
 import { CharacterClanSummary } from '@/components/character-summary/character-clan'
@@ -82,7 +82,7 @@ export function CharacterSummaryClient({ data }: Readonly<CharacterSummaryClient
           </>}
           resources={canRoll ? <SessionResources characterId={data.id} /> : undefined}
         />
-        {hasBloodPotency && <div id="potencia-de-sangue"><BloodPotencySummary characterId={data.id} /></div>}
+        {canRoll && <CharacterAwakePanel characterId={data.id} />}\n        {hasBloodPotency && <div id="potencia-de-sangue"><BloodPotencySummary characterId={data.id} /></div>}
         {canRoll && <div id="rolagens"><CharacterRolls characterId={data.id} prefill={rollPrefill} /></div>}
         {hasSummaryName(data.predator) && data.predator && <div id="predacao"><PlayerPredatorSummary name={data.predator} roll={data.predatorRoll} source={data.predatorSource} selection={data.predatorSelection} /></div>}
       </div>
