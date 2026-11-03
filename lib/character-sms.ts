@@ -174,13 +174,13 @@ export async function smsContacts(campaignId: string, actorId: string, view?: 'p
   } finally { client.release() }
 }
 
-type Thread = {id:string;kind:string;character_a_id:string;character_b_id:string;updated_at:Date;name_a:string;name_b:string}
+type Thread = {id:string;kind:'DIRECT'|'COTERIE';character_a_id:string|null;character_b_id:string|null;coterie_id:string|null;coterie_name:string|null;updated_at:Date;name_a:string;name_b:string}
 async function threadAndAccess(client:PoolClient,campaignId:string,actorId:string,threadId:string,allowEmptyParticipant=false,view?:'player') {
   if (!smsUuid(threadId)) fail(404,'Conversa não encontrada.')
   const a=await access(client,campaignId,actorId,view)
-  const record=await client.query<Thread>(`SELECT t.*,ca.name AS name_a,cb.name AS name_b
-    FROM character_message_threads t JOIN characters ca ON ca.id=t.character_a_id
-    JOIN characters cb ON cb.id=t.character_b_id
+  const record=await client.query<Thread>(`SELECT t.*,COALESCE(ca.name,t.coterie_name) AS name_a,COALESCE(cb.name,'Grupo') AS name_b
+    FROM character_message_threads t LEFT JOIN characters ca ON ca.id=t.character_a_id
+    LEFT JOIN characters cb ON cb.id=t.character_b_id
     WHERE t.id=$1::uuid AND t.campaign_id=$2::uuid`,[threadId,campaignId])
   const thread=record.rows[0]
   if (!thread) fail(404,'Conversa não encontrada.')
@@ -190,7 +190,12 @@ async function threadAndAccess(client:PoolClient,campaignId:string,actorId:strin
       JOIN characters ch ON ch.id=d.recipient_character_id
       WHERE m.thread_id=$1::uuid AND ch.user_id=$2 AND ch.character_type='PLAYER_VAMPIRE' AND ch.status<>'DELETED' LIMIT 1`,[threadId,actorId])
     if(!delivered.rowCount){
-      const owner=allowEmptyParticipant && (await client.query('SELECT 1 FROM characters WHERE id=ANY($1::uuid[]) AND user_id=$2 AND status=\'APPROVED\' LIMIT 1',[[thread.character_a_id,thread.character_b_id],actorId])).rowCount
+      let owner=false
+      if(allowEmptyParticipant && thread.kind==='DIRECT'){
+        owner=Boolean((await client.query("SELECT 1 FROM characters WHERE id=ANY($1::uuid[]) AND user_id=$2 AND status='APPROVED' AND character_type='PLAYER_VAMPIRE' LIMIT 1",[[thread.character_a_id,thread.character_b_id],actorId])).rowCount)
+      } else if(allowEmptyParticipant && thread.kind==='COTERIE' && thread.coterie_id){
+        owner=(await smsAvailableCoteries(client,campaignId,actorId,'player')).some(item=>item.id===thread.coterie_id)
+      }
       if(!owner) fail(404,'Conversa não encontrada.')
     }
   }
@@ -202,18 +207,19 @@ export async function smsThreads(campaignId:string,actorId:string,view?:'player'
   const client=await pool!.connect()
   try {
     const a=await access(client,campaignId,actorId,view)
+    const coteries=await smsAvailableCoteries(client,campaignId,actorId,a.role)
     const results=await client.query(`SELECT t.id,t.kind,t.updated_at AS "updatedAt",
-      ca.name AS "characterA",cb.name AS "characterB",
+      COALESCE(ca.name,t.coterie_name) AS "characterA",COALESCE(cb.name,'Grupo') AS "characterB",
       (SELECT count(*)::int FROM character_messages m JOIN character_message_deliveries d ON d.message_id=m.id
         JOIN characters ch ON ch.id=d.recipient_character_id
         WHERE m.thread_id=t.id AND d.read_at IS NULL AND ch.user_id=$2 AND ch.character_type='PLAYER_VAMPIRE' AND ch.status<>'DELETED') AS "unreadCount"
       FROM character_message_threads t
-      JOIN characters ca ON ca.id=t.character_a_id JOIN characters cb ON cb.id=t.character_b_id
-      WHERE t.campaign_id=$1::uuid AND ($3::boolean OR EXISTS (
+      LEFT JOIN characters ca ON ca.id=t.character_a_id LEFT JOIN characters cb ON cb.id=t.character_b_id
+      WHERE t.campaign_id=$1::uuid AND ($3::boolean OR t.coterie_id=ANY($4::uuid[]) OR EXISTS (
         SELECT 1 FROM character_messages m JOIN character_message_deliveries d ON d.message_id=m.id
         JOIN characters ch ON ch.id=d.recipient_character_id
         WHERE m.thread_id=t.id AND ch.user_id=$2 AND ch.character_type='PLAYER_VAMPIRE' AND ch.status<>'DELETED'))
-      ORDER BY t.updated_at DESC LIMIT 100`,[campaignId,actorId,a.role==='narrator'])
+      ORDER BY t.updated_at DESC LIMIT 100`,[campaignId,actorId,a.role==='narrator',coteries.map(c=>c.id)])
     return {...a,threads:results.rows}
   } finally {client.release()}
 }
@@ -235,7 +241,7 @@ export async function smsMessages(campaignId:string,actorId:string,threadId:stri
           WHERE d.message_id=m.id AND ch.user_id=$2 AND ch.character_type='PLAYER_VAMPIRE' AND ch.status<>'DELETED'))
         AND ($4::uuid IS NULL OR (m.created_at,m.id)<(SELECT created_at,id FROM character_messages WHERE id=$4::uuid AND thread_id=$1::uuid))
       ORDER BY m.created_at DESC,m.id DESC LIMIT 50`,[threadId,actorId,a.role==='narrator',cursor??null])
-    return { ...a, thread:{id:thread.id,characterA:thread.name_a,characterB:thread.name_b,characterAId:thread.character_a_id,characterBId:thread.character_b_id},
+    return { ...a, thread:{id:thread.id,kind:thread.kind,characterA:thread.name_a,characterB:thread.name_b,characterAId:thread.character_a_id,characterBId:thread.character_b_id},
       messages:rows.rows.reverse() }
   } finally {client.release()}
 }
