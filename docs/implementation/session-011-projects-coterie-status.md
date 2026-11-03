@@ -106,3 +106,19 @@
 - [x] Teste de integração adicionado para classificação MINE/PARTNER/COTERIE, visibilidade do Narrador e proibição de operações mecânicas exclusivas.
 - [ ] Validar commits atuais em CI e realizar QA com duas contas (Narrador e jogador) e telas estreitas.
 - [ ] Opcional futuro: o jogador solicitar participação em projetos alheios sem conseguir editar o projeto, sujeito à aprovação do proprietário/Narrador.
+
+## Entrega incremental — página Coterie (2026-11-03)
+
+- [x] Criada rota independente `/campaigns/[id]/coterie`, com sidebar e identidade visual da campanha. Narrador e jogadores acessam a mesma página com operações adequadas aos seus papéis.
+- [x] Criado `CampaignCoteriePanel`: seleção de Coterie, resumo, membros, Domain (Chasse/Lien/Portillon), Backgrounds, vantagens/defeitos, Havens e seus méritos/defeitos, favores/dívidas e objetivos.
+- [x] Narrador pode criar Coterie, editar Domain, gerir participantes, cadastrar Backgrounds, vantagens/defeitos, Haven, méritos/defeitos do Haven e favores.
+- [x] Jogadores integrantes podem consultar a própria Coterie, propor objetivos e criar projetos coletivos a partir de objetivos abertos. Apenas o Narrador pode alterar recursos coletivos.
+- [x] API aplica visibilidade por Coterie: integrantes ativos veem apenas aquelas das quais participam; Narrador vê todas da mesa.
+- [x] API inclui detalhes de Haven traits, contadores de Projects relacionados e opções de personagens (apenas Narrador).
+- [x] Links e redirecionamentos da visão da mesa e do portal do jogador apontam para a rota independente; Projects continua em outra página.
+- [x] Testes de integração escritos para autorização, Domain, recursos coletivos, Haven traits e conversão de objetivo em Project.
+- [ ] Executar CI da versão atual (Next typegen, tsc, lint, Vitest PostgreSQL e build) e corrigir eventuais falhas.
+- [ ] QA manual responsivo, acessibilidade e navegação em duas contas.
+- [ ] Melhorias posteriores: edição/baixa de favores e dívidas, exclusão de registros com histórico, seleção catalogada amigável de vantagens e gestão de recursos considerando reservas de Stake em toda a aplicação.
+
+**Arquivos:** `app/campaigns/[id]/coterie/page.tsx`, `components/coterie/campaign-coterie-panel.tsx`, `lib/coterie-service.ts`, `tests/session11-projects-coterie.test.ts`.
