@@ -27,7 +27,6 @@ export async function getPlayerCampaigns(actorId: string): Promise<PlayerCampaig
       AND ch.character_type = 'PLAYER_VAMPIRE'
       AND ch.status <> 'DELETED'
     LEFT JOIN users u ON u.auth0_id = c.master_user_id
-    WHERE c.master_user_id <> ${actorId}
     GROUP BY c.id, c.name, c.theme, c.principios, c.status, u.name
     ORDER BY c.name
   `)
