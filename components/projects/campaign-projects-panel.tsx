@@ -97,7 +97,7 @@ export function CampaignProjectsPanel({campaignId}:Readonly<{campaignId:string}>
   const o=stakeOptions?.find(option=>option.ownerType+':'+option.ownerId+':'+option.trait===choice.key)
   return o&&choice.dots>0?[{...(o.ownerType==='CHARACTER'?{characterId:o.ownerId}:{coterieId:o.ownerId}),trait:o.trait,dots:choice.dots}]:[]
  })
- const required=selected?.launchResult?.stakeRequired??0
+ const required=selectedChoices.length>0&&selectedChoices.every(choice=>'coterieId' in choice)?(selected?.launchResult?.stakeRequired??0):Math.max(selected?.launchResult?.stakeRequired??0,selected?.participants.length??0)
  const totalStake=selectedChoices.reduce((sum,s)=>sum+s.dots,0)
  const canCreate=(data?.characters.length??0)>0||(data?.coteries.length??0)>0
  return <section className="campaign-projects" aria-label="Projetos da mesa">
@@ -195,7 +195,7 @@ export function CampaignProjectsPanel({campaignId}:Readonly<{campaignId:string}>
    </form>}
    {data?.canManage&&selected.status==='AWAITING_APPROVAL'&&selected.launchDifficulty!=null&&!isStakePending(selected)&&<button className="button-primary" type="button" disabled={busy} onClick={()=>void command('LAUNCH',selected,{rollingCharacterId:selected.participants[0]?.characterId??selected.ownerCharacterId})}><Dices className="size-4"/>Launch Roll · dificuldade {selected.launchDifficulty}</button>}
    {data?.canManage&&isStakePending(selected)&&<div className="space-y-3 rounded-lg border border-amber-800/50 bg-amber-950/10 p-4">
-    <h4 className="font-semibold text-amber-200">Confirmar Stake após o Launch Roll</h4><p className="text-sm">O resultado exige <strong>{required}</strong> ponto(s), sujeitos à disponibilidade dos Backgrounds participantes.</p>
+    <h4 className="font-semibold text-amber-200">Confirmar Stake após o Launch Roll</h4><p className="text-sm">O resultado exige <strong>{selected.launchResult?.stakeRequired??0}</strong> ponto(s) de base. Em parceria, cada jogador participante deve comprometer pelo menos um ponto, salvo Stake integralmente compartilhado da Coterie.</p>
     {!stakeOptions&&<button className="button-ghost" type="button" onClick={()=>void readStake(selected.id)}>Consultar pontos disponíveis</button>}
     {stakeOptions&&<div className="space-y-2">{stakeOptions.map(o=>{
       const key=o.ownerType+':'+o.ownerId+':'+o.trait;const chosen=stakeChoices.find(row=>row.key===key)?.dots??0
