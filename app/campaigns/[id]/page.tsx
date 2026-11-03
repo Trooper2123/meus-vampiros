@@ -30,6 +30,7 @@ export default async function CampaignDetailPage({ params, searchParams }: Reado
     return summary ? { ...summary, status: character.status } : null
   }))).filter(summary => summary?.characterType === 'PLAYER_VAMPIRE')
   const query = await searchParams
+  if (query?.view === 'projects') redirect('/campaigns/'+campaign.id+'/projects')
   const requestedCharacter = query?.xpCharacterId
   const allowedViews = ['overview','characters','participants','npcs','handouts','calendar','xp','possessions','limits','projects','coterie','messages','notes','research','settings'] as const
   const requestedView = query?.view
