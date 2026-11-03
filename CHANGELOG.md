@@ -1,3 +1,14 @@
+## [2026-11-03] - refactor - Projects e Coterie como abas do hub
+
+**Branch:** `feat/session-011-projects-coterie`. Revisão de navegação solicitada pelo usuário.
+
+- **Narrador:** `/campaigns/[id]?view=projects` e `?view=coterie` montam os painéis completos dentro de `app/campaigns/[id]/page.tsx`, reutilizando a navegação lateral da Gestão da Mesa.
+- **Jogador:** `PlayerCampaignPortal` inclui os painéis reais `PlayerProjectsPanel` e `CampaignCoteriePanel` nas tabs locais correspondentes, preservando o banner e a barra horizontal de abas.
+- Deep links `/campaigns/player/[id]?tab=projects|coterie`; links internos Coterie → Projetos mudam de aba sem sair do portal do jogador.
+- Rotas dedicadas legadas passam a redirecionar após verificação do vínculo com a mesa, sem criar uma segunda interface.
+- Nenhuma alteração na mecânica de Stake, autorização dos Projects ou persistência da Coterie; a composição visual foi refatorada.
+- O workflow foi atualizado para incluir portal e páginas do hub na checagem. **Validação desta revisão em andamento.**
+
 ## [2026-11-03] - feat - Página Coterie independente, visão do Narrador e jogador
 
 **Branch:** `feat/session-011-projects-coterie`.
