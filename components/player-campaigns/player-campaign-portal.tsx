@@ -64,7 +64,7 @@ export function PlayerCampaignPortal({campaign,actorId}:Readonly<{campaign:Playe
         {active ? <Link className="button-primary" href={`/campaigns/${campaign.id}/session`}><Play className="size-4"/>Entrar na sessão</Link> : <span className="player-portal-session-off"><ShieldAlert className="size-4"/>Nenhuma sessão em andamento. Arquivos e calendários continuam acessíveis.</span>}
       </div>
     </div>
-    <nav className="player-portal-tabs" aria-label="Áreas da mesa">{tabs.map(({id,label,Icon})=><button type="button" key={id} onClick={()=>setTab(id)} aria-current={tab===id?'page':undefined} className={tab===id?'is-active':''}><Icon className="size-5"/>{label}</button>)}</nav>
+    <nav className="player-portal-tabs" aria-label="Áreas da mesa">{tabs.map(({id,label,Icon})=>id==='projects'?<Link key={id} href={`/campaigns/${campaign.id}/projects`}><Icon className="size-5"/>{label}</Link>:<button type="button" key={id} onClick={()=>setTab(id)} aria-current={tab===id?'page':undefined} className={tab===id?'is-active':''}><Icon className="size-5"/>{label}</button>)}</nav>
     {tab==='overview' && <div className="player-portal-overview">
       <PortalPanel title="Sobre a Campanha" icon={BookOpen}>
         <p className="player-portal-description">{campaign.theme || 'O Narrador ainda não definiu o tema da crônica.'}</p>
