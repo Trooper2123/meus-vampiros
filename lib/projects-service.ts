@@ -149,7 +149,7 @@ export async function getCampaignProjects(actorId:string,campaignId:string){
      const participants=await tx.execute(sql`SELECT p.character_id AS "characterId",ch.name FROM project_participants p JOIN characters ch ON ch.id=p.character_id WHERE p.project_id=${id}::uuid`)
      const stakes=await tx.execute(sql`SELECT character_id AS "characterId",coterie_id AS "coterieId",trait,dots,released_at AS "releasedAt" FROM project_stakes WHERE project_id=${id}::uuid`)
      const events=await tx.execute(sql`SELECT type,previous_project_die AS "previousProjectDie",new_project_die AS "newProjectDie",description,created_at AS "createdAt" FROM project_events WHERE project_id=${id}::uuid ORDER BY created_at DESC LIMIT 50`)
-     projects.push({...(row as object),participants:participants.rows,stakes:stakes.rows,events:events.rows})
+     projects.push({...row,participants:participants.rows,stakes:stakes.rows,events:events.rows})
    }
    return {projects,canManage:access.is_master}
  })
