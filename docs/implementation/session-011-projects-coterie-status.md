@@ -94,3 +94,15 @@
 - [ ] Validar a versão atual na CI. A última CI verde anterior não inclui todos os commits desta entrega.
 
 **Arquivos principais:** `components/projects/campaign-projects-panel.tsx`, `app/campaigns/[id]/projects/page.tsx`, `lib/project-stake-options.ts`, `lib/projects-service.ts`, `app/api/campaigns/[id]/projects/stakes/route.ts`, `tests/session11-projects-coterie.test.ts`.
+
+## Entrega incremental — visão do jogador (2026-11-03)
+
+- [x] Criada `components/projects/player-projects-panel.tsx`, renderizada somente para jogador na rota `/campaigns/[id]/projects`; Narrador mantém sua tabela própria.
+- [x] Layout conforme referência enviada: cards compactos, barras de progresso, Project Die, status, menus de detalhes e destaque vermelho escuro.
+- [x] Filtros **Todos**, **Meus**, **Em parceria** e **Da Coterie** com contadores calculados apenas sobre projetos autorizados pela API. Filtro adicional por status.
+- [x] Relação do jogador (`playerRelation`) classificada pelo servidor mediante propriedade real do personagem, participação explícita e vínculo ativo à Coterie. Filtros visuais não substituem autorização SQL.
+- [x] Criação de rascunhos próprios ou da Coterie, edição e envio para aprovação exclusivamente pelo responsável, acompanhamento de participantes e NPCs, Stake reservado, histórico e solicitação de Goal Roll.
+- [x] Nenhuma ação de aprovação, Launch, Increment, COMMIT_STAKE ou resolução do Goal Roll é exposta ao jogador; backend continua validando todas as ações.
+- [x] Teste de integração adicionado para classificação MINE/PARTNER/COTERIE, visibilidade do Narrador e proibição de operações mecânicas exclusivas.
+- [ ] Validar commits atuais em CI e realizar QA com duas contas (Narrador e jogador) e telas estreitas.
+- [ ] Opcional futuro: o jogador solicitar participação em projetos alheios sem conseguir editar o projeto, sujeito à aprovação do proprietário/Narrador.
