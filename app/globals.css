@@ -2862,3 +2862,81 @@ main > .archive-header {
   .characters-filter-feedback button{margin-left:0}
   .characters-filter-stat .characters-filter-active{position:static}
 }
+
+/* Portal do jogador — painel persistente para campanhas fora da sessão */
+.characters-access-campaign{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:15px;border:1px solid #c43b45;border-radius:7px;background:linear-gradient(110deg,#8a1621,#3e1018);padding:12px 16px;color:#f7ece8;font-family:var(--font-serif),Georgia,serif;font-size:15px;text-decoration:none;transition:background .2s,border-color .2s}
+.characters-access-campaign:hover{border-color:#f0525b;background:linear-gradient(110deg,#ad2332,#551321)}
+.characters-access-campaign svg:last-child{margin-left:auto}
+.player-campaign-portal{background:radial-gradient(ellipse at 68% 0,#320c12 0%,#13090c 40%,#090608 88%);}
+.player-campaign-portal .archive-content{max-width:none}
+.player-campaign-list-content,.player-campaign-portal-content{padding:26px clamp(19px,3vw,48px) 55px}
+.player-portal-heading{border-bottom:1px solid #8c343a;padding:5px 0 26px;margin-bottom:24px}
+.player-portal-heading h1{color:#f6e8e4;font-family:var(--font-serif),Georgia,serif;font-size:clamp(37px,4vw,60px);line-height:1.15;margin:10px 0}
+.player-portal-heading p:last-child{max-width:750px;color:#c7aaa4;font-size:14px;line-height:1.7}
+.player-portal-summary{display:flex;align-items:center;gap:10px;margin:0 0 20px;color:#efcbc4}
+.player-portal-summary svg{color:#df3649}
+.player-campaign-list-grid{display:grid;gap:15px}
+.player-portal-card{position:relative;min-width:0;border:1px solid #7f4632;border-radius:10px;background:linear-gradient(135deg,#230e12,#12080a 62%,#1a0b0e);padding:20px;box-shadow:inset 0 0 0 1px #2b1116,0 9px 30px #0005}
+.player-campaign-list-card{display:grid;grid-template-columns:100px minmax(0,1fr) auto;align-items:center;gap:20px}
+.player-campaign-card-art,.player-portal-cover-art{display:flex;align-items:center;justify-content:center;flex:none;border:1px solid #b0443c;border-radius:8px;background:radial-gradient(circle at 50% 25%,#8a192a,#260b13 65%,#14090d);color:#ef5860}
+.player-campaign-card-art{height:110px}
+.player-campaign-list-card h2{margin:5px 0;color:#f2e4df;font-family:var(--font-serif),Georgia,serif;font-size:clamp(22px,2vw,29px)}
+.player-campaign-list-card p{color:#bfaaa6;font-size:13px}
+.player-campaign-card-meta{display:flex;flex-wrap:wrap;gap:16px;margin-top:12px;color:#d0b4ad;font-size:11px}
+.player-campaign-card-meta span{display:flex;align-items:center;gap:5px}
+.player-campaign-list-card>.button-primary{display:inline-flex;align-items:center;gap:7px;justify-content:center;border-radius:6px;padding:13px 17px;white-space:nowrap}
+.player-portal-empty{display:flex;align-items:center;flex-direction:column;justify-content:center;gap:14px;min-height:300px;text-align:center}
+.player-portal-empty svg{color:#e1404b}
+.player-portal-empty h2{font-family:var(--font-serif),serif;font-size:25px}
+.player-portal-empty p{color:#bea4a0}
+.player-portal-campaign-banner{display:flex;align-items:center;gap:18px;margin:0 0 20px;border:1px solid #743538;border-radius:10px;background:linear-gradient(125deg,#220d11,#360c13 42%,#13080b);padding:20px}
+.player-portal-cover-art{width:124px;height:100px}
+.player-portal-banner-info{flex:1;min-width:0}
+.player-portal-banner-info h1{font-family:var(--font-serif),Georgia,serif;font-size:clamp(25px,2.8vw,42px);line-height:1.15;margin:6px 0;color:#f5e6e2}
+.player-portal-meta{display:flex;align-items:center;gap:14px;flex-wrap:wrap;color:#d7b8b3;font-size:12px}
+.player-portal-meta span{display:inline-flex;align-items:center;gap:5px}
+.player-portal-status{border:1px solid #89464b;border-radius:7px;background:#462028;padding:5px 10px;color:#e2cbc5}
+.player-portal-banner-actions{display:flex;justify-content:flex-end;min-width:215px;max-width:305px}
+.player-portal-banner-actions .button-primary{display:inline-flex;gap:8px;align-items:center;border-radius:6px}
+.player-portal-session-off{display:flex;align-items:center;gap:11px;border:1px solid #754c40;border-radius:7px;background:#210e12;padding:13px;color:#d7c1b9;font-size:12px;line-height:1.5}
+.player-portal-session-off svg{flex:none;color:#ef5660}
+.player-portal-tabs{display:flex;align-items:stretch;flex-wrap:wrap;gap:5px;margin:0 0 19px;border-bottom:1px solid #a65031;padding-bottom:0}
+.player-portal-tabs button{display:flex;align-items:center;justify-content:center;gap:9px;min-height:53px;border:1px solid #5e332e;border-radius:7px 7px 0 0;background:#190c0f;padding:12px 19px;color:#ebd9d3;font-family:var(--font-serif),serif;font-size:16px}
+.player-portal-tabs button:hover{border-color:#d03a47;background:#34111a}
+.player-portal-tabs button.is-active{border-color:#ef4252;background:linear-gradient(#af192d,#681422);box-shadow:0 0 14px #d31e343b;color:#fff}
+.player-portal-overview{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:17px}
+.player-portal-card-heading{display:flex;align-items:center;gap:11px;border-bottom:1px solid #6e3b31;padding-bottom:14px;margin-bottom:14px}
+.player-portal-card-heading>svg{flex:none;color:#ed3447}
+.player-portal-card-heading h2{color:#f7e7e2;font-family:var(--font-serif),Georgia,serif;font-size:clamp(21px,2vw,27px)}
+.player-portal-card-heading p{color:#bd9995;font-size:12px;margin-top:3px}
+.player-portal-description{max-width:680px;color:#e7d3cc;font-family:var(--font-serif),Georgia,serif;font-size:18px;line-height:1.7}
+.player-portal-principles{margin-top:20px;color:#c3a8a1;font-size:13px;line-height:1.7}
+.player-portal-principles strong{color:#eab5af}
+.player-portal-see-all{position:absolute;top:23px;right:18px;color:#ea5459;font-family:var(--font-serif),serif;font-size:13px}
+.player-portal-see-all:hover{text-decoration:underline}
+.player-portal-list-row{display:flex;align-items:center;gap:15px;border-bottom:1px solid #52302b;padding:13px 5px;color:#e6d5cf;text-align:left}
+.player-portal-list-row:last-child{border-bottom:0}
+.player-portal-list-row>svg{flex:none;color:#e44450}
+.player-portal-list-row>div{display:flex;flex:1;min-width:0;flex-direction:column;gap:5px}
+.player-portal-list-row strong{overflow-wrap:anywhere;font-family:var(--font-serif),serif;font-size:17px}
+.player-portal-list-row small{color:#bda49e;font-size:12px}
+.player-portal-list-row p{color:#c3a8a1;font-size:12px}
+.player-portal-file-download{display:flex;flex:none;padding:8px;color:#e4d2cf}
+.player-portal-note-preview{width:100%}
+.player-portal-note-preview:hover{color:#ef636d}
+.player-portal-muted{padding:13px 4px;color:#ab9690;font-size:13px}
+.player-portal-notes{min-height:420px}
+.player-portal-notes .campaign-notes-workspace{min-width:0}
+.player-portal-card .campaign-calendar-workspace{background:transparent}
+.player-portal-card .button-ghost{display:inline-flex;align-items:center;gap:8px}
+.campaigns-reference-shell .campaign-nav-role-links{display:flex;flex-direction:column;gap:7px}
+.campaigns-reference-shell .campaign-nav-role-links>details{border:1px solid #52272f;border-radius:7px;background:#1d0c11}
+.campaigns-reference-shell .campaign-nav-role-links>details>summary{display:flex;align-items:center;gap:8px;cursor:pointer;list-style:none;padding:10px;color:#eee1dd;font-family:var(--font-serif),serif;font-size:14px}
+.campaigns-reference-shell .campaign-nav-role-links>details>summary::-webkit-details-marker{display:none}
+.campaigns-reference-shell .campaign-nav-role-links>details>summary svg:last-child{margin-left:auto}
+.campaigns-reference-shell .campaign-nav-role-links>details>a{display:flex;align-items:center;gap:10px;margin:3px 6px 6px;border:1px solid transparent;border-radius:5px;padding:8px 10px;color:#c7aeb0;text-decoration:none}
+.campaigns-reference-shell .campaign-nav-role-links>details>a:hover{background:#32121a}
+.campaigns-reference-shell .campaign-nav-role-links>details>a.is-active{border-color:#be3743;background:#751522;color:#fff}
+@media(max-width:1150px){.player-portal-overview{grid-template-columns:1fr}.player-portal-campaign-banner{flex-wrap:wrap}.player-portal-banner-actions{justify-content:flex-start;max-width:none}}
+@media(max-width:760px){.player-campaign-list-card{grid-template-columns:75px minmax(0,1fr)}.player-campaign-card-art{height:90px}.player-campaign-list-card>.button-primary{grid-column:1/-1}.player-portal-cover-art{width:85px;height:85px}.player-portal-tabs{overflow-x:auto;flex-wrap:nowrap}.player-portal-tabs button{flex:none;padding:11px 13px}.player-portal-see-all{position:static;display:block;margin-bottom:8px}}
+@media(max-width:480px){.player-portal-campaign-banner{gap:12px}.player-portal-banner-info{flex-basis:100%}.player-portal-banner-actions{width:100%}.player-portal-card{padding:15px}}
