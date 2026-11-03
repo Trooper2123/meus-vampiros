@@ -241,7 +241,7 @@ export async function commandProject(actorId:string,campaignId:string,input:Proj
          await event(tx,project.id,'LAUNCHED',actorId,null,10,reason||'Projeto lançado sem Stake: vitória crítica.',{...result,rollingCharacterId:rollingId})
        }else{
          await tx.execute(sql`UPDATE character_projects SET launch_difficulty=${result.launchDifficulty},launch_result=${JSON.stringify(result)}::jsonb WHERE id=${project.id}::uuid`)
-         await event(tx,project.id,'APPROVED',actorId,null,null,'Launch Roll bem-sucedido. Aguardando compromisso de Stake.',{...result,rollingCharacterId:rollingId})
+         await event(tx,project.id,'LAUNCH_PENDING_STAKE',actorId,null,null,'Launch Roll bem-sucedido. Aguardando compromisso de Stake.',{...result,rollingCharacterId:rollingId})
        }
      }else{
        await tx.execute(sql`UPDATE character_projects SET launch_failure_count=launch_failure_count+1,launch_difficulty=${result.launchDifficulty+1},launch_result=${JSON.stringify(result)}::jsonb WHERE id=${project.id}::uuid`)
