@@ -131,8 +131,8 @@ async function applyStakeLoss(tx:Session11Tx,project:ProjectRow,loss:number){
 export async function getCampaignProjects(actorId:string,campaignId:string){
  requireUuid(campaignId,'Mesa inválida.')
  return db.transaction(async tx=>{
-   const access=await campaignAccess(tx,actorId,campaignId)
-   const result=await tx.execute<{id:string;name:string;status:ProjectStatus;projectDie:number|null;projectType:string}>(sql`SELECT p.id,p.name,p.description,p.goal_description AS "goalDescription",p.project_type AS "projectType",p.status,p.owner_character_id AS "ownerCharacterId",p.coterie_id AS "coterieId",p.created_by_user_id AS "createdBy",p.target_trait AS "targetTrait",p.target_current_dots AS "currentDots",p.target_final_dots AS "finalDots",p.scope,p.increment_unit AS "incrementUnit",p.increment_value AS "incrementValue",p.project_die AS "projectDie",p.launch_difficulty AS "launchDifficulty",p.launch_result AS "launchResult",p.launch_pool AS "launchPool",p.goal_roll_requested AS "goalRollRequested",p.revision,p.updated_at AS "updatedAt" FROM character_projects p WHERE p.campaign_id=${campaignId}::uuid AND (${access.is_master} OR (p.project_type='PERSONAL' AND p.created_by_user_id=${actorId}) OR EXISTS (SELECT 1 FROM characters c WHERE c.id=p.owner_character_id AND c.user_id=${actorId}) OR EXISTS(SELECT 1 FROM project_participants pp JOIN characters ch ON ch.id=pp.character_id WHERE pp.project_id=p.id AND ch.user_id=${actorId}) OR EXISTS(SELECT 1 FROM coterie_members cm JOIN characters ch ON ch.id=cm.character_id WHERE cm.coterie_id=p.coterie_id AND ch.user_id=${actorId} AND cm.left_at IS NULL)) ORDER BY p.updated_at DESC`)
+   const access=await campaignAccess(tx,actorId,campaignId,false,true)
+   const result=await tx.execute<{id:string;name:string;status:ProjectStatus;projectDie:number|null;projectType:string}>(sql`SELECT p.id,p.name,p.description,p.goal_description AS "goalDescription",p.project_type AS "projectType",p.status,p.owner_character_id AS "ownerCharacterId",p.coterie_id AS "coterieId",p.target_trait AS "targetTrait",p.target_current_dots AS "currentDots",p.target_final_dots AS "finalDots",p.scope,p.increment_unit AS "incrementUnit",p.increment_value AS "incrementValue",p.project_die AS "projectDie",p.launch_difficulty AS "launchDifficulty",p.launch_result AS "launchResult",p.launch_pool AS "launchPool",p.goal_roll_requested AS "goalRollRequested",p.revision,p.updated_at AS "updatedAt" FROM character_projects p WHERE p.campaign_id=${campaignId}::uuid AND (${access.is_master} OR (p.project_type='PERSONAL' AND p.created_by_user_id=${actorId}) OR EXISTS (SELECT 1 FROM characters c WHERE c.id=p.owner_character_id AND c.user_id=${actorId}) OR EXISTS(SELECT 1 FROM project_participants pp JOIN characters ch ON ch.id=pp.character_id WHERE pp.project_id=p.id AND ch.user_id=${actorId}) OR EXISTS(SELECT 1 FROM coterie_members cm JOIN characters ch ON ch.id=cm.character_id WHERE cm.coterie_id=p.coterie_id AND ch.user_id=${actorId} AND cm.left_at IS NULL)) ORDER BY p.updated_at DESC`)
    const projects=[]
    for(const row of result.rows){
      const id=(row as {id:string}).id
@@ -141,7 +141,7 @@ export async function getCampaignProjects(actorId:string,campaignId:string){
      const events=await tx.execute(sql`SELECT type,previous_project_die AS "previousProjectDie",new_project_die AS "newProjectDie",description,created_at AS "createdAt" FROM project_events WHERE project_id=${id}::uuid ORDER BY created_at DESC LIMIT 50`)
      projects.push({...row,participants:participants.rows,stakes:stakes.rows,events:events.rows})
    }
-   return {projects,canManage:access.is_master}
+   return {projects,canManage:access.is_master&&access.status!=='Arquivada',archived:access.status==='Arquivada'}
  })
 }
 export async function commandProject(actorId:string,campaignId:string,input:ProjectCommand,dice:DiceProvider=serverDiceProvider){
