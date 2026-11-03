@@ -12,6 +12,7 @@ import { CampaignTools } from '@/components/campaign-calendar/campaign-tools'
 import { SessionQuickRoll } from '@/components/game-session/session-quick-roll'
 import { SessionPlayerWorkspace } from '@/components/game-session/session-player-workspace'
 import { MasterViewportGuard } from '@/components/master-viewport-guard'
+import { SessionSoundtrack } from './session-soundtrack'
 import { AwakePanel } from '@/components/awake-panel'
 import { CampaignAwakeSettings } from './campaign-awake-settings'
 import { DEFAULT_SHORTCUTS, SHORTCUT_LABELS, type ShortcutCode } from '@/lib/session-shortcut-options'
@@ -170,6 +171,7 @@ function SessionWorkspace({ campaignId, actorId, campaignName }: Readonly<{ camp
 
           {activeTool === 'calendar' && <div className="session-panel"><p className="eyebrow">Agenda da campanha</p><h2 className="mt-2 font-serif text-2xl">Calendário da mesa</h2><div className="mt-5"><CampaignTools campaignId={campaignId} master={manage}/></div></div>}
         </section>
+        {activeSession?.status === 'ACTIVE' && <SessionSoundtrack sessionId={activeSession.id}/>}
       </main>
 
       <aside className="session-cameras" aria-label="Câmeras dos participantes">
