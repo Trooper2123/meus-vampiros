@@ -18,7 +18,7 @@ vi.mock('@/lib/character-commands', () => ({
   },
 }))
 
-import { smsMessages, smsSend, smsSettings, setSmsSettings, smsUuid } from '@/lib/character-sms'
+import { smsMessages, smsSend, smsStart, smsSettings, setSmsSettings, smsUuid } from '@/lib/character-sms'
 
 const campaignId = '11111111-1111-4111-8111-111111111111'
 const threadId = '22222222-2222-4222-8222-222222222222'
@@ -99,4 +99,41 @@ describe('SMS persistente e permissões', () => {
     expect(query?.[0]).toContain('ch.user_id=$2')
     expect(query?.[1]?.[1]).toBe('player')
   })
+  it('impede envio à Coterie quando o domínio de membros não existe', async () => {
+    mocks.clientQuery.mockImplementation(async (statement: string) => {
+      if (statement.includes('master_user_id,character_sms_enabled')) return result([{master_user_id:'narrator',character_sms_enabled:true}])
+      if (statement.includes('SELECT id,name,character_type,user_id,status,visibility')) return result([{
+        id:senderId,name:'Xerife',user_id:'narrator',status:'APPROVED',character_type:'VAMPIRE_NPC',visibility:'PLAYER_VISIBLE',
+      }])
+      if (statement.includes("to_regclass('coteries')")) return result([{ready:false}])
+      return result([{id:campaignId}])
+    })
+    await expect(smsStart(campaignId,'narrator',{kind:'COTERIE',coterieId:recipientId,senderCharacterId:senderId})).rejects.toMatchObject({
+      status:409,message:'COTERIE_UNAVAILABLE',
+    })
+    expect(mocks.clientQuery.mock.calls.some(([sql])=>String(sql).includes('INSERT INTO character_message_threads'))).toBe(false)
+  })
+
+  it('entrega ao controlador do personagem usado pelo Narrador sem expor outras mensagens',async()=>{
+    const outsider='66666666-6666-4666-8666-666666666666'
+    mocks.clientQuery.mockImplementation(async (statement: string,values?:unknown[])=>{
+      if (statement.includes('master_user_id,character_sms_enabled'))return result([{master_user_id:'narrator',character_sms_enabled:true}])
+      if (statement.includes('SELECT t.*,COALESCE'))return result([{
+        id:threadId,kind:'DIRECT',character_a_id:senderId,character_b_id:recipientId,
+        name_a:'A',name_b:'B',coterie_id:null,
+      }])
+      if (statement.includes('SELECT id,name,character_type,user_id,status,visibility'))return result([{
+        id:outsider,name:'C',character_type:'PLAYER_VAMPIRE',user_id:'player-C',status:'APPROVED',visibility:'PLAYER_VISIBLE',
+      }])
+      if (statement.includes('INSERT INTO character_messages'))return result([{id:key}])
+      if (statement.includes('SELECT id,body,thread_id,sender_character_id'))return result()
+      if (statement.includes('FOR UPDATE'))return result([{id:campaignId}])
+      return result()
+    })
+    await smsSend(campaignId,'narrator',threadId,{senderCharacterId:outsider,body:'Eu vou ao encontro.',idempotencyKey:key})
+    const deliveries=mocks.clientQuery.mock.calls.filter(([statement])=>String(statement).includes('INSERT INTO character_message_deliveries'))
+    expect(deliveries).toHaveLength(3)
+    expect(deliveries.some(([,args])=>(args as unknown[])[1]===outsider && (args as unknown[])[2]==='NARRATOR_AS_CHARACTER')).toBe(true)
+  })
+
 })
