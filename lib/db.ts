@@ -68,6 +68,14 @@ export async function ensureAllTables() {
     ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS call_active BOOLEAN NOT NULL DEFAULT false;
     ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS session_shortcuts JSONB NOT NULL DEFAULT '["npcs","calendar","notes"]'::jsonb;
     ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS awake_execution_mode TEXT NOT NULL DEFAULT 'NARRATOR_FORCES';
+    CREATE TABLE IF NOT EXISTS campaign_awake_setting_events (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      campaign_id UUID NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+      actor_user_id TEXT NOT NULL,
+      previous_mode TEXT NOT NULL,
+      new_mode TEXT NOT NULL,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
 
     CREATE TABLE IF NOT EXISTS characters (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
