@@ -35,7 +35,7 @@ export async function updateSessionSoundtrack(actorId:string,sessionId:string,in
    if(row.revision!==input.expectedRevision)throw new CharacterCommandError(409,'A trilha mudou. Recarregue os controles.')
    const startedAt=input.playing&&(!row.playing||row.mood!==input.mood)?new Date():row.started_at
    await tx.execute(sql`UPDATE session_soundtrack_state SET mood=${input.mood},playing=${input.playing},started_at=${startedAt},revision=revision+1,updated_by_user_id=${actorId},updated_at=NOW() WHERE session_id=${sessionId}::uuid`)
-   const result={mood:input.mood,playing:input.playing,startedAt:startedAt?.toISOString()??null,revision:row.revision+1,canManage:true,active:true}
+   const result={mood:input.mood,playing:input.playing,startedAt:startedAt?new Date(startedAt).toISOString():null,revision:row.revision+1,canManage:true,active:true}
    await tx.execute(sql`INSERT INTO session_soundtrack_commands (session_id,command_key,actor_user_id,request_hash,result) VALUES (${sessionId}::uuid,${input.idempotencyKey}::uuid,${actorId},${hash},${JSON.stringify(result)}::jsonb)`)
    return result
  })
