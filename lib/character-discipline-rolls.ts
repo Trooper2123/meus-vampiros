@@ -63,7 +63,7 @@ export async function getCharacterDisciplineRolls(actorId:string, characterId:st
 }
 export type DisciplineRollIntent={powerId:string;difficulty:number;expectedRevision:number;idempotencyKey:string}
 export function rollCharacterDiscipline(actorId:string,characterId:string,input:DisciplineRollIntent,provider:DiceProvider=serverDiceProvider) {
- if(!input||typeof input.powerId!=='string'||input.powerId.length>400||!Number.isSafeInteger(input.difficulty)||input.difficulty<1||input.difficulty>50||!Number.isSafeInteger(input.expectedRevision)||input.expectedRevision<0||!uuid.test(input.idempotencyKey)) throw new CharacterCommandError(400,'Comando de Disciplina inválido.')
+ if(!uuid.test(characterId)||!input||typeof input.powerId!=='string'||input.powerId.length>400||!Number.isSafeInteger(input.difficulty)||input.difficulty<1||input.difficulty>50||!Number.isSafeInteger(input.expectedRevision)||input.expectedRevision<0||!uuid.test(input.idempotencyKey)) throw new CharacterCommandError(400,'Comando de Disciplina inválido.')
  return runCharacterCommand(actorId,characterId,{type:'DISCIPLINE_POWER_ROLLED',key:input.idempotencyKey,expectedRevision:input.expectedRevision,payload:input},character=>character.ownerId===actorId,async character=>{
    if(character.characterType!=='PLAYER_VAMPIRE'||!(character.status==='APPROVED'||!character.campaignId&&character.status==='DRAFT')) throw new CharacterCommandError(422,'Personagem indisponível para esta rolagem.')
    const power=selectedPowers(character.data).find(item=>item.id===input.powerId)
