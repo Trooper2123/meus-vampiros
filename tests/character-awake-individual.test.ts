@@ -17,22 +17,24 @@ describe('Awake individual e política por mesa',()=>{
  }
  it('inicia noite fora do app e registra um despertar idempotente',async()=>{
    const char=await independent()
-   const night=await executeCharacterAwake('player-awake',char.id,{action:'START_NIGHT',expectedRevision:0,idempotencyKey:randomUUID(),inGameDate:'2001-05-01'})
+   await executeCharacterAwake('player-awake',char.id,{action:'DECLARE_EXTERNAL',expectedRevision:0,idempotencyKey:randomUUID()})
+   const night=await executeCharacterAwake('player-awake',char.id,{action:'START_NIGHT',expectedRevision:1,idempotencyKey:randomUUID(),inGameDate:'2001-05-01'})
    expect(night.night).toMatchObject({origin:'EXTERNAL_TABLE',number:1})
-   const rollD10=vi.fn(()=>[5]);const input={action:'AWAKE' as const,nightId:night.night.id,expectedRevision:1,idempotencyKey:randomUUID()}
+   const rollD10=vi.fn(()=>[5]);const input={action:'AWAKE' as const,nightId:night.night.id,expectedRevision:2,idempotencyKey:randomUUID()}
    const a=await executeCharacterAwake('player-awake',char.id,input,{rollD10})
    const b=await executeCharacterAwake('player-awake',char.id,input,{rollD10})
    expect(a).toEqual(b)
    expect(rollD10).toHaveBeenCalledTimes(1)
    expect(a).toMatchObject({outcome:'AWAKENED_HUNGRIER',after:{hunger:3}})
    expect((await getCharacterAwake('player-awake',char.id)).last).toMatchObject({nightId:night.night.id})
-   await expect(executeCharacterAwake('player-awake',char.id,{...input,idempotencyKey:randomUUID(),expectedRevision:2},{rollD10})).rejects.toMatchObject({status:409})
+   await expect(executeCharacterAwake('player-awake',char.id,{...input,idempotencyKey:randomUUID(),expectedRevision:3},{rollD10})).rejects.toMatchObject({status:409})
    await expect(getCharacterAwake('stranger',char.id)).rejects.toMatchObject({status:403})
  })
  it('falha em Fome 5 causa torpor sem ultrapassar o teto',async()=>{
    const char=await independent(5)
-   const night=await executeCharacterAwake('player-awake',char.id,{action:'START_NIGHT',expectedRevision:0,idempotencyKey:randomUUID()})
-   const result=await executeCharacterAwake('player-awake',char.id,{action:'AWAKE',nightId:night.night.id,expectedRevision:1,idempotencyKey:randomUUID()},{rollD10:()=>[1]})
+   await executeCharacterAwake('player-awake',char.id,{action:'DECLARE_EXTERNAL',expectedRevision:0,idempotencyKey:randomUUID()})
+   const night=await executeCharacterAwake('player-awake',char.id,{action:'START_NIGHT',expectedRevision:1,idempotencyKey:randomUUID()})
+   const result=await executeCharacterAwake('player-awake',char.id,{action:'AWAKE',nightId:night.night.id,expectedRevision:2,idempotencyKey:randomUUID()},{rollD10:()=>[1]})
    expect(result).toMatchObject({outcome:'TORPOR',after:{hunger:5,condition:'TORPOR',torpor:{cause:'HUNGER'}}})
  })
  it('separa modo jogador de modo forçado e congela execução na noite',async()=>{
