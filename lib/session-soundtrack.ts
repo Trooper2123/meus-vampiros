@@ -14,7 +14,7 @@ export async function getSessionSoundtrack(actorId:string,sessionId:string) {
  const access=await getGameSession(actorId,sessionId)
  const rows=await db.execute<{mood:SoundtrackMood;playing:boolean;started_at:Date|null;revision:number}>(sql`SELECT mood,playing,started_at,revision FROM session_soundtrack_state WHERE session_id=${sessionId}::uuid`)
  const state=rows.rows[0]
- return {mood:state?.mood??'DREAD',playing:access.session.status==='ACTIVE'&&(state?.playing??false),startedAt:state?.started_at?.toISOString()??null,revision:state?.revision??0,canManage:access.canManage,active:access.session.status==='ACTIVE'}
+ return {mood:state?.mood??'DREAD',playing:access.session.status==='ACTIVE'&&(state?.playing??false),startedAt:state?.started_at?new Date(state.started_at).toISOString():null,revision:state?.revision??0,canManage:access.canManage,active:access.session.status==='ACTIVE'}
 }
 export async function updateSessionSoundtrack(actorId:string,sessionId:string,input:SoundtrackCommand) {
  if(!uuid.test(sessionId)||!input||!SOUNDTRACK_MOODS.includes(input.mood)||typeof input.playing!=='boolean'||!Number.isSafeInteger(input.expectedRevision)||input.expectedRevision<0||!uuid.test(input.idempotencyKey)) throw new CharacterCommandError(400,'Comando de trilha inválido.')
