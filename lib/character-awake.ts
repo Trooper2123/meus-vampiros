@@ -6,11 +6,11 @@ import { drawD10 } from './vtm-v5/dice-roll-service'
 import { applyAwakening, readSessionState } from './vtm-v5/session-state'
 
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
-export type AwakeIntent = { action: 'START_NIGHT' | 'AWAKE'; expectedRevision: number; idempotencyKey: string; nightId?: string; inGameDate?: string; sessionId?: string }
+export type AwakeIntent = { action: 'DECLARE_EXTERNAL' | 'START_NIGHT' | 'AWAKE'; expectedRevision: number; idempotencyKey: string; nightId?: string; inGameDate?: string; sessionId?: string }
 
 function validate(input: AwakeIntent) {
-  if (!['START_NIGHT', 'AWAKE'].includes(input.action) || !Number.isSafeInteger(input.expectedRevision) || input.expectedRevision < 0 || !uuid.test(input.idempotencyKey) || input.nightId !== undefined && !uuid.test(input.nightId) || input.sessionId !== undefined && !uuid.test(input.sessionId) || input.inGameDate !== undefined && (!/^\d{4}-\d{2}-\d{2}$/.test(input.inGameDate) || Number.isNaN(Date.parse(input.inGameDate)) || new Date(input.inGameDate).toISOString().slice(0,10) !== input.inGameDate)) throw new CharacterCommandError(400, 'Dados do despertar inválidos.')
-  if (input.action === 'AWAKE' && !input.nightId || input.action === 'START_NIGHT' && (input.nightId || input.sessionId)) throw new CharacterCommandError(400, 'Contexto de noite inválido.')
+  if (!input || !['DECLARE_EXTERNAL', 'START_NIGHT', 'AWAKE'].includes(input.action) || !Number.isSafeInteger(input.expectedRevision) || input.expectedRevision < 0 || !uuid.test(input.idempotencyKey) || input.nightId !== undefined && !uuid.test(input.nightId) || input.sessionId !== undefined && !uuid.test(input.sessionId) || input.inGameDate !== undefined && (!/^\d{4}-\d{2}-\d{2}$/.test(input.inGameDate) || Number.isNaN(Date.parse(input.inGameDate)) || new Date(input.inGameDate).toISOString().slice(0,10) !== input.inGameDate)) throw new CharacterCommandError(400, 'Dados do despertar inválidos.')
+  if (input.action === 'AWAKE' && !input.nightId || input.action !== 'AWAKE' && (input.nightId || input.sessionId)) throw new CharacterCommandError(400, 'Contexto de noite inválido.')
 }
 
 export async function getCharacterAwake(actorId: string, characterId: string) {
@@ -19,7 +19,7 @@ export async function getCharacterAwake(actorId: string, characterId: string) {
   if (!character) throw new CharacterCommandError(404, 'Ficha não encontrada.')
   if (character.ownerId !== actorId && character.masterId !== actorId) throw new CharacterCommandError(403, 'Acesso negado.')
   const state = readSessionState(character.data, character.gameState)
-  if (!character.campaignId) return { context: 'EXTERNAL_TABLE' as const, night: character.gameState.independentNight ?? null, last: character.gameState.lastAwakening ?? null, revision: character.revision, hunger: state.hunger, condition: state.condition, eligible: character.characterType === 'PLAYER_VAMPIRE' && state.condition !== 'FINAL_DEATH' }
+  if (!character.campaignId) return { context: character.gameState.playContext === 'EXTERNAL_TABLE' ? 'EXTERNAL_TABLE' as const : 'UNLINKED' as const, night: character.gameState.independentNight ?? null, last: character.gameState.lastAwakening ?? null, revision: character.revision, hunger: state.hunger, condition: state.condition, eligible: character.characterType === 'PLAYER_VAMPIRE' && state.condition !== 'FINAL_DEATH' }
   const rows = await (await import('./db')).db.execute<{ id: string; in_game_date: string; execution_mode: string; night_number: number }>(sql`SELECT id, in_game_date::text, execution_mode, night_number FROM chronicle_nights WHERE campaign_id = ${character.campaignId}::uuid AND status = 'ACTIVE' ORDER BY night_number DESC LIMIT 1`)
   const night = rows.rows[0] ?? null
   const completed = night ? await (await import('./db')).db.execute<{ outcome: string; roll: number | null }>(sql`SELECT outcome, roll FROM night_awakenings WHERE night_id = ${night.id}::uuid AND character_id = ${character.id}::uuid`) : null
@@ -28,12 +28,18 @@ export async function getCharacterAwake(actorId: string, characterId: string) {
 
 export async function executeCharacterAwake(actorId: string, characterId: string, input: AwakeIntent, dice: DiceProvider = serverDiceProvider) {
   validate(input)
-  return runCharacterCommand(actorId, characterId, { type: input.action === 'START_NIGHT' ? 'INDEPENDENT_NIGHT_STARTED' : 'CHARACTER_AWAKENED', key: input.idempotencyKey, expectedRevision: input.expectedRevision, payload: input }, character => character.ownerId === actorId, async (character, transaction) => {
+  return runCharacterCommand(actorId, characterId, { type: input.action === 'START_NIGHT' ? 'INDEPENDENT_NIGHT_STARTED' : input.action === 'DECLARE_EXTERNAL' ? 'EXTERNAL_TABLE_DECLARED' : 'CHARACTER_AWAKENED', key: input.idempotencyKey, expectedRevision: input.expectedRevision, payload: input }, character => character.ownerId === actorId, async (character, transaction) => {
     if (character.characterType !== 'PLAYER_VAMPIRE' || ['ARCHIVED','DISABLED','DELETED'].includes(character.status)) throw new CharacterCommandError(422, 'Despertar disponível apenas para vampiros jogáveis.')
     const before = readSessionState(character.data, character.gameState)
     if (before.condition === 'FINAL_DEATH') throw new CharacterCommandError(422, 'Personagem morto definitivamente.')
+    if (input.action === 'DECLARE_EXTERNAL') {
+      if (character.campaignId) throw new CharacterCommandError(403,'A ficha já está vinculada a uma mesa do aplicativo.')
+      character.gameState.playContext = 'EXTERNAL_TABLE'
+      return { playContext:'EXTERNAL_TABLE', hunger:before.hunger, condition:before.condition }
+    }
     if (input.action === 'START_NIGHT') {
       if (character.campaignId) throw new CharacterCommandError(403, 'Noites de mesa cadastrada são iniciadas pelo Narrador.')
+      if (character.gameState.playContext !== 'EXTERNAL_TABLE') throw new CharacterCommandError(409,'Indique primeiro que esta ficha pertence a uma mesa fora do aplicativo.')
       const last = character.gameState.independentNight as { number?: number } | undefined
       const night = { id: randomUUID(), number: Number(last?.number ?? 0) + 1, inGameDate: input.inGameDate ?? null, createdAt: new Date().toISOString(), origin: 'EXTERNAL_TABLE' }
       character.gameState.independentNight = night
