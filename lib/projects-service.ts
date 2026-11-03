@@ -151,7 +151,17 @@ export async function getCampaignProjects(actorId:string,campaignId:string){
    const npcOptions=access.is_master&&npcTables?.rows[0]?.ready
      ?await tx.execute<{id:string;name:string}>(sql`SELECT cn.id,nd.name FROM campaign_npcs cn JOIN npc_definitions nd ON nd.id=cn.npc_id WHERE cn.campaign_id=${campaignId}::uuid AND nd.status='ACTIVE' ORDER BY nd.name`)
      :null
-   return {projects,characters:characters.rows,roster:roster.rows,npcOptions:npcOptions?.rows??[],coteries:coteries.rows,canManage:access.is_master&&access.status!=='Arquivada',archived:access.status==='Arquivada'}
+   const ownIds=new Set(characters.rows.map(character=>character.id))
+   const coterieIds=new Set(coteries.rows.map(coterie=>coterie.id))
+   const classified=projects.map(project=>{
+     const record=project as typeof project & {ownerCharacterId?:string|null;coterieId?:string|null;participants?:{characterId:string}[];projectType?:string}
+     const playerRelation = access.is_master ? null
+       : record.projectType==='PERSONAL' && record.ownerCharacterId && ownIds.has(record.ownerCharacterId) ? 'MINE'
+       : record.projectType==='COTERIE' && record.coterieId && coterieIds.has(record.coterieId) ? 'COTERIE'
+       : 'PARTNER'
+     return {...project,playerRelation}
+   })
+   return {projects:classified,characters:characters.rows,roster:roster.rows,npcOptions:npcOptions?.rows??[],coteries:coteries.rows,canManage:access.is_master&&access.status!=='Arquivada',archived:access.status==='Arquivada'}
  })
 }
 export async function commandProject(actorId:string,campaignId:string,input:ProjectCommand,dice:DiceProvider=serverDiceProvider){
