@@ -6,6 +6,7 @@ import useSWR from 'swr'
 import { BookOpen, CalendarDays, Dice5, Droplet, FileText, HeartPulse, MessageCircle, NotebookPen, ScrollText, Shield, Users, LogOut, X } from 'lucide-react'
 import { LiveKitRoomLink } from '@/components/livekit/livekit-room-link'
 import { CharacterSummary } from '@/components/character-summary/character-summary'
+import { SessionSoundtrack } from './session-soundtrack'
 import { DisciplineRollPanel } from '@/components/character-summary/discipline-roll-panel'
 import { CharacterRolls } from '@/components/character-summary/character-rolls'
 import { CharacterAwakePanel } from '@/components/character-summary/character-awake-panel'
@@ -84,7 +85,8 @@ export function SessionPlayerWorkspace({campaignId,actorId,sessionId,characters,
           {tab==='session' && <div className="session-player-events"><div className="session-player-section-heading"><CalendarDays className="size-6"/><div><p className="eyebrow">Minha participação</p><h2>Calendário e disponibilidade</h2><p>Consulte eventos e informe os dias em que pode participar.</p></div></div><CampaignTools campaignId={campaignId} master={false}/></div>}
           {tab==='files' && <div className="session-player-files"><div className="session-player-section-heading"><FileText className="size-6"/><div><p className="eyebrow">Documentos da crônica</p><h2>Arquivos recebidos</h2><p>Materiais que o Narrador compartilhar com você aparecerão aqui.</p></div></div><div className="session-player-empty"><FileText className="size-9"/><h3>Nenhum arquivo compartilhado</h3><p>A integração de handouts por Vercel Blob e seus avisos ainda depende do módulo de compartilhamento da mesa.</p></div></div>}
         </div>
-        {current && sessionId && <PlayerQuickActions characterId={current.id} sessionId={sessionId}/>}
+        {sessionId && <SessionSoundtrack sessionId={sessionId}/>} 
+        {current && sessionId && <PlayerQuickActions characterId={current.id} sessionId={sessionId}/> }
         {(!current||!sessionId) && <div className="session-player-actions-unavailable">As ações de dados e recursos ficam disponíveis quando uma ficha autorizada participa de uma sessão ativa.</div>}
       </main>
       <aside className="session-player-cameras" aria-label="Câmeras da mesa">
