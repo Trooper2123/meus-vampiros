@@ -151,7 +151,7 @@ async function threadAndAccess(client:PoolClient,campaignId:string,actorId:strin
     const delivered=await client.query(`SELECT 1 FROM character_messages m
       JOIN character_message_deliveries d ON d.message_id=m.id
       JOIN characters ch ON ch.id=d.recipient_character_id
-      WHERE m.thread_id=$1::uuid AND ch.user_id=$2 AND ch.status<>'DELETED' LIMIT 1`,[threadId,actorId])
+      WHERE m.thread_id=$1::uuid AND ch.user_id=$2 AND ch.character_type='PLAYER_VAMPIRE' AND ch.status<>'DELETED' LIMIT 1`,[threadId,actorId])
     if(!delivered.rowCount){
       const owner=allowEmptyParticipant && (await client.query('SELECT 1 FROM characters WHERE id=ANY($1::uuid[]) AND user_id=$2 AND status=\'APPROVED\' LIMIT 1',[[thread.character_a_id,thread.character_b_id],actorId])).rowCount
       if(!owner) fail(404,'Conversa não encontrada.')
@@ -169,13 +169,13 @@ export async function smsThreads(campaignId:string,actorId:string,view?:'player'
       ca.name AS "characterA",cb.name AS "characterB",
       (SELECT count(*)::int FROM character_messages m JOIN character_message_deliveries d ON d.message_id=m.id
         JOIN characters ch ON ch.id=d.recipient_character_id
-        WHERE m.thread_id=t.id AND d.read_at IS NULL AND ch.user_id=$2 AND ch.status<>'DELETED') AS "unreadCount"
+        WHERE m.thread_id=t.id AND d.read_at IS NULL AND ch.user_id=$2 AND ch.character_type='PLAYER_VAMPIRE' AND ch.status<>'DELETED') AS "unreadCount"
       FROM character_message_threads t
       JOIN characters ca ON ca.id=t.character_a_id JOIN characters cb ON cb.id=t.character_b_id
       WHERE t.campaign_id=$1::uuid AND ($3::boolean OR EXISTS (
         SELECT 1 FROM character_messages m JOIN character_message_deliveries d ON d.message_id=m.id
         JOIN characters ch ON ch.id=d.recipient_character_id
-        WHERE m.thread_id=t.id AND ch.user_id=$2 AND ch.status<>'DELETED'))
+        WHERE m.thread_id=t.id AND ch.user_id=$2 AND ch.character_type='PLAYER_VAMPIRE' AND ch.status<>'DELETED'))
       ORDER BY t.updated_at DESC LIMIT 100`,[campaignId,actorId,a.role==='narrator'])
     return {...a,threads:results.rows}
   } finally {client.release()}
@@ -195,7 +195,7 @@ export async function smsMessages(campaignId:string,actorId:string,threadId:stri
         AND ($3::boolean OR EXISTS(
           SELECT 1 FROM character_message_deliveries d
           JOIN characters ch ON ch.id=d.recipient_character_id
-          WHERE d.message_id=m.id AND ch.user_id=$2 AND ch.status<>'DELETED'))
+          WHERE d.message_id=m.id AND ch.user_id=$2 AND ch.character_type='PLAYER_VAMPIRE' AND ch.status<>'DELETED'))
         AND ($4::uuid IS NULL OR (m.created_at,m.id)<(SELECT created_at,id FROM character_messages WHERE id=$4::uuid AND thread_id=$1::uuid))
       ORDER BY m.created_at DESC,m.id DESC LIMIT 50`,[threadId,actorId,a.role==='narrator',cursor??null])
     return { ...a, thread:{id:thread.id,characterA:thread.name_a,characterB:thread.name_b},
@@ -286,7 +286,7 @@ export async function smsRead(campaignId:string,actorId:string,threadId:string,v
     await client.query(`UPDATE character_message_deliveries d SET read_at=now()
       FROM character_messages m,characters ch
       WHERE d.message_id=m.id AND ch.id=d.recipient_character_id
-      AND m.thread_id=$1::uuid AND ch.user_id=$2 AND d.read_at IS NULL`,[threadId,actorId])
+      AND m.thread_id=$1::uuid AND ch.user_id=$2 AND ch.character_type='PLAYER_VAMPIRE' AND d.read_at IS NULL`,[threadId,actorId])
     return {ok:true}
   }finally{client.release()}
 }
