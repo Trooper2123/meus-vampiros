@@ -139,6 +139,8 @@ export async function commandCoterie(actorId:string,campaignId:string,input:Inpu
         const member=await tx.execute<{id:string}>(sql`SELECT cm.id FROM coterie_members cm JOIN characters ch ON ch.id=cm.character_id WHERE cm.coterie_id=${coterieId}::uuid AND ch.user_id=${actorId} AND cm.left_at IS NULL LIMIT 1`)
         if(!member.rows[0])throw new CharacterCommandError(403,'Somente membro pode propor este projeto.')
       }
+      const prior=await tx.execute<{id:string}>(sql`SELECT id FROM character_projects WHERE origin_goal_id=${goal.rows[0].id}::uuid`)
+      if(prior.rows[0])throw new CharacterCommandError(409,'Este objetivo já originou um projeto.')
       const project=await tx.execute<{id:string}>(sql`INSERT INTO character_projects (campaign_id,coterie_id,origin_goal_id,name,description,goal_description,project_type,created_by_user_id) VALUES (${campaignId}::uuid,${coterieId}::uuid,${goal.rows[0].id}::uuid,${goal.rows[0].title},${goal.rows[0].description},${goal.rows[0].title},'COTERIE',${actorId}) RETURNING id`)
       await tx.execute(sql`INSERT INTO project_events (project_id,type,description,actor_id) VALUES (${project.rows[0].id}::uuid,'CREATED','Projeto proposto a partir de objetivo da Coterie',${actorId})`)
       await updateRevision(tx,coterieId)
