@@ -14,6 +14,7 @@ on:
       - 'app/campaigns/[id]/projects/**'
       - 'app/api/campaigns/**/projects/stakes/**'
       - 'components/player-campaigns/player-campaign-portal.tsx'
+      - 'app/campaigns/player/[id]/page.tsx'
       - 'lib/coterie-service.ts'
       - 'lib/session11-common.ts'
       - 'lib/vtm-v5/projects.ts'
@@ -62,7 +63,7 @@ jobs:
       - name: Verificar tipos
         run: npx tsc --noEmit --incremental false
       - name: Lint dos módulos de sessão 011
-        run: npx eslint lib/projects-coterie-schema.ts lib/projects-service.ts lib/project-stake-options.ts lib/coterie-service.ts components/projects/campaign-projects-panel.tsx components/projects/player-projects-panel.tsx components/coterie/campaign-coterie-panel.tsx app/campaigns/'[id]'/coterie/page.tsx app/campaigns/'[id]'/projects/page.tsx lib/session11-common.ts lib/vtm-v5/projects.ts app/api/campaigns/'[id]'/projects/route.ts app/api/campaigns/'[id]'/coteries/route.ts
+        run: npx eslint lib/projects-coterie-schema.ts lib/projects-service.ts lib/project-stake-options.ts lib/coterie-service.ts components/projects/campaign-projects-panel.tsx components/projects/player-projects-panel.tsx components/coterie/campaign-coterie-panel.tsx app/campaigns/'[id]'/coterie/page.tsx app/campaigns/'[id]'/projects/page.tsx app/campaigns/'[id]'/page.tsx app/campaigns/player/'[id]'/page.tsx components/player-campaigns/player-campaign-portal.tsx lib/session11-common.ts lib/vtm-v5/projects.ts app/api/campaigns/'[id]'/projects/route.ts app/api/campaigns/'[id]'/coteries/route.ts
       - name: Testar mecânicas e isolamento PostgreSQL
         run: npx vitest run tests/project-mechanics.test.ts tests/session11-projects-coterie.test.ts
       - name: Build de produção
