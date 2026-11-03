@@ -46,7 +46,7 @@ export function DisciplineRollPanel({characterId,sessionId}:Readonly<{characterI
    {pending.current&&!busy&&<button className="button-ghost self-start" type="button" onClick={()=>void roll()}>Reenviar mesma rolagem</button>}
    {result&&<><p className="text-sm">Poder: {result.powerName} · Pool: {result.pool} · Bônus de Potência: {result.bonusDice} · Fome após Rouse: {result.hungerAfter}</p>
     {result.rouseRolls.length>0&&<p className="text-sm">Rouse: {result.rouseRolls.join(', ')}</p>}
-    <AnimatedDice normalDice={result.result.normalDice} hungerDice={result.result.hungerDice} outcome={result.result.outcome} successes={result.result.successes} difficulty={result.result.difficulty} visibility="PUBLIC"/>
+    <AnimatedDice animate={true} normalDice={result.result.normalDice} hungerDice={result.result.hungerDice} outcome={result.result.outcome} successes={result.result.successes} difficulty={result.result.difficulty} visibility="PUBLIC"/>
    </>}
   </div>}
  </section>
