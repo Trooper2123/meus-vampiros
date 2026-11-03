@@ -6,8 +6,10 @@ import useSWR from 'swr'
 import { BookOpen, CalendarDays, Dice5, Droplet, FileText, HeartPulse, MessageCircle, NotebookPen, ScrollText, Shield, Users, LogOut, X } from 'lucide-react'
 import { LiveKitRoomLink } from '@/components/livekit/livekit-room-link'
 import { CharacterSummary } from '@/components/character-summary/character-summary'
+import { DisciplineRollPanel } from '@/components/character-summary/discipline-roll-panel'
 import { CharacterRolls } from '@/components/character-summary/character-rolls'
-import { CharacterAwakePanel } from '@/components/character-summary/character-awake-panel'\nimport { SessionResources } from '@/components/character-summary/session-resources'
+import { CharacterAwakePanel } from '@/components/character-summary/character-awake-panel'
+import { SessionResources } from '@/components/character-summary/session-resources'
 import { NotesPanel } from '@/components/notes/notes-panel'
 import { CampaignTools } from '@/components/campaign-calendar/campaign-tools'
 
@@ -46,7 +48,7 @@ function PlayerQuickActions({characterId,sessionId}:Readonly<{characterId:string
       {actions.map(({id,label,Icon,value})=><button key={id} type="button" className={active===id?'is-active':''} aria-pressed={active===id} onClick={()=>setActive(old=>old===id?null:id)}><Icon className="size-5"/><strong>{label}</strong><small>{value}</small></button>)}
     </div>
     {active && <div className="session-player-action-panel">
-      {active==='roll' ? <><CharacterAwakePanel characterId={characterId} sessionId={sessionId}/><CharacterRolls characterId={characterId} sessionId={sessionId}/></> :
+      {active==='roll' ? <><CharacterAwakePanel characterId={characterId} sessionId={sessionId}/><DisciplineRollPanel characterId={characterId} sessionId={sessionId}/><CharacterRolls characterId={characterId} sessionId={sessionId}/></> :
       <><p className="mb-3 text-xs text-muted-foreground">Ajustes de {active==='health'?'Vitalidade':active==='hunger'?'Fome':'Força de Vontade'} seguem as regras de dano e persistência da ficha.</p><SessionResources characterId={characterId} sessionId={sessionId} focus={active}/></>}
     </div>}
   </section>
