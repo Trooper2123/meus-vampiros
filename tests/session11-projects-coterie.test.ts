@@ -37,7 +37,7 @@ describe('SPEC-SESSION-011: domínio persistente em PostgreSQL isolado',()=>{
    for(let i=0;i<10;i++){await commandProject('narrator-011',campaign.id,command('INCREMENT',{projectId:p.projectId,expectedRevision:revision++,reason:'Avanço narrativo'}) as any)}
    const projects=(await getCampaignProjects('player-011',campaign.id)).projects
    expect(projects).toHaveLength(1)
-   expect((projects[0] as {status:string}).status).toBe('SUCCESS')
+   expect(projects[0].status).toBe('SUCCESS')
  })
  it('Launch comum registra Stake depois do dado e reserva Background coletivo',async()=>{
    const camp=await createTestCampaign('narrator-011')
@@ -55,8 +55,8 @@ describe('SPEC-SESSION-011: domínio persistente em PostgreSQL isolado',()=>{
    const committed=await commandProject('narrator-011',camp.id,command('COMMIT_STAKE',{projectId:p.projectId,expectedRevision:4,stakes:[{coterieId:co.coterieId,trait:'RESOURCES',dots:1}]}) as any)
    expect(committed).toMatchObject({ok:true,revision:5})
    const view=await getCampaignProjects('player-011',camp.id)
-   expect((view.projects[0] as {status:string;projectDie:number}).status).toBe('ACTIVE')
-   expect((view.projects[0] as {projectDie:number}).projectDie).toBe(10)
+   expect(view.projects[0].status).toBe('ACTIVE')
+   expect(view.projects[0].projectDie).toBe(10)
  })
  it('Objetivo coletivo vira Project apenas por comando explícito',async()=>{
    const campaign=await createTestCampaign('narrator-011')
@@ -66,6 +66,6 @@ describe('SPEC-SESSION-011: domínio persistente em PostgreSQL isolado',()=>{
    const project=await commandCoterie('narrator-011',campaign.id,command('GOAL_TO_PROJECT',{coterieId:c.coterieId,goalId:goal.id}) as any)
    expect(project.projectId).toBeTruthy()
    const projects=await getCampaignProjects('narrator-011',campaign.id)
-   expect((projects.projects[0] as {projectType:string}).projectType).toBe('COTERIE')
+   expect(projects.projects[0].projectType).toBe('COTERIE')
  })
 })
