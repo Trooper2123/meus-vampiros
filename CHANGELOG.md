@@ -1,3 +1,18 @@
+## [2026-11-03 01:14 BRT] - feat - Implementações iniciais Awake, SG-010 e SG-011 (não homologadas)
+
+**Branch:** `feat/spec11-sg010-awake`.
+
+**Arquivos principais:** `lib/character-awake.ts`, `lib/campaign-awake-settings.ts`, `lib/character-discipline-rolls.ts`, `lib/session-soundtrack.ts`, respectivas rotas `app/api`, painéis `components/character-summary` e `components/game-session`, `lib/db.ts` e testes novos.
+
+- Awake: declaração explícita de mesa externa, noites independentes por personagem, Rouse Check autoritativo com idempotência, histórico e integração à ficha e à sessão ativa do jogador.
+- Awake em mesa: configuração persistida do responsável (`PLAYER_ROLLS` ou `NARRATOR_FORCES`), preparação de noite pelo Narrador, política congelada na noite e bloqueio de despertar repetido. Adicionada auditoria de alterações.
+- SG-010: catálogo dos poderes efetivamente adquiridos, fórmulas simples validadas no servidor, dados normais/Fome, custo de um Rouse e bônus elegível de Potência. Poderes especiais ou sem fórmula inequívoca permanecem assistidos.
+- SG-011: ambiências **originais geradas no navegador**, sem áudio comercial; Narrador altera clima/reprodução para participantes, volume e mudo individuais, estado persistido e sincronizado por consulta periódica.
+- DDL aditivo: `campaigns.awake_execution_mode`, `chronicle_nights.execution_mode`, `campaign_awake_setting_events`, `session_soundtrack_state`, `session_soundtrack_commands`.
+- Novos testes escritos: `tests/character-awake-individual.test.ts`, `tests/discipline-player-rolls.test.ts`, `tests/session-soundtrack.test.ts`.
+- **Validação: NÃO EXECUTADA.** Não houve checkout completo, typecheck, lint, build, PostgreSQL isolado, execução de testes, nem teste de áudio em navegador. A implementação é **experimental** e não está homologada.
+- Pendentes: ampliar catálogo para poderes com mecânicas especiais, testes resistidos, custo múltiplo de Rouse/Fome 5 assistida, revisão de segurança completa e trilhas em arquivo/licenciadas.
+
 ## [2026-11-02 04:22 BRT] - fix - Atualizar teste da listagem de campanhas
 
 **Arquivos principais:** `tests/session-notes-ui.test.tsx`.
