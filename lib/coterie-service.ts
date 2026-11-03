@@ -54,7 +54,7 @@ export async function getCampaignCoteries(actorId:string,campaignId:string){
       const havens=await tx.execute(sql`SELECT id,name,description,location,is_primary AS "isPrimary" FROM coterie_havens WHERE coterie_id=${id}::uuid`)
       const boons=await tx.execute(sql`SELECT id,type,counterparty,level,description,status FROM coterie_boons_debts WHERE coterie_id=${id}::uuid`)
       const goals=await tx.execute(sql`SELECT id,title,description,status FROM coterie_goals WHERE coterie_id=${id}::uuid ORDER BY created_at DESC`)
-      detail.push({...coteries.rows.find(row=>(row as {id:string}).id===id) as object,members:members.rows,backgrounds:backgrounds.rows,advantages:advantages.rows,havens:havens.rows,boons:boons.rows,goals:goals.rows})
+      detail.push({...(coteries.rows.find(row=>(row as {id:string}).id===id) as object),members:members.rows,backgrounds:backgrounds.rows,advantages:advantages.rows,havens:havens.rows,boons:boons.rows,goals:goals.rows})
     }
     const catalog=await tx.execute(sql`SELECT id,code,name,source,description,suggested_mechanics AS "suggestedMechanics" FROM coterie_type_catalog WHERE active=true ORDER BY name`)
     return {canManage:access.is_master,coteries:detail,types:catalog.rows}
