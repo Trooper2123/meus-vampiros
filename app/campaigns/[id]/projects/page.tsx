@@ -7,6 +7,7 @@ import { getCampaignsForMaster } from '@/lib/campaigns'
 import { getPlayerCampaign } from '@/lib/player-campaigns'
 import { getCampaignProjects } from '@/lib/projects-service'
 import { CampaignProjectsPanel } from '@/components/projects/campaign-projects-panel'
+import { PlayerProjectsPanel } from '@/components/projects/player-projects-panel'
 
 export default async function CampaignProjectsPage({params}:Readonly<{params:Promise<{id:string}>}>) {
  const auth=await getSessionOrDev()
@@ -41,8 +42,8 @@ export default async function CampaignProjectsPage({params}:Readonly<{params:Pro
      </nav>
      <Link className="campaign-return-to-mesas" href={root}><ChevronLeft className="size-4"/>Voltar à mesa</Link>
     </aside>
-    <div className="campaign-approved-main">
-     <CampaignProjectsPanel campaignId={id}/>
+    <div className="campaign-approved-main min-w-0">
+     {masterCampaign ? <CampaignProjectsPanel campaignId={id}/> : <PlayerProjectsPanel campaignId={id}/>}
     </div>
    </div>
   </div>
