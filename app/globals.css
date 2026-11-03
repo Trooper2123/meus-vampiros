@@ -2948,3 +2948,54 @@ main > .archive-header {
 .player-portal-module-pending p{max-width:620px;color:#c7a9a4;font-size:13px;line-height:1.7}
 .player-portal-tabs{row-gap:6px}
 @media(max-width:760px){.player-portal-tabs{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:thin}}
+
+/* SPEC-SESSION-012 — Mensagens entre personagens, separadas do chat LiveKit. */
+.sms-shell{--sms-border:#753b3b;min-width:0;border:1px solid var(--sms-border);border-radius:10px;background:linear-gradient(135deg,#230f15,#10090c 65%);padding:18px;color:#f4e7e1}
+.sms-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;border-bottom:1px solid #653338;padding-bottom:16px}
+.sms-heading h2{display:flex;align-items:center;gap:10px;font-family:var(--font-serif),Georgia,serif;font-size:clamp(20px,2.1vw,28px)}
+.sms-heading h2 svg{color:#ef444d}
+.sms-heading p:last-child{margin-top:5px;color:#c4a7a2;font-size:12px}
+.sms-privacy,.sms-disabled{display:flex;align-items:center;gap:9px;border:1px solid #6d3c3b;border-radius:6px;background:#28151a;margin:13px 0;padding:10px;color:#ddc3bb;font-size:12px;line-height:1.5}
+.sms-privacy svg{flex:none;color:#e54d55}
+.sms-disabled{border-color:#b9773a;color:#f0cda6}
+.sms-layout{display:grid;grid-template-columns:minmax(190px,.68fr) minmax(0,1.8fr);gap:13px;min-height:470px}
+.sms-inbox,.sms-conversation{min-width:0;border:1px solid #603236;border-radius:8px;background:linear-gradient(#220e14,#130b0d);padding:12px}
+.sms-inbox h3,.sms-compose-new h3,.sms-thread-content>h3{margin:4px 0 12px;font-family:var(--font-serif),serif;font-size:19px;color:#f4ddd7}
+.sms-thread{display:flex;align-items:center;gap:8px;width:100%;min-width:0;margin-bottom:5px;border:1px solid #593238;border-radius:7px;background:#1a0d10;padding:10px;color:#ebdad5;text-align:left}
+.sms-thread:hover,.sms-thread.active{border-color:#ed4c57;background:#491620}
+.sms-thread>svg{flex:none;color:#e04c54}
+.sms-thread>span{display:flex;flex:1;min-width:0;flex-direction:column;gap:5px}
+.sms-thread strong{font-family:var(--font-serif),serif;font-size:13px;overflow-wrap:anywhere}
+.sms-thread small{color:#c0a5a0;font-size:10px}
+.sms-unread{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;border-radius:20px;background:#bc2738;padding:1px 5px;color:#fff;font-size:11px}
+.sms-compose-new{border-bottom:1px solid #6e3a3d;padding-bottom:15px}
+.sms-fields{display:flex;flex-wrap:wrap;gap:9px;align-items:flex-end}
+.sms-fields label{display:flex;flex:1 1 150px;min-width:0;flex-direction:column;gap:5px;color:#d7bcb5;font-size:11px}
+.sms-fields select{width:100%;min-height:37px;border:1px solid #865155;border-radius:5px;background:#1f1014;padding:7px;color:#faeae4;font-size:12px}
+.sms-fields button{min-height:37px;padding:6px 11px;font-size:11px}
+.sms-compose-new>.sms-muted{display:flex;align-items:center;gap:7px;margin-top:9px}
+.sms-muted{color:#b79a96;font-size:12px;line-height:1.5}
+.sms-placeholder{padding:38px 0;text-align:center}
+.sms-messages{display:flex;max-height:440px;min-height:120px;flex-direction:column;gap:10px;overflow:auto;padding:12px 0}
+.sms-bubble{align-self:flex-start;max-width:89%;border:1px solid #7d444a;border-radius:10px 10px 10px 2px;background:#31151d;padding:11px 13px;overflow-wrap:anywhere}
+.sms-bubble.mine{align-self:flex-end;border-color:#bf3d4c;border-radius:10px 10px 2px 10px;background:#5c1a28}
+.sms-bubble strong{color:#ffc4c0;font-family:var(--font-serif),serif;font-size:13px}
+.sms-bubble p{margin:5px 0;white-space:pre-wrap;font-size:13px;line-height:1.55}
+.sms-bubble small{color:#bfa8a0;font-size:10px}
+.sms-write{display:flex;align-items:flex-end;gap:9px;border-top:1px solid #603236;padding-top:12px}
+.sms-write textarea{flex:1;min-width:0;border:1px solid #815056;border-radius:6px;background:#180e11;padding:10px;color:#f3e7e1;font-size:12px}
+.sms-write button{display:flex;align-items:center;gap:6px;padding:10px 14px}
+.sms-error{margin:10px 0;color:#ff868c;font-size:12px}
+.sms-settings{display:flex;flex-direction:column;align-items:flex-start;gap:12px;margin:18px 0;border:1px solid #774348;border-radius:8px;background:#1d0e13;padding:19px}
+.sms-settings-title{display:flex;align-items:center;gap:12px}
+.sms-settings-title svg{color:#e94152}
+.sms-settings-title h3{font-family:var(--font-serif),Georgia,serif;font-size:22px}
+.sms-settings>p{color:#c6ada5;font-size:12px;line-height:1.7}
+.sms-toggle{display:flex;align-items:center;gap:12px;border:1px solid #7c4248;border-radius:7px;background:#30151a;padding:9px 13px;color:#f3e1dd;font-size:13px}
+.sms-toggle.active{border-color:#ba5457;background:#431923}
+.sms-toggle-track{position:relative;display:block;width:40px;height:21px;border-radius:30px;background:#5f3e40;transition:background .2s}
+.sms-toggle.active .sms-toggle-track{background:#af3743}
+.sms-toggle-track>span{position:absolute;top:3px;left:3px;width:15px;height:15px;border-radius:50%;background:#fff;transition:transform .2s}
+.sms-toggle.active .sms-toggle-track>span{transform:translateX(19px)}
+.sms-toggle:disabled{opacity:.6;cursor:not-allowed}
+@media(max-width:900px){.sms-layout{grid-template-columns:1fr}.sms-inbox{max-height:220px;overflow:auto}}
