@@ -5,6 +5,7 @@ import {db,ensureAllTables} from '@/lib/db'
 import {createTestCampaign,createTestCharacter,preparePostgresTest} from './postgres-test-helpers'
 import {commandCoterie,getCampaignCoteries} from '@/lib/coterie-service'
 import {commandProject,getCampaignProjects} from '@/lib/projects-service'
+import {getProjectStakeOptions,backgroundDots} from '@/lib/project-stake-options'
 
 const command=(action:string,extra:Record<string,unknown>={})=>({action,idempotencyKey:randomUUID(),...extra})
 describe('SPEC-SESSION-011: domínio persistente em PostgreSQL isolado',()=>{
@@ -97,6 +98,33 @@ describe('SPEC-SESSION-011: domínio persistente em PostgreSQL isolado',()=>{
    await commandProject('owner-011',camp.id,command('UPDATE_DRAFT',{projectId:project.projectId,expectedRevision:1,name:'Conquistar acesso',goalDescription:'Expandir contatos'}) as any)
    await expect(commandProject('narrator-011',camp.id,command('SET_PARTICIPANTS',{projectId:project.projectId,expectedRevision:2,participantIds:[owner.id],npcParticipantIds:[randomUUID()]}) as any)).rejects.toMatchObject({status:422})
    expect((await getCampaignProjects('partner-011',camp.id)).projects).toHaveLength(1)
+ })
+ it('Stake utiliza Background do jogador e desconta reservas de outros projetos',async()=>{
+  const camp=await createTestCampaign('narrator-011')
+  const ch=await createTestCharacter('player-011',camp.id,'Investidora',{fome:0,vantagens:[{name:'Resources',level:2}]})
+  await db.execute(sql`UPDATE characters SET status='APPROVED',character_type='PLAYER_VAMPIRE',game_state='{"hunger":0,"condition":"ACTIVE"}'::jsonb WHERE id=${ch.id}::uuid`)
+  const launch=async(name:string)=>{
+   const p=await commandProject('player-011',camp.id,command('CREATE',{ownerCharacterId:ch.id,name,goalDescription:'Aumentar contatos'}) as any)
+   await commandProject('player-011',camp.id,command('SUBMIT',{projectId:p.projectId,expectedRevision:0}) as any)
+   await commandProject('narrator-011',camp.id,command('APPROVE',{projectId:p.projectId,expectedRevision:1,targetTrait:'Contacts',currentDots:0,finalDots:1,incrementUnit:'MONTH',incrementValue:1,launchPool:3}) as any)
+   const roll=await commandProject('narrator-011',camp.id,command('LAUNCH',{projectId:p.projectId,expectedRevision:2,rollingCharacterId:ch.id}) as any,{rollD10:()=>[6,6,6]})
+   expect(roll.launchResult).toMatchObject({outcome:'WIN',stakeRequired:1})
+   return p.projectId
+  }
+  const first=await launch('Infiltrar o mercado')
+  const initial=await getProjectStakeOptions('narrator-011',camp.id,first)
+  expect(initial.options).toEqual(expect.arrayContaining([expect.objectContaining({ownerType:'CHARACTER',trait:'RESOURCES',dots:2,reserved:0,available:2})]))
+  await commandProject('narrator-011',camp.id,command('COMMIT_STAKE',{projectId:first,expectedRevision:3,stakes:[{characterId:ch.id,trait:'Resources',dots:1}]}) as any)
+  const second=await launch('Expandir rede de favores')
+  const next=await getProjectStakeOptions('narrator-011',camp.id,second)
+  expect(next.options).toEqual(expect.arrayContaining([expect.objectContaining({trait:'RESOURCES',dots:2,reserved:1,available:1})]))
+  await expect(commandProject('narrator-011',camp.id,command('COMMIT_STAKE',{projectId:second,expectedRevision:3,stakes:[{characterId:ch.id,trait:'Resources',dots:2}]}) as any)).rejects.toMatchObject({status:422})
+  await commandProject('narrator-011',camp.id,command('COMMIT_STAKE',{projectId:second,expectedRevision:3,stakes:[{characterId:ch.id,trait:'Resources',dots:1}]}) as any)
+  expect((await getProjectStakeOptions('narrator-011',camp.id,second)).options).toEqual(expect.arrayContaining([expect.objectContaining({trait:'RESOURCES',available:0,reserved:2})]))
+  await expect(getProjectStakeOptions('player-011',camp.id,second)).rejects.toMatchObject({status:403})
+ })
+ it('normaliza nomes e pontos de Background sem duplicar fontes',()=>{
+  expect(backgroundDots({vantagens:[{name:'Resources',level:2},{name:'Resources',level:3}],backgrounds:[{name:'Resources',dots:5}]})).toEqual([{trait:'RESOURCES',dots:3}])
  })
  it('Objetivo coletivo vira Project apenas por comando explícito',async()=>{
    const campaign=await createTestCampaign('narrator-011')
