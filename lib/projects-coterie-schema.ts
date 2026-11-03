@@ -156,6 +156,12 @@ CREATE TABLE IF NOT EXISTS project_participants (
   character_id UUID NOT NULL REFERENCES characters(id) ON DELETE RESTRICT,
   PRIMARY KEY(project_id,character_id)
 );
+CREATE TABLE IF NOT EXISTS project_npc_participants (
+  project_id UUID NOT NULL REFERENCES character_projects(id) ON DELETE CASCADE,
+  campaign_npc_id UUID NOT NULL REFERENCES campaign_npcs(id) ON DELETE RESTRICT,
+  participation_role TEXT NOT NULL DEFAULT 'PARTNER' CHECK(participation_role IN ('PARTNER','ALLY','ADVERSARY','OTHER')),
+  PRIMARY KEY(project_id,campaign_npc_id)
+);
 CREATE TABLE IF NOT EXISTS project_stakes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   project_id UUID NOT NULL REFERENCES character_projects(id) ON DELETE CASCADE,
