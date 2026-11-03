@@ -37,7 +37,7 @@ export default async function CampaignProjectsPage({params}:Readonly<{params:Pro
       <Link href={root}><Home/>Visão da Mesa</Link>
       <Link href={masterCampaign?root+'?view=characters':'/characters'}><BookOpen/>Personagens</Link>
       <Link href={'/campaigns/'+id+'/projects'} className="is-active" aria-current="page"><FolderKanban/>Projetos</Link>
-      <Link href={masterCampaign?root+'?view=coterie':root}><Users/>Coterie</Link>
+      <Link href={'/campaigns/'+id+'/coterie'}><Users/>Coterie</Link>
       <Link href={masterCampaign?root+'?view=calendar':root}><CalendarDays/>Calendário</Link>
      </nav>
      <Link className="campaign-return-to-mesas" href={root}><ChevronLeft className="size-4"/>Voltar à mesa</Link>
