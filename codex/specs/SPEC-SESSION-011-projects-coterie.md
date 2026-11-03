@@ -461,14 +461,16 @@ Informações privadas do Narrador nunca devem ser enviadas no payload do jogado
 
 ## 25. UI — Gestão da Mesa
 
-Manter **duas páginas distintas** e links independentes no menu da campanha; não colocar Projects e Coterie como duas colunas ou seções de uma mesma página:
+**Navegação aprovada pelo usuário (revisão posterior): Projects e Coterie são duas **abas distintas dentro do mesmo hub da campanha**, não páginas independentes. Não renderizar ambos os painéis lado a lado. As abas compartilham o cabeçalho e a navegação da mesa.
 
-```text
-/campaigns/[id]/projects    → página Projetos
-/campaigns/[id]/coterie     → página Coterie
-```
+- Hub do **Narrador**: `/campaigns/[id]?view=projects` e `/campaigns/[id]?view=coterie`.
+- Hub do **jogador**: `/campaigns/player/[id]`, com tabs internas `projects` e `coterie`; parâmetros opcionais `?tab=projects` e `?tab=coterie` para deep links.
+- URLs legadas `/campaigns/[id]/projects` e `/campaigns/[id]/coterie` redirecionam para a aba correspondente após identificar o perfil autorizado.
+- Dentro da aba Coterie, os links para Projects devem mudar para a aba Projetos do **mesmo hub**, sem recarregar uma página independente.
+- Usar `CampaignProjectsPanel` para Narrador, `PlayerProjectsPanel` para jogador e `CampaignCoteriePanel` para ambos, mantendo autorização no servidor.
+- Preservar a identidade visual do hub: vermelho profundo, preto, molduras existentes, tipografia serif e a barra horizontal de abas do jogador.
 
-A navegação do Narrador e a área do jogador devem apontar para essas mesmas áreas independentes, com projeções e ações adaptadas ao papel. A Coterie pode referenciar Projects, porém não incorpora o painel completo de Projetos. Manter o estilo visual real da aplicação: vermelho profundo, preto, molduras ornamentais douradas, tipografia gótica/serif e cards já existentes; evitar visual genérico de dashboard cinza.
+A distinção entre Projects e Coterie é **funcional e de conteúdo**, não de página/rota isolada.
 
 ### Projetos
 
@@ -479,11 +481,11 @@ Exibir contadores de Ativos, Aguardando e Concluídos e cards contendo propriet�
 - Parceria **não** altera `project_type`: um Project pode continuar `PERSONAL` e envolver outros jogadores/NPCs; `COTERIE` é propriedade do grupo.
 - A UI nunca depende só de filtros para esconder projetos alheios: a API deve aplicar autorização por personagem, participação ou Coterie.
 
-### Cotterie
+### Coterie
 
 Exibir nome, tipo, membros, Domain (Chasse/Lien/Portillon), Backgrounds, Haven, Goals e Boons/Debts.
 
-**Regra do projeto:** apresentar **dois mockups separados**, um para Projetos e outro para Coterie, alinhados à imagem real da interface enviada pelo usuário, antes da implementação de qualquer novo layout. A primeira versão com os dois painéis lado a lado foi rejeitada como estrutura da navegação.
+**Regra de UX atual:** manter os painéis já aprovados dentro das abas do hub existente, sem introduzir uma navegação lateral extra para Coterie/Projects e sem alterar a identidade visual. Novas mudanças visuais significativas continuam exigindo prévia revisão.
 
 ### 25.1. Participação de jogadores e NPCs
 
@@ -519,7 +521,7 @@ Exibir nome, tipo, membros, Domain (Chasse/Lien/Portillon), Backgrounds, Haven, 
 - [ ] Coterie Goals são distintos de Projects.
 - [ ] Goal pode originar Project coletivo.
 - [ ] Narrador controla aprovação e resolução mecânica.
-- [ ] Projetos e Coterie possuem **páginas/rotas diferentes** com identidade visual já adotada na aplicação.
+- [ ] Projetos e Coterie possuem **abas separadas no mesmo hub**, para Narrador e jogador, sem sair da campanha.
 - [ ] Narrador pode consultar todos e criar Projects para qualquer personagem ou Coterie da mesa.
 - [ ] Jogador consulta apenas Projects do seu personagem, com participação explícita, ou da Coterie da qual faça parte.
 - [ ] Project pessoal pode incluir outros jogadores e NPCs da mesa sem transferir propriedade.
