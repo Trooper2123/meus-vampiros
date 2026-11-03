@@ -133,7 +133,7 @@ CREATE TABLE IF NOT EXISTS character_projects (
   increment_value INT CHECK(increment_value BETWEEN 1 AND 120),
   project_die INT CHECK(project_die BETWEEN 1 AND 10),
   launch_pool INT CHECK(launch_pool BETWEEN 1 AND 50),
-  launch_difficulty INT CHECK(launch_difficulty BETWEEN 3 AND 7),
+  launch_difficulty INT CHECK(launch_difficulty BETWEEN 3 AND 50),
   launch_result JSONB,
   approved_at TIMESTAMPTZ,
   approved_by_user_id TEXT,
