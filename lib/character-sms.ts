@@ -67,13 +67,13 @@ export async function ensureSmsSchema() {
   await schema
 }
 
-async function access(db: PoolClient, campaignId: string, actorId: string): Promise<Access> {
+async function access(db: PoolClient, campaignId: string, actorId: string, view?: 'player'): Promise<Access> {
   if (!smsUuid(campaignId)) fail(400, 'Mesa inválida.')
   const result = await db.query<{ master_user_id: string; character_sms_enabled: boolean; status: string }>(
     'SELECT master_user_id,character_sms_enabled,status FROM campaigns WHERE id=$1::uuid', [campaignId])
   const campaign = result.rows[0]
   if (!campaign) fail(404, 'Mesa não encontrada.')
-  if (campaign.master_user_id === actorId) return { role: 'narrator', enabled: campaign.character_sms_enabled }
+  if (campaign.master_user_id === actorId && view !== 'player') return { role: 'narrator', enabled: campaign.character_sms_enabled }
   const member = await db.query('SELECT 1 FROM characters WHERE campaign_id=$1::uuid AND user_id=$2 AND character_type=$3 AND status<>$4 LIMIT 1',
     [campaignId,actorId,'PLAYER_VAMPIRE','DELETED'])
   if (!member.rowCount) fail(404, 'Mesa não disponível.')
@@ -122,11 +122,11 @@ export async function setSmsSettings(campaignId: string, actorId: string, enable
   } catch(e) { await client.query('ROLLBACK'); throw e } finally { client.release() }
 }
 
-export async function smsContacts(campaignId: string, actorId: string) {
+export async function smsContacts(campaignId: string, actorId: string, view?: 'player') {
   await ensureSmsSchema()
   const client=await pool!.connect()
   try {
-    const a=await access(client,campaignId,actorId)
+    const a=await access(client,campaignId,actorId,view)
     const characters=await client.query<{id:string;name:string;characterType:string;owned:boolean}>(
       `SELECT id,name,character_type AS "characterType",user_id=$2 AS owned FROM characters
        WHERE campaign_id=$1::uuid AND status<>'DELETED'
@@ -138,9 +138,9 @@ export async function smsContacts(campaignId: string, actorId: string) {
 }
 
 type Thread = {id:string;kind:string;character_a_id:string;character_b_id:string;updated_at:Date;name_a:string;name_b:string}
-async function threadAndAccess(client:PoolClient,campaignId:string,actorId:string,threadId:string,allowEmptyParticipant=false) {
+async function threadAndAccess(client:PoolClient,campaignId:string,actorId:string,threadId:string,allowEmptyParticipant=false,view?:'player') {
   if (!smsUuid(threadId)) fail(404,'Conversa não encontrada.')
-  const a=await access(client,campaignId,actorId)
+  const a=await access(client,campaignId,actorId,view)
   const record=await client.query<Thread>(`SELECT t.*,ca.name AS name_a,cb.name AS name_b
     FROM character_message_threads t JOIN characters ca ON ca.id=t.character_a_id
     JOIN characters cb ON cb.id=t.character_b_id
@@ -160,11 +160,11 @@ async function threadAndAccess(client:PoolClient,campaignId:string,actorId:strin
   return {a,thread}
 }
 
-export async function smsThreads(campaignId:string,actorId:string){
+export async function smsThreads(campaignId:string,actorId:string,view?:'player'){
   await ensureSmsSchema()
   const client=await pool!.connect()
   try {
-    const a=await access(client,campaignId,actorId)
+    const a=await access(client,campaignId,actorId,view)
     const results=await client.query(`SELECT t.id,t.kind,t.updated_at AS "updatedAt",
       ca.name AS "characterA",cb.name AS "characterB",
       (SELECT count(*)::int FROM character_messages m JOIN character_message_deliveries d ON d.message_id=m.id
@@ -181,11 +181,11 @@ export async function smsThreads(campaignId:string,actorId:string){
   } finally {client.release()}
 }
 
-export async function smsMessages(campaignId:string,actorId:string,threadId:string,cursor?:string) {
+export async function smsMessages(campaignId:string,actorId:string,threadId:string,cursor?:string,view?:'player') {
   await ensureSmsSchema()
   const client=await pool!.connect()
   try{
-    const {a,thread}=await threadAndAccess(client,campaignId,actorId,threadId,true)
+    const {a,thread}=await threadAndAccess(client,campaignId,actorId,threadId,true,view)
     if(cursor && !smsUuid(cursor)) fail(400,'Cursor inválido.')
     const rows=await client.query(`SELECT m.id,m.body,m.sender_character_id AS "senderCharacterId",
       c.name AS "senderName",m.created_at AS "createdAt",
@@ -203,7 +203,7 @@ export async function smsMessages(campaignId:string,actorId:string,threadId:stri
   } finally {client.release()}
 }
 
-export async function smsStart(campaignId:string,actorId:string,input:Record<string,unknown>){
+export async function smsStart(campaignId:string,actorId:string,input:Record<string,unknown>,view?:'player'){
   const senderId=input.senderCharacterId
   const recipientId=input.recipientCharacterId
   if(!smsUuid(senderId)||!smsUuid(recipientId)||senderId===recipientId) fail(422,'Remetente ou destinatário inválido.')
@@ -212,7 +212,7 @@ export async function smsStart(campaignId:string,actorId:string,input:Record<str
   try{
     await client.query('BEGIN')
     await client.query('SELECT id FROM campaigns WHERE id=$1::uuid FOR UPDATE',[campaignId])
-    const a=await access(client,campaignId,actorId)
+    const a=await access(client,campaignId,actorId,view)
     if(!a.enabled) fail(409,'SMS_DISABLED')
     const sender=await character(client,campaignId,senderId)
     const recipient=await character(client,campaignId,recipientId)
@@ -228,7 +228,7 @@ export async function smsStart(campaignId:string,actorId:string,input:Record<str
   } catch(e){await client.query('ROLLBACK');throw e} finally{client.release()}
 }
 
-export async function smsSend(campaignId:string,actorId:string,threadId:string,input:Record<string,unknown>){
+export async function smsSend(campaignId:string,actorId:string,threadId:string,input:Record<string,unknown>,view?:'player'){
   const senderId=input.senderCharacterId
   const key=input.idempotencyKey
   const body=input.body
@@ -240,7 +240,7 @@ export async function smsSend(campaignId:string,actorId:string,threadId:string,i
     // Lock the campaign row so disable and send cannot race each other.
     const locked=await client.query('SELECT id FROM campaigns WHERE id=$1::uuid FOR UPDATE',[campaignId])
     if(!locked.rowCount) fail(404,'Mesa não encontrada.')
-    const {a,thread}=await threadAndAccess(client,campaignId,actorId,threadId,true)
+    const {a,thread}=await threadAndAccess(client,campaignId,actorId,threadId,true,view)
     if(!a.enabled) fail(409,'SMS_DISABLED')
     const sender=await character(client,campaignId,senderId)
     if(!canActAs(sender,a.role,actorId)) fail(403,'Você não pode enviar como este personagem.')
@@ -277,11 +277,11 @@ export async function smsSend(campaignId:string,actorId:string,threadId:string,i
   }catch(e){await client.query('ROLLBACK');throw e}finally{client.release()}
 }
 
-export async function smsRead(campaignId:string,actorId:string,threadId:string){
+export async function smsRead(campaignId:string,actorId:string,threadId:string,view?:'player'){
   await ensureSmsSchema()
   const client=await pool!.connect()
   try{
-    const {a}=await threadAndAccess(client,campaignId,actorId,threadId)
+    const {a}=await threadAndAccess(client,campaignId,actorId,threadId,false,view)
     if(a.role==='narrator')return {ok:true}
     await client.query(`UPDATE character_message_deliveries d SET read_at=now()
       FROM character_messages m,characters ch
