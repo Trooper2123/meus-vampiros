@@ -24,11 +24,14 @@ export async function ensureSmsSchema() {
         character_a_id UUID REFERENCES characters(id),
         character_b_id UUID REFERENCES characters(id),
         coterie_id UUID,
+        coterie_name TEXT,
         created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
         updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
         CHECK (kind <> 'DIRECT' OR (character_a_id IS NOT NULL AND character_b_id IS NOT NULL AND character_a_id <> character_b_id)),
         CHECK (kind <> 'COTERIE' OR coterie_id IS NOT NULL)
       )`)
+      await pool.query('ALTER TABLE character_message_threads ADD COLUMN IF NOT EXISTS coterie_name TEXT')
+      await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS sms_coterie_unique ON character_message_threads (campaign_id,coterie_id) WHERE kind='COTERIE'`)
       await pool.query(`CREATE UNIQUE INDEX IF NOT EXISTS sms_direct_unique ON character_message_threads
         (campaign_id, character_a_id, character_b_id) WHERE kind='DIRECT'`)
       await pool.query(`CREATE TABLE IF NOT EXISTS character_messages (
