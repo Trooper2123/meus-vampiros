@@ -147,7 +147,11 @@ export async function getCampaignProjects(actorId:string,campaignId:string){
    const characters=await tx.execute<{id:string;name:string}>(sql`SELECT id,name FROM characters WHERE campaign_id=${campaignId}::uuid AND character_type='PLAYER_VAMPIRE' AND status NOT IN ('DELETED','ARCHIVED') AND (${access.is_master} OR user_id=${actorId}) ORDER BY name`)
    const roster=await tx.execute<{id:string;name:string}>(sql`SELECT id,name FROM characters WHERE campaign_id=${campaignId}::uuid AND character_type='PLAYER_VAMPIRE' AND status NOT IN ('DELETED','ARCHIVED') ORDER BY name`)
    const coteries=await tx.execute<{id:string;name:string}>(sql`SELECT co.id,co.name FROM coteries co WHERE co.campaign_id=${campaignId}::uuid AND (${access.is_master} OR EXISTS(SELECT 1 FROM coterie_members cm JOIN characters ch ON ch.id=cm.character_id WHERE cm.coterie_id=co.id AND cm.left_at IS NULL AND ch.user_id=${actorId})) ORDER BY co.name`)
-   return {projects,characters:characters.rows,roster:roster.rows,coteries:coteries.rows,canManage:access.is_master&&access.status!=='Arquivada',archived:access.status==='Arquivada'}
+   const npcTables=access.is_master?await tx.execute<{ready:boolean}>(sql`SELECT to_regclass('campaign_npcs') IS NOT NULL AND to_regclass('npc_definitions') IS NOT NULL AS ready`):null
+   const npcOptions=access.is_master&&npcTables?.rows[0]?.ready
+     ?await tx.execute<{id:string;name:string}>(sql`SELECT cn.id,nd.name FROM campaign_npcs cn JOIN npc_definitions nd ON nd.id=cn.npc_id WHERE cn.campaign_id=${campaignId}::uuid AND nd.status='ACTIVE' ORDER BY nd.name`)
+     :null
+   return {projects,characters:characters.rows,roster:roster.rows,npcOptions:npcOptions?.rows??[],coteries:coteries.rows,canManage:access.is_master&&access.status!=='Arquivada',archived:access.status==='Arquivada'}
  })
 }
 export async function commandProject(actorId:string,campaignId:string,input:ProjectCommand,dice:DiceProvider=serverDiceProvider){
