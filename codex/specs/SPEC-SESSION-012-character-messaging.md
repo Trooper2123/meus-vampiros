@@ -69,7 +69,7 @@ Criar um sistema persistente de mensagens *in character*, com aparência de SMS/
 
 Acesso a uma campanha exige ser Narrador ou controlar personagem válido nela. O acesso ao sistema deve validar o status atual e a elegibilidade do personagem, não apenas user_id. A política inicial para participação ativa é PLAYER_VAMPIRE com status APPROVED e não removido, desabilitado ou arquivado. O Narrador pode usar NPCs pertencentes à campanha, desde que existam e não estejam excluídos.
 
-- A consulta de envio deve confirmar campaign_id do emissor, campaign_id do destinatário, tipo e propriedade de ambos. Não aceitar sender_actor_id, created_by_actor_id ou is_narrator enviados pelo cliente.
+- A consulta de envio deve confirmar campaign_id do emissor, campaign_id do destinatário, tipo e legitimidade de acesso. Jogador deve ser proprietário do próprio personagem; **o Narrador é exceção autorizada para enviar como outro personagem**. Não aceitar sender_actor_id, created_by_actor_id ou is_narrator enviados pelo cliente.
 - Para o Narrador, permitir selecionar qualquer personagem da campanha em sua função de remetente, inclusive personagens dos jogadores; o servidor registra a atuação do Narrador.
 - Jogadores podem selecionar somente um de seus próprios personagens APPROVED; para conversa direta, o destinatário deve ser um personagem da campanha permitido pelo catálogo de contatos visíveis. NPCs ocultos não podem ser descobertos por enumeração.
 - O acesso ao histórico deve ser decidido por **entregas/visibilidade persistida por mensagem**, não por um filtro ingênuo de campaign_id ou pela participação atual em uma thread. Também deve existir uma entrega especial ao proprietário do personagem quando **o Narrador envia como esse personagem**, sem entregar automaticamente as outras mensagens da conversa.
@@ -328,7 +328,7 @@ A área de Configurações da Mesa (`/campaigns/[id]?view=settings`) deve inclui
 
 ## 15. Critérios de aceite
 
-- [ ] Jogador vê apenas mensagens efetivamente dirigidas às suas fichas ou Coterie.
+- [ ] Jogador vê mensagens entregues às próprias fichas ou Coterie **e mensagens enviadas pelo Narrador usando a identidade de uma ficha sua**, sem acesso às demais mensagens alheias.
 - [ ] Narrador vê todas as mensagens da própria campanha, inclusive DIRECT.
 - [ ] Narrador responde como NPC ou outro personagem, com auditoria da identidade real.
 - [ ] Jogador vê cada mensagem que o Narrador enviou ou respondeu como seu personagem, mesmo sem ser destinatário original, sem acesso ao restante da conversa alheia.
