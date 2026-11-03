@@ -8,8 +8,9 @@ type Contact = {id:string;name:string;characterType:string;owned:boolean}
 type Thread = {id:string;kind:string;updatedAt:string;characterA:string;characterB:string;unreadCount:number}
 type Message = {id:string;body:string;senderCharacterId:string;senderName:string;createdAt:string;narratorOperated:boolean|null}
 type Inbox = {enabled:boolean;isNarrator:boolean;threads:Thread[]}
-type Contacts = {enabled:boolean;isNarrator:boolean;characters:Contact[]}
-type History = {enabled:boolean;isNarrator:boolean;thread:{id:string;characterA:string;characterB:string;characterAId:string;characterBId:string};messages:Message[]}
+type Coterie = {id:string;name:string;ownedCharacterIds:string[]}
+type Contacts = {enabled:boolean;isNarrator:boolean;characters:Contact[];coteries:Coterie[]}
+type History = {enabled:boolean;isNarrator:boolean;thread:{id:string;kind:'DIRECT'|'COTERIE';characterA:string;characterB:string;characterAId:string|null;characterBId:string|null};messages:Message[]}
 const get = async (url:string) => {
   const r=await fetch(url,{cache:'no-store'})
   const body=await r.json().catch(()=>({}))
@@ -27,6 +28,8 @@ export function CharacterSms({campaignId,mode='player'}:Readonly<{campaignId:str
   const [threadId,setThreadId]=useState<string|null>(null)
   const [senderId,setSenderId]=useState('')
   const [recipientId,setRecipientId]=useState('')
+  const [newKind,setNewKind]=useState<'DIRECT'|'COTERIE'>('DIRECT')
+  const [coterieId,setCoterieId]=useState('')
   const [body,setBody]=useState('')
   const [busy,setBusy]=useState(false)
   const [error,setError]=useState('')
@@ -36,10 +39,13 @@ export function CharacterSms({campaignId,mode='player'}:Readonly<{campaignId:str
   const isNarrator=mode==='narrator' && inbox?.isNarrator===true
   const allContacts=contacts?.characters??[]
   const senders=isNarrator?allContacts:allContacts.filter(c=>c.owned&&c.characterType==='PLAYER_VAMPIRE')
-  const currentSender=senders.some(c=>c.id===senderId)?senderId:(senders[0]?.id??'')
+  const coteries=contacts?.coteries??[]
+  const currentCoterie=coteries.find(c=>c.id===coterieId)??coteries[0]
+  const newSenders=newKind==='COTERIE'&&!isNarrator?senders.filter(c=>currentCoterie?.ownedCharacterIds.includes(c.id)):senders
+  const currentSender=newSenders.some(c=>c.id===senderId)?senderId:(newSenders[0]?.id??'')
   const recipients=allContacts.filter(c=>c.id!==currentSender)
   const selectedRecipient=recipients.some(c=>c.id===recipientId)?recipientId:(recipients[0]?.id??'')
-  const replySenders=isNarrator?senders:senders.filter(c=>history?.thread && [history.thread.characterAId,history.thread.characterBId].includes(c.id))
+  const replySenders=isNarrator?senders:senders.filter(c=>history?.thread && (history.thread.kind==='COTERIE' ? coteries.find(co=>co.id===inbox?.threads.find(t=>t.id===threadId)?.id)?.ownedCharacterIds.includes(c.id) : [history.thread.characterAId,history.thread.characterBId].includes(c.id)))
   const replySender=replySenders.some(c=>c.id===senderId)?senderId:(replySenders[0]?.id??'')
   const count=useMemo(()=>inbox?.threads.reduce((sum,t)=>sum+Number(t.unreadCount??0),0)??0,[inbox])
   const messages=history?.messages??[]
@@ -57,10 +63,10 @@ export function CharacterSms({campaignId,mode='player'}:Readonly<{campaignId:str
   },[threadId,latestMessageId,threadUrl,inbox?.enabled,refreshInbox])
 
   async function createConversation(){
-    if(!currentSender||!selectedRecipient||busy)return
+    if(!currentSender||(newKind==='DIRECT'&&!selectedRecipient)||(newKind==='COTERIE'&&!currentCoterie)||busy)return
     setBusy(true);setError('')
     try{
-      const response=await fetch(inboxUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({senderCharacterId:currentSender,recipientCharacterId:selectedRecipient})})
+      const response=await fetch(inboxUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(newKind==='COTERIE'?{kind:'COTERIE',senderCharacterId:currentSender,coterieId:currentCoterie?.id}:{kind:'DIRECT',senderCharacterId:currentSender,recipientCharacterId:selectedRecipient})})
       const data=await response.json().catch(()=>({}))
       if(!response.ok)throw new Error(data.error??'Não foi possível criar a conversa.')
       setThreadId(data.id);setBody('')
@@ -95,13 +101,14 @@ export function CharacterSms({campaignId,mode='player'}:Readonly<{campaignId:str
       </aside>
       <div className="sms-conversation">
         <div className="sms-compose-new">
-          <h3>Nova conversa direta</h3>
+          <h3>Nova conversa</h3>
+          <div className="sms-target-kind"><button type="button" aria-pressed={newKind==='DIRECT'} className={newKind==='DIRECT'?'active':''} onClick={()=>setNewKind('DIRECT')}>Direta</button><button type="button" aria-pressed={newKind==='COTERIE'} className={newKind==='COTERIE'?'active':''} onClick={()=>setNewKind('COTERIE')}>Coterie</button></div>
           <div className="sms-fields">
-            <label>Falar como <select value={currentSender} onChange={e=>setSenderId(e.target.value)} disabled={disabled||busy}>{senders.map(c=><option key={c.id} value={c.id}>{c.name}{isNarrator?' · '+c.characterType:''}</option>)}</select></label>
-            <label>Enviar para <select value={selectedRecipient} onChange={e=>setRecipientId(e.target.value)} disabled={disabled||busy}>{recipients.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
-            <button type="button" className="button-ghost" disabled={disabled||busy||!currentSender||!selectedRecipient} onClick={()=>void createConversation()}>Abrir conversa</button>
+            <label>Falar como <select value={currentSender} onChange={e=>setSenderId(e.target.value)} disabled={disabled||busy}>{newSenders.map(c=><option key={c.id} value={c.id}>{c.name}{isNarrator?' · '+c.characterType:''}</option>)}</select></label>
+            {newKind==='DIRECT'?<label>Enviar para <select value={selectedRecipient} onChange={e=>setRecipientId(e.target.value)} disabled={disabled||busy}>{recipients.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select></label>:<label>Coterie <select value={currentCoterie?.id??''} onChange={e=>setCoterieId(e.target.value)} disabled={disabled||busy||coteries.length===0}>{coteries.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select></label>}
+            <button type="button" className="button-ghost" disabled={disabled||busy||!currentSender||(newKind==='DIRECT'?!selectedRecipient:!currentCoterie)} onClick={()=>void createConversation()}>Abrir conversa</button>
           </div>
-          <p className="sms-muted"><Users className="size-4"/>Mensagens para toda a Coterie serão disponibilizadas quando o módulo de membros da Coterie estiver ativo.</p>
+          {coteries.length===0&&<p className="sms-muted"><Users className="size-4"/>Conversa de Coterie disponível quando o Narrador cadastrar membros no módulo de Coterie.</p>}
         </div>
         {threadId&&<div className="sms-thread-content">
           <h3>{history?.thread.characterA} · {history?.thread.characterB}</h3>
