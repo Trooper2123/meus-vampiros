@@ -157,7 +157,7 @@ export default async function PersonagensPage() {
                                                 <dd className="mt-1">{character.spentXp ?? '0'} / {character.totalXp ?? '0'}</dd>
                                             </div>
                                         </dl>
-                                        {character.campaignId && character.characterType === 'PLAYER_VAMPIRE' && character.status !== 'ARCHIVED' && <Link href={`/campaigns/player/${character.campaignId}`} className="characters-access-campaign" aria-label={`Acessar a mesa ${character.campaignName ?? ''} como jogador`}><Layers3 className="size-4" aria-hidden="true"/><span>Acessar mesa</span><ArrowRight className="size-4" aria-hidden="true"/></Link>}
+                                        {character.campaignId && character.characterType === 'PLAYER_VAMPIRE' && <Link href={`/campaigns/player/${character.campaignId}`} className="characters-access-campaign" aria-label={`Acessar a mesa ${character.campaignName ?? ''} como jogador`}><Layers3 className="size-4" aria-hidden="true"/><span>Acessar mesa</span><ArrowRight className="size-4" aria-hidden="true"/></Link>}
                                         <div className="archive-card-actions characters-ui-actions">
                                             {character.characterType === 'PLAYER_VAMPIRE' &&
                                                 <GetResumeCharacterButton characterId={character.id}/>}
