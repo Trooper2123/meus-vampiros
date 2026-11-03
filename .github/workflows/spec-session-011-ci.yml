@@ -56,3 +56,7 @@ jobs:
         run: npx eslint lib/projects-coterie-schema.ts lib/projects-service.ts lib/coterie-service.ts lib/session11-common.ts lib/vtm-v5/projects.ts app/api/campaigns/'[id]'/projects/route.ts app/api/campaigns/'[id]'/coteries/route.ts
       - name: Testar mecânicas e isolamento PostgreSQL
         run: npx vitest run tests/project-mechanics.test.ts tests/session11-projects-coterie.test.ts
+      - name: Build de produção
+        run: npm run build
+      - name: Auditoria de dependências de produção
+        run: npm audit --omit=dev --audit-level=high
