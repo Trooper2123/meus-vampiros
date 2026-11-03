@@ -3,6 +3,7 @@ import { db } from './db'
 import { CharacterCommandError } from './character-commands'
 import { campaignAccess,dots,optionalText,requireCharacterOfCampaign,requireText,requireUuid,runCampaignCommand,type Session11Tx,type CampaignAccess } from './session11-common'
 import { advanceProjectDie,launchDifficulty,projectScope,resolveProjectGoal,resolveProjectLaunch } from './vtm-v5/projects'
+import { stakeOptionsForProject } from './project-stake-options'
 import { serverDiceProvider,type DiceProvider } from './vtm-v5/dice-provider'
 
 type ProjectStatus='DRAFT'|'AWAITING_APPROVAL'|'ACTIVE'|'SUCCESS'|'FAILED'|'ABANDONED'
@@ -62,29 +63,13 @@ async function participantAccess(tx:Session11Tx,project:ProjectRow,actorId:strin
 }
 function requireMaster(access:CampaignAccess){if(!access.is_master)throw new CharacterCommandError(403,'Ação exclusiva do Narrador da mesa.')}
 async function availableStake(tx:Session11Tx,project:ProjectRow,item:Stake){
- const trait=requireText(item.trait,'Background',80)
+ const trait=requireText(item.trait,'Background',80).toUpperCase()
  const amount=dots(item.dots,'Pontos comprometidos',1)
  const hasCharacter=typeof item.characterId==='string',hasCoterie=typeof item.coterieId==='string'
  if(hasCharacter===hasCoterie)throw new CharacterCommandError(400,'Stake precisa pertencer a um personagem ou à Coterie.')
- let actual=0
- if(hasCoterie){
-   requireUuid(item.coterieId,'Coterie inválida.')
-   if(project.coterie_id!==item.coterieId)throw new CharacterCommandError(403,'Stake de outra Coterie.')
-   const r=await tx.execute<{dots:number}>(sql`SELECT dots FROM coterie_backgrounds WHERE coterie_id=${item.coterieId}::uuid AND background_code=${trait.toUpperCase()} FOR UPDATE`)
-   actual=r.rows.reduce((sum,row)=>sum+Number(row.dots),0)
- }else{
-   const ch=await requireCharacterOfCampaign(tx,project.campaign_id,item.characterId!)
-   const r=await tx.execute<{data:Record<string,unknown>}>(sql`SELECT data FROM characters WHERE id=${ch.id}::uuid FOR UPDATE`)
-   const data=r.rows[0]?.data??{}
-   const backgrounds=Array.isArray(data.vantagens)?data.vantagens:[]
-   actual=backgrounds.reduce<number>((sum,entry)=>{
-     if(!entry||typeof entry!=='object'||Array.isArray(entry))return sum
-     const v=entry as {name?:unknown;level?:unknown}
-     return typeof v.name==='string'&&v.name.trim().toUpperCase()===trait.toUpperCase() ? sum+Number(v.level??0):sum
-   },0)
- }
- const existing=await tx.execute<{dots:number}>(sql`SELECT COALESCE(SUM(dots),0)::int AS dots FROM project_stakes WHERE trait=${trait} AND released_at IS NULL AND ${hasCharacter?sql`character_id=${item.characterId}::uuid`:sql`coterie_id=${item.coterieId}::uuid`}`)
- if(actual-Number(existing.rows[0]?.dots??0)<amount)throw new CharacterCommandError(422,'Não há dots disponíveis para comprometer neste Background.')
+ const options=await stakeOptionsForProject(tx,project.campaign_id,project.id)
+ const option=options.find(entry=>entry.ownerId===(item.characterId??item.coterieId)&&entry.trait===trait&&entry.ownerType===(hasCharacter?'CHARACTER':'COTERIE'))
+ if(!option||option.available<amount)throw new CharacterCommandError(422,'Pontos insuficientes: este Background pode já estar comprometido em outro projeto.')
  return {trait,amount}
 }
 async function commitStakes(tx:Session11Tx,project:ProjectRow,stakes:Stake[],required:number){
@@ -99,7 +84,7 @@ async function commitStakes(tx:Session11Tx,project:ProjectRow,stakes:Stake[],req
    sum+=checked.amount
  }
  if(sum!==required)throw new CharacterCommandError(422,`O lançamento exige ${required} pontos em Stake.`)
- for(const stake of stakes)await tx.execute(sql`INSERT INTO project_stakes (project_id,character_id,coterie_id,trait,dots) VALUES (${project.id}::uuid,${stake.characterId??null}::uuid,${stake.coterieId??null}::uuid,${stake.trait.trim()},${stake.dots})`)
+ for(const stake of stakes)await tx.execute(sql`INSERT INTO project_stakes (project_id,character_id,coterie_id,trait,dots) VALUES (${project.id}::uuid,${stake.characterId??null}::uuid,${stake.coterieId??null}::uuid,${stake.trait.trim().toUpperCase()},${stake.dots})`)
 }
 async function finalize(tx:Session11Tx,projectId:string,status:'SUCCESS'|'FAILED'|'ABANDONED'){
  await tx.execute(sql`UPDATE character_projects SET status=${status},completed_at=now(),goal_roll_requested=false WHERE id=${projectId}::uuid`)
