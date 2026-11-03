@@ -44,7 +44,11 @@ export async function getCampaignCoteries(actorId:string,campaignId:string){
   return db.transaction(async tx=>{
     const access=await campaignAccess(tx,actorId,campaignId,false,true)
     const coteries=await tx.execute(sql`SELECT co.id,co.name,co.type_id AS "typeId",ct.name AS "typeName",co.chronicle,co.city,co.description,co.has_domain AS "hasDomain",co.domain_description AS "domainDescription",co.chasse,co.lien,co.portillon,co.domain_resonance AS "domainResonance",co.chronicle_tenets AS "chronicleTenets",co.revision
-    FROM coteries co LEFT JOIN coterie_type_catalog ct ON ct.id=co.type_id WHERE co.campaign_id=${campaignId}::uuid ORDER BY co.created_at`)
+    FROM coteries co LEFT JOIN coterie_type_catalog ct ON ct.id=co.type_id
+    WHERE co.campaign_id=${campaignId}::uuid AND (${access.is_master} OR EXISTS(
+      SELECT 1 FROM coterie_members cm JOIN characters ch ON ch.id=cm.character_id
+      WHERE cm.coterie_id=co.id AND cm.left_at IS NULL AND ch.user_id=${actorId} AND ch.status NOT IN ('DELETED','ARCHIVED')
+    )) ORDER BY co.created_at`)
     const ids=coteries.rows.map(x=>(x as {id:string}).id)
     const detail=[]
     for(const id of ids){
@@ -53,11 +57,14 @@ export async function getCampaignCoteries(actorId:string,campaignId:string){
       const advantages=await tx.execute(sql`SELECT id,catalog_item_id AS "catalogItemId",custom_name AS "customName",dots,kind,notes FROM coterie_advantages WHERE coterie_id=${id}::uuid`)
       const havens=await tx.execute(sql`SELECT id,name,description,location,is_primary AS "isPrimary" FROM coterie_havens WHERE coterie_id=${id}::uuid`)
       const boons=await tx.execute(sql`SELECT id,type,counterparty,level,description,status FROM coterie_boons_debts WHERE coterie_id=${id}::uuid`)
-      const goals=await tx.execute(sql`SELECT id,title,description,status FROM coterie_goals WHERE coterie_id=${id}::uuid ORDER BY created_at DESC`)
-      detail.push({...(coteries.rows.find(row=>(row as {id:string}).id===id) as object),members:members.rows,backgrounds:backgrounds.rows,advantages:advantages.rows,havens:havens.rows,boons:boons.rows,goals:goals.rows})
+      const goals=await tx.execute(sql`SELECT cg.id,cg.title,cg.description,cg.status,cp.id AS "projectId" FROM coterie_goals cg LEFT JOIN character_projects cp ON cp.origin_goal_id=cg.id WHERE cg.coterie_id=${id}::uuid ORDER BY cg.created_at DESC`)
+      const traits=await tx.execute(sql`SELECT ht.id,ht.haven_id AS "havenId",ht.catalog_item_id AS "catalogItemId",ht.custom_name AS "customName",ht.kind,ht.dots FROM coterie_haven_traits ht JOIN coterie_havens h ON h.id=ht.haven_id WHERE h.coterie_id=${id}::uuid`)
+      const projectCounts=await tx.execute<{total:number;active:number}>(sql`SELECT COUNT(*)::int AS total, COUNT(*) FILTER (WHERE status='ACTIVE')::int AS active FROM character_projects WHERE coterie_id=${id}::uuid`)
+      detail.push({...(coteries.rows.find(row=>(row as {id:string}).id===id) as object),members:members.rows,backgrounds:backgrounds.rows,advantages:advantages.rows,havens:havens.rows.map(h=>({...h as object,traits:traits.rows.filter(t=>(t as {havenId:string}).havenId===(h as {id:string}).id)})),boons:boons.rows,goals:goals.rows,projectCounts:projectCounts.rows[0]})
     }
     const catalog=await tx.execute(sql`SELECT id,code,name,source,description,suggested_mechanics AS "suggestedMechanics" FROM coterie_type_catalog WHERE active=true ORDER BY name`)
-    return {canManage:access.is_master&&access.status!=='Arquivada',archived:access.status==='Arquivada',coteries:detail,types:catalog.rows}
+    const roster=access.is_master?await tx.execute<{id:string;name:string}>(sql`SELECT id,name FROM characters WHERE campaign_id=${campaignId}::uuid AND character_type='PLAYER_VAMPIRE' AND status NOT IN ('ARCHIVED','DELETED','DISABLED') ORDER BY name`):null
+    return {canManage:access.is_master&&access.status!=='Arquivada',archived:access.status==='Arquivada',coteries:detail,types:catalog.rows,roster:roster?.rows??[]}
   })
 }
 export async function commandCoterie(actorId:string,campaignId:string,input:Input) {
