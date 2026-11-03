@@ -42,7 +42,7 @@ async function updateRevision(tx:Session11Tx,coterieId:string) {
 export async function getCampaignCoteries(actorId:string,campaignId:string){
   requireUuid(campaignId,'Mesa inválida.')
   return db.transaction(async tx=>{
-    const access=await campaignAccess(tx,actorId,campaignId)
+    const access=await campaignAccess(tx,actorId,campaignId,false,true)
     const coteries=await tx.execute(sql`SELECT co.id,co.name,co.type_id AS "typeId",ct.name AS "typeName",co.chronicle,co.city,co.description,co.has_domain AS "hasDomain",co.domain_description AS "domainDescription",co.chasse,co.lien,co.portillon,co.domain_resonance AS "domainResonance",co.chronicle_tenets AS "chronicleTenets",co.revision
     FROM coteries co LEFT JOIN coterie_type_catalog ct ON ct.id=co.type_id WHERE co.campaign_id=${campaignId}::uuid ORDER BY co.created_at`)
     const ids=coteries.rows.map(x=>(x as {id:string}).id)
@@ -57,7 +57,7 @@ export async function getCampaignCoteries(actorId:string,campaignId:string){
       detail.push({...(coteries.rows.find(row=>(row as {id:string}).id===id) as object),members:members.rows,backgrounds:backgrounds.rows,advantages:advantages.rows,havens:havens.rows,boons:boons.rows,goals:goals.rows})
     }
     const catalog=await tx.execute(sql`SELECT id,code,name,source,description,suggested_mechanics AS "suggestedMechanics" FROM coterie_type_catalog WHERE active=true ORDER BY name`)
-    return {canManage:access.is_master,coteries:detail,types:catalog.rows}
+    return {canManage:access.is_master&&access.status!=='Arquivada',archived:access.status==='Arquivada',coteries:detail,types:catalog.rows}
   })
 }
 export async function commandCoterie(actorId:string,campaignId:string,input:Input) {
