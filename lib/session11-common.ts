@@ -23,7 +23,7 @@ export function dots(value: unknown, name: string, min = 0, max = 5) {
   if (!Number.isSafeInteger(value) || Number(value) < min || Number(value) > max) throw new CharacterCommandError(400, name + ' inválido.')
   return Number(value)
 }
-export async function campaignAccess(tx: Session11Tx, actorId: string, campaignId: string, forUpdate = false): Promise<CampaignAccess> {
+export async function campaignAccess(tx: Session11Tx, actorId: string, campaignId: string, forUpdate = false, allowArchived = false): Promise<CampaignAccess> {
   requireUuid(campaignId, 'Mesa inválida.')
   const rows = await tx.execute<CampaignAccess>(sql`SELECT c.master_user_id, c.status,
      (c.master_user_id = ${actorId}) AS is_master,
@@ -32,7 +32,7 @@ export async function campaignAccess(tx: Session11Tx, actorId: string, campaignI
   const access=rows.rows[0]
   if(!access) throw new CharacterCommandError(404,'Mesa não encontrada.')
   if(!access.is_member) throw new CharacterCommandError(403,'Você não participa desta mesa.')
-  if(access.status==='Arquivada') throw new CharacterCommandError(409,'Esta mesa está arquivada.')
+  if(access.status==='Arquivada' && !allowArchived) throw new CharacterCommandError(409,'Esta mesa está arquivada.')
   return access
 }
 export async function requireCampaignMaster(tx: Session11Tx, actorId: string,campaignId:string) {
