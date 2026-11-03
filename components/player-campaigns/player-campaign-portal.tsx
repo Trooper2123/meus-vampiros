@@ -3,14 +3,14 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import useSWR from 'swr'
-import { BookOpen, CalendarDays, Download, FileText, FolderOpen, Home, NotebookPen, Play, ShieldAlert, Users } from 'lucide-react'
+import { BookOpen, CalendarDays, Download, FileText, FolderKanban, FolderOpen, Home, NotebookPen, Play, ShieldAlert, Users } from 'lucide-react'
 import { CampaignTools } from '@/components/campaign-calendar/campaign-tools'
 import { NotesPanel } from '@/components/notes/notes-panel'
 import type { PlayerCampaign } from '@/lib/player-campaigns'
 import type { CampaignEvent } from '@/lib/types/campaign-event'
 import type { PlayerHandout } from '@/lib/player-handouts'
 
-type Tab = 'overview'|'files'|'notes'|'events'|'calendar'
+type Tab = 'overview'|'files'|'notes'|'events'|'calendar'|'coterie'|'projects'
 type SessionResponse = {session?:{id:string;status:'ACTIVE'|'CLOSED'}|null}
 type NotePreview = {id:string;title:string;updatedAt:string;marker?:string|null}
 const fetcher = async (url:string) => {
@@ -49,6 +49,8 @@ export function PlayerCampaignPortal({campaign,actorId}:Readonly<{campaign:Playe
     {id:'notes' as const,label:'Anotações',Icon:NotebookPen},
     {id:'events' as const,label:'Eventos',Icon:CalendarDays},
     {id:'calendar' as const,label:'Calendário',Icon:CalendarDays},
+    {id:'coterie' as const,label:'Coterie',Icon:Users},
+    {id:'projects' as const,label:'Projetos',Icon:FolderKanban},
   ]
   return <div className="player-portal-workspace">
     <div className="player-portal-campaign-banner">
@@ -102,5 +104,19 @@ export function PlayerCampaignPortal({campaign,actorId}:Readonly<{campaign:Playe
       {events.map(event=><div className="player-portal-list-row" key={event.id}><CalendarDays className="size-5"/><div><strong>{event.title}</strong><small>{event.eventDate ? niceDate(event.eventDate) : `Crônica: ${event.fictionalMonth ?? ''} ${event.fictionalYear ?? ''}`}{event.eventTime?` · ${event.eventTime}`:''}</small>{event.description&&<p>{event.description}</p>}</div></div>)}
     </PortalPanel>}
     {tab==='calendar'&&<PortalPanel title="Calendários e Disponibilidade" subtitle="Consulte o calendário da campanha e marque sua disponibilidade para encontros." icon={CalendarDays}><CampaignTools campaignId={campaign.id} master={false}/></PortalPanel>}
+    {tab==='coterie'&&<PortalPanel title="Coterie" subtitle="A estrutura coletiva dos personagens desta crônica." icon={Users}>
+      <div className="player-portal-module-pending" role="status">
+        <Users className="size-9" aria-hidden="true"/>
+        <h3>A Coterie ainda não está disponível</h3>
+        <p>Quando o módulo da Coterie for implementado pelo Narrador, você poderá consultar membros, Domain, Backgrounds compartilhados, Haven, Goals e Boons/Debts autorizados para os jogadores.</p>
+      </div>
+    </PortalPanel>}
+    {tab==='projects'&&<PortalPanel title="Projetos" subtitle="Projects pessoais e coletivos, distintos das missões do Narrador." icon={FolderKanban}>
+      <div className="player-portal-module-pending" role="status">
+        <FolderKanban className="size-9" aria-hidden="true"/>
+        <h3>Os Projects ainda não estão disponíveis</h3>
+        <p>Esta área exibirá seus projetos pessoais e os da Coterie após a implementação das regras de Scope, Stake, Increment e Project Die, com aprovação e resolução mecânica pelo Narrador.</p>
+      </div>
+    </PortalPanel>}
   </div>
 }
