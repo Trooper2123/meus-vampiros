@@ -141,7 +141,7 @@ export async function getCampaignProjects(actorId:string,campaignId:string){
  requireUuid(campaignId,'Mesa inválida.')
  return db.transaction(async tx=>{
    const access=await campaignAccess(tx,actorId,campaignId,false,true)
-   const result=await tx.execute<{id:string;name:string;status:ProjectStatus;projectDie:number|null;projectType:string}>(sql`SELECT p.id,p.name,p.description,p.goal_description AS "goalDescription",p.project_type AS "projectType",p.status,p.owner_character_id AS "ownerCharacterId",p.coterie_id AS "coterieId",p.target_trait AS "targetTrait",p.target_current_dots AS "currentDots",p.target_final_dots AS "finalDots",p.scope,p.increment_unit AS "incrementUnit",p.increment_value AS "incrementValue",p.project_die AS "projectDie",p.launch_difficulty AS "launchDifficulty",p.launch_result AS "launchResult",p.launch_pool AS "launchPool",p.goal_roll_requested AS "goalRollRequested",p.revision,p.updated_at AS "updatedAt" FROM character_projects p WHERE p.campaign_id=${campaignId}::uuid AND (${access.is_master} OR (p.project_type='PERSONAL' AND p.created_by_user_id=${actorId}) OR EXISTS (SELECT 1 FROM characters c WHERE c.id=p.owner_character_id AND c.user_id=${actorId}) OR EXISTS(SELECT 1 FROM project_participants pp JOIN characters ch ON ch.id=pp.character_id WHERE pp.project_id=p.id AND ch.user_id=${actorId}) OR EXISTS(SELECT 1 FROM coterie_members cm JOIN characters ch ON ch.id=cm.character_id WHERE cm.coterie_id=p.coterie_id AND ch.user_id=${actorId} AND cm.left_at IS NULL)) ORDER BY p.updated_at DESC`)
+   const result=await tx.execute<{id:string;name:string;status:ProjectStatus;projectDie:number|null;projectType:string}>(sql`SELECT p.id,p.name,p.description,p.goal_description AS "goalDescription",p.project_type AS "projectType",p.status,p.owner_character_id AS "ownerCharacterId",p.coterie_id AS "coterieId",p.target_trait AS "targetTrait",p.target_current_dots AS "currentDots",p.target_final_dots AS "finalDots",p.scope,p.increment_unit AS "incrementUnit",p.increment_value AS "incrementValue",p.project_die AS "projectDie",p.launch_difficulty AS "launchDifficulty",p.launch_result AS "launchResult",p.launch_pool AS "launchPool",p.goal_roll_requested AS "goalRollRequested",p.revision,p.updated_at AS "updatedAt" FROM character_projects p WHERE p.campaign_id=${campaignId}::uuid AND (${access.is_master} OR EXISTS (SELECT 1 FROM characters c WHERE c.id=p.owner_character_id AND c.user_id=${actorId}) OR EXISTS(SELECT 1 FROM project_participants pp JOIN characters ch ON ch.id=pp.character_id WHERE pp.project_id=p.id AND ch.user_id=${actorId}) OR EXISTS(SELECT 1 FROM coterie_members cm JOIN characters ch ON ch.id=cm.character_id WHERE cm.coterie_id=p.coterie_id AND ch.user_id=${actorId} AND cm.left_at IS NULL)) ORDER BY p.updated_at DESC`)
    const projects=[]
    for(const row of result.rows){
      const id=(row as {id:string}).id
@@ -204,11 +204,14 @@ export async function commandProject(actorId:string,campaignId:string,input:Proj
        if(!Array.isArray(ids)||ids.length>12||new Set(ids).size!==ids.length)throw new CharacterCommandError(400,'Participantes NPC inválidos.')
        for(const id of ids){
          requireUuid(id,'NPC inválido.')
-         const npc=await tx.execute<{id:string}>(sql`SELECT id FROM campaign_npcs WHERE id=${id}::uuid AND campaign_id=${campaignId}::uuid`)
-         if(!npc.rows[0])throw new CharacterCommandError(422,'O NPC precisa estar cadastrado nesta mesma mesa.')
+         const npc=await tx.execute<{id:string;name:string}>(sql`SELECT cn.id,nd.name FROM campaign_npcs cn JOIN npc_definitions nd ON nd.id=cn.npc_id WHERE cn.id=${id}::uuid AND cn.campaign_id=${campaignId}::uuid AND nd.status='ACTIVE'`)
+         if(!npc.rows[0])throw new CharacterCommandError(422,'O NPC precisa estar cadastrado e ativo nesta mesma mesa.')
        }
        await tx.execute(sql`DELETE FROM project_npc_participants WHERE project_id=${project.id}::uuid`)
-       for(const id of ids)await tx.execute(sql`INSERT INTO project_npc_participants (project_id,campaign_npc_id) VALUES (${project.id}::uuid,${id}::uuid)`)
+       for(const id of ids){
+         const npc=await tx.execute<{name:string}>(sql`SELECT nd.name FROM campaign_npcs cn JOIN npc_definitions nd ON nd.id=cn.npc_id WHERE cn.id=${id}::uuid AND cn.campaign_id=${campaignId}::uuid`)
+         await tx.execute(sql`INSERT INTO project_npc_participants (project_id,campaign_npc_id,display_name) VALUES (${project.id}::uuid,${id}::uuid,${npc.rows[0].name})`)
+       }
      }
      await tx.execute(sql`DELETE FROM project_participants WHERE project_id=${project.id}::uuid`)
      for(const id of input.participantIds)await tx.execute(sql`INSERT INTO project_participants (project_id,character_id) VALUES (${project.id}::uuid,${id}::uuid)`)
