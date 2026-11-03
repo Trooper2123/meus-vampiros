@@ -57,8 +57,9 @@ export async function startChronicleNight(actorId: string, campaignId: string, i
   campaignId = campaignId.toLowerCase()
   const hash = hashRequest(input)
   return await db.transaction(async transaction => {
-    const campaignRows = await transaction.execute<{ master_user_id: string }>(sql`SELECT master_user_id FROM campaigns WHERE id = ${campaignId}::uuid FOR UPDATE`)
+    const campaignRows = await transaction.execute<{ master_user_id: string; awake_execution_mode: string }>(sql`SELECT master_user_id, awake_execution_mode FROM campaigns WHERE id = ${campaignId}::uuid FOR UPDATE`)
     if (campaignRows.rows[0]?.master_user_id !== actorId) { throw new CharacterCommandError(403, 'Somente o Narrador desta mesa pode iniciar a noite.') }
+    if (campaignRows.rows[0]?.awake_execution_mode !== 'NARRATOR_FORCES') { throw new CharacterCommandError(409, 'A mesa está configurada para que os jogadores realizem os despertares. Prepare a noite antes de iniciar os testes.') }
     const previous = await transaction.execute<{ started_by_user_id: string; request_hash: string; result: NightResult }>(sql`SELECT started_by_user_id, request_hash, result FROM chronicle_nights WHERE campaign_id = ${campaignId}::uuid AND idempotency_key = ${input.idempotencyKey}`)
     if (previous.rows[0]) {
       if (previous.rows[0].started_by_user_id !== actorId || previous.rows[0].request_hash !== hash) { throw new CharacterCommandError(409, 'A chave já foi usada para outro início de noite.') }
