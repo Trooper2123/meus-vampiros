@@ -51,17 +51,6 @@ async function participantAccess(tx:Session11Tx,project:ProjectRow,actorId:strin
  return Boolean(rows.rows[0])
 }
 function requireMaster(access:CampaignAccess){if(!access.is_master)throw new CharacterCommandError(403,'Ação exclusiva do Narrador da mesa.')}
-async function readOrigin(tx:Session11Tx,project:ProjectRow,actorId:string){
- if(project.project_type==='PERSONAL'){
-   const character=await requireCharacterOfCampaign(tx,project.campaign_id,project.owner_character_id!)
-   if(character.user_id!==actorId)throw new CharacterCommandError(403,'Personagem não pertence ao jogador.')
- }else{
-   const c=await tx.execute<{id:string}>(sql`SELECT id FROM coteries WHERE id=${project.coterie_id}::uuid AND campaign_id=${project.campaign_id}::uuid`)
-   if(!c.rows[0])throw new CharacterCommandError(422,'Coterie não pertence à mesa.')
-   const m=await tx.execute<{id:string}>(sql`SELECT cm.id FROM coterie_members cm JOIN characters ch ON ch.id=cm.character_id WHERE cm.coterie_id=${project.coterie_id}::uuid AND ch.user_id=${actorId} AND cm.left_at IS NULL LIMIT 1`)
-   if(!m.rows[0])throw new CharacterCommandError(403,'É necessário ser membro da Coterie para propor o projeto.')
- }
-}
 async function availableStake(tx:Session11Tx,project:ProjectRow,item:Stake){
  const trait=requireText(item.trait,'Background',80)
  const amount=dots(item.dots,'Pontos comprometidos',1)
