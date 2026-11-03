@@ -73,7 +73,7 @@ async function availableStake(tx:Session11Tx,project:ProjectRow,item:Stake){
  if(!option||option.available<amount)throw new CharacterCommandError(422,'Pontos insuficientes: este Background pode já estar comprometido em outro projeto.')
  return {trait,amount}
 }
-async function commitStakes(tx:Session11Tx,project:ProjectRow,stakes:Stake[],required:number){
+async function commitStakes(tx:Session11Tx,project:ProjectRow,stakes:Stake[],required:number,actorId:string){
  if(required===0){if(stakes.length)throw new CharacterCommandError(422,'Um lançamento crítico não exige Stake.');return}
  if(!stakes.length||stakes.length>12)throw new CharacterCommandError(422,'Informe os Background dots comprometidos pelos participantes.')
  let sum=0
@@ -87,7 +87,7 @@ async function commitStakes(tx:Session11Tx,project:ProjectRow,stakes:Stake[],req
  if(sum!==required)throw new CharacterCommandError(422,`O lançamento exige ${required} pontos em Stake.`)
  for(const stake of stakes){
    await tx.execute(sql`INSERT INTO project_stakes (project_id,character_id,coterie_id,trait,dots) VALUES (${project.id}::uuid,${stake.characterId??null}::uuid,${stake.coterieId??null}::uuid,${stake.trait.trim().toUpperCase()},${stake.dots})`)
-   if(stake.characterId)await tx.execute(sql`INSERT INTO character_ledger_events(character_id,event_type,origin,payload,created_by_user_id) VALUES (${stake.characterId}::uuid,'PROJECT_STAKE_RESERVED','PROJECT',${JSON.stringify({projectId:project.id,trait:stake.trait.trim().toUpperCase(),dots:stake.dots})}::jsonb,${'SYSTEM'})`)
+   if(stake.characterId)await tx.execute(sql`INSERT INTO character_ledger_events(character_id,event_type,origin,payload,created_by_user_id) VALUES (${stake.characterId}::uuid,'PROJECT_STAKE_RESERVED','PROJECT',${JSON.stringify({projectId:project.id,trait:stake.trait.trim().toUpperCase(),dots:stake.dots})}::jsonb,${actorId})`)
  }
 }
 async function finalize(tx:Session11Tx,projectId:string,status:'SUCCESS'|'FAILED'|'ABANDONED',actorId:string){
@@ -96,7 +96,7 @@ async function finalize(tx:Session11Tx,projectId:string,status:'SUCCESS'|'FAILED
  await tx.execute(sql`UPDATE project_stakes SET released_at=now() WHERE project_id=${projectId}::uuid AND released_at IS NULL`)
  for(const stake of reserved.rows)await tx.execute(sql`INSERT INTO character_ledger_events(character_id,event_type,origin,payload,created_by_user_id) VALUES(${stake.character_id}::uuid,'PROJECT_STAKE_RELEASED','PROJECT',${JSON.stringify({projectId,status,trait:stake.trait,dots:stake.dots})}::jsonb,${actorId})`)
 }
-async function applyStakeLoss(tx:Session11Tx,project:ProjectRow,loss:number){
+async function applyStakeLoss(tx:Session11Tx,project:ProjectRow,loss:number,actorId:string){
  const stakes=await tx.execute<{id:string;character_id:string|null;coterie_id:string|null;trait:string;dots:number}>(sql`SELECT id,character_id,coterie_id,trait,dots FROM project_stakes WHERE project_id=${project.id}::uuid AND released_at IS NULL ORDER BY created_at,id FOR UPDATE`)
  let remaining=loss,spent=0
  for(const stake of stakes.rows){
@@ -283,7 +283,7 @@ export async function commandProject(actorId:string,campaignId:string,input:Proj
        const contributing=new Set(stakes.filter(stake=>stake.characterId&&stake.dots>=1).map(stake=>stake.characterId))
        if(!participantIds.every(id=>contributing.has(id)))throw new CharacterCommandError(422,'Cada participante cooperante deve comprometer pelo menos um dot ou utilizar apenas Stake compartilhado da Coterie.')
      }
-     await commitStakes(tx,project,stakes,required)
+     await commitStakes(tx,project,stakes,required,actorId)
      await tx.execute(sql`UPDATE character_projects SET status='ACTIVE',project_die=10,launched_at=now() WHERE id=${project.id}::uuid`)
      await event(tx,project.id,'LAUNCHED',actorId,null,10,reason||'Stake confirmado e projeto iniciado.',{requiredStake:launch.stakeRequired})
    }else if(input.action==='INCREMENT'){
@@ -326,7 +326,7 @@ export async function commandProject(actorId:string,campaignId:string,input:Proj
        else await tx.execute(sql`UPDATE character_projects SET project_die=${next},goal_roll_requested=false WHERE id=${project.id}::uuid`)
        await event(tx,project.id,next<1?'COMPLETED':'GOAL_ROLL',actorId,project.project_die,next<1?null:next,reason||'Goal Roll bem-sucedido.',result)
      }else{
-       const loss=await applyStakeLoss(tx,project,result.stakeDamage)
+       const loss=await applyStakeLoss(tx,project,result.stakeDamage,actorId)
        await tx.execute(sql`UPDATE character_projects SET goal_roll_requested=false WHERE id=${project.id}::uuid`)
        const available=await tx.execute<{remaining:number}>(sql`SELECT COALESCE(SUM(dots),0)::int AS remaining FROM project_stakes WHERE project_id=${project.id}::uuid AND released_at IS NULL`)
        const critical=Boolean((project.launch_result as {outcome?:string}|null)?.outcome==='CRITICAL')
