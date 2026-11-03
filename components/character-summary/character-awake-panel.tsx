@@ -23,7 +23,7 @@ export function CharacterAwakePanel({ characterId, sessionId }: Readonly<{ chara
       const response=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(pending.current)})
       const result=await response.json().catch(()=>null)
       if(!response.ok) {
-        if(response.status<500) pending.current=null
+        if(response.status<500) {pending.current=null;if(response.status===409) await mutate()}
         throw new Error(result?.error ?? 'Falha ao processar a operação.')
       }
       pending.current=null
