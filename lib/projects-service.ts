@@ -84,11 +84,16 @@ async function commitStakes(tx:Session11Tx,project:ProjectRow,stakes:Stake[],req
    sum+=checked.amount
  }
  if(sum!==required)throw new CharacterCommandError(422,`O lançamento exige ${required} pontos em Stake.`)
- for(const stake of stakes)await tx.execute(sql`INSERT INTO project_stakes (project_id,character_id,coterie_id,trait,dots) VALUES (${project.id}::uuid,${stake.characterId??null}::uuid,${stake.coterieId??null}::uuid,${stake.trait.trim().toUpperCase()},${stake.dots})`)
+ for(const stake of stakes){
+   await tx.execute(sql`INSERT INTO project_stakes (project_id,character_id,coterie_id,trait,dots) VALUES (${project.id}::uuid,${stake.characterId??null}::uuid,${stake.coterieId??null}::uuid,${stake.trait.trim().toUpperCase()},${stake.dots})`)
+   if(stake.characterId)await tx.execute(sql`INSERT INTO character_ledger_events(character_id,event_type,origin,payload,created_by_user_id) VALUES (${stake.characterId}::uuid,'PROJECT_STAKE_RESERVED','PROJECT',${JSON.stringify({projectId:project.id,trait:stake.trait.trim().toUpperCase(),dots:stake.dots})}::jsonb,${'SYSTEM'})`)
+ }
 }
-async function finalize(tx:Session11Tx,projectId:string,status:'SUCCESS'|'FAILED'|'ABANDONED'){
+async function finalize(tx:Session11Tx,projectId:string,status:'SUCCESS'|'FAILED'|'ABANDONED',actorId:string){
+ const reserved=await tx.execute<{character_id:string;trait:string;dots:number}>(sql`SELECT character_id,trait,dots FROM project_stakes WHERE project_id=${projectId}::uuid AND character_id IS NOT NULL AND released_at IS NULL AND dots>0 FOR UPDATE`)
  await tx.execute(sql`UPDATE character_projects SET status=${status},completed_at=now(),goal_roll_requested=false WHERE id=${projectId}::uuid`)
  await tx.execute(sql`UPDATE project_stakes SET released_at=now() WHERE project_id=${projectId}::uuid AND released_at IS NULL`)
+ for(const stake of reserved.rows)await tx.execute(sql`INSERT INTO character_ledger_events(character_id,event_type,origin,payload,created_by_user_id) VALUES(${stake.character_id}::uuid,'PROJECT_STAKE_RELEASED','PROJECT',${JSON.stringify({projectId,status,trait:stake.trait,dots:stake.dots})}::jsonb,${actorId})`)
 }
 async function applyStakeLoss(tx:Session11Tx,project:ProjectRow,loss:number){
  const stakes=await tx.execute<{id:string;character_id:string|null;coterie_id:string|null;trait:string;dots:number}>(sql`SELECT id,character_id,coterie_id,trait,dots FROM project_stakes WHERE project_id=${project.id}::uuid AND released_at IS NULL ORDER BY created_at,id FOR UPDATE`)
@@ -108,10 +113,11 @@ async function applyStakeLoss(tx:Session11Tx,project:ProjectRow,loss:number){
      let remainingDots=consumed
      const revised=list.map(item=>{
        if(remainingDots<=0||!item||typeof item!=='object'||Array.isArray(item))return item
-       const v=item as {name?:string;level?:number}
+       const v=item as {name?:string;level?:number;dots?:number;pontos?:number}
        if(v.name?.toUpperCase()!==stake.trait.toUpperCase())return item
-       const debit=Math.min(Number(v.level??0),remainingDots);remainingDots-=debit
-       return {...v,level:Number(v.level??0)-debit}
+       const points=Number(v.level??v.dots??v.pontos??0)
+       const debit=Math.min(points,remainingDots);remainingDots-=debit
+       return 'level' in v?{...v,level:points-debit}:'dots' in v?{...v,dots:points-debit}:{...v,pontos:points-debit}
      })
      if(remainingDots>0)throw new CharacterCommandError(409,'Background não está mais disponível para sofrer a perda.')
      await tx.execute(sql`UPDATE characters SET data=${JSON.stringify({...data,vantagens:revised})}::jsonb,revision=revision+1,updated_at=now() WHERE id=${stake.character_id}::uuid`)
@@ -280,7 +286,7 @@ export async function commandProject(actorId:string,campaignId:string,input:Proj
      if(project.status!=='ACTIVE'||!project.project_die)throw new CharacterCommandError(409,'O projeto não está ativo.')
      const progress=advanceProjectDie(project.project_die)
      if(progress.completed){
-       await finalize(tx,project.id,'SUCCESS')
+       await finalize(tx,project.id,'SUCCESS',actorId)
        await tx.execute(sql`UPDATE character_projects SET project_die=NULL WHERE id=${project.id}::uuid`)
        await event(tx,project.id,'COMPLETED',actorId,progress.previous,null,reason||'Projeto concluído por passagem de Increment.')
      }else{
@@ -311,7 +317,7 @@ export async function commandProject(actorId:string,campaignId:string,input:Proj
      const result=resolveProjectGoal(dice,pool,project.project_die,Math.min(hunger,pool))
      if(result.won){
        const next=project.project_die-result.projectDieDamage
-       if(next<1){await finalize(tx,project.id,'SUCCESS');await tx.execute(sql`UPDATE character_projects SET project_die=NULL WHERE id=${project.id}::uuid`)}
+       if(next<1){await finalize(tx,project.id,'SUCCESS',actorId);await tx.execute(sql`UPDATE character_projects SET project_die=NULL WHERE id=${project.id}::uuid`)}
        else await tx.execute(sql`UPDATE character_projects SET project_die=${next},goal_roll_requested=false WHERE id=${project.id}::uuid`)
        await event(tx,project.id,next<1?'COMPLETED':'GOAL_ROLL',actorId,project.project_die,next<1?null:next,reason||'Goal Roll bem-sucedido.',result)
      }else{
@@ -320,7 +326,7 @@ export async function commandProject(actorId:string,campaignId:string,input:Proj
        const available=await tx.execute<{remaining:number}>(sql`SELECT COALESCE(SUM(dots),0)::int AS remaining FROM project_stakes WHERE project_id=${project.id}::uuid AND released_at IS NULL`)
        const critical=Boolean((project.launch_result as {outcome?:string}|null)?.outcome==='CRITICAL')
        if(Number(available.rows[0]?.remaining??0)===0&&!critical){
-         await finalize(tx,project.id,'FAILED')
+         await finalize(tx,project.id,'FAILED',actorId)
          await event(tx,project.id,'FAILED',actorId,project.project_die,project.project_die,reason||'Projeto colapsou após perda de Stake.',{...result,...loss})
        }else await event(tx,project.id,'GOAL_ROLL',actorId,project.project_die,project.project_die,reason||'Goal Roll perdido.',{...result,...loss})
        // Perdas além do Stake exigem adjudicação do Narrador e não são debitadas automaticamente.
@@ -330,7 +336,7 @@ export async function commandProject(actorId:string,campaignId:string,input:Proj
    }else if(input.action==='ABANDON'){
      await assertOwner(tx,project,access,actorId)
      if(['SUCCESS','FAILED','ABANDONED'].includes(project.status))throw new CharacterCommandError(409,'Projeto já encerrado.')
-     await finalize(tx,project.id,'ABANDONED')
+     await finalize(tx,project.id,'ABANDONED',actorId)
      await event(tx,project.id,'ABANDONED',actorId,project.project_die,project.project_die,reason||'Projeto abandonado.')
    }else throw new CharacterCommandError(400,'Ação desconhecida.')
    await changeRevision(tx,project.id)
