@@ -11,7 +11,7 @@ Criar um sistema persistente de mensagens *in character*, com aparência de SMS/
 **Regras mandatórias:**
 1. O **Narrador acessa todas as mensagens da sua campanha**, inclusive conversas privadas entre jogadores e conversas da Coterie, sem precisar ser destinatário.
 2. O Narrador **envia e responde assumindo a identidade ficcional de NPCs ou de qualquer outro personagem pertencente à campanha**. A identidade real do operador permanece registrada, mesmo quando não exibida aos jogadores.
-3. O **Jogador visualiza apenas mensagens endereçadas a um de seus personagens autorizados ou à Coterie da qual esse personagem é destinatário**. Não possui acesso global a conversas da campanha.
+3. O **Jogador visualiza mensagens endereçadas a um de seus personagens autorizados ou à Coterie da qual esse personagem é destinatário, além das mensagens enviadas pelo Narrador assumindo a identidade de um personagem seu**. Essa autoria ficcional dá visibilidade **somente à mensagem escrita como seu personagem**, não a todo o histórico de uma conversa alheia.
 4. Um jogador **só pode enviar como personagem que controla**, nunca se passar por outro jogador, NPC, Narrador ou membro de outra campanha.
 5. As mensagens persistem entre sessões; **não reutilizar o chat temporário do LiveKit**.
 
@@ -51,11 +51,12 @@ Criar um sistema persistente de mensagens *in character*, com aparência de SMS/
 | Operação | Jogador | Narrador da campanha |
 |---|---|---|
 | Listar threads | Somente threads com mensagens entregues ao(s) seu(s) personagem(ns) | Todas da campanha |
-| Ler mensagens diretas | Apenas se um personagem seu for destinatário efetivo, ou remetente legítimo | Todas |
+| Ler mensagens diretas | Mensagens recebidas pelo próprio personagem, enviadas legitimamente por ele ou enviadas pelo Narrador como esse personagem | Todas |
 | Ler mensagens de Coterie | Somente mensagens entregues ao seu personagem enquanto membro destinatário | Todas |
 | Iniciar conversa direta | Como personagem próprio e autorizado, com destinatário visível e elegível | Como qualquer personagem elegível da campanha, inclusive NPC |
 | Enviar à Coterie | Como seu personagem membro, para sua Coterie | Como personagem elegível, inclusive NPC, para qualquer Coterie da campanha |
 | Responder como outro personagem | Proibido | Permitido; registrar operador real |
+| Ver mensagens do Narrador como seu personagem | Permitido para o conteúdo dessas mensagens, inclusive respostas; sem acesso automático às demais mensagens da thread | Todas, com autoria técnica |
 | Consultar auditoria de impersonação | Proibido | Permitido |
 | Consultar conversa de outro jogador | Proibido | Permitido |
 | Listar todas as Coteries | Somente Coteries a que o personagem pertence | Todas |
@@ -71,7 +72,7 @@ Acesso a uma campanha exige ser Narrador ou controlar personagem válido nela. O
 - A consulta de envio deve confirmar campaign_id do emissor, campaign_id do destinatário, tipo e propriedade de ambos. Não aceitar sender_actor_id, created_by_actor_id ou is_narrator enviados pelo cliente.
 - Para o Narrador, permitir selecionar qualquer personagem da campanha em sua função de remetente, inclusive personagens dos jogadores; o servidor registra a atuação do Narrador.
 - Jogadores podem selecionar somente um de seus próprios personagens APPROVED; para conversa direta, o destinatário deve ser um personagem da campanha permitido pelo catálogo de contatos visíveis. NPCs ocultos não podem ser descobertos por enumeração.
-- O acesso ao histórico deve ser decidido por destinatários persistidos por mensagem, não por um filtro ingênuo de campaign_id ou pela participação atual em uma thread.
+- O acesso ao histórico deve ser decidido por **entregas/visibilidade persistida por mensagem**, não por um filtro ingênuo de campaign_id ou pela participação atual em uma thread. Também deve existir uma entrega especial ao proprietário do personagem quando **o Narrador envia como esse personagem**, sem entregar automaticamente as outras mensagens da conversa.
 - Caso um ator controle várias fichas da mesma campanha, as caixas de entrada podem ser agregadas por usuário **apenas** quando cada linha devolvida pertencer a uma de suas fichas. O envio sempre identifica explicitamente o personagem escolhido.
 - Caso a pessoa também seja Narrador da campanha, a experiência em modo Jogador deve usar as permissões restritas do personagem selecionado; somente o endpoint/visão administrativa do Narrador expõe tudo. Nunca misturar os resultados em um mesmo payload.
 
@@ -82,7 +83,7 @@ Acesso a uma campanha exige ser Narrador ou controlar personagem válido nela. O
 - Quem ingressar depois não recebe retroativamente mensagens anteriores.
 - Quem sair mantém acesso somente às mensagens que foram entregues ao seu personagem, se sua ficha continuar acessível ao proprietário; não lê mensagens futuras.
 - Se a campanha tiver múltiplas Coteries, selecionar explicitamente o coterie_id; **nunca expandir para todas as Coteries**.
-- O remetente jogador recebe sua cópia na thread apenas quando controla legitimamente o personagem. Mensagens enviadas por impersonação do Narrador não criam entrega automática para o controlador do personagem assumido; o Narrador lê pelo acesso administrativo.
+- O jogador controlador do personagem remetente recebe sua cópia tanto quando envia pessoalmente quanto quando **o Narrador envia ou responde assumindo esse personagem**. A entrega do envio do Narrador deve ser explícita e restrita a essa mensagem, mesmo quando o personagem não é destinatário da conversa. Isso **não** concede ao jogador acesso às demais mensagens de outros participantes da thread.
 - Mudanças futuras de grupo não devem recalcular destinatários de mensagens antigas.
 
 **Dependência:** a SPEC-SESSION-011 descreve coterie_members, mas o schema operacional deve ser verificado antes da migração. Se o domínio da Coterie ainda não existir, não simular lista de membros por todas as fichas da campanha: habilitar inicialmente apenas DIRECT e apresentar COTERIE como indisponível até implantação da dependência.
@@ -95,7 +96,7 @@ Fluxo:
 1. Jogador escolhe um de seus personagens e um destinatário autorizado.
 2. Digita a mensagem e confirma o envio.
 3. Backend revalida autor, destinatário, campanha e thread.
-4. Mensagem é persistida de forma transacional, com entrega ao destinatário; uma cópia para o remetente só é criada quando o ator autenticado realmente controla esse personagem.
+4. Mensagem é persistida de forma transacional, com entrega ao destinatário e **cópia visível ao controlador do personagem remetente**; isso inclui mensagens cujo remetente ficcional foi assumido pelo Narrador.
 5. Ambos veem a conversa. O Narrador vê a conversa em sua caixa global.
 6. O Narrador pode responder como o destinatário original, um NPC ou outro personagem elegível, **sem falsificar quem executou a ação**.
 
@@ -103,7 +104,7 @@ Fluxo:
 - **Participar da conversa existente:** nova mensagem visível apenas aos destinatários selecionados da mensagem, com indicação de novo participante; ou
 - **Abrir outra conversa:** thread distinta com participantes elegíveis.
 
-Na primeira entrega, a escolha mais segura é exigir **nova thread** ao mudar o conjunto de destinatários; o Narrador pode responder como outro personagem mantendo os destinatários originais. O remetente substituto não ganha direito de leitura automática ao proprietário daquele personagem: apenas destinatários materiais da mensagem e remetentes legitimamente controlados pelo ator recebem cópias.
+Na primeira entrega, a escolha mais segura é exigir **nova thread** ao mudar o conjunto de destinatários; o Narrador pode responder como outro personagem mantendo os destinatários originais. O controlador do personagem assumido pelo Narrador recebe **a mensagem enviada como seu personagem**, mas não ganha acesso a mensagens alheias da thread. Toda listagem de mensagens deve filtrar por visibilidade por mensagem, inclusive quando a thread já está na caixa de entrada.
 
 ### 6.2 Mensagem da Coterie (COTERIE)
 
@@ -116,7 +117,7 @@ A thread se vincula a campaign_id e coterie_id. Jogador membro pode enviar à pr
 - Registrar impersonated_by_narrator = true e created_by_actor_id no evento/mensagem, acessível apenas à auditoria da Gestão da Mesa.
 - Não permitir que o Narrador use este recurso para alterar a autoria de mensagens anteriores.
 - A interface do Narrador exibe a identificação “Enviado como [personagem] · Operado pelo Narrador”.
-- Quando ele fala como personagem de jogador, a mensagem aparece na conversa com o personagem escolhido como remetente ficcional, mas **o jogador não deve receber privilégios para consultar conversas alheias por causa da autoria ficcional forjada**. A entrega e a autorização permanecem por destinatários materializados ou por autoria legítima daquele usuário.
+- Quando ele fala como personagem de jogador, o jogador **pode ver e acompanhar o texto enviado/respondido como seu personagem**, inclusive se não for destinatário da thread original. O backend materializa uma cópia de visibilidade para o personagem assumido; **a visibilidade não se estende automaticamente às demais mensagens da thread**, de modo a preservar conversas alheias.
 
 ## 7. Modelo de dados (proposta PostgreSQL)
 
@@ -161,8 +162,9 @@ Reutilizar campanhas, personagens, usuários, NPCs e Coteries. **Não** reutiliz
 - delivered_at TIMESTAMPTZ NOT NULL
 - read_at TIMESTAMPTZ NULL
 - PRIMARY KEY (message_id, recipient_character_id)
-- Uso: fonte de verdade de **quem pode ler** e dos indicadores de leitura.
+- Uso: fonte de verdade de **quem pode ler** e dos indicadores de leitura; inclui destinatários diretos, membros da Coterie e cópia ao personagem cuja identidade foi utilizada pelo Narrador como remetente.
 - Em COTERIE, materializa cada personagem da Coterie no momento do envio.
+- Acrescentar `delivery_reason TEXT CHECK ('DIRECT_RECIPIENT','COTERIE_MEMBER','SENDER_COPY','NARRATOR_AS_CHARACTER')` (ou tabela de direitos equivalente). Garantir unicidade por mensagem/personagem mesmo quando mais de uma razão se aplica. A entrega `NARRATOR_AS_CHARACTER` é gerada independentemente de o ator real controlar o personagem.
 
 ### character_message_audit_events
 - id UUID PK
@@ -190,6 +192,7 @@ Rotas sugeridas (nomes ajustáveis às convenções existentes):
 - GET /api/campaigns/[id]/character-messages/unread?characterId=
 - GET /api/campaigns/[id]/narrator/character-messages?cursor=&limit=&sender=&recipient=&kind=
 - GET /api/campaigns/[id]/narrator/character-messages/audit?cursor=&limit=
+- GET/PATCH /api/campaigns/[id]/settings/character-sms (PATCH exclusivo do Narrador)
 
 **Contrato de envio (exemplo):**
 ```json
@@ -223,6 +226,7 @@ Layout “SMS da Crônica”:
 - Identidade da Coterie e indicadores de mensagens enviadas a todo o grupo.
 - Preservar o design gótico da aplicação e a navegação lateral global existente.
 - Informar de maneira acessível que **o Narrador pode ler todas as mensagens da campanha**.
+- Mensagens enviadas pelo Narrador como o personagem selecionado aparecem no histórico do jogador como **mensagens enviadas por seu personagem**, com horário e conteúdo, inclusive respostas do Narrador. A visibilidade não autoriza abrir mensagens de outros personagens na mesma conversa.
 
 ## 10. UI do Narrador
 
@@ -245,6 +249,23 @@ Local: `/campaigns/[id]?view=messages`, substituindo o placeholder já existente
 - Não incluir o texto de mensagens privadas em notificações globais para outro usuário/campanha; em notificações do Narrador pode constar o personagem autor, sem revelar dados para terceiros.
 - Sem depender de WebSockets/LiveKit nesta fase; preparar serviço para eventos em tempo real futuros.
 
+## 11.1 Configuração da campanha: SMS habilitado/desabilitado
+
+A área de Configurações da Mesa (`/campaigns/[id]?view=settings`) deve incluir um controle do Narrador: **“Permitir mensagens entre personagens (SMS)”**.
+
+- Campo persistente por campanha: `campaigns.character_sms_enabled BOOLEAN NOT NULL DEFAULT true` (ou tabela `campaign_settings` existente, se houver).
+- Somente o Narrador proprietário da campanha pode consultar a configuração administrativa e alterá-la por endpoint protegido. O jogador pode consultar somente o estado efetivo `enabled`.
+- A alteração vale para **todos os participantes daquela campanha**, seja a sessão iniciada ou não. Não altera o chat LiveKit de sessão.
+- **Habilitado:** permitir criar threads e enviar mensagens conforme autorização.
+- **Desabilitado:** bloquear novas threads e mensagens para **todos**, inclusive o Narrador atuando como personagem, com resposta 409 `SMS_DISABLED`; apresentar a aba Mensagens como **histórico somente leitura**, com aviso “Mensagens desativadas pelo Narrador” e controles de composição desabilitados.
+- Ao desabilitar, **preservar o histórico, a auditoria e a visibilidade já concedida**. Jogadores seguem podendo consultar apenas mensagens previamente autorizadas, inclusive as enviadas pelo Narrador como seus personagens. O Narrador mantém acesso global ao histórico.
+- Suspender badges de novas mensagens e avisos de recebimento enquanto desabilitado; não apagar `read_at` nem descartar dados. Ao reativar, as conversas continuam a partir do histórico, sem republicação ou duplicação de notificações anteriores.
+- Validação no servidor deve ocorrer **dentro da transação do envio**, para evitar corrida entre desligamento e envio; checagem apenas no frontend é insuficiente.
+- Registrar cada alteração de estado em auditoria (ator, campanha, estado anterior/novo, timestamp), sem registrar conteúdo das mensagens.
+- Endpoint sugerido: `GET/PATCH /api/campaigns/[id]/settings/character-sms`; PATCH com `{ "enabled": boolean }`, proteção CSRF/origin e verificação de proprietário da campanha.
+
+**A política de histórico somente leitura é o comportamento padrão adotado nesta SPEC.** Se houver necessidade narrativa de ocultar totalmente o arquivo, isso deverá ser uma configuração separada e explicitamente autorizada, não um efeito colateral de desabilitar o envio.
+
 ## 12. Segurança, moderação e observabilidade
 
 - Isolamento total por campaign_id; negar IDOR/BOLA tanto em leitura quanto envio e read receipts.
@@ -265,7 +286,8 @@ Local: `/campaigns/[id]?view=messages`, substituindo o placeholder já existente
 2. Criar tabelas, constraints, índices e testes de migração/seed. Durante desenvolvimento, recriação de schema é aceita; não inventar dados históricos.
 3. Implementar serviço de autorização centralizado e projeções distintas PLAYER/NARRATOR.
 4. Implementar criação e leitura de threads, mensagem transacional, entregas, read_at e idempotência.
-5. Implementar visão administrativa do Narrador e auditoria do envio como personagem.
+5. Implementar visão administrativa do Narrador e auditoria do envio como personagem, inclusive cópia visível ao jogador proprietário desse personagem.
+5a. Adicionar configuração persistente de SMS no painel de Configurações do Narrador, enforcement transacional e modo somente leitura quando desabilitado.
 6. Implementar aba SMS no Hub permanente do Jogador, incluindo contato, conversa e badge.
 7. Reutilizar o mesmo módulo no Hub durante a sessão, sem alterar chat/câmeras LiveKit.
 8. Revisar acessibilidade, privacidade, erros e desempenho; executar testes, TypeScript, lint e build.
@@ -279,7 +301,7 @@ Local: `/campaigns/[id]?view=messages`, substituindo o placeholder já existente
 | MSG-02 | Jogador C tenta abrir ID da thread A↔B | 404/403, nenhum conteúdo vazado |
 | MSG-03 | Jogador A tenta enviar como personagem B | Rejeitado e auditado |
 | MSG-04 | Narrador envia como NPC | Destinatários veem NPC; auditoria identifica conta do Narrador |
-| MSG-05 | Narrador envia como personagem de B | Remetente ficcional de B; B não recebe acesso a conversa alheia |
+| MSG-05 | Narrador envia ou responde como personagem de B | B visualiza **essa mensagem** como enviada pelo próprio personagem, sem acesso às demais mensagens de conversa alheia |
 | MSG-06 | Narrador acessa thread privada A↔B | Leitura integral autorizada |
 | MSG-07 | Jogador A da Coterie X recebe mensagem à X | Entrega presente |
 | MSG-08 | Jogador da Coterie Y tenta ler mensagem à X | Acesso negado |
@@ -295,14 +317,21 @@ Local: `/campaigns/[id]?view=messages`, substituindo o placeholder já existente
 | MSG-18 | Troca de conta/personagem enquanto há cache | Conteúdo anterior invalidado |
 | MSG-19 | Coterie ainda sem domínio persistente | Envio COTERIE bloqueado de forma explícita, nunca difundido à campanha inteira |
 | MSG-20 | Personagem arquivado/desabilitado tenta enviar | Bloqueado pela política de elegibilidade |
-| MSG-21 | Mensagem de Narrador com remitente ficcional de jogador | Não altera autorização nem propriedade das mensagens |
+| MSG-21 | Mensagem do Narrador como personagem de jogador | O jogador vê essa mensagem, inclusive resposta, mas não as demais mensagens restritas da thread |
 | MSG-22 | Paginação de thread e listagem global | Sem fuga de dados e ordem determinística |
+| MSG-23 | Narrador envia mensagem como B em thread entre A e C | B vê somente essa mensagem; A/C veem o que lhes foi entregue; Narrador vê tudo |
+| MSG-24 | Narrador desativa SMS com conversas existentes | GET de histórico continua autorizado; POST de thread/mensagem retorna 409 SMS_DISABLED para qualquer papel |
+| MSG-25 | Jogador tenta alterar configuração SMS da campanha | 403; estado inalterado |
+| MSG-26 | Narrador reativa SMS | Envio volta a funcionar, mantendo histórico e sem reenviar notificações antigas |
+| MSG-27 | Narrador desativa SMS enquanto envio está em andamento | Transação serializa/valida o estado; nenhuma mensagem criada após desativação efetiva |
+| MSG-28 | SMS desativado durante chamada LiveKit | Chat ao vivo permanece funcionando e independente |
 
 ## 15. Critérios de aceite
 
 - [ ] Jogador vê apenas mensagens efetivamente dirigidas às suas fichas ou Coterie.
 - [ ] Narrador vê todas as mensagens da própria campanha, inclusive DIRECT.
 - [ ] Narrador responde como NPC ou outro personagem, com auditoria da identidade real.
+- [ ] Jogador vê cada mensagem que o Narrador enviou ou respondeu como seu personagem, mesmo sem ser destinatário original, sem acesso ao restante da conversa alheia.
 - [ ] Nenhum jogador pode falar como outro personagem.
 - [ ] O conteúdo persiste sem sessão ativa.
 - [ ] O SMS não se confunde nem substitui o chat temporário LiveKit.
@@ -314,6 +343,9 @@ Local: `/campaigns/[id]?view=messages`, substituindo o placeholder já existente
 - [ ] Hub permanente e Hub de sessão do jogador compartilham serviço e permissões.
 - [ ] Testes de segurança, build, lint e TypeScript aprovados.
 - [ ] A interface informa que o Narrador tem acesso integral às mensagens.
+- [ ] Narrador pode desativar e reativar SMS por campanha nas Configurações da Mesa.
+- [ ] SMS desativado impede novos envios e threads, preservando histórico acessível em modo somente leitura.
+- [ ] A restrição é verificada no backend, inclusive contra condições de corrida, sem afetar LiveKit.
 - [ ] Sem mensagens, identidades e destinatários fictícios criados automaticamente.
 
 ## 16. Fontes internas e decisões
