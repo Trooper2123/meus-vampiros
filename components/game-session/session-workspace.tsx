@@ -12,6 +12,8 @@ import { CampaignTools } from '@/components/campaign-calendar/campaign-tools'
 import { SessionQuickRoll } from '@/components/game-session/session-quick-roll'
 import { SessionPlayerWorkspace } from '@/components/game-session/session-player-workspace'
 import { MasterViewportGuard } from '@/components/master-viewport-guard'
+import { AwakePanel } from '@/components/awake-panel'
+import { CampaignAwakeSettings } from './campaign-awake-settings'
 import { DEFAULT_SHORTCUTS, SHORTCUT_LABELS, type ShortcutCode } from '@/lib/session-shortcut-options'
 
 type Snapshot = { archived?: boolean; sessions?: {id:string;status:'ACTIVE'|'CLOSED';startedAt:string}[]; session: { id: string; status: 'ACTIVE' | 'CLOSED'; revision: number; chronicleNightIds: string[] } | null; canManage: boolean; characters: { id: string; name: string }[] }
@@ -34,6 +36,7 @@ function SessionWorkspace({ campaignId, actorId, campaignName }: Readonly<{ camp
   const [researchView, setResearchView] = useState<'skills' | 'merits'>('skills')
   const [closedNpcSession,setClosedNpcSession]=useState('')
   const manage = data?.canManage ?? false
+  const { data: awakeSettings } = useSWR<{executionMode:'PLAYER_ROLLS'|'NARRATOR_FORCES'}>(manage ? `/api/campaigns/${campaignId}/awake-settings` : null, read)
   const { data: shortcutSettings } = useSWR<{shortcuts: ShortcutCode[]}>(manage ? `/api/campaigns/${campaignId}/session-shortcuts` : null, read, { refreshInterval: 20000 })
   const shortcuts = shortcutSettings?.shortcuts ?? DEFAULT_SHORTCUTS
   const shortcutIcons = { npcs: UserRoundCog, calendar: CalendarDays, notes: NotebookPen, research: Search, handouts: FileText, visual: ImageIcon, xp: Wallet } as const
@@ -107,6 +110,7 @@ function SessionWorkspace({ campaignId, actorId, campaignName }: Readonly<{ camp
         <nav className="session-tabs" aria-label="Seções do modo sessão">
           {[
             { id: 'shared', label: 'Hub', Icon: House },
+            { id: 'awake', label: 'Início da noite', Icon: CalendarDays },
             { id: 'visual', label: 'Mesa Visual', Icon: Boxes },
             { id: 'handouts', label: 'Handouts', Icon: FileText },
             { id: 'research', label: 'Pesquisas', Icon: Search },
@@ -161,6 +165,8 @@ function SessionWorkspace({ campaignId, actorId, campaignName }: Readonly<{ camp
           {activeTool === 'reveals' && notesSessionId && <div className="session-panel"><h2 className="font-serif text-2xl">Revelações da sessão</h2><div className="mt-5"><SessionReveals key={notesSessionId} sessionId={notesSessionId} active={data.session?.id===notesSessionId&&data.session.status==='ACTIVE'}/></div></div>}
 
           {activeTool === 'xp' && manage && activeSession?.status === 'ACTIVE' && <div className="session-panel"><h2 className="font-serif text-2xl">XP e pertences</h2><div className="mt-5"><CampaignPossessionsManager campaignId={campaignId} sessionId={activeSession.id}/></div></div>}
+
+          {activeTool === 'awake' && <div className="session-panel"><CampaignAwakeSettings campaignId={campaignId}/>{awakeSettings?.executionMode === 'NARRATOR_FORCES' && <AwakePanel campaignId={campaignId} sessionId={activeSession?.status==='ACTIVE'?activeSession.id:undefined}/>}</div>}
 
           {activeTool === 'calendar' && <div className="session-panel"><p className="eyebrow">Agenda da campanha</p><h2 className="mt-2 font-serif text-2xl">Calendário da mesa</h2><div className="mt-5"><CampaignTools campaignId={campaignId} master={manage}/></div></div>}
         </section>
