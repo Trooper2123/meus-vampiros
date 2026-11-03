@@ -10,7 +10,7 @@ async function fetchCampaigns(url: string): Promise<{ campaigns: { id: string }[
   return response.json()
 }
 
-export function ArchiveHeader({ title, showCampaigns, variant = 'default', campaignSection = 'current', campaignRole = 'master' }: Readonly<{ title: string; showCampaigns?: boolean; variant?: 'default' | 'campaigns' | 'characters'; campaignSection?: 'current' | 'inactive'; campaignRole?: 'master' | 'player' }>) {
+export function ArchiveHeader({ title, showCampaigns, variant = 'default', campaignSection = 'current' }: Readonly<{ title: string; showCampaigns?: boolean; variant?: 'default' | 'campaigns' | 'characters'; campaignSection?: 'current' | 'inactive' }>) {
   const { data } = useSWR(showCampaigns === undefined ? '/api/campaigns' : null, fetchCampaigns)
   const hasCampaigns = showCampaigns ?? Boolean(data?.campaigns?.length)
   const onInactive = campaignSection === 'inactive'
@@ -20,19 +20,11 @@ export function ArchiveHeader({ title, showCampaigns, variant = 'default', campa
     <Link href="/characters" aria-current={variant === 'characters' ? 'page' : undefined} className="button-ghost">{sidebar && <UserRound className="size-4" aria-hidden="true"/>}Personagens</Link>
     {sidebar ? <details className="campaign-nav-group" open={variant === 'campaigns'}>
       <summary><Layers3 className="size-4" aria-hidden="true"/><span>Campanhas</span><ChevronDown className="campaign-nav-chevron size-4" aria-hidden="true"/></summary>
-      <div className="campaign-nav-subitems campaign-nav-role-links">
-        <details open={variant === 'campaigns' && campaignRole === 'player'}>
-          <summary><UserRound className="size-4"/>Como Jogador(a)<ChevronDown className="size-4 campaign-nav-chevron"/></summary>
-          <Link href="/campaigns?role=player" aria-current={variant === 'campaigns' && campaignRole === 'player' && !onInactive ? 'page' : undefined} className={variant === 'campaigns' && campaignRole === 'player' && !onInactive ? 'is-active' : ''}><CirclePlay className="size-4" aria-hidden="true"/>Ativas</Link>
-          <Link href="/campaigns?role=player&view=inactive" aria-current={variant === 'campaigns' && campaignRole === 'player' && onInactive ? 'page' : undefined} className={variant === 'campaigns' && campaignRole === 'player' && onInactive ? 'is-active' : ''}><Archive className="size-4" aria-hidden="true"/>Inativas</Link>
-        </details>
-        <details open={variant === 'campaigns' && campaignRole === 'master'}>
-          <summary><Layers3 className="size-4"/>Como Mestre(a)<ChevronDown className="size-4 campaign-nav-chevron"/></summary>
-          <Link href="/campaigns" aria-current={variant === 'campaigns' && campaignRole === 'master' && !onInactive ? 'page' : undefined} className={variant === 'campaigns' && campaignRole === 'master' && !onInactive ? 'is-active' : ''}><CirclePlay className="size-4" aria-hidden="true"/>Ativas</Link>
-          <Link href="/campaigns?view=inactive" aria-current={variant === 'campaigns' && campaignRole === 'master' && onInactive ? 'page' : undefined} className={variant === 'campaigns' && campaignRole === 'master' && onInactive ? 'is-active' : ''}><Archive className="size-4" aria-hidden="true"/>Inativas</Link>
-        </details>
+      <div className="campaign-nav-subitems">
+        <Link href="/campaigns" aria-current={variant === 'campaigns' && !onInactive ? 'page' : undefined} className={variant === 'campaigns' && !onInactive ? 'is-active' : ''}><CirclePlay className="size-4" aria-hidden="true"/>Ativas</Link>
+        <Link href="/campaigns?view=inactive" aria-current={variant === 'campaigns' && onInactive ? 'page' : undefined} className={variant === 'campaigns' && onInactive ? 'is-active' : ''}><Archive className="size-4" aria-hidden="true"/>Inativas</Link>
       </div>
-    </details> : hasCampaigns && <Link href="/campaigns?role=player" className="button-ghost">Mesas</Link>}
+    </details> : hasCampaigns && <Link href="/campaigns" className="button-ghost">Mesas</Link>}
     <Link href="/master/catalogo" className="button-ghost">{sidebar && <BookOpen className="size-4" aria-hidden="true"/>}Disciplinas e habilidades</Link>
     <Link href="/master/vantagens-defeitos" className="button-ghost">{sidebar && <Star className="size-4" aria-hidden="true"/>}Vantagens e defeitos</Link>
     <Link href="/notes" className="button-ghost">{sidebar && <NotebookPen className="size-4" aria-hidden="true"/>}Anotações</Link>
