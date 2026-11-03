@@ -31,6 +31,7 @@ export default async function CampaignDetailPage({ params, searchParams }: Reado
   }))).filter(summary => summary?.characterType === 'PLAYER_VAMPIRE')
   const query = await searchParams
   if (query?.view === 'projects') redirect('/campaigns/'+campaign.id+'/projects')
+  if (query?.view === 'coterie') redirect('/campaigns/'+campaign.id+'/coterie')
   const requestedCharacter = query?.xpCharacterId
   const allowedViews = ['overview','characters','participants','npcs','handouts','calendar','xp','possessions','limits','projects','coterie','messages','notes','research','settings'] as const
   const requestedView = query?.view
@@ -72,7 +73,7 @@ export default async function CampaignDetailPage({ params, searchParams }: Reado
               <Link className={view === 'possessions' ? 'is-active' : ''} href={viewHref('possessions')}><PackageOpen/>Itens Restritos</Link>
               <Link className={view === 'limits' ? 'is-active' : ''} href={viewHref('limits')}><Shield/>Limites</Link>
               <Link className={view === 'projects' ? 'is-active' : ''} href={'/campaigns/'+campaign.id+'/projects'}><FolderKanban/>Projetos</Link>
-              <Link className={view === 'coterie' ? 'is-active' : ''} href={viewHref('coterie')}><Users/>Cotterie</Link>
+              <Link className={view === 'coterie' ? 'is-active' : ''} href={'/campaigns/'+campaign.id+'/coterie'}><Users/>Cotterie</Link>
               <Link className={view === 'messages' ? 'is-active' : ''} href={viewHref('messages')}><MessagesSquare/>Mensagens da Mesa</Link>
               <Link className={view === 'notes' ? 'is-active' : ''} href={viewHref('notes')}><NotebookPen/>Anotações</Link>
               <Link className={view === 'research' ? 'is-active' : ''} href={viewHref('research')}><Search/>Pesquisas</Link>
