@@ -15,7 +15,7 @@ pnpm dev
 
 Acesse http://localhost:3000. Configure `DATABASE_URL` para os fluxos persistentes. O modo sessão exige PostgreSQL em todos os ambientes e retorna 503 sem configuração; não cria partidas em memória. A identidade local de desenvolvimento não representa autenticação de produção. DEV_AUTH_BYPASS não dispensa sessão em produção.
 
-Use `.env.local.example` como referência de configuração, sem versionar credenciais. Não configure banco externo apenas para executar o fluxo em memória.
+Use `.env.local.example` como referência de configuração, sem versionar credenciais. Para desenvolvimento e testes persistentes, use um PostgreSQL local isolado.
 
 ## Validação
 
@@ -31,9 +31,37 @@ O build verifica tipos. A CLI Vercel não é dependência de runtime; eventual c
 
 Regressões de autenticação e isolamento sem acessar banco ou carregar credenciais: `pnpm exec vitest run --config vitest.access.config.ts`.
 
+Antes de cada push, o agente deve executar `npm install` e, em seguida, `pnpm build`. Corrigir eventuais erros e repetir os comandos até ambos terminarem com sucesso; se houver impedimento, registrar o bloqueio e não realizar o push. Revisar alterações nos manifests e lockfiles geradas pela instalação. Essa etapa não substitui as demais verificações de segurança e pré-commit do [AGENTS.md](AGENTS.md).
+
 ## Funcionalidades e limites
 
-Fichas independentes, duplicação, clãs/predação, recursos/XP, especialidades, anotações, calendário, convites e NPCs de mesa possuem entregas em memória. Algumas SPECs continuam parciais; isso não equivale ao motor V5 completo.
+Resumo atualizado em 03/11/2026. “Ativas” indica funcionalidades implementadas; disponibilidade depende da configuração e das migrações do ambiente. Não significa validação integral em produção nem implementação de todo o motor V5.
+
+### Funcionalidades ativas
+
+| Área | Funcionalidades implementadas |
+| --- | --- |
+| Fichas | Criação e edição de personagens, fichas independentes, duplicação, validação e aprovação pelo Narrador. |
+| Regras V5 | Clãs, tipos de predação, disciplinas e seleção de poderes, especialidades e projeções de Potência do Sangue. |
+| Recursos e evolução | Gestão de recursos e condições, XP e histórico, ações de sangue e início da noite (Awake). |
+| Rolagens | Rolagens calculadas no servidor, histórico, rerrolagens e adjudicações autorizadas. |
+| Mesas | Criação e gestão, convites, participantes, regras da mesa, arquivamento e restauração. |
+| Agenda | Eventos, disponibilidade e calendários de planejamento e sessões. |
+| Sessões | Início, encerramento e consulta persistidos em PostgreSQL, vínculos de noites, convocação e painel com recursos e rolagens. |
+| Acervo narrativo | NPCs, anotações privadas e compartilhadas, vínculos, retratos, imagens e revelações controladas pelo Narrador. |
+| Mesa virtual | Integração opcional de áudio/vídeo com LiveKit; imagens privadas dependem da configuração do Vercel Blob. |
+
+### Funcionalidades planejadas e entregas parciais
+
+| Frente | O que falta concluir |
+| --- | --- |
+| Dossiê e rolagens V5 | Unificação das fichas de NPCs completos/simplificados e carniçais, rolagens de NPCs e fluxo de disputa/combate com auditoria. |
+| Integração das rolagens à chamada | Concluir feed, visibilidade por papel e efeitos explícitos previstos no dossiê. |
+| Evolução narrativa | Concluir o escopo e a validação integral de registros, relações e mídias; partes já estão disponíveis no acervo. |
+| Catálogos da VTM Wiki | Existe uma POC de metadados. Importação, persistência, administração e publicação continuam bloqueadas por validação técnica/editorial, direitos por entrada e permissões administrativas. |
+| Regras avançadas V5 | Ampliar a automação além dos recortes implementados; os catálogos e controles atuais não representam todas as regras do sistema. |
+
+Além do roadmap funcional, permanecem pendências de validação global nas specs de Modo Sessão e evolução narrativa, QA visual/acessibilidade/responsividade e integrações externas reais. Os registros locais de planejamento podem conter evidências históricas; não representam testes reexecutados nesta atualização.
 
 O modo sessão em `/campaigns/[id]/session` persiste início, encerramento, revisão e vínculos de noites no PostgreSQL. Recursos, rolagens e ferramentas autorizadas convergem por consultas autenticadas a cada cinco segundos; vídeo é opcional. A validação global ainda tem falhas legadas registradas nas specs. QA visual/acessibilidade/responsividade e integrações externas reais permanecem pendentes.
 

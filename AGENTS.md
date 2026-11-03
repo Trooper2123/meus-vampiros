@@ -135,6 +135,14 @@ Uma SPEC somente poderá ser considerada concluída quando:
 
 **Regra de bloqueio:** se uma validação obrigatória falhar ou não puder ser executada, registrar o motivo e manter a tarefa como `blocked` até a resolução ou aprovação explícita de uma exceção de segurança documentada. Vulnerabilidades críticas ou altas não poderão ser dispensadas apenas para concluir a SPEC.
 
+## Execução antes de push
+
+- Antes de **cada push**, executar `npm install` e, em seguida, `pnpm build` na raiz da aplicação.
+- Corrigir eventuais erros de instalação ou build e repetir os comandos até ambos terminarem com sucesso. Não realizar push com erros pendentes ou se algum comando não puder ser executado; registrar o motivo do bloqueio.
+- Revisar alterações em manifests e lockfiles geradas por `npm install`, mantendo a consistência das dependências e sem incluir mudanças acidentais.
+- Executar essas verificações sobre o estado final que será enviado. Se houver correções posteriores, repetir a validação antes do push e registrar os resultados.
+- Essa obrigação não substitui testes, tipos, lint, auditoria de dependências, revisão de segurança ou revisão pré-commit exigidos abaixo.
+
 ## Revisão pré-commit
 
 - Arquivos de `.codex/` são locais e não devem entrar no commit, inclusive specs/backlog/revisões. Manter a pasta ignorada e excluir esses arquivos do staging. Ao retirar renomes `.kiro/` → `.codex/`, retirar também a exclusão staged da origem para evitar remoção acidental de documentação rastreada. Não apagar arquivos locais nem alterar o histórico para aplicar essa regra.
