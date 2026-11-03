@@ -82,7 +82,7 @@ Acesso a uma campanha exige ser Narrador ou controlar personagem válido nela. O
 - Quem ingressar depois não recebe retroativamente mensagens anteriores.
 - Quem sair mantém acesso somente às mensagens que foram entregues ao seu personagem, se sua ficha continuar acessível ao proprietário; não lê mensagens futuras.
 - Se a campanha tiver múltiplas Coteries, selecionar explicitamente o coterie_id; **nunca expandir para todas as Coteries**.
-- O próprio remetente também recebe uma cópia na thread, para composição de histórico.
+- O remetente jogador recebe sua cópia na thread apenas quando controla legitimamente o personagem. Mensagens enviadas por impersonação do Narrador não criam entrega automática para o controlador do personagem assumido; o Narrador lê pelo acesso administrativo.
 - Mudanças futuras de grupo não devem recalcular destinatários de mensagens antigas.
 
 **Dependência:** a SPEC-SESSION-011 descreve coterie_members, mas o schema operacional deve ser verificado antes da migração. Se o domínio da Coterie ainda não existir, não simular lista de membros por todas as fichas da campanha: habilitar inicialmente apenas DIRECT e apresentar COTERIE como indisponível até implantação da dependência.
@@ -95,15 +95,15 @@ Fluxo:
 1. Jogador escolhe um de seus personagens e um destinatário autorizado.
 2. Digita a mensagem e confirma o envio.
 3. Backend revalida autor, destinatário, campanha e thread.
-4. Mensagem é persistida de forma transacional, com entregas ao remetente e ao destinatário.
+4. Mensagem é persistida de forma transacional, com entrega ao destinatário; uma cópia para o remetente só é criada quando o ator autenticado realmente controla esse personagem.
 5. Ambos veem a conversa. O Narrador vê a conversa em sua caixa global.
 6. O Narrador pode responder como o destinatário original, um NPC ou outro personagem elegível, **sem falsificar quem executou a ação**.
 
-**Identidade da thread:** não assumir que toda thread DIRECT tem sempre os mesmos dois interlocutores ao permitir respostas de terceiros pelo Narrador. A primeira entrega pode usar pares de personagens e permitir ao Narrador escolher uma thread já existente e responder nela; o modelo deve registrar o remetente efetivo de cada mensagem. Quando o Narrador inserir novo personagem em conversa de terceiros, exigir escolha explícita entre:
+**Identidade da thread:** não assumir que toda thread DIRECT tem sempre os mesmos dois interlocutores ao permitir respostas de terceiros pelo Narrador. A primeira entrega pode usar pares de personagens e permitir ao Narrador escolher uma thread já existente e responder nela; o modelo deve registrar o remetente ficcional e o ator autenticado de cada mensagem. Quando o Narrador inserir novo personagem em conversa de terceiros, exigir escolha explícita entre:
 - **Participar da conversa existente:** nova mensagem visível apenas aos destinatários selecionados da mensagem, com indicação de novo participante; ou
 - **Abrir outra conversa:** thread distinta com participantes elegíveis.
 
-Na primeira entrega, a escolha mais segura é exigir **nova thread** ao mudar o conjunto de destinatários; o Narrador pode responder como outro personagem mantendo os destinatários originais. O remetente substituto não ganha direito de leitura automática ao proprietário daquele personagem.
+Na primeira entrega, a escolha mais segura é exigir **nova thread** ao mudar o conjunto de destinatários; o Narrador pode responder como outro personagem mantendo os destinatários originais. O remetente substituto não ganha direito de leitura automática ao proprietário daquele personagem: apenas destinatários materiais da mensagem e remetentes legitimamente controlados pelo ator recebem cópias.
 
 ### 6.2 Mensagem da Coterie (COTERIE)
 
