@@ -56,13 +56,15 @@ function PlayerQuickActions({characterId,sessionId}:Readonly<{characterId:string
 export function SessionPlayerWorkspace({campaignId,actorId,sessionId,characters,campaignName}:Readonly<{campaignId:string;actorId:string;sessionId:string|null;characters:Character[];campaignName?:string|null}>) {
   const [tab,setTab]=useState<PlayerTab>('sheet')
   const [selected,setSelected]=useState(characters[0]?.id??'')
+  const {data:smsInbox}=useSWR<{enabled:boolean;threads:Array<{unreadCount:number}>}>(`/api/campaigns/${campaignId}/character-sms?view=player`,read,{refreshInterval:10000})
+  const smsUnread=smsInbox?.enabled?smsInbox.threads.reduce((sum,thread)=>sum+Number(thread.unreadCount??0),0):0
   const current=characters.find(character=>character.id===selected)??characters[0]
   const tabs=[
     {id:'sheet' as const,label:'Ficha',Icon:ScrollText},
     {id:'diary' as const,label:'Anotações',Icon:NotebookPen},
     {id:'session' as const,label:'Sessão',Icon:CalendarDays},
     {id:'files' as const,label:'Arquivos',Icon:FileText},
-    {id:'messages' as const,label:'Mensagens',Icon:MessageSquareText},
+    {id:'messages' as const,label:smsUnread>0?`Mensagens (${smsUnread})`:'Mensagens',Icon:MessageSquareText},
   ]
   return <div className="session-player-approved" aria-label="Modo Sessão do Jogador">
     <div className="session-player-title"><div><p className="eyebrow">Arquivos da Noite · Visão do Jogador</p><h1>{campaignName ? `Sessão: ${campaignName}` : "Minha Sessão"}</h1><p>Ficha, diário e recursos da crônica sem sair da mesa.</p></div><div className="session-player-title-actions"><span className="session-player-status">{sessionId?<><i/>Sessão em andamento</> :'Aguardando início da sessão'}</span><Link className="session-player-exit" href="/characters"><LogOut className="size-4"/>Sair da Sessão</Link></div></div>
