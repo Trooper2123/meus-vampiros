@@ -9,7 +9,7 @@ type Thread = {id:string;kind:string;updatedAt:string;characterA:string;characte
 type Message = {id:string;body:string;senderCharacterId:string;senderName:string;createdAt:string;narratorOperated:boolean|null}
 type Inbox = {enabled:boolean;isNarrator:boolean;threads:Thread[]}
 type Contacts = {enabled:boolean;isNarrator:boolean;characters:Contact[]}
-type History = {enabled:boolean;isNarrator:boolean;thread:{id:string;characterA:string;characterB:string};messages:Message[]}
+type History = {enabled:boolean;isNarrator:boolean;thread:{id:string;characterA:string;characterB:string;characterAId:string;characterBId:string};messages:Message[]}
 const get = async (url:string) => {
   const r=await fetch(url,{cache:'no-store'})
   const body=await r.json().catch(()=>({}))
@@ -39,6 +39,8 @@ export function CharacterSms({campaignId,mode='player'}:Readonly<{campaignId:str
   const currentSender=senders.some(c=>c.id===senderId)?senderId:(senders[0]?.id??'')
   const recipients=allContacts.filter(c=>c.id!==currentSender)
   const selectedRecipient=recipients.some(c=>c.id===recipientId)?recipientId:(recipients[0]?.id??'')
+  const replySenders=isNarrator?senders:senders.filter(c=>history?.thread && [history.thread.characterAId,history.thread.characterBId].includes(c.id))
+  const replySender=replySenders.some(c=>c.id===senderId)?senderId:(replySenders[0]?.id??'')
   const count=useMemo(()=>inbox?.threads.reduce((sum,t)=>sum+Number(t.unreadCount??0),0)??0,[inbox])
   const messages=history?.messages??[]
   const latestMessageId=messages.at(-1)?.id
@@ -67,11 +69,11 @@ export function CharacterSms({campaignId,mode='player'}:Readonly<{campaignId:str
   }
 
   async function send(){
-    if(!threadId||!currentSender||!body.trim()||busy)return
+    if(!threadId||!replySender||!body.trim()||busy)return
     setBusy(true);setError('')
     try{
       const response=await fetch(threadUrl(threadId),{method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({senderCharacterId:currentSender,body:body.trim(),idempotencyKey:crypto.randomUUID()})})
+        body:JSON.stringify({senderCharacterId:replySender,body:body.trim(),idempotencyKey:crypto.randomUUID()})})
       const data=await response.json().catch(()=>({}))
       if(!response.ok)throw new Error(data.error==='SMS_DISABLED'?'Mensagens desativadas pelo Narrador.':data.error??'Não foi possível enviar.')
       setBody('');await Promise.all([refreshInbox(),refreshHistory()])
@@ -107,12 +109,13 @@ export function CharacterSms({campaignId,mode='player'}:Readonly<{campaignId:str
           {!history&&!historyError&&<p className="sms-muted">Carregando conversa...</p>}
           <div className="sms-messages" role="log" aria-live="polite">
             {history&&messages.length===0&&<p className="sms-muted">Envie a primeira mensagem.</p>}
-            {messages.map(m=><article key={m.id} className={m.senderCharacterId===currentSender?'sms-bubble mine':'sms-bubble'}><strong>{m.senderName}</strong><p>{m.body}</p><small>{new Date(m.createdAt).toLocaleString('pt-BR')}{isNarrator&&m.narratorOperated?' · Enviado pelo Narrador':''}</small></article>)}
+            {messages.map(m=><article key={m.id} className={m.senderCharacterId===replySender?'sms-bubble mine':'sms-bubble'}><strong>{m.senderName}</strong><p>{m.body}</p><small>{new Date(m.createdAt).toLocaleString('pt-BR')}{isNarrator&&m.narratorOperated?' · Enviado pelo Narrador':''}</small></article>)}
           </div>
           <form className="sms-write" onSubmit={e=>{e.preventDefault();void send()}}>
+            <label className="sms-reply-as">Falar como <select value={replySender} onChange={e=>setSenderId(e.target.value)} disabled={disabled||busy}>{replySenders.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
             <label className="sr-only" htmlFor="sms-draft">Mensagem</label>
             <textarea id="sms-draft" value={body} onChange={e=>setBody(e.target.value)} disabled={disabled||busy} maxLength={2000} placeholder={disabled?'Mensagens desativadas':'Escreva uma mensagem como o personagem selecionado...'} rows={3}/>
-            <button type="submit" className="button-primary" disabled={disabled||busy||!body.trim()||!currentSender}><Send className="size-4"/>Enviar</button>
+            <button type="submit" className="button-primary" disabled={disabled||busy||!body.trim()||!replySender}><Send className="size-4"/>Enviar</button>
           </form>
         </div>}
         {!threadId&&<p className="sms-muted sms-placeholder">Selecione uma conversa ou inicie uma nova.</p>}
