@@ -58,9 +58,10 @@ export function CharacterSms({campaignId,mode='player'}:Readonly<{campaignId:str
 
   useEffect(()=>{
     if(!threadId||!latestMessageId||!inbox?.enabled)return
+    const activeThreadId=threadId
     let active=true
     async function markRead(){
-      const response=await fetch(threadUrl(threadId),{method:'PATCH',headers:{'Content-Type':'application/json'},body:'{}'})
+      const response=await fetch(threadUrl(activeThreadId),{method:'PATCH',headers:{'Content-Type':'application/json'},body:'{}'})
       if(active&&response.ok)void refreshInbox()
     }
     void markRead()

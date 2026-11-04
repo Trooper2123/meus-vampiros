@@ -13,9 +13,7 @@ import type { PlayerCampaign } from '@/lib/player-campaigns'
 import type { CampaignEvent } from '@/lib/types/campaign-event'
 import type { PlayerHandout } from '@/lib/player-handouts'
 
-export type PlayerCampaignTab = 'overview'|'files'|'notes'|'events'|'calendar'|'coterie'|'projects'
-type Tab = PlayerCampaignTab
-type Tab = 'overview'|'files'|'notes'|'events'|'calendar'|'coterie'|'projects'|'messages'
+export type PlayerCampaignTab = 'overview'|'files'|'notes'|'events'|'calendar'|'coterie'|'projects'|'messages'
 type SessionResponse = {session?:{id:string;status:'ACTIVE'|'CLOSED'}|null}
 type NotePreview = {id:string;title:string;updatedAt:string;marker?:string|null}
 const fetcher = async (url:string) => {
@@ -38,8 +36,8 @@ function PortalPanel({title,subtitle,icon:Icon,children}:Readonly<{title:string;
 }
 
 export function PlayerCampaignPortal({campaign,actorId,initialTab='overview'}:Readonly<{campaign:PlayerCampaign;actorId:string;initialTab?:PlayerCampaignTab}>) {
-  const [tab,setTab]=useState<Tab>(initialTab)
-  const openTab=(next:Tab)=>{
+  const [tab,setTab]=useState<PlayerCampaignTab>(initialTab)
+  const openTab=(next:PlayerCampaignTab)=>{
     setTab(next)
     // Atualiza o deep link sem sair do hub nem desmontar o banner.
     const url=new URL(window.location.href)

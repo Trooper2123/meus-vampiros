@@ -37,7 +37,7 @@ describe('SPEC-SESSION-011: domínio persistente em PostgreSQL isolado',()=>{
    await commandCoterie('narrator-coterie',camp.id,command('ADD_ADVANTAGE',{coterieId:co.coterieId,kind:'ADVANTAGE',customName:'Aliança noturna',dots:2}) as any)
    await commandCoterie('narrator-coterie',camp.id,command('ADD_HAVEN',{coterieId:co.coterieId,name:'Refúgio dos Vigias',location:'Brasília',isPrimary:true}) as any)
    const withHaven=(await getCampaignCoteries('narrator-coterie',camp.id)).coteries[0]
-   const haven=withHaven.havens[0] as {id:string}
+   const haven=withHaven.havens[0]
    await commandCoterie('narrator-coterie',camp.id,command('ADD_HAVEN_TRAIT',{coterieId:co.coterieId,havenId:haven.id,kind:'MERIT',customName:'Biblioteca',dots:1}) as any)
    await commandCoterie('narrator-coterie',camp.id,command('ADD_BOON',{coterieId:co.coterieId,kind:'DEBT',counterparty:'Primogênito',level:2}) as any)
    await expect(commandCoterie('outsider-coterie',camp.id,command('ADD_GOAL',{coterieId:co.coterieId,title:'Invadir o refúgio'}) as any)).rejects.toMatchObject({status:403})
