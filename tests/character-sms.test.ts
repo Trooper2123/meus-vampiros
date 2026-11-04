@@ -38,6 +38,11 @@ beforeEach(() => {
 })
 
 describe('SMS persistente e permissões', () => {
+  it.each([undefined, 42, '../../wrong'])('rejeita destinatário inválido antes de consultar o banco: %s', async recipientCharacterId => {
+    await expect(smsStart(campaignId, 'narrator', { senderCharacterId: senderId, recipientCharacterId })).rejects.toMatchObject({ status: 422 })
+    expect(mocks.clientQuery).not.toHaveBeenCalled()
+  })
+
   it('valida UUID antes de consultar entidades', () => {
     expect(smsUuid(campaignId)).toBe(true)
     expect(smsUuid('../../wrong')).toBe(false)

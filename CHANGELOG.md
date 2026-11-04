@@ -1,3 +1,13 @@
+## [2026-11-03 21:24 BRT] - fix - Tipos de SMS, Awake e Havens de coteries
+
+- Arquivos: `lib/character-sms.ts`, `lib/coterie-service.ts`, `tests/character-awake-individual.test.ts` e `tests/character-sms.test.ts`.
+- SMS: helper de erro declarado como função com retorno `never`, permitindo narrowing após validação; destinatário validado no ramo de conversa direta. Regras de autorização, transações e limites preservados.
+- Coteries: preservados os campos tipados de Haven ao compor o retorno com traits, removendo casts que apagavam o contrato.
+- Awake: testes validam objeto e identificador da noite antes de acessar o retorno genérico do executor de comandos.
+- Validação: 12 erros TypeScript corrigidos; `npx tsc --noEmit` e `pnpm build` aprovados; 10 testes SMS aprovados, incluindo três destinatários inválidos.
+- Bloqueios: lint falha internamente (`scopeManager.addGlobals is not a function`); integração Awake/coteries não validada com PostgreSQL. Tentativa da rota Awake sem banco isolado resultou em três testes barrados pela proteção do ambiente, sem mutações.
+- Auditoria: uma vulnerabilidade moderada em minimatch; nenhuma alta/crítica. Revisão do ajuste sem novos segredos ou mudanças de acesso identificadas; aprovação geral permanece bloqueada pelo lint e integração pendente. Sem migração, seed, commit ou push.
+
 ## [2026-11-03] - refactor - Projects e Coterie como abas do hub
 
 **Branch:** `feat/session-011-projects-coterie`. Revisão de navegação solicitada pelo usuário.
