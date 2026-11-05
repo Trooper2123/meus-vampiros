@@ -21,6 +21,8 @@ export default defineConfig({
   test: {
     environment: 'node',
     fileParallelism: false,
+    include: ['tests/**/*.{test,spec}.?(c|m)[jt]s?(x)'],
+    exclude: ['**/node_modules/**', '**/.git/**', '**/.git-worktrees/**'],
     globalSetup: ['./tests/postgres-global-setup.ts'],
   },
 })
