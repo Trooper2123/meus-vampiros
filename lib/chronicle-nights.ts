@@ -57,8 +57,9 @@ export async function startChronicleNight(actorId: string, campaignId: string, i
   campaignId = campaignId.toLowerCase()
   const hash = hashRequest(input)
   return await db.transaction(async transaction => {
-    const campaignRows = await transaction.execute<{ master_user_id: string }>(sql`SELECT master_user_id FROM campaigns WHERE id = ${campaignId}::uuid FOR UPDATE`)
+    const campaignRows = await transaction.execute<{ master_user_id: string; awake_execution_mode: string }>(sql`SELECT master_user_id, awake_execution_mode FROM campaigns WHERE id = ${campaignId}::uuid FOR UPDATE`)
     if (campaignRows.rows[0]?.master_user_id !== actorId) { throw new CharacterCommandError(403, 'Somente o Narrador desta mesa pode iniciar a noite.') }
+    if (campaignRows.rows[0]?.awake_execution_mode !== 'NARRATOR_FORCES') { throw new CharacterCommandError(409, 'A mesa está configurada para que os jogadores realizem os despertares. Prepare a noite antes de iniciar os testes.') }
     const previous = await transaction.execute<{ started_by_user_id: string; request_hash: string; result: NightResult }>(sql`SELECT started_by_user_id, request_hash, result FROM chronicle_nights WHERE campaign_id = ${campaignId}::uuid AND idempotency_key = ${input.idempotencyKey}`)
     if (previous.rows[0]) {
       if (previous.rows[0].started_by_user_id !== actorId || previous.rows[0].request_hash !== hash) { throw new CharacterCommandError(409, 'A chave já foi usada para outro início de noite.') }
@@ -93,7 +94,7 @@ export async function getChronicleAwakePanel(actorId: string, campaignId: string
     const rows = await db.execute<{ id: string; name: string; campaign_id: string; character_type: string; status: string; data: Record<string, unknown>; game_state: Record<string, unknown>; revision: number }>(sql`SELECT id, name, campaign_id, character_type, status, data, game_state, revision FROM characters WHERE campaign_id = ${campaignId}::uuid ORDER BY name`)
     const characters = rows.rows.map(row => ({ id: row.id, name: row.name, campaignId: row.campaign_id, characterType: row.character_type, status: row.status, data: row.data ?? {}, gameState: row.game_state ?? {}, revision: row.revision }))
     const history = await db.execute<{ result: NightResult }>(sql`SELECT result FROM chronicle_nights WHERE campaign_id = ${campaignId}::uuid AND status = 'ACTIVE' ORDER BY night_number DESC LIMIT 10`)
-    const nights = history.rows.map(row => row.result)
+    const nights = history.rows.map(row => row.result).filter((night): night is NightResult => Boolean(night))
     const latest = await db.execute<{ character_id: string; night_number: number }>(sql`SELECT a.character_id, MAX(n.night_number) AS night_number FROM night_awakenings a JOIN chronicle_nights n ON n.id = a.night_id WHERE n.campaign_id = ${campaignId}::uuid AND n.status = 'ACTIVE' GROUP BY a.character_id`)
     for (const row of latest.rows) lastProcessed.set(row.character_id, Number(row.night_number))
   return { characters: characters.map(character => { const state = readSessionState(character.data, character.gameState); return { id: character.id, name: character.name, hunger: state.hunger, condition: state.condition, status: character.status, lastProcessedNight: lastProcessed.get(character.id) ?? null, eligible: character.characterType === 'PLAYER_VAMPIRE' && character.status === 'APPROVED' && state.condition !== 'FINAL_DEATH' } }), nights }
