@@ -1,5 +1,8 @@
 'use client'
 
+import { SessionVisualBoard } from '@/components/game-session/session-visual-board'
+import { CampaignHandouts } from '@/components/campaign-handouts'
+
 import { CharacterSms } from '@/components/character-sms/character-sms'
 import { useState, type ComponentProps } from 'react'
 import Link from 'next/link'
@@ -58,6 +61,7 @@ function PlayerQuickActions({characterId,sessionId}:Readonly<{characterId:string
 
 export function SessionPlayerWorkspace({campaignId,actorId,sessionId,characters,campaignName}:Readonly<{campaignId:string;actorId:string;sessionId:string|null;characters:Character[];campaignName?:string|null}>) {
   const [tab,setTab]=useState<PlayerTab>('sheet')
+  const [mobilePanel,setMobilePanel]=useState<'center'|'chat'|'cameras'>('center')
   const [selected,setSelected]=useState(characters[0]?.id??'')
   const {data:smsInbox}=useSWR<{enabled:boolean;threads:Array<{unreadCount:number}>}>(`/api/campaigns/${campaignId}/character-sms?view=player`,read,{refreshInterval:10000})
   const smsUnread=smsInbox?.enabled?smsInbox.threads.reduce((sum,thread)=>sum+Number(thread.unreadCount??0),0):0
@@ -71,7 +75,8 @@ export function SessionPlayerWorkspace({campaignId,actorId,sessionId,characters,
   ]
   return <div className="session-player-approved" aria-label="Modo Sessão do Jogador">
     <div className="session-player-title"><div><p className="eyebrow">Arquivos da Noite · Visão do Jogador</p><h1>{campaignName ? `Sessão: ${campaignName}` : "Minha Sessão"}</h1><p>Ficha, diário e recursos da crônica sem sair da mesa.</p></div><div className="session-player-title-actions"><span className="session-player-status">{sessionId?<><i/>Sessão em andamento</> :'Aguardando início da sessão'}</span><Link className="session-player-exit" href="/characters"><LogOut className="size-4"/>Sair da Sessão</Link></div></div>
-    <div className="session-player-columns">
+    <nav className="session-mobile-panels" aria-label="Selecionar painel da sessão">{[{id:'center',label:'Ficha e recursos'},{id:'chat',label:'Chat'},{id:'cameras',label:'Câmeras'}].map(item=><button type="button" key={item.id} aria-pressed={mobilePanel===item.id} className={mobilePanel===item.id?'is-active':''} onClick={()=>setMobilePanel(item.id as 'center'|'chat'|'cameras')}>{item.label}</button>)}</nav>
+    <div className="session-player-columns" data-mobile-panel={mobilePanel}>
       <aside className="session-player-chat" aria-label="Chat da sessão">
         <div className="session-player-column-header"><MessageCircle className="size-5"/><h2>Chat da Sessão</h2></div>
         <div id="session-player-livekit-chat" className="session-chat-mount">
@@ -88,7 +93,7 @@ export function SessionPlayerWorkspace({campaignId,actorId,sessionId,characters,
           {tab==='diary' && <div className="session-player-diary"><div className="session-player-section-heading"><NotebookPen className="size-6"/><div><p className="eyebrow">Diário da Crônica</p><h2>Minhas Anotações</h2><p>Registre acontecimentos, agrupe capítulos por marcador e pesquise seus próprios registros.</p></div></div><NotesPanel actorId={actorId} initialCampaignId={campaignId}/></div>}
           {tab==='session' && <div className="session-player-events"><div className="session-player-section-heading"><CalendarDays className="size-6"/><div><p className="eyebrow">Minha participação</p><h2>Calendário e disponibilidade</h2><p>Consulte eventos e informe os dias em que pode participar.</p></div></div><CampaignTools campaignId={campaignId} master={false}/></div>}
           {tab==='messages' && <CharacterSms campaignId={campaignId} mode="player"/>}
-          {tab==='files' && <div className="session-player-files"><div className="session-player-section-heading"><FileText className="size-6"/><div><p className="eyebrow">Documentos da crônica</p><h2>Arquivos recebidos</h2><p>Materiais que o Narrador compartilhar com você aparecerão aqui.</p></div></div><div className="session-player-empty"><FileText className="size-9"/><h3>Nenhum arquivo compartilhado</h3><p>A integração de handouts por Vercel Blob e seus avisos ainda depende do módulo de compartilhamento da mesa.</p></div></div>}
+          {tab==='files' && <div className="session-player-files"><h2 className="font-serif text-2xl">Arquivos recebidos</h2><div className="mb-5"><h3 className="mb-2 font-serif text-xl">Mesa visual compartilhada</h3><SessionVisualBoard campaignId={campaignId}/></div><CampaignHandouts campaignId={campaignId}/></div>}
         </div>
         {sessionId && <SessionSoundtrack sessionId={sessionId}/>} 
         {current && sessionId && <PlayerQuickActions characterId={current.id} sessionId={sessionId}/> }
