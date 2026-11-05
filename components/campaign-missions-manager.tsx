@@ -1,3 +1,4 @@
+import Link from 'next/link'
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
@@ -20,6 +21,8 @@ type Mission = {
   campaignEventId: string | null
   eventTitle: string | null
   eventDate: string | null
+  eventFictionalYear: number | null
+  eventFictionalMonth: string | null
 }
 type CalendarEvent = { id: string; title: string; eventDate: string | null; fictionalYear: number | null; fictionalMonth: string | null; visibility: 'master' | 'everyone' }
 type Listing = { missions: Mission[]; canManage: boolean }
@@ -107,6 +110,9 @@ export function CampaignMissionsManager({ campaignId }: Readonly<{ campaignId: s
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Dados inválidos.') }
   }
 
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' })
+  const daysUntil = (date: string) => Math.round((Date.parse(date + 'T12:00:00Z') - Date.parse(today + 'T12:00:00Z')) / 86400000)
+  const reminders = (listing?.missions ?? []).filter(m => m.status === 'ACTIVE' && ((m.dueDate && daysUntil(m.dueDate) <= 7) || (m.eventDate && daysUntil(m.eventDate) <= 7)))
   const visible = (listing?.missions ?? []).filter(mission => filter === 'ALL' || mission.status === filter)
   return <div className="campaign-module-body flex flex-col gap-5">
     <div className="flex flex-wrap items-center justify-between gap-3">
@@ -116,6 +122,11 @@ export function CampaignMissionsManager({ campaignId }: Readonly<{ campaignId: s
         {listing?.canManage && <button className="button-primary" type="button" disabled={pending} onClick={() => { setEditing('NEW'); setForm(emptyForm); setError(''); setNotice('') }}><CirclePlus className="size-4" aria-hidden="true" />Nova missão</button>}
       </div>
     </div>
+    {reminders.length > 0 && <section className="campaign-module-subsection flex flex-col gap-2" aria-label="Lembretes de prazos de missões">
+      <h4 className="font-serif text-lg">Prazos e eventos próximos</h4>
+      <p className="text-xs text-muted-foreground">Avisos exibidos ao acessar a campanha. Apenas missões permitidas para sua conta.</p>
+      {reminders.map(mission => { const deadlines = [mission.dueDate, mission.eventDate].filter((date): date is string => Boolean(date)); const nearest = deadlines.sort()[0]; const days = daysUntil(nearest); return <p key={mission.id} className="text-sm"><a className="underline" href={`#mission-${mission.id}`}>{mission.title}</a>: {days < 0 ? `prazo vencido há ${-days} dia(s)` : days === 0 ? 'vence hoje' : `faltam ${days} dia(s)`}</p> })}
+    </section>}
     {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
     {notice && <p role="status" className="text-sm">{notice}</p>}
     {loading && <p role="status">Carregando missões…</p>}
@@ -143,12 +154,13 @@ export function CampaignMissionsManager({ campaignId }: Readonly<{ campaignId: s
       </div>
     </form>}
     {!loading && listing && visible.length === 0 && <div className="campaign-module-subsection"><p className="text-sm text-muted-foreground">Nenhuma missão encontrada para este filtro.</p></div>}
-    {visible.map(mission => <article key={mission.id} className="campaign-module-subsection flex flex-col gap-3">
+    {visible.map(mission => <article id={`mission-${mission.id}`} key={mission.id} className="campaign-module-subsection flex flex-col gap-3">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div><h4 className="font-serif text-xl">{mission.title}</h4><p className="text-xs text-muted-foreground">{statuses[mission.status]} · {visibilityLabels[mission.visibility]}</p></div>
         {listing?.canManage && <button type="button" className="button-ghost" disabled={pending} onClick={() => edit(mission)}>Editar</button>}
       </div>
       {(mission.dueDate || mission.eventTitle) && <p className="text-xs text-muted-foreground">{mission.dueDate ? `Data: ${mission.dueDate}` : ''}{mission.dueDate && mission.eventTitle ? ' · ' : ''}{mission.eventTitle ? `Evento: ${mission.eventTitle}${mission.eventDate ? ` (${mission.eventDate})` : ''}` : ''}</p>}
+      {mission.campaignEventId && <Link className="button-ghost self-start" href={`/campaigns/${campaignId}?view=calendar&eventId=${mission.campaignEventId}`}>Ver evento no calendário</Link>}
       {mission.description && <p className="text-sm whitespace-pre-wrap">{mission.description}</p>}
       {listing?.canManage && mission.narratorNotes && <div className="border-l-2 pl-3"><p className="text-xs font-semibold">Notas do narrador</p><p className="text-sm whitespace-pre-wrap">{mission.narratorNotes}</p></div>}
       {mission.characterIds.length > 0 && <p className="text-xs text-muted-foreground">Personagens atribuídos: {mission.characterIds.length}</p>}
