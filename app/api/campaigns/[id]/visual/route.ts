@@ -23,7 +23,7 @@ export async function PUT(request:Request,context:Context) {
   const handoutId=body.handoutId
   if(handoutId!==null && (typeof handoutId!=='string'||!library.handouts.some(item=>item.id===handoutId&&item.contentType?.startsWith('image/')&&item.shareMode==='ALL')))throw new CharacterCommandError(422,'Selecione uma imagem da biblioteca.')
   const expected=body.expectedRevision
-  if(!Number.isSafeInteger(expected)||expected<0)throw new CharacterCommandError(422,'Revisão inválida.')
+  if(typeof expected!=='number'||!Number.isSafeInteger(expected)||expected<0)throw new CharacterCommandError(422,'Revisão inválida.')
   const updated=await db.execute<{revision:string}>(sql`
    INSERT INTO campaign_visual_state(campaign_id,handout_id,revision) SELECT ${campaign}::uuid,${handoutId}::uuid,1 WHERE ${expected}=0
    ON CONFLICT(campaign_id) DO UPDATE SET handout_id=EXCLUDED.handout_id,revision=campaign_visual_state.revision+1,updated_at=now()
