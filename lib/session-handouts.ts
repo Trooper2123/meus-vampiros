@@ -1,4 +1,5 @@
 import { del, get } from '@vercel/blob'
+import { configurePrivateBlobToken } from '@/lib/private-blob-token'
 import { randomUUID } from 'node:crypto'
 import { sql } from 'drizzle-orm'
 import { CharacterCommandError } from '@/lib/character-commands'
@@ -7,7 +8,7 @@ import { db } from '@/lib/db'
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 const configuredMax = Number(process.env.SESSION_HANDOUT_MAX_BYTES ?? 100 * 1024 * 1024)
 export const MAX_SESSION_HANDOUT_BYTES = Number.isSafeInteger(configuredMax) && configuredMax > 0 ? configuredMax : 100 * 1024 * 1024
-function requireBlob() { if (!process.env.BLOB_READ_WRITE_TOKEN) { throw new CharacterCommandError(503, 'Configure um Vercel Blob privado para usar os handouts.') } }
+function requireBlob() { if (!configurePrivateBlobToken()) { throw new CharacterCommandError(503, 'Configure um Vercel Blob privado para usar os handouts.') } }
 function requireUuid(value: unknown) { if (typeof value !== 'string' || !uuid.test(value)) { throw new CharacterCommandError(400, 'Identificador inválido.') } return value }
 function object(value: unknown): Record<string, unknown> { if (!value || typeof value !== 'object' || Array.isArray(value)) { throw new CharacterCommandError(400, 'Dados inválidos.') } return value as Record<string, unknown> }
 async function campaignAccess(actorId: string, campaignId: string) {
@@ -129,6 +130,6 @@ export async function deleteCampaignHandout(actorId:string,id:string) {
     await tx.execute(sql`DELETE FROM campaign_handout_recipients WHERE handout_id=${id}::uuid`)
     return item
   })
-  try{if(process.env.BLOB_READ_WRITE_TOKEN){await del(row.blob_pathname)}}catch{throw new CharacterCommandError(503,'Arquivo removido da mesa; a limpeza do armazenamento será repetida ao tentar novamente.')}
+  try{if(configurePrivateBlobToken()){await del(row.blob_pathname)}}catch{throw new CharacterCommandError(503,'Arquivo removido da mesa; a limpeza do armazenamento será repetida ao tentar novamente.')}
   return {ok:true}
 }
