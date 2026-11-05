@@ -12,7 +12,7 @@ const allowedTransitions:Record<Status,Status[]>={DRAFT:['ACTIVE','CANCELLED'],A
 function connection(){if(!pool)fail(503,'Banco não configurado.');return pool!}
 async function role(actorId:string,campaignId:string){
  if(!validUuid(campaignId))fail(400,'Mesa inválida.')
- const result=await connection().query<{master:boolean;member:boolean}>(`SELECT master_user_id=$2 AS master, (master_user_id=$2 OR EXISTS(SELECT 1 FROM characters WHERE campaign_id=c.id AND user_id=$2 AND character_type='PLAYER_VAMPIRE' AND status<>'DELETED')) AS member FROM campaigns c WHERE c.id=$1::uuid`,[campaignId,actorId])
+ const result=await connection().query<{master:boolean;member:boolean;timezone:string}>(`SELECT master_user_id=$2 AS master, COALESCE(NULLIF(timezone,''),'UTC') AS timezone, (master_user_id=$2 OR EXISTS(SELECT 1 FROM characters WHERE campaign_id=c.id AND user_id=$2 AND character_type='PLAYER_VAMPIRE' AND status<>'DELETED')) AS member FROM campaigns c WHERE c.id=$1::uuid`,[campaignId,actorId])
  if(!result.rows[0]?.member)fail(403,'Acesso negado.')
  return result.rows[0]
 }
@@ -31,33 +31,54 @@ function input(value:unknown,keys:string[]){
 export async function listMissions(actorId:string,campaignId:string){
  const access=await role(actorId,campaignId)
  const result=await connection().query(`
- SELECT m.id,m.title,m.description,m.status,m.visibility,m.revision,m.created_at AS "createdAt",m.updated_at AS "updatedAt",
+ SELECT m.id,m.title,m.description,m.status,m.visibility,m.revision,m.created_at AS "createdAt",m.updated_at AS "updatedAt",m.due_date::text AS "dueDate",CASE WHEN ev.id IS NOT NULL AND ($2::boolean OR ev.visibility='everyone') THEN m.campaign_event_id ELSE NULL END AS "campaignEventId",
+ CASE WHEN ev.id IS NOT NULL AND ($2::boolean OR ev.visibility='everyone') THEN ev.title ELSE NULL END AS "eventTitle",
+ CASE WHEN ev.id IS NOT NULL AND ($2::boolean OR ev.visibility='everyone') THEN ev.event_date::text ELSE NULL END AS "eventDate",
+ CASE WHEN ev.id IS NOT NULL AND ($2::boolean OR ev.visibility='everyone') THEN ev.fictional_year ELSE NULL END AS "eventFictionalYear",
+ CASE WHEN ev.id IS NOT NULL AND ($2::boolean OR ev.visibility='everyone') THEN ev.fictional_month ELSE NULL END AS "eventFictionalMonth",
  CASE WHEN $2::boolean THEN m.narrator_notes ELSE NULL END AS "narratorNotes",
  COALESCE((SELECT jsonb_agg(mc.character_id) FROM campaign_mission_characters mc WHERE mc.mission_id=m.id),'[]'::jsonb) AS "characterIds",
  CASE WHEN $2::boolean THEN COALESCE((SELECT jsonb_agg(mn.campaign_npc_id) FROM campaign_mission_npcs mn WHERE mn.mission_id=m.id),'[]'::jsonb) ELSE '[]'::jsonb END AS "npcIds"
- FROM campaign_missions m WHERE m.campaign_id=$1::uuid AND (
+ FROM campaign_missions m LEFT JOIN campaign_events ev ON ev.id=m.campaign_event_id WHERE m.campaign_id=$1::uuid AND (
  $2::boolean OR (m.status<>'DRAFT' AND (m.visibility='CAMPAIGN' OR
  (m.visibility='ASSIGNED' AND EXISTS(
  SELECT 1 FROM campaign_mission_characters mc JOIN characters ch ON ch.id=mc.character_id
  WHERE mc.mission_id=m.id AND ch.user_id=$3 AND ch.campaign_id=m.campaign_id AND ch.status<>'DELETED'
  ))))) ORDER BY m.updated_at DESC,m.id`,[campaignId,access.master,actorId])
- return {missions:result.rows,canManage:access.master}
+ const characters=access.master?await connection().query<{id:string;name:string}>(`SELECT id,name FROM characters WHERE campaign_id=$1::uuid AND character_type='PLAYER_VAMPIRE' AND status<>'DELETED' ORDER BY name`,[campaignId]):null
+ const npcs=access.master?await connection().query<{id:string;name:string}>(`SELECT cn.id,n.name FROM campaign_npcs cn JOIN npc_definitions n ON n.id=cn.npc_id WHERE cn.campaign_id=$1::uuid AND n.status='ACTIVE' ORDER BY n.name`,[campaignId]):null
+ return {missions:result.rows,canManage:access.master,timezone:access.timezone,characters:characters?.rows??[],npcs:npcs?.rows??[]}
 }
 export async function commandMission(actorId:string,campaignId:string,value:unknown){
  const access=await role(actorId,campaignId)
  if(!access.master)fail(403,'Somente o Narrador pode alterar missões.')
- const data=input(value,['action','missionId','title','description','narratorNotes','visibility','status','expectedRevision','characterIds','npcIds'])
+ const data=input(value,['action','missionId','title','description','narratorNotes','visibility','status','expectedRevision','characterIds','npcIds','dueDate','campaignEventId','timezone'])
  const action=data.action
- if(action!=='CREATE'&&action!=='UPDATE'&&action!=='TRANSITION')fail(400,'Ação inválida.')
+ if(action!=='CREATE'&&action!=='UPDATE'&&action!=='TRANSITION'&&action!=='SET_TIMEZONE')fail(400,'Ação inválida.')
+ if(action==='SET_TIMEZONE'){
+  const timezone=data.timezone
+  if(typeof timezone!=='string'||timezone.length>80)fail(422,'Fuso horário inválido.')
+  try {new Intl.DateTimeFormat('en-US',{timeZone:timezone})}catch{fail(422,'Fuso horário inválido.')}
+  await connection().query('UPDATE campaigns SET timezone=$1,updated_at=now() WHERE id=$2::uuid AND master_user_id=$3',[timezone,campaignId,actorId])
+  return {timezone}
+ }
+ const dueDate=data.dueDate===undefined?undefined:data.dueDate===null||data.dueDate===''?null:data.dueDate
+ if(dueDate!==undefined&&dueDate!==null&&(typeof dueDate!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(dueDate)||Number.isNaN(Date.parse(dueDate))||new Date(dueDate).toISOString().slice(0,10)!==dueDate))fail(422,'Data inválida.')
+ const eventId=data.campaignEventId===undefined?undefined:data.campaignEventId===null||data.campaignEventId===''?null:data.campaignEventId
+ if(eventId!==undefined&&eventId!==null&&!validUuid(eventId))fail(422,'Evento inválido.')
  const client=await connection().connect()
  try{
   await client.query('BEGIN')
+  if(eventId){
+   const event=await client.query('SELECT id FROM campaign_events WHERE id=$1::uuid AND campaign_id=$2::uuid',[eventId,campaignId])
+   if(!event.rowCount)fail(422,'O evento não pertence à mesa.')
+  }
   let missionId:string
   if(action==='CREATE'){
    const title=text(data.title,180,true),description=text(data.description??'',10000),notes=text(data.narratorNotes??'',10000)
    const visibility=data.visibility??'NARRATOR_ONLY'
    if(!MISSION_VISIBILITIES.includes(visibility as Visibility))fail(422,'Visibilidade inválida.')
-   const inserted=await client.query<{id:string}>(`INSERT INTO campaign_missions(campaign_id,title,description,narrator_notes,visibility,created_by) VALUES($1::uuid,$2,$3,$4,$5,$6) RETURNING id`,[campaignId,title,description,notes,visibility,actorId])
+   const inserted=await client.query<{id:string}>(`INSERT INTO campaign_missions(campaign_id,title,description,narrator_notes,visibility,created_by,due_date,campaign_event_id) VALUES($1::uuid,$2,$3,$4,$5,$6,$7::date,$8::uuid) RETURNING id`,[campaignId,title,description,notes,visibility,actorId,dueDate??null,eventId??null])
    missionId=inserted.rows[0].id
   }else{
    if(!validUuid(data.missionId)||!Number.isSafeInteger(data.expectedRevision)||Number(data.expectedRevision)<0)fail(422,'Missão ou revisão inválida.')
@@ -75,7 +96,7 @@ export async function commandMission(actorId:string,campaignId:string,value:unkn
     const notes=data.narratorNotes===undefined?null:text(data.narratorNotes,10000)
     const visibility=data.visibility===undefined?null:data.visibility
     if(visibility!==null&&!MISSION_VISIBILITIES.includes(visibility as Visibility))fail(422,'Visibilidade inválida.')
-    await client.query(`UPDATE campaign_missions SET title=COALESCE($2,title),description=COALESCE($3,description),narrator_notes=COALESCE($4,narrator_notes),visibility=COALESCE($5,visibility),revision=revision+1,updated_at=now() WHERE id=$1::uuid`,[missionId,title,description,notes,visibility])
+    await client.query(`UPDATE campaign_missions SET title=COALESCE($2,title),description=COALESCE($3,description),narrator_notes=COALESCE($4,narrator_notes),visibility=COALESCE($5,visibility),due_date=CASE WHEN $6::boolean THEN $7::date ELSE due_date END,campaign_event_id=CASE WHEN $8::boolean THEN $9::uuid ELSE campaign_event_id END,revision=revision+1,updated_at=now() WHERE id=$1::uuid`,[missionId,title,description,notes,visibility,dueDate!==undefined,dueDate??null,eventId!==undefined,eventId??null])
    }
   }
   if(action!=='TRANSITION'){

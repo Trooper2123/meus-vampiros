@@ -1,5 +1,8 @@
 'use client'
 
+import { campaignDaysUntil } from '@/lib/campaign-timezone'
+
+import Link from 'next/link'
 import { Plus } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { REAL_MONTHS, sortCampaignEventsChronologically, type CampaignCalendarConfig, type CampaignEvent, type EventFormData } from '@/lib/types/campaign-event'
@@ -16,6 +19,8 @@ function eventMonth(event: CampaignEvent) {
 }
 
 export function CampaignEventCalendar({ campaignId, master, config }: Readonly<{ campaignId: string; master: boolean; config: CampaignCalendarConfig }>) {
+  const [timezone, setTimezone] = useState('UTC')
+  const [missionLinks, setMissionLinks] = useState<Array<{id:string;title:string;campaignEventId:string|null}>>([])
   const [events, setEvents] = useState<CampaignEvent[]>([])
   const [yearFilter, setYearFilter] = useState('all')
   const [monthFilter, setMonthFilter] = useState('all')
@@ -34,7 +39,23 @@ export function CampaignEventCalendar({ campaignId, master, config }: Readonly<{
   }, [campaignId])
 
   useEffect(() => { void loadEvents() }, [loadEvents])
+  useEffect(() => {
+    let active = true
+    void fetch(`/api/campaigns/${encodeURIComponent(campaignId)}/missions`, { cache: 'no-store' })
+      .then(async response => { if (!response.ok) throw new Error('Missões indisponíveis'); return response.json() })
+      .then(data => { if (active) (setMissionLinks(data.missions ?? []), setTimezone(data.timezone ?? 'UTC')) })
+      .catch(() => { if (active) setMissionLinks([]) })
+    return () => { active = false }
+  }, [campaignId])
 
+  const daysUntil = (date: string) => campaignDaysUntil(date, timezone)
+  const upcoming = events.filter(event => event.eventDate && daysUntil(event.eventDate) >= 0 && daysUntil(event.eventDate) <= 7)
+  useEffect(() => {
+    if (loading || events.length === 0) return
+    const id = new URLSearchParams(window.location.search).get('eventId')
+    if (!id || !events.some(event => event.id === id)) return
+    document.getElementById(`event-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }, [loading, events])
   const showFilters = events.length > 20
   const years = useMemo(() => [...new Set(events.map(eventYear).filter((year): year is number => year !== null))].sort((first, second) => first - second), [events])
   const months = useMemo(() => [...new Map(events.map((event) => [eventMonth(event), event.fictionalMonth ?? (eventMonth(event) ? REAL_MONTHS[eventMonth(event)! - 1] : '')]).filter(([index]) => index !== null) as Array<[number, string]>).entries()].sort(([first], [second]) => first - second), [events])
@@ -64,11 +85,12 @@ export function CampaignEventCalendar({ campaignId, master, config }: Readonly<{
   } else if (visibleEvents.length === 0) {
     calendarContent = <div className="empty-state mt-6"><p>Nenhum evento corresponde aos filtros selecionados.</p></div>
   } else {
-    calendarContent = <div className={`${styles.eventGrid} mt-6`}>{visibleEvents.map((event) => <EventCard key={event.id} event={event} master={master} onEdit={setEditingEvent} onDelete={(selectedEvent) => void deleteEvent(selectedEvent)} />)}</div>
+    calendarContent = <div className={`${styles.eventGrid} mt-6`}>{visibleEvents.map((event) => <div key={event.id} id={`event-${event.id}`} className="flex flex-col gap-2"><EventCard event={event} master={master} onEdit={setEditingEvent} onDelete={(selectedEvent) => void deleteEvent(selectedEvent)} />{missionLinks.filter(mission => mission.campaignEventId === event.id).map(mission => <Link key={mission.id} className="button-ghost self-start" href={`/campaigns/${campaignId}?view=missions#mission-${mission.id}`}>Missão vinculada: {mission.title}</Link>)}</div>)}</div>
   }
   return <section aria-labelledby="campaign-events-title" className="border border-border p-6">
     <div className="flex flex-wrap items-end justify-between gap-4 border-b border-border pb-5"><div><p className="eyebrow">Linha do tempo</p><h2 id="campaign-events-title" className="mt-2 font-serif text-2xl">Calendário de eventos</h2></div>{master && <button type="button" className="button-primary inline-flex items-center gap-2" onClick={() => setEditingEvent(null)}><Plus className="size-4" aria-hidden="true" /> Criar evento</button>}</div>
     {showFilters && <div className="mt-5 grid grid-cols-1 gap-4 border-b border-border pb-5 sm:grid-cols-2" aria-label="Filtrar eventos"><label className="sheet-field"><span>Ano</span><select className="select" value={yearFilter} onChange={(event) => setYearFilter(event.target.value)}><option value="all">Todos os anos</option>{years.map((year) => <option key={year} value={year}>{year}</option>)}</select></label><label className="sheet-field"><span>Mês</span><select className="select" value={monthFilter} onChange={(event) => setMonthFilter(event.target.value)}><option value="all">Todos os meses</option>{months.map(([index, label]) => <option key={index} value={index}>{label}</option>)}</select></label></div>}
+    {upcoming.length > 0 && <aside className="mt-4 border border-border p-4" aria-label="Lembretes de eventos próximos"><h3 className="font-serif text-lg">Eventos nos próximos 7 dias</h3>{upcoming.map(event => <p key={event.id} className="mt-2 text-sm"><a className="underline" href={`#event-${event.id}`}>{event.title}</a> — {daysUntil(event.eventDate! ) === 0 ? 'hoje' : `em ${daysUntil(event.eventDate!)} dia(s)`}</p>)}</aside>}
     {error && <p role="alert" className="mt-4 text-sm text-primary">{error}</p>}
     {calendarContent}
     {editingEvent !== undefined && <EventFormModal event={editingEvent} config={config} submitting={submitting} error={error} onClose={() => { setEditingEvent(undefined); setError(null) }} onSubmit={saveEvent} />}

@@ -1,7 +1,6 @@
 'use client'
 
 import { SessionVisualBoard } from '@/components/game-session/session-visual-board'
-
 import { CampaignHandouts } from '@/components/campaign-handouts'
 
 import { CharacterSms } from '@/components/character-sms/character-sms'
