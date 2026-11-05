@@ -1,0 +1,146 @@
+'use client'
+
+import { useCallback, useEffect, useState } from 'react'
+import { CheckCircle2, CirclePlus, RefreshCw, Save, XCircle } from 'lucide-react'
+
+type Status = 'DRAFT' | 'ACTIVE' | 'COMPLETED' | 'FAILED' | 'CANCELLED'
+type Visibility = 'NARRATOR_ONLY' | 'ASSIGNED' | 'CAMPAIGN'
+type Mission = {
+  id: string
+  title: string
+  description: string
+  narratorNotes: string | null
+  status: Status
+  visibility: Visibility
+  revision: number
+  characterIds: string[]
+  npcIds: string[]
+  updatedAt: string
+}
+type Listing = { missions: Mission[]; canManage: boolean }
+type FormData = { title: string; description: string; narratorNotes: string; visibility: Visibility; characterIds: string; npcIds: string }
+const emptyForm: FormData = { title: '', description: '', narratorNotes: '', visibility: 'NARRATOR_ONLY', characterIds: '', npcIds: '' }
+const statuses: Record<Status, string> = { DRAFT: 'Rascunho', ACTIVE: 'Ativa', COMPLETED: 'Concluída', FAILED: 'Falhou', CANCELLED: 'Cancelada' }
+const visibilityLabels: Record<Visibility, string> = { NARRATOR_ONLY: 'Apenas narrador', ASSIGNED: 'Personagens atribuídos', CAMPAIGN: 'Toda a mesa' }
+const transitions: Record<Status, Status[]> = { DRAFT: ['ACTIVE', 'CANCELLED'], ACTIVE: ['COMPLETED', 'FAILED', 'CANCELLED'], COMPLETED: [], FAILED: [], CANCELLED: [] }
+const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+function parseIds(value: string): string[] {
+  const ids = value.split(/[\s,;]+/).map(item => item.trim()).filter(Boolean)
+  if (ids.length > 100 || ids.some(id => !uuid.test(id)) || new Set(ids).size !== ids.length) throw new Error('Informe UUIDs válidos e únicos, separados por vírgula ou linha.')
+  return ids
+}
+
+export function CampaignMissionsManager({ campaignId }: Readonly<{ campaignId: string }>) {
+  const [listing, setListing] = useState<Listing | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [pending, setPending] = useState(false)
+  const [error, setError] = useState('')
+  const [notice, setNotice] = useState('')
+  const [editing, setEditing] = useState<string | null>(null)
+  const [form, setForm] = useState<FormData>(emptyForm)
+  const [filter, setFilter] = useState<'ALL' | Status>('ALL')
+  const url = `/api/campaigns/${encodeURIComponent(campaignId)}/missions`
+
+  const load = useCallback(async (quiet = false) => {
+    if (!quiet) setLoading(true)
+    try {
+      const response = await fetch(url, { cache: 'no-store' })
+      const body = await response.json()
+      if (!response.ok) throw new Error(body.error ?? 'Não foi possível carregar as missões.')
+      setListing(body as Listing)
+      setError('')
+    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Erro ao carregar missões.') }
+    finally { setLoading(false) }
+  }, [url])
+
+  useEffect(() => { void load() }, [load])
+
+  async function command(body: Record<string, unknown>, message: string) {
+    setPending(true); setError(''); setNotice('')
+    try {
+      const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.error ?? 'Não foi possível salvar a missão.')
+      setNotice(message)
+      setEditing(null)
+      setForm(emptyForm)
+      await load(true)
+    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Erro ao salvar missão.') }
+    finally { setPending(false) }
+  }
+
+  function edit(mission: Mission) {
+    setEditing(mission.id)
+    setForm({
+      title: mission.title, description: mission.description, narratorNotes: mission.narratorNotes ?? '',
+      visibility: mission.visibility, characterIds: mission.characterIds.join(', '), npcIds: mission.npcIds.join(', '),
+    })
+    setError(''); setNotice('')
+  }
+
+  async function submit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    try {
+      const characterIds = parseIds(form.characterIds)
+      const npcIds = parseIds(form.npcIds)
+      const existing = listing?.missions.find(mission => mission.id === editing)
+      await command({
+        action: existing ? 'UPDATE' : 'CREATE',
+        ...(existing ? { missionId: existing.id, expectedRevision: existing.revision } : {}),
+        title: form.title, description: form.description, narratorNotes: form.narratorNotes,
+        visibility: form.visibility, characterIds, npcIds,
+      }, existing ? 'Missão atualizada.' : 'Missão criada.')
+    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Dados inválidos.') }
+  }
+
+  const visible = (listing?.missions ?? []).filter(mission => filter === 'ALL' || mission.status === filter)
+  return <div className="campaign-module-body flex flex-col gap-5">
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <div><h3 className="font-serif text-xl">Missões da crônica</h3><p className="text-sm text-muted-foreground">Planeje objetivos, atribua participantes e acompanhe o progresso.</p></div>
+      <div className="flex flex-wrap gap-2">
+        <button className="button-ghost" type="button" disabled={pending || loading} onClick={() => void load()}><RefreshCw className="size-4" aria-hidden="true" />Atualizar</button>
+        {listing?.canManage && <button className="button-primary" type="button" disabled={pending} onClick={() => { setEditing('NEW'); setForm(emptyForm); setError(''); setNotice('') }}><CirclePlus className="size-4" aria-hidden="true" />Nova missão</button>}
+      </div>
+    </div>
+    {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+    {notice && <p role="status" className="text-sm">{notice}</p>}
+    {loading && <p role="status">Carregando missões…</p>}
+    {listing && <div className="flex flex-wrap gap-2 items-center">
+      <label htmlFor="campaign-missions-filter" className="text-sm">Filtrar por estado</label>
+      <select id="campaign-missions-filter" className="sheet-field" value={filter} onChange={event => setFilter(event.target.value as typeof filter)}>
+        <option value="ALL">Todas</option>
+        {Object.entries(statuses).map(([key, label]) => <option key={key} value={key}>{label}</option>)}
+      </select>
+      <span className="text-sm text-muted-foreground">{visible.length} {visible.length === 1 ? 'missão' : 'missões'}</span>
+    </div>}
+    {listing?.canManage && editing && <form className="campaign-module-subsection flex flex-col gap-3" onSubmit={event => void submit(event)}>
+      <h4 className="font-serif text-lg">{editing === 'NEW' ? 'Criar missão' : 'Editar missão'}</h4>
+      <label className="sheet-field"><span>Título</span><input required maxLength={180} value={form.title} onChange={event => setForm(prev => ({ ...prev, title: event.target.value }))} /></label>
+      <label className="sheet-field"><span>Descrição</span><textarea rows={4} maxLength={10000} value={form.description} onChange={event => setForm(prev => ({ ...prev, description: event.target.value }))} /></label>
+      <label className="sheet-field"><span>Visibilidade</span><select value={form.visibility} onChange={event => setForm(prev => ({ ...prev, visibility: event.target.value as Visibility }))}>{Object.entries(visibilityLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label>
+      <label className="sheet-field"><span>Personagens atribuídos (UUIDs separados por vírgula ou linha)</span><textarea rows={2} value={form.characterIds} onChange={event => setForm(prev => ({ ...prev, characterIds: event.target.value }))} placeholder="Opcional; somente personagens da mesa" /></label>
+      <label className="sheet-field"><span>NPCs relacionados (UUIDs das instâncias na mesa)</span><textarea rows={2} value={form.npcIds} onChange={event => setForm(prev => ({ ...prev, npcIds: event.target.value }))} placeholder="Opcional" /></label>
+      <label className="sheet-field"><span>Notas exclusivas do narrador</span><textarea rows={3} maxLength={10000} value={form.narratorNotes} onChange={event => setForm(prev => ({ ...prev, narratorNotes: event.target.value }))} /></label>
+      <div className="flex flex-wrap gap-2">
+        <button type="submit" className="button-primary" disabled={pending}><Save className="size-4" aria-hidden="true" />{pending ? 'Salvando…' : 'Salvar missão'}</button>
+        <button type="button" className="button-ghost" disabled={pending} onClick={() => { setEditing(null); setError('') }}>Cancelar</button>
+      </div>
+    </form>}
+    {!loading && listing && visible.length === 0 && <div className="campaign-module-subsection"><p className="text-sm text-muted-foreground">Nenhuma missão encontrada para este filtro.</p></div>}
+    {visible.map(mission => <article key={mission.id} className="campaign-module-subsection flex flex-col gap-3">
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div><h4 className="font-serif text-xl">{mission.title}</h4><p className="text-xs text-muted-foreground">{statuses[mission.status]} · {visibilityLabels[mission.visibility]}</p></div>
+        {listing?.canManage && <button type="button" className="button-ghost" disabled={pending} onClick={() => edit(mission)}>Editar</button>}
+      </div>
+      {mission.description && <p className="text-sm whitespace-pre-wrap">{mission.description}</p>}
+      {listing?.canManage && mission.narratorNotes && <div className="border-l-2 pl-3"><p className="text-xs font-semibold">Notas do narrador</p><p className="text-sm whitespace-pre-wrap">{mission.narratorNotes}</p></div>}
+      {mission.characterIds.length > 0 && <p className="text-xs text-muted-foreground">Personagens atribuídos: {mission.characterIds.length}</p>}
+      {listing?.canManage && mission.npcIds.length > 0 && <p className="text-xs text-muted-foreground">NPCs relacionados: {mission.npcIds.length}</p>}
+      {listing?.canManage && transitions[mission.status].length > 0 && <div className="flex flex-wrap gap-2">
+        {transitions[mission.status].map(next => <button key={next} type="button" className="button-ghost" disabled={pending} onClick={() => void command({ action: 'TRANSITION', missionId: mission.id, expectedRevision: mission.revision, status: next }, `Missão: ${statuses[next].toLowerCase()}.`)}>
+          {next === 'COMPLETED' ? <CheckCircle2 className="size-4" aria-hidden="true" /> : <XCircle className="size-4" aria-hidden="true" />}{next === 'ACTIVE' ? 'Ativar' : statuses[next]}
+        </button>)}
+      </div>}
+    </article>)}
+  </div>
+}
