@@ -180,7 +180,7 @@ function SessionWorkspace({ campaignId, actorId, campaignName }: Readonly<{ camp
       </main>
 
       <aside className="session-cameras" aria-label="Câmeras dos participantes">
-        <div className="session-column-heading"><Users className="size-6 text-primary" aria-hidden="true"/><div><p className="eyebrow">Participantes</p><h2 className="font-serif text-xl">Participantes ({data.characters.length})</h2></div></div>
+        <div className="session-column-heading"><Users className="size-6 text-primary" aria-hidden="true"/><div><p className="eyebrow">Participantes</p><h2 className="font-serif text-xl">Participantes da mesa</h2></div></div>
         
         <div className="mt-4"><LiveKitRoomLink campaignId={campaignId} master={manage} compact chatTargetId="session-master-livekit-chat" /></div><SessionParticipants campaignId={campaignId}/>
         {data.characters.length > 0 && <div className="session-character-links"><p className="eyebrow">Resumos de ficha</p>{data.characters.map(character => <Link key={character.id} href={`/characters/${character.id}/summary`} target="_blank" rel="noopener noreferrer"><BookOpen className="size-3.5" aria-hidden="true"/>{character.name}</Link>)}</div>}
