@@ -1,3 +1,4 @@
+import { CampaignDeadlineReminders } from '@/components/campaign-deadline-reminders'
 import { CampaignMissionsManager } from '@/components/campaign-missions-manager'
 import { CampaignCover } from '@/components/campaign-cover'
 import { db, ensureAllTables } from '@/lib/db'
@@ -101,6 +102,7 @@ export default async function CampaignDetailPage({ params, searchParams }: Reado
             {view === 'overview' && <>
               <section className="campaign-preparation-banner"><div><span className="campaign-preparation-pill"><Shield className="size-4"/>Mesa em preparação</span><h2 className="mt-4 font-serif text-3xl">Nenhuma sessão ativa</h2><p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">Organize a próxima sessão, gerencie participantes, limites, handouts, anotações e eventos da campanha.</p></div><CampaignCover campaignId={campaign.id} hasCover={hasCover} variant="banner" /></section>
               <div className="campaign-approved-grid">
+                <CampaignDeadlineReminders campaignId={campaign.id} />
                 <section className="campaign-approved-card"><div className="campaign-approved-card-title"><span><Users/>Participantes ({summaries.length})</span><Link href={viewHref('participants')}>Ver todos →</Link></div><div className="campaign-participant-preview">{summaries.slice(0,4).map(summary => summary && <Link key={summary.id} href={`/characters/${summary.id}/summary`} className="campaign-participant-chip"><span className="campaign-participant-avatar">{summary.name.slice(0,1)}</span><strong>{summary.name}</strong><small>{summary.clan ?? 'Clã não definido'}</small></Link>)}</div></section>
                 <section className="campaign-approved-card"><div className="campaign-approved-card-title"><span><Shield/>Limites da Mesa</span><Link href={viewHref('limits')}>Gerenciar →</Link></div><CampaignLimitsSummary campaignId={campaign.id} /></section>
                 <section className="campaign-approved-card"><div className="campaign-approved-card-title"><span><CalendarDays/>Calendário de Eventos</span><Link href={viewHref('calendar')}>Resumo →</Link></div><div className="campaign-empty-module"><p>Acesse o calendário para consultar e agendar eventos.</p></div></section>
