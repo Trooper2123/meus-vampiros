@@ -1,5 +1,6 @@
-import { CampaignHandouts } from '@/components/campaign-handouts'
 'use client'
+
+import { CampaignHandouts } from '@/components/campaign-handouts'
 
 import { useEffect, useRef, useState } from 'react'
 import { BookOpen, CalendarDays, FileText, MessageCircle, NotebookPen, Search, Users, Wallet, Eye, UserRoundCog, House, Boxes, ImageIcon, Dices, Pause, X } from 'lucide-react'
