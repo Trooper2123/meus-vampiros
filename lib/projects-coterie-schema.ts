@@ -16,6 +16,9 @@ ALTER TABLE coterie_type_catalog ADD COLUMN IF NOT EXISTS id TEXT;
 UPDATE coterie_type_catalog SET id = code WHERE id IS NULL;
 ALTER TABLE coterie_type_catalog ALTER COLUMN id SET NOT NULL;
 CREATE UNIQUE INDEX IF NOT EXISTS coterie_type_catalog_id_idx ON coterie_type_catalog(id);
+ALTER TABLE coterie_type_catalog ADD COLUMN IF NOT EXISTS description TEXT NOT NULL DEFAULT '';
+ALTER TABLE coterie_type_catalog ADD COLUMN IF NOT EXISTS suggested_mechanics JSONB NOT NULL DEFAULT '{}'::jsonb;
+ALTER TABLE coterie_type_catalog ADD COLUMN IF NOT EXISTS active BOOLEAN NOT NULL DEFAULT true;
 INSERT INTO coterie_type_catalog (id,code,name,description,source,suggested_mechanics)
 VALUES
 ('BLOOD_CULT','BLOOD_CULT','Blood Cult','Culto de sangue; atrai seguidores mortais.','V5 Corebook pp. 197–199','{"lien":1,"portillon":2,"herd":3}'::jsonb),
@@ -179,6 +182,7 @@ CREATE TABLE IF NOT EXISTS project_stakes (
   released_at TIMESTAMPTZ,
   CHECK((character_id IS NOT NULL) <> (coterie_id IS NOT NULL))
 );
+ALTER TABLE project_stakes ADD COLUMN IF NOT EXISTS released_at TIMESTAMPTZ;
 CREATE INDEX IF NOT EXISTS project_stakes_active ON project_stakes(character_id,coterie_id,trait) WHERE released_at IS NULL;
 CREATE TABLE IF NOT EXISTS project_events (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

@@ -6,6 +6,7 @@ import { CharacterSmsSettings } from '@/components/character-sms/character-sms-s
 import { MasterViewportGuard } from '@/components/master-viewport-guard'
 import { NotesPanel } from '@/components/notes/notes-panel'
 import { CampaignArchiveControl } from '@/components/campaign-archive-control'
+import { CampaignDetailsSettings } from '@/components/campaign-details-settings'
 import { CampaignProjectsPanel } from '@/components/projects/campaign-projects-panel'
 import { CampaignCoteriePanel } from '@/components/coterie/campaign-coterie-panel'
 import { CampaignTools } from '@/components/campaign-calendar/campaign-tools'
@@ -112,6 +113,7 @@ export default async function CampaignDetailPage({ params, searchParams }: Reado
             {view === 'messages' && <section className="campaign-module-workspace"><div className="campaign-module-header"><div className="campaign-module-heading"><MessagesSquare/><div><p className="eyebrow">Comunicação entre personagens</p><h2>Mensagens da Mesa</h2><p>Acompanhe conversas privadas entre personagens da crônica.</p></div></div></div><CharacterSms campaignId={campaign.id} mode="narrator"/></section>}
             {view === 'notes' && <section className="campaign-module-workspace"><div className="campaign-module-header"><div className="campaign-module-heading"><NotebookPen/><div><p className="eyebrow">Registro do Narrador</p><h2>Anotações</h2><p>Organize, agrupe e pesquise registros, pistas e informações da campanha.</p></div></div></div><NotesPanel actorId={session.user.sub} initialCampaignId={campaign.id}/></section>}
             {view === 'research' && <section className="campaign-module-workspace"><div className="campaign-module-header"><div className="campaign-module-heading"><Search/><div><p className="eyebrow">Referências de regras</p><h2>Pesquisas</h2><p>Consulte catálogos de disciplinas, habilidades, vantagens e defeitos.</p></div></div></div><div className="campaign-module-choice-grid"><Link href="/master/catalogo"><Search/><strong>Disciplinas e habilidades</strong><span>Abrir catálogo de poderes e referências.</span></Link><Link href="/master/vantagens-defeitos"><BookOpen/><strong>Vantagens e defeitos</strong><span>Abrir catálogo e itens personalizados.</span></Link></div></section>}
+            
 {view === 'settings' && (
   <section className="campaign-module-workspace">
     <div className="campaign-module-header">
@@ -134,25 +136,44 @@ export default async function CampaignDetailPage({ params, searchParams }: Reado
     </div>
 
     <div className="campaign-settings-content">
+      {/* Dados gerais da campanha */}
+      <CampaignDetailsSettings
+        campaignId={campaign.id}
+        name={campaign.name}
+        theme={campaign.theme}
+        principios={campaign.principios}
+      />
+
+      {/* Ferramentas administrativas */}
       <CampaignTools
         campaignId={campaign.id}
         master
         settingsOnly
       />
 
+      {/* Configurações da sessão */}
       <CampaignSessionShortcutSettings campaignId={campaign.id} />
 
+      {/* Catálogo global de NPCs — Issue #79 */}
       <CampaignNpcCatalogSettings campaignId={campaign.id} />
 
+      {/* Configurações Awake */}
       <CampaignAwakeSettings campaignId={campaign.id} />
 
+      {/* Configurações de mensagens SMS */}
       <CharacterSmsSettings campaignId={campaign.id} />
 
+      {/* Arquivamento */}
       <section className="campaign-module-subsection campaign-settings-danger">
         <p className="eyebrow">Administração da campanha</p>
-        <h3 className="mt-2 font-serif text-xl">Arquivamento</h3>
+
+        <h3 className="mt-2 font-serif text-xl">
+          Arquivamento
+        </h3>
+
         <p className="mt-2 mb-4 text-sm text-muted-foreground">
-          Arquivar uma mesa impede novas sessões, preservando o histórico.
+          Arquivar uma mesa impede novas sessões,
+          preservando o histórico.
         </p>
 
         <CampaignArchiveControl
