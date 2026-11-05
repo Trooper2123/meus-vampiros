@@ -1,5 +1,6 @@
-import { CampaignHandouts } from '@/components/campaign-handouts'
 'use client'
+
+import { CampaignHandouts } from '@/components/campaign-handouts'
 
 import { CharacterSms } from '@/components/character-sms/character-sms'
 import { useState, type ComponentProps } from 'react'
