@@ -48,6 +48,12 @@ export function CampaignEventCalendar({ campaignId, master, config }: Readonly<{
   const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' })
   const daysUntil = (date: string) => Math.round((Date.parse(date + 'T12:00:00Z') - Date.parse(today + 'T12:00:00Z')) / 86400000)
   const upcoming = events.filter(event => event.eventDate && daysUntil(event.eventDate) >= 0 && daysUntil(event.eventDate) <= 7)
+  useEffect(() => {
+    if (loading || events.length === 0) return
+    const id = new URLSearchParams(window.location.search).get('eventId')
+    if (!id || !events.some(event => event.id === id)) return
+    document.getElementById(`event-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }, [loading, events])
   const showFilters = events.length > 20
   const years = useMemo(() => [...new Set(events.map(eventYear).filter((year): year is number => year !== null))].sort((first, second) => first - second), [events])
   const months = useMemo(() => [...new Map(events.map((event) => [eventMonth(event), event.fictionalMonth ?? (eventMonth(event) ? REAL_MONTHS[eventMonth(event)! - 1] : '')]).filter(([index]) => index !== null) as Array<[number, string]>).entries()].sort(([first], [second]) => first - second), [events])
