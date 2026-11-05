@@ -62,6 +62,8 @@ export async function ensureAllTables() {
     );
 
     ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS principios TEXT;
+    ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS cover_storage_key TEXT;
+    ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS cover_updated_at TIMESTAMPTZ;
     ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS session_start_time TIME;
     ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS session_end_time TIME;
     ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS enabled_clan_codes JSONB;
