@@ -10,8 +10,6 @@ import { CharacterSummary } from '@/components/character-summary/character-summa
 import { CampaignParticipantControls } from '@/components/campaign-participant-controls'
 import { CampaignPossessionsManager } from '@/components/master-panel'
 import { CampaignXpHistory } from '@/components/campaign-xp-history'
-import { CampaignProjectsPanel } from '@/components/projects/campaign-projects-panel'
-import { CampaignCoteriePanel } from '@/components/coterie/campaign-coterie-panel'
 import { NewNpcModal, NpcCatalogue } from '@/components/npcs/npc-catalogue'
 import { getCharacterSummaryData } from '@/lib/character-summary'
 import { getCharactersForCampaign } from '@/lib/characters'

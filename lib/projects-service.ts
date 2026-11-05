@@ -96,7 +96,7 @@ async function finalize(tx:Session11Tx,projectId:string,status:'SUCCESS'|'FAILED
  await tx.execute(sql`UPDATE project_stakes SET released_at=now() WHERE project_id=${projectId}::uuid AND released_at IS NULL`)
  for(const stake of reserved.rows)await tx.execute(sql`INSERT INTO character_ledger_events(character_id,event_type,origin,payload,created_by_user_id) VALUES(${stake.character_id}::uuid,'PROJECT_STAKE_RELEASED','PROJECT',${JSON.stringify({projectId,status,trait:stake.trait,dots:stake.dots})}::jsonb,${actorId})`)
 }
-async function applyStakeLoss(tx:Session11Tx,project:ProjectRow,loss:number,actorId:string){
+async function applyStakeLoss(tx:Session11Tx,project:ProjectRow,loss:number){
  const stakes=await tx.execute<{id:string;character_id:string|null;coterie_id:string|null;trait:string;dots:number}>(sql`SELECT id,character_id,coterie_id,trait,dots FROM project_stakes WHERE project_id=${project.id}::uuid AND released_at IS NULL ORDER BY created_at,id FOR UPDATE`)
  let remaining=loss,spent=0
  for(const stake of stakes.rows){
@@ -336,7 +336,7 @@ export async function commandProject(actorId:string,campaignId:string,input:Proj
        else await tx.execute(sql`UPDATE character_projects SET project_die=${next},goal_roll_requested=false WHERE id=${project.id}::uuid`)
        await event(tx,project.id,next<1?'COMPLETED':'GOAL_ROLL',actorId,project.project_die,next<1?null:next,reason||'Goal Roll bem-sucedido.',result)
      }else{
-       const loss=await applyStakeLoss(tx,project,result.stakeDamage,actorId)
+       const loss=await applyStakeLoss(tx,project,result.stakeDamage)
        await tx.execute(sql`UPDATE character_projects SET goal_roll_requested=false WHERE id=${project.id}::uuid`)
        const available=await tx.execute<{remaining:number}>(sql`SELECT COALESCE(SUM(dots),0)::int AS remaining FROM project_stakes WHERE project_id=${project.id}::uuid AND released_at IS NULL`)
        const critical=Boolean((project.launch_result as {outcome?:string}|null)?.outcome==='CRITICAL')

@@ -52,22 +52,23 @@ export function PlayerProjectsPanel({campaignId}:Readonly<{campaignId:string}>) 
  const [busy,setBusy]=useState(false)
  const [notice,setNotice]=useState('')
  const retry=useRef<{action:string;idempotencyKey:string;[key:string]:unknown}|null>(null)
+ const [retryRequest,setRetryRequest]=useState<{action:string;idempotencyKey:string;[key:string]:unknown}|null>(null)
  const projects=data?.projects??[]
  const counts={ALL:projects.length,MINE:projects.filter(p=>p.playerRelation==='MINE').length,PARTNER:projects.filter(p=>p.playerRelation==='PARTNER').length,COTERIE:projects.filter(p=>p.playerRelation==='COTERIE').length}
  const visible=useMemo(()=>projects.filter(p=>(filter==='ALL'||p.playerRelation===filter)&&(status==='ALL'||p.status===status)),[projects,filter,status])
- const selected=projects.find(p=>p.id===opened)
  const canEdit=(p:Project)=>p.status==='DRAFT'&&(p.playerRelation==='MINE'||p.projectType==='COTERIE'&&p.createdByMe&&p.playerRelation==='COTERIE')
  const canCreate=Boolean(data&&!data.archived&&(data.characters.length||data.coteries.length))
- const open=(p:Project)=>{setOpened(opened===p.id?null:p.id);setEditing(false);setDetails({name:p.name,goal:p.goalDescription,description:p.description});setNotice('');retry.current=null}
+ const clearRetry=()=>{retry.current=null;setRetryRequest(null)}
+ const open=(p:Project)=>{setOpened(opened===p.id?null:p.id);setEditing(false);setDetails({name:p.name,goal:p.goalDescription,description:p.description});setNotice('');clearRetry()}
  async function send(action:string,project?:Project,extra:Record<string,unknown>={}) {
   if(busy||!data||data.archived)return
   const request=retry.current??{action,idempotencyKey:crypto.randomUUID(),...(project?{projectId:project.id,expectedRevision:project.revision}:{}),...extra}
-  retry.current=request;setBusy(true);setNotice('')
+  retry.current=request;setRetryRequest(request);setBusy(true);setNotice('')
   try{
    const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(request)})
    const result=await response.json().catch(()=>null)
-   if(!response.ok){if(response.status<500)retry.current=null;throw new Error(result?.error??'Operação não realizada.')}
-   retry.current=null;await mutate()
+   if(!response.ok){if(response.status<500)clearRetry();throw new Error(result?.error??'Operação não realizada.')}
+   clearRetry();await mutate()
    if(action==='CREATE'){setCreating(false);setOpened(result.projectId);setName('');setGoal('');setDescription('');setOwner('')}
    if(action==='UPDATE_DRAFT')setEditing(false)
    setNotice(action==='SUBMIT'?'Projeto enviado ao Narrador para aprovação.':action==='REQUEST_GOAL'?'Solicitação de Goal Roll registrada.':'Projeto atualizado com sucesso.')
@@ -77,7 +78,7 @@ export function PlayerProjectsPanel({campaignId}:Readonly<{campaignId:string}>) 
  return <section className="space-y-4" aria-label="Meus projetos">
   <header className="flex flex-wrap items-start justify-between gap-3 border-b border-border/70 pb-4">
    <div className="flex items-center gap-3"><FolderKanban className="size-6 text-rose-500" aria-hidden="true"/><div><h2 className="font-serif text-2xl">Meus Projetos</h2><p className="mt-0.5 text-xs text-muted-foreground">Projetos criados por você, em que você participa ou da sua Coterie.</p></div></div>
-   {canCreate&&<button className="button-primary flex items-center gap-2 text-sm" type="button" onClick={()=>{setCreating(v=>!v);setOpened(null);setNotice('');retry.current=null}}><Plus className="size-4"/>Novo Projeto</button>}
+   {canCreate&&<button className="button-primary flex items-center gap-2 text-sm" type="button" onClick={()=>{setCreating(v=>!v);setOpened(null);setNotice('');clearRetry()}}><Plus className="size-4"/>Novo Projeto</button>}
   </header>
   {error&&<p role="alert" className="rounded-lg border border-red-800/60 p-3 text-sm text-red-300">{error.message}</p>}
   {isLoading&&<p className="py-10 text-center text-sm text-muted-foreground">Consultando os projetos da crônica…</p>}
@@ -87,12 +88,12 @@ export function PlayerProjectsPanel({campaignId}:Readonly<{campaignId:string}>) 
    {creating&&<form className="space-y-3 rounded-xl border border-primary/50 bg-card p-4" onSubmit={e=>{e.preventDefault();void send('CREATE',undefined,{name,goalDescription:goal,description,...(projectType==='PERSONAL'?{ownerCharacterId:owner}:{coterieId:owner})})}}>
     <div className="flex items-center justify-between"><h3 className="font-serif text-xl">Criar Projeto</h3><button type="button" aria-label="Fechar formulário" onClick={()=>setCreating(false)}><X className="size-4"/></button></div>
     <div className="grid gap-3 sm:grid-cols-2">
-     <label className="flex flex-col gap-1 text-xs">Tipo<select className="input" value={projectType} onChange={e=>{setProjectType(e.target.value as 'PERSONAL'|'COTERIE');setOwner('');retry.current=null}}><option value="PERSONAL">Pessoal</option><option value="COTERIE">Da Coterie</option></select></label>
-     <label className="flex flex-col gap-1 text-xs">{projectType==='PERSONAL'?'Personagem':'Coterie'}<select className="input" required value={owner} onChange={e=>{setOwner(e.target.value);retry.current=null}}><option value="">Selecione…</option>{(projectType==='PERSONAL'?data.characters:data.coteries).map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
+     <label className="flex flex-col gap-1 text-xs">Tipo<select className="input" value={projectType} onChange={e=>{setProjectType(e.target.value as 'PERSONAL'|'COTERIE');setOwner('');clearRetry()}}><option value="PERSONAL">Pessoal</option><option value="COTERIE">Da Coterie</option></select></label>
+     <label className="flex flex-col gap-1 text-xs">{projectType==='PERSONAL'?'Personagem':'Coterie'}<select className="input" required value={owner} onChange={e=>{setOwner(e.target.value);clearRetry()}}><option value="">Selecione…</option>{(projectType==='PERSONAL'?data.characters:data.coteries).map(item=><option key={item.id} value={item.id}>{item.name}</option>)}</select></label>
     </div>
-    <label className="flex flex-col gap-1 text-xs">Nome do projeto<input className="input" required maxLength={140} value={name} onChange={e=>{setName(e.target.value);retry.current=null}}/></label>
-    <label className="flex flex-col gap-1 text-xs">Objetivo<input className="input" required maxLength={1000} value={goal} onChange={e=>{setGoal(e.target.value);retry.current=null}}/></label>
-    <label className="flex flex-col gap-1 text-xs">Descrição<textarea className="input min-h-20" maxLength={2000} value={description} onChange={e=>{setDescription(e.target.value);retry.current=null}}/></label>
+    <label className="flex flex-col gap-1 text-xs">Nome do projeto<input className="input" required maxLength={140} value={name} onChange={e=>{setName(e.target.value);clearRetry()}}/></label>
+    <label className="flex flex-col gap-1 text-xs">Objetivo<input className="input" required maxLength={1000} value={goal} onChange={e=>{setGoal(e.target.value);clearRetry()}}/></label>
+    <label className="flex flex-col gap-1 text-xs">Descrição<textarea className="input min-h-20" maxLength={2000} value={description} onChange={e=>{setDescription(e.target.value);clearRetry()}}/></label>
     <p className="text-xs text-muted-foreground">O projeto nasce como rascunho. Após o envio, o Narrador aprova a mecânica de Scope, Launch e Stake.</p>
     <button className="button-primary" type="submit" disabled={busy||!owner||!name.trim()||!goal.trim()}>{busy?'Salvando…':'Criar rascunho'}</button>
    </form>}
@@ -127,9 +128,9 @@ export function PlayerProjectsPanel({campaignId}:Readonly<{campaignId:string}>) 
        <button type="button" className="button-ghost" onClick={()=>setEditing(v=>!v)} disabled={busy}>Editar rascunho</button>
       </div>}
       {editing&&canEdit(p)&&p.status==='DRAFT'&&<form className="space-y-2 rounded-lg border border-border p-3" onSubmit={e=>{e.preventDefault();void send('UPDATE_DRAFT',p,{name:details.name,goalDescription:details.goal,description:details.description})}}>
-       <label className="flex flex-col gap-1 text-xs">Nome<input required maxLength={140} className="input" value={details.name} onChange={e=>{setDetails(d=>({...d,name:e.target.value}));retry.current=null}}/></label>
-       <label className="flex flex-col gap-1 text-xs">Objetivo<input required maxLength={1000} className="input" value={details.goal} onChange={e=>{setDetails(d=>({...d,goal:e.target.value}));retry.current=null}}/></label>
-       <label className="flex flex-col gap-1 text-xs">Descrição<textarea maxLength={2000} className="input" value={details.description} onChange={e=>{setDetails(d=>({...d,description:e.target.value}));retry.current=null}}/></label>
+       <label className="flex flex-col gap-1 text-xs">Nome<input required maxLength={140} className="input" value={details.name} onChange={e=>{setDetails(d=>({...d,name:e.target.value}));clearRetry()}}/></label>
+       <label className="flex flex-col gap-1 text-xs">Objetivo<input required maxLength={1000} className="input" value={details.goal} onChange={e=>{setDetails(d=>({...d,goal:e.target.value}));clearRetry()}}/></label>
+       <label className="flex flex-col gap-1 text-xs">Descrição<textarea maxLength={2000} className="input" value={details.description} onChange={e=>{setDetails(d=>({...d,description:e.target.value}));clearRetry()}}/></label>
        <button className="button-primary" type="submit" disabled={busy||!details.name.trim()||!details.goal.trim()}>Salvar alterações</button>
       </form>}
       {p.status==='ACTIVE'&&!p.goalRollRequested&&!data.archived&&<button type="button" className="button-ghost" disabled={busy} onClick={()=>void send('REQUEST_GOAL',p)}><ScrollText className="size-4"/>Solicitar Goal Roll ao Narrador</button>}
@@ -142,7 +143,7 @@ export function PlayerProjectsPanel({campaignId}:Readonly<{campaignId:string}>) 
    {!visible.length&&<div className="rounded-xl border border-border/70 bg-card/60 py-10 text-center text-sm text-muted-foreground"><FolderKanban className="mx-auto mb-3 size-9 opacity-60" aria-hidden="true"/>{projects.length?'Nenhum projeto corresponde aos filtros.':'Você ainda não possui projetos relacionados a esta mesa.'}</div>}
    </div>
    <p className="text-xs text-muted-foreground">Os pontos de Stake de cada personagem são reservados pelo Narrador após o Launch Roll. Você pode acompanhar o compromisso, mas não debitar ou alterar pontos diretamente.</p>
-   {retry.current&&!busy&&<button className="button-ghost text-xs" type="button" onClick={()=>void send(retry.current!.action,undefined,{})}>Reenviar operação pendente</button>}
+   {retryRequest&&!busy&&<button className="button-ghost text-xs" type="button" onClick={()=>void send(retryRequest.action,undefined,{})}>Reenviar operação pendente</button>}
   </>}
  </section>
 }

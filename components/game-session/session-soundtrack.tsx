@@ -56,6 +56,7 @@ export function SessionSoundtrack({sessionId}:Readonly<{sessionId:string}>) {
  const [muted,setMuted]=useState(false)
  const [busy,setBusy]=useState(false)
  const [feedback,setFeedback]=useState('')
+ const [pendingCommand,setPendingCommand]=useState<Command|null>(null)
  const audio=useRef<AudioEngine|null>(null)
  const pending=useRef<Command|null>(null)
 
@@ -86,14 +87,14 @@ export function SessionSoundtrack({sessionId}:Readonly<{sessionId:string}>) {
  }
  async function send(mood:Mood,playing:boolean) {
   if(!data||busy)return
-  if(!pending.current)pending.current={mood,playing,expectedRevision:data.revision,idempotencyKey:crypto.randomUUID()}
+  if(!pending.current){pending.current={mood,playing,expectedRevision:data.revision,idempotencyKey:crypto.randomUUID()};setPendingCommand(pending.current)}
   setBusy(true);setFeedback('')
   try{
    const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(pending.current)})
    const body=await r.json().catch(()=>null)
-   if(!r.ok){if(r.status<500)pending.current=null;throw new Error(body?.error??'Falha ao alterar trilha.')}
-   pending.current=null;await mutate();setFeedback('Estado da trilha atualizado para os participantes.')
-  }catch(e){setFeedback(e instanceof Error?e.message:'Falha de conexão, use reenviar.')}finally{setBusy(false)}
+   if(!r.ok){if(r.status<500){pending.current=null;setPendingCommand(null)};throw new Error(body?.error??'Falha ao alterar trilha.')}
+   pending.current=null;setPendingCommand(null);await mutate();setFeedback('Estado da trilha atualizado para os participantes.')
+  }catch(e){setPendingCommand(pending.current);setFeedback(e instanceof Error?e.message:'Falha de conexão, use reenviar.')}finally{setBusy(false)}
  }
  return <section className="border border-border bg-card p-4 sm:p-5" aria-label="Trilha sonora da sessão">
   <p className="eyebrow">Ambiência sonora · SG-011</p><h3 className="mt-2 font-serif text-xl">Trilha sonora da sessão</h3>
@@ -106,13 +107,13 @@ export function SessionSoundtrack({sessionId}:Readonly<{sessionId:string}>) {
     <label className="flex gap-2 items-center"><input type="checkbox" checked={muted} onChange={e=>setMuted(e.target.checked)}/>Silenciar neste dispositivo</label></>}
    {data.canManage&&<div className="flex flex-wrap items-end gap-3">
     <label className="flex flex-col gap-1">Ambiente
-     <select className="select" value={data.mood} disabled={busy||Boolean(pending.current)} onChange={e=>void send(e.target.value as Mood,data.playing)}>
+     <select className="select" value={data.mood} disabled={busy||Boolean(pendingCommand)} onChange={e=>void send(e.target.value as Mood,data.playing)}>
       {(Object.keys(notes) as Mood[]).map(mood=><option key={mood} value={mood}>{captions[mood]}</option>)}
      </select>
     </label>
     <button className="button-primary" type="button" disabled={!data.active||busy} onClick={()=>void send(data.mood,!data.playing)}>{data.playing?'Pausar para todos':'Reproduzir para todos'}</button>
    </div>}
-   {pending.current&&!busy&&<button className="button-ghost self-start" type="button" onClick={()=>void send(pending.current!.mood,pending.current!.playing)}>Reenviar mesmo comando</button>}
+   {pendingCommand&&!busy&&<button className="button-ghost self-start" type="button" onClick={()=>void send(pendingCommand.mood,pendingCommand.playing)}>Reenviar mesmo comando</button>}
    {feedback&&<output role="status" aria-live="polite">{feedback}</output>}
   </div>}
  </section>
