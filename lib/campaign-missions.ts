@@ -31,11 +31,13 @@ function input(value:unknown,keys:string[]){
 export async function listMissions(actorId:string,campaignId:string){
  const access=await role(actorId,campaignId)
  const result=await connection().query(`
- SELECT m.id,m.title,m.description,m.status,m.visibility,m.revision,m.created_at AS "createdAt",m.updated_at AS "updatedAt",
+ SELECT m.id,m.title,m.description,m.status,m.visibility,m.revision,m.created_at AS "createdAt",m.updated_at AS "updatedAt",m.due_date::text AS "dueDate",m.campaign_event_id AS "campaignEventId",
+ CASE WHEN ev.id IS NOT NULL AND ($2::boolean OR ev.visibility='everyone') THEN ev.title ELSE NULL END AS "eventTitle",
+ CASE WHEN ev.id IS NOT NULL AND ($2::boolean OR ev.visibility='everyone') THEN ev.event_date::text ELSE NULL END AS "eventDate",
  CASE WHEN $2::boolean THEN m.narrator_notes ELSE NULL END AS "narratorNotes",
  COALESCE((SELECT jsonb_agg(mc.character_id) FROM campaign_mission_characters mc WHERE mc.mission_id=m.id),'[]'::jsonb) AS "characterIds",
  CASE WHEN $2::boolean THEN COALESCE((SELECT jsonb_agg(mn.campaign_npc_id) FROM campaign_mission_npcs mn WHERE mn.mission_id=m.id),'[]'::jsonb) ELSE '[]'::jsonb END AS "npcIds"
- FROM campaign_missions m WHERE m.campaign_id=$1::uuid AND (
+ FROM campaign_missions m LEFT JOIN campaign_events ev ON ev.id=m.campaign_event_id WHERE m.campaign_id=$1::uuid AND (
  $2::boolean OR (m.status<>'DRAFT' AND (m.visibility='CAMPAIGN' OR
  (m.visibility='ASSIGNED' AND EXISTS(
  SELECT 1 FROM campaign_mission_characters mc JOIN characters ch ON ch.id=mc.character_id
@@ -46,18 +48,26 @@ export async function listMissions(actorId:string,campaignId:string){
 export async function commandMission(actorId:string,campaignId:string,value:unknown){
  const access=await role(actorId,campaignId)
  if(!access.master)fail(403,'Somente o Narrador pode alterar missões.')
- const data=input(value,['action','missionId','title','description','narratorNotes','visibility','status','expectedRevision','characterIds','npcIds'])
+ const data=input(value,['action','missionId','title','description','narratorNotes','visibility','status','expectedRevision','characterIds','npcIds','dueDate','campaignEventId'])
  const action=data.action
  if(action!=='CREATE'&&action!=='UPDATE'&&action!=='TRANSITION')fail(400,'Ação inválida.')
+ const dueDate=data.dueDate===undefined?undefined:data.dueDate===null||data.dueDate===''?null:data.dueDate
+ if(dueDate!==undefined&&dueDate!==null&&(typeof dueDate!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(dueDate)||Number.isNaN(Date.parse(dueDate))||new Date(dueDate).toISOString().slice(0,10)!==dueDate))fail(422,'Data inválida.')
+ const eventId=data.campaignEventId===undefined?undefined:data.campaignEventId===null||data.campaignEventId===''?null:data.campaignEventId
+ if(eventId!==undefined&&eventId!==null&&!validUuid(eventId))fail(422,'Evento inválido.')
  const client=await connection().connect()
  try{
   await client.query('BEGIN')
+  if(eventId){
+   const event=await client.query('SELECT id FROM campaign_events WHERE id=$1::uuid AND campaign_id=$2::uuid',[eventId,campaignId])
+   if(!event.rowCount)fail(422,'O evento não pertence à mesa.')
+  }
   let missionId:string
   if(action==='CREATE'){
    const title=text(data.title,180,true),description=text(data.description??'',10000),notes=text(data.narratorNotes??'',10000)
    const visibility=data.visibility??'NARRATOR_ONLY'
    if(!MISSION_VISIBILITIES.includes(visibility as Visibility))fail(422,'Visibilidade inválida.')
-   const inserted=await client.query<{id:string}>(`INSERT INTO campaign_missions(campaign_id,title,description,narrator_notes,visibility,created_by) VALUES($1::uuid,$2,$3,$4,$5,$6) RETURNING id`,[campaignId,title,description,notes,visibility,actorId])
+   const inserted=await client.query<{id:string}>(`INSERT INTO campaign_missions(campaign_id,title,description,narrator_notes,visibility,created_by,due_date,campaign_event_id) VALUES($1::uuid,$2,$3,$4,$5,$6,$7::date,$8::uuid) RETURNING id`,[campaignId,title,description,notes,visibility,actorId,dueDate??null,eventId??null])
    missionId=inserted.rows[0].id
   }else{
    if(!validUuid(data.missionId)||!Number.isSafeInteger(data.expectedRevision)||Number(data.expectedRevision)<0)fail(422,'Missão ou revisão inválida.')
@@ -75,7 +85,7 @@ export async function commandMission(actorId:string,campaignId:string,value:unkn
     const notes=data.narratorNotes===undefined?null:text(data.narratorNotes,10000)
     const visibility=data.visibility===undefined?null:data.visibility
     if(visibility!==null&&!MISSION_VISIBILITIES.includes(visibility as Visibility))fail(422,'Visibilidade inválida.')
-    await client.query(`UPDATE campaign_missions SET title=COALESCE($2,title),description=COALESCE($3,description),narrator_notes=COALESCE($4,narrator_notes),visibility=COALESCE($5,visibility),revision=revision+1,updated_at=now() WHERE id=$1::uuid`,[missionId,title,description,notes,visibility])
+    await client.query(`UPDATE campaign_missions SET title=COALESCE($2,title),description=COALESCE($3,description),narrator_notes=COALESCE($4,narrator_notes),visibility=COALESCE($5,visibility),due_date=CASE WHEN $6::boolean THEN $7::date ELSE due_date END,campaign_event_id=CASE WHEN $8::boolean THEN $9::uuid ELSE campaign_event_id END,revision=revision+1,updated_at=now() WHERE id=$1::uuid`,[missionId,title,description,notes,visibility,dueDate!==undefined,dueDate??null,eventId!==undefined,eventId??null])
    }
   }
   if(action!=='TRANSITION'){
