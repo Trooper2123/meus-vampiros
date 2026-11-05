@@ -4,14 +4,14 @@
 
 Adicionar à Gestão da Mesa dois módulos integrados, porém conceitualmente distintos:
 
-- **Projetos (Projects):** planos de médio/longo prazo iniciados pelos personagens, individualmente ou em grupo, seguindo o sistema de *Projects* do Appendix II do Corebook V5.
+- **Projetos (Projects):** planos de médio/longo prazo iniciados pelos jogadores, pela Coterie **ou pelo Narrador em nome de um personagem/Coterie**, seguindo o sistema de *Projects* do Appendix II do Corebook V5.
 - **Coterie:** representação persistente do grupo vampírico da campanha, incluindo membros, tipo, domínio, recursos compartilhados, objetivos e características coletivas.
 
 Projetos não são Missões do Narrador.
 
 | Conceito | Origem | Controle | Função |
 |---|---|---|---|
-| Projeto | Jogador/Coterie | Jogador + Narrador | Alterar o mundo ou conquistar algo a longo prazo |
+| Projeto | Jogador, Coterie ou Narrador | Proponente/responsável + Narrador | Alterar o mundo ou conquistar algo a longo prazo |
 | Coterie | Grupo | Grupo + Narrador | Representar a estrutura coletiva dos personagens |
 | Missão | Narrador | Narrador | Objetivo narrativo proposto pela crônica |
 
@@ -182,7 +182,7 @@ FAILED
 ABANDONED
 ```
 
-Jogador pode criar, editar DRAFT, submeter, acompanhar, solicitar Goal Roll e abandonar.
+O jogador responsável pode criar, editar DRAFT, submeter e abandonar seus projetos; jogadores associados somente acompanham e podem solicitar Goal Roll quando autorizado. O Narrador pode criar qualquer projeto pessoal ou de Coterie, inclusive associar personagens de outros jogadores e NPCs da mesma mesa.
 
 Narrador pode aprovar, ajustar Scope, definir Increment/pools, resolver rolls, registrar consequências e encerrar.
 
@@ -438,14 +438,18 @@ Backgrounds compartilhados podem participar de Projects quando as regras permiti
 
 ### Jogador
 
-- visualizar Coterie, membros e recursos compartilhados;
-- criar projetos próprios;
-- propor projetos coletivos;
-- acompanhar Projects;
-- solicitar Goal Roll.
+- visualizar Coterie, membros e recursos compartilhados autorizados;
+- criar projetos próprios e propor projetos de Coterie da qual seja membro;
+- **visualizar somente** projetos que pertençam ao seu personagem, que tenham seu personagem registrado como participante/parceiro (inclusive de outro jogador ou ao lado de NPC) ou que pertençam a uma Coterie da qual seja membro ativo;
+- acompanhar Project Die, histórico e andamento dos projetos visíveis;
+- solicitar Goal Roll quando autorizado;
+- somente o responsável/proprietário altera o rascunho; ser participante não concede automaticamente poder de edição.
 
 ### Narrador
 
+- **visualizar todos os Projects da mesa**, independentemente do jogador, Coterie ou participantes, sem restrição por autoria;
+- **criar Projects** pessoais para qualquer personagem jogável da mesa e Projects coletivos para qualquer Coterie da mesa;
+- associar personagens e NPCs existentes da mesma mesa a Projects como parceiros/participantes, sem tornar NPC o proprietário de um Project pessoal;
 - editar Coterie, Domain e recursos;
 - aprovar Projects;
 - definir Scope, Increment e pools;
@@ -457,22 +461,43 @@ Informações privadas do Narrador nunca devem ser enviadas no payload do jogado
 
 ## 25. UI — Gestão da Mesa
 
-Adicionar ao menu lateral:
+**Navegação aprovada pelo usuário (revisão posterior): Projects e Coterie são duas **abas distintas dentro do mesmo hub da campanha**, não páginas independentes. Não renderizar ambos os painéis lado a lado. As abas compartilham o cabeçalho e a navegação da mesa.
 
-```text
-Projetos
-Cotterie
-```
+- Hub do **Narrador**: `/campaigns/[id]?view=projects` e `/campaigns/[id]?view=coterie`.
+- Hub do **jogador**: `/campaigns/player/[id]`, com tabs internas `projects` e `coterie`; parâmetros opcionais `?tab=projects` e `?tab=coterie` para deep links.
+- URLs legadas `/campaigns/[id]/projects` e `/campaigns/[id]/coterie` redirecionam para a aba correspondente após identificar o perfil autorizado.
+- Dentro da aba Coterie, os links para Projects devem mudar para a aba Projetos do **mesmo hub**, sem recarregar uma página independente.
+- Usar `CampaignProjectsPanel` para Narrador, `PlayerProjectsPanel` para jogador e `CampaignCoteriePanel` para ambos, mantendo autorização no servidor.
+- Preservar a identidade visual do hub: vermelho profundo, preto, molduras existentes, tipografia serif e a barra horizontal de abas do jogador.
+
+A distinção entre Projects e Coterie é **funcional e de conteúdo**, não de página/rota isolada.
 
 ### Projetos
 
 Exibir contadores de Ativos, Aguardando e Concluídos e cards contendo proprietário, Scope, Project Die e próximo Increment.
 
-### Cotterie
+- **Narrador:** visualização de todos os projetos da campanha e filtros por responsável, Coterie, participante, NPC e status, com ação **Novo Projeto**.
+- **Jogador:** filtros **Meus Projetos**, **Projetos em parceria** e **Projetos da Coterie**, aplicados sobre o conjunto autorizado pelo servidor. Cada Project mostra participantes jogadores e NPCs que o Narrador associou explicitamente.
+- Parceria **não** altera `project_type`: um Project pode continuar `PERSONAL` e envolver outros jogadores/NPCs; `COTERIE` é propriedade do grupo.
+- A UI nunca depende só de filtros para esconder projetos alheios: a API deve aplicar autorização por personagem, participação ou Coterie.
+
+### Coterie
 
 Exibir nome, tipo, membros, Domain (Chasse/Lien/Portillon), Backgrounds, Haven, Goals e Boons/Debts.
 
-**Regra do projeto:** antes da implementação de novo layout dessas páginas, apresentar mockup/imagem da UI para aprovação.
+**Regra de UX atual:** manter os painéis já aprovados dentro das abas do hub existente, sem introduzir uma navegação lateral extra para Coterie/Projects e sem alterar a identidade visual. Novas mudanças visuais significativas continuam exigindo prévia revisão.
+
+### 25.1. Participação de jogadores e NPCs
+
+- `character_projects.owner_character_id` representa o dono do projeto pessoal, e `coterie_id` a Coterie proprietária; o Narrador é criador/administrador, não substitui o proprietário mecânico.
+- `project_participants` contém os **personagens de jogadores** relacionados à execução do projeto, inclusive parceiros de outros jogadores.
+- `project_npc_participants` contém **NPCs da campanha** (`campaign_npcs`) que atuam como parceiros; somente o Narrador pode associar ou retirar NPCs.
+- `npc_definitions` e `campaign_npcs` são o catálogo e o vínculo já existentes do módulo de NPCs. Não criar personagens-fantasma para representar esses parceiros.
+- Ao consultar projetos, o jogador enxerga somente os vinculados ao seu personagem, explicitamente incluídos como parceria, ou os de uma Coterie da qual participa; NPC não concede visibilidade, apenas participa de um projeto já acessível.
+- Um NPC de outra campanha não pode ser associado, mesmo que seu identificador seja conhecido. O servidor valida isso transacionalmente.
+- Projetos compartilhados do tipo `PERSONAL` continuam pertencendo ao personagem original. Participantes podem ver e solicitar ações permitidas, mas **não** passam a poder editar o projeto.
+- A retirada de um jogador de uma parceria não deve apagar histórico; acessos futuros precisam ser reavaliados no servidor.
+- O Narrador tem visão e edição gerencial de todos os Projects da mesa, inclusive dos criados por jogador.
 
 ## 26. Critérios de aceite
 
@@ -496,6 +521,12 @@ Exibir nome, tipo, membros, Domain (Chasse/Lien/Portillon), Backgrounds, Haven, 
 - [ ] Coterie Goals são distintos de Projects.
 - [ ] Goal pode originar Project coletivo.
 - [ ] Narrador controla aprovação e resolução mecânica.
+- [ ] Projetos e Coterie possuem **abas separadas no mesmo hub**, para Narrador e jogador, sem sair da campanha.
+- [ ] Narrador pode consultar todos e criar Projects para qualquer personagem ou Coterie da mesa.
+- [ ] Jogador consulta apenas Projects do seu personagem, com participação explícita, ou da Coterie da qual faça parte.
+- [ ] Project pessoal pode incluir outros jogadores e NPCs da mesa sem transferir propriedade.
+- [ ] Participante pode acompanhar, mas não editar rascunho alheio.
+- [ ] NPC de outra campanha é rejeitado pelo backend.
 - [ ] Dados privados do Narrador não chegam ao jogador.
 - [ ] Novo layout só é implementado após aprovação visual.
 

@@ -1,3 +1,106 @@
+## [2026-11-03 21:24 BRT] - fix - Tipos de SMS, Awake e Havens de coteries
+
+- Arquivos: `lib/character-sms.ts`, `lib/coterie-service.ts`, `tests/character-awake-individual.test.ts` e `tests/character-sms.test.ts`.
+- SMS: helper de erro declarado como função com retorno `never`, permitindo narrowing após validação; destinatário validado no ramo de conversa direta. Regras de autorização, transações e limites preservados.
+- Coteries: preservados os campos tipados de Haven ao compor o retorno com traits, removendo casts que apagavam o contrato.
+- Awake: testes validam objeto e identificador da noite antes de acessar o retorno genérico do executor de comandos.
+- Validação: 12 erros TypeScript corrigidos; `npx tsc --noEmit` e `pnpm build` aprovados; 10 testes SMS aprovados, incluindo três destinatários inválidos.
+- Bloqueios: lint falha internamente (`scopeManager.addGlobals is not a function`); integração Awake/coteries não validada com PostgreSQL. Tentativa da rota Awake sem banco isolado resultou em três testes barrados pela proteção do ambiente, sem mutações.
+- Auditoria: uma vulnerabilidade moderada em minimatch; nenhuma alta/crítica. Revisão do ajuste sem novos segredos ou mudanças de acesso identificadas; aprovação geral permanece bloqueada pelo lint e integração pendente. Sem migração, seed, commit ou push.
+
+## [2026-11-03] - refactor - Projects e Coterie como abas do hub
+
+**Branch:** `feat/session-011-projects-coterie`. Revisão de navegação solicitada pelo usuário.
+
+- **Narrador:** `/campaigns/[id]?view=projects` e `?view=coterie` montam os painéis completos dentro de `app/campaigns/[id]/page.tsx`, reutilizando a navegação lateral da Gestão da Mesa.
+- **Jogador:** `PlayerCampaignPortal` inclui os painéis reais `PlayerProjectsPanel` e `CampaignCoteriePanel` nas tabs locais correspondentes, preservando o banner e a barra horizontal de abas.
+- Deep links `/campaigns/player/[id]?tab=projects|coterie`; links internos Coterie → Projetos mudam de aba sem sair do portal do jogador.
+- Rotas dedicadas legadas passam a redirecionar após verificação do vínculo com a mesa, sem criar uma segunda interface.
+- Nenhuma alteração na mecânica de Stake, autorização dos Projects ou persistência da Coterie; a composição visual foi refatorada.
+- O workflow foi atualizado para incluir portal e páginas do hub na checagem. **Validação desta revisão em andamento.**
+## [2026-11-03 01:14 BRT] - feat - Implementações iniciais Awake, SG-010 e SG-011 (não homologadas)
+
+**Branch:** `feat/spec11-sg010-awake`.
+
+**Arquivos principais:** `lib/character-awake.ts`, `lib/campaign-awake-settings.ts`, `lib/character-discipline-rolls.ts`, `lib/session-soundtrack.ts`, respectivas rotas `app/api`, painéis `components/character-summary` e `components/game-session`, `lib/db.ts` e testes novos.
+
+- Awake: declaração explícita de mesa externa, noites independentes por personagem, Rouse Check autoritativo com idempotência, histórico e integração à ficha e à sessão ativa do jogador.
+- Awake em mesa: configuração persistida do responsável (`PLAYER_ROLLS` ou `NARRATOR_FORCES`), preparação de noite pelo Narrador, política congelada na noite e bloqueio de despertar repetido. Adicionada auditoria de alterações.
+- SG-010: catálogo dos poderes efetivamente adquiridos, fórmulas simples validadas no servidor, dados normais/Fome, custo de um Rouse e bônus elegível de Potência. Poderes especiais ou sem fórmula inequívoca permanecem assistidos.
+- SG-011: ambiências **originais geradas no navegador**, sem áudio comercial; Narrador altera clima/reprodução para participantes, volume e mudo individuais, estado persistido e sincronizado por consulta periódica.
+- DDL aditivo: `campaigns.awake_execution_mode`, `chronicle_nights.execution_mode`, `campaign_awake_setting_events`, `session_soundtrack_state`, `session_soundtrack_commands`.
+- Novos testes escritos: `tests/character-awake-individual.test.ts`, `tests/discipline-player-rolls.test.ts`, `tests/session-soundtrack.test.ts`.
+- **Validação: NÃO EXECUTADA.** Não houve checkout completo, typecheck, lint, build, PostgreSQL isolado, execução de testes, nem teste de áudio em navegador. A implementação é **experimental** e não está homologada.
+- Pendentes: ampliar catálogo para poderes com mecânicas especiais, testes resistidos, custo múltiplo de Rouse/Fome 5 assistida, revisão de segurança completa e trilhas em arquivo/licenciadas.
+## [2026-11-03 12:28 BRT] - docs - Atualizar panorama e verificações antes de push
+
+## [2026-11-03] - feat - Página Coterie independente, visão do Narrador e jogador
+
+**Branch:** `feat/session-011-projects-coterie`.
+
+- Rota `/campaigns/[id]/coterie` com identidade gótica e navegação da campanha, independente de Projects.
+- Painel completo com apresentação de membros, domínio, Backgrounds, vantagens/defeitos, Havens e seus traits, favores/dívidas e objetivos coletivos.
+- Narrador cria e administra Coteries e recursos, jogador membro consulta e propõe objetivos e Projects coletivos sem alterar recursos.
+- API restringe listagem às Coteries das quais o jogador é membro ativo; administrador de mesa consulta todas.
+- Testes de integração ampliados, CI configurada para incluir os novos arquivos; **resultado da execução desta revisão ainda não confirmado**.
+
+## [2026-11-03] - feat - Projetos na visão do jogador
+
+**Branch:** `feat/session-011-projects-coterie`.
+
+- Novo painel `PlayerProjectsPanel` utilizado somente na área do jogador, na mesma rota exclusiva de Projects, sem reutilizar a tabela administrativa do Narrador.
+- Cards e filtros correspondentes à referência do usuário: Todos, Meus, Em parceria, Da Coterie, status, progresso e Project Die.
+- Classificação dos projetos por vínculo real com personagem e Coterie calculada no backend; nenhuma visibilidade nova é concedida só por um filtro do navegador.
+- Jogador cria, edita e submete rascunhos próprios, acompanha seus Projects e solicita Goal Roll. Operações de Stake, aprovação, Launch e Increment continuam exclusivas do Narrador.
+- Testes adicionais cobrem permissões e os três tipos de vínculo. **Homologação da versão atual ainda depende de CI e QA.**
+
+## [2026-11-03] - feat - Tela independente Projetos da Mesa e Stake vinculado à ficha
+
+**Branch:** `feat/session-011-projects-coterie`.
+
+- Implementada a página `/campaigns/[id]/projects` usando estrutura e identidade visual da campanha, com filtros, busca, tabela, dossiê, criação e ações de resolução.
+- Narrador pode consultar/criar projetos de toda a campanha; jogador consulta apenas Projects autorizados de seu personagem, colaboração ou Coterie.
+- Interface para relacionar jogadores e NPCs existentes na mesa, com atualização auditada por comando.
+- Mecânica de Stake agora consulta os pontos de Background da ficha, desconta reservas de outros Projects, valida a escolha no servidor e registra reserva/liberação no ledger de personagem. Não usa vantagens gerais como Stake.
+- Incluído endpoint de saldo de Stake com acesso exclusivo ao Narrador e testes de prevenção de reserva duplicada.
+- Não altera a página Coterie; homologação final, QA visual e enforcement de Stake em todos os consumidores externos do atributo ainda pendentes.
+- **Validação pendente para este HEAD:** a CI verde registrada anteriormente cobre uma revisão anterior desta feature, não os novos arquivos.
+
+## [2026-11-03] - feat - Projetos separados de Coterie; colaboração entre jogadores e NPCs
+
+**Branch:** `feat/session-011-projects-coterie`.
+
+- Corrige a SPEC-SESSION-011 para exigir páginas separadas e papéis definidos: Narrador visualiza/cria todos os Projects; jogador consulta apenas projetos do próprio personagem, dos quais participa ou de sua Coterie.
+- Backend recebe `npcParticipantIds` apenas no comando do Narrador, valida `campaign_npcs` da mesma mesa, registra parceiros NPC na entidade `project_npc_participants` e preserva o nome de apresentação.
+- Diferencia permissão de consulta e edição: colaborador pode acompanhar; somente proprietário/responsável ou Narrador altera rascunhos.
+- Teste de integração novo para acesso de Narrador, dois jogadores parceiros, NPC e impedimento de alteração por colaborador.
+- Interface real mantida sem alterações até os dois mockups em estilo existente serem apresentados/aprovados.
+- Revalidar CI após esses commits antes de declarar homologação.
+
+## [2026-11-03 12:30 BRT] - feat - Iniciar SPEC-SESSION-011: Projects e Coterie
+
+**Branch:** `feat/session-011-projects-coterie`. **Estado:** implementação experimental; **não homologada**.
+
+**Arquivos principais:** `lib/projects-coterie-schema.ts`, `lib/db.ts`, `lib/session11-common.ts`, `lib/coterie-service.ts`, `lib/projects-service.ts`, `lib/vtm-v5/projects.ts`, `app/api/campaigns/[id]/coteries/route.ts`, `app/api/campaigns/[id]/projects/route.ts`, `tests/project-mechanics.test.ts`, `tests/session11-projects-coterie.test.ts`, `.github/workflows/spec-session-011-ci.yml`.
+
+- Adiciona schema aditivo para múltiplas Coteries por campanha, membros, Domain (Chasse, Lien, Portillon), Backgrounds compartilhados, vantagens/defeitos, Haven/Hangout, Boons/Debts e Goals. Registra histórico e idempotência de comandos.
+- Semear 15 tipos iniciais do Corebook com sugestões de configuração (não concede pontos automaticamente); catálogo é extensível.
+- Projetos pessoais e de Coterie: criação por jogador, envio, aprovação do Narrador, Scope, Increment, Launch Roll no servidor, confirmação posterior de Stake, Project Die, Goal Roll resistido e encerramento.
+- Define membros participantes; restringe Stakes a participantes ou recursos compartilhados e impede reservas incompatíveis entre diferentes Projects.
+- Goal Roll usa Project Die como tamanho do pool de oposição; dez do jogador contam um sucesso sem crítico, enquanto a oposição pode fazer crítico.
+- Adiciona rotas autenticadas com verificação de vínculo com mesa, acesso por recurso, revisão otimista e comandos idempotentes.
+- Adiciona testes e CI com PostgreSQL isolado; **não foram executados neste ambiente**. Não aplicar migrações em produção sem aprovação/backup.
+- **UI não implementada:** conforme SPEC §25, primeiro apresentar mockup para aprovação; backend e estrutura de dados não constituem implementação integral.
+- Pendências: integrar reserva de Stakes a todos os outros usos de Backgrounds, fontes suplementares do catálogo, XP/consequências narrativas avançadas, adversários NPC/FACTION, automação temporal, teste real de build/DB e revisão de segurança.
+
+## [2026-11-03 — validação da SPEC-SESSION-011] - test - CI focada aprovada
+
+**Arquivos principais:** `lib/projects-service.ts`, `lib/session11-common.ts`, `lib/coterie-service.ts`, `tests/session11-projects-coterie.test.ts`, `docs/implementation/session-011-projects-coterie-status.md`.
+
+- Correções de controle de acesso: ex-membro não consulta Projects coletivos, participantes pessoais autorizados acompanham seus projetos, mesa arquivada permite leitura sem permitir mutações e IDs Auth0 não são expostos na listagem de Projects.
+- GitHub Actions run `41670212248`: TypeScript, lint focado, 12 testes (2 arquivos), build de produção e auditoria de dependências de produção **aprovados**; auditoria reportou zero vulnerabilidades de produção.
+- A interface permanece **bloqueada por aprovação visual** prevista na SPEC §25. Integração de Stake nos módulos externos, regras narrativas especiais e QA manual ainda pendentes; PR #61 permanece draft.
+
 ## [2026-11-02 04:22 BRT] - fix - Atualizar teste da listagem de campanhas
 
 **Arquivos principais:** `tests/session-notes-ui.test.tsx`.

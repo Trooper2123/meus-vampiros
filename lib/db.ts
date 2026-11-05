@@ -1,3 +1,4 @@
+import { PROJECTS_COTERIE_SCHEMA } from './projects-coterie-schema'
 import { drizzle } from 'drizzle-orm/node-postgres'
 import { Pool } from 'pg'
 import { sql } from 'drizzle-orm'
@@ -67,6 +68,15 @@ export async function ensureAllTables() {
     ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS creation_policy JSONB;
     ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS call_active BOOLEAN NOT NULL DEFAULT false;
     ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS session_shortcuts JSONB NOT NULL DEFAULT '["npcs","calendar","notes"]'::jsonb;
+    ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS awake_execution_mode TEXT NOT NULL DEFAULT 'NARRATOR_FORCES';
+    CREATE TABLE IF NOT EXISTS campaign_awake_setting_events (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      campaign_id UUID NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+      actor_user_id TEXT NOT NULL,
+      previous_mode TEXT NOT NULL,
+      new_mode TEXT NOT NULL,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
 
     CREATE TABLE IF NOT EXISTS characters (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -178,6 +188,7 @@ export async function ensureAllTables() {
     UNIQUE(campaign_id, night_number),
     UNIQUE(campaign_id, idempotency_key)
   );
+  ALTER TABLE chronicle_nights ADD COLUMN IF NOT EXISTS execution_mode TEXT NOT NULL DEFAULT 'NARRATOR_FORCES';
   CREATE UNIQUE INDEX IF NOT EXISTS chronicle_nights_processing_idx ON chronicle_nights(campaign_id) WHERE status = 'PROCESSING';
   CREATE TABLE IF NOT EXISTS night_awakenings (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -297,6 +308,7 @@ export async function ensureAllTables() {
       payload JSONB NOT NULL
     );
     `)
+    await pool.query(PROJECTS_COTERIE_SCHEMA)
     await ensureGameSessionsTables()
   })().catch(error => {
     schemaInitialization = undefined
@@ -325,6 +337,24 @@ export async function ensureGameSessionsTables() {
       session_id UUID NOT NULL REFERENCES game_sessions(id) ON DELETE CASCADE,
       chronicle_night_id UUID NOT NULL REFERENCES chronicle_nights(id) ON DELETE RESTRICT,
       PRIMARY KEY (session_id, chronicle_night_id)
+    );
+    CREATE TABLE IF NOT EXISTS session_soundtrack_state (
+      session_id UUID PRIMARY KEY REFERENCES game_sessions(id) ON DELETE CASCADE,
+      mood TEXT NOT NULL DEFAULT 'DREAD' CHECK(mood IN ('DREAD','NOIR','RITUAL')),
+      playing BOOLEAN NOT NULL DEFAULT false,
+      started_at TIMESTAMPTZ,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_by_user_id TEXT,
+      revision INTEGER NOT NULL DEFAULT 0
+    );
+    CREATE TABLE IF NOT EXISTS session_soundtrack_commands (
+      session_id UUID NOT NULL REFERENCES game_sessions(id) ON DELETE CASCADE,
+      command_key UUID NOT NULL,
+      actor_user_id TEXT NOT NULL,
+      request_hash TEXT NOT NULL,
+      result JSONB NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      PRIMARY KEY(session_id, command_key)
     );
     CREATE TABLE IF NOT EXISTS game_session_close_operations (
       idempotency_key UUID PRIMARY KEY,

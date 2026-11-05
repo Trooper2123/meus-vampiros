@@ -18,10 +18,11 @@ export function CampaignArchiveControl({ id, name, archived }: Readonly<{ id: st
     } catch (error) { setMessage(error instanceof Error ? error.message : 'Não foi possível atualizar a mesa.') }
     finally { setBusy(false) }
   }
+  const actionLabel = archived ? 'Restaurar mesa' : 'Confirmar arquivamento'
   return <details className="border border-border bg-card p-5"><summary className="cursor-pointer font-serif text-xl">{archived ? 'Restaurar mesa' : 'Arquivar mesa'}</summary><form onSubmit={e => void submit(e)} className="mt-4 flex flex-col gap-4">
     <p className="text-sm text-muted-foreground">Arquivar retira a mesa da listagem principal e impede novas sessões. Fichas, imagens, anotações e histórico são preservados. A mesa pode ser restaurada.</p>
     <label className="sheet-field"><span>Digite o nome da mesa para confirmar: {name}</span><input required maxLength={name.length} value={confirmationName} disabled={busy} onChange={e => setConfirmationName(e.target.value)} /></label>
-    <button className="button-ghost self-start" type="submit" disabled={busy || confirmationName !== name}>{busy ? 'Salvando…' : archived ? 'Restaurar mesa' : 'Confirmar arquivamento'}</button>
+    <button className="button-ghost self-start" type="submit" disabled={busy || confirmationName !== name}>{busy ? 'Salvando…' : actionLabel}</button>
     {message && <output className="text-sm" aria-live="polite">{message}</output>}
   </form></details>
 }

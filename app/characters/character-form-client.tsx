@@ -164,7 +164,8 @@ export default function CharacterFormClient({
   const [characterType, setCharacterType] = useState<CharacterType>('PLAYER_VAMPIRE')
   const [creationType, setCreationType] = useState<CreationType>('FLEDGLING')
   const requestedEntryMode = searchParams?.get('entryMode')
-  const [entryMode, setEntryMode] = useState<CharacterEntryMode | null>(mode === 'edit' || idFromUrl ? 'ASSISTED' : requestedEntryMode === 'ASSISTED' || requestedEntryMode === 'EXISTING' ? requestedEntryMode : null)
+  const validEntryMode = requestedEntryMode === 'ASSISTED' || requestedEntryMode === 'EXISTING' ? requestedEntryMode : null
+  const [entryMode, setEntryMode] = useState<CharacterEntryMode | null>(mode === 'edit' || idFromUrl ? 'ASSISTED' : validEntryMode)
   const [skillMode, setSkillMode] = useState<QuickSkillMode>('BALANCED')
   const [characterStatus, setCharacterStatus] = useState<CharacterStatus>('DRAFT')
   const [validationReport, setValidationReport] = useState<ValidationReport | null>(null)

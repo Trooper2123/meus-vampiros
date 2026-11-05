@@ -32,7 +32,8 @@ export function executeCharacterRoll(actorId: string, id: string, input: RollInp
 }
 
 function resolveCharacterRollResult(mode: string,difficulty: number,provider: DiceProvider,pool: number,hungerCount: number) {
-  let result=['TAKING_HALF','AUTOMATIC'].includes(mode)? evaluateV5Roll([],[],mode==='CHECK'? 1:difficulty):rollV5Pool(provider,pool,hungerCount,mode==='CHECK'? 1:difficulty)
+  const targetDifficulty = mode === 'CHECK' ? 1 : difficulty
+  let result=['TAKING_HALF','AUTOMATIC'].includes(mode)? evaluateV5Roll([],[],targetDifficulty):rollV5Pool(provider,pool,hungerCount,targetDifficulty)
   if(mode==='TAKING_HALF'||mode==='AUTOMATIC') {
     let shortcut
     try { shortcut=mode==='TAKING_HALF'? resolveTakingHalf(pool,difficulty):resolveAutomaticWin(pool,difficulty)} 

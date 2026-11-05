@@ -43,10 +43,10 @@ export function SessionLiveKitChat({ targetId }: Readonly<{ targetId: string }>)
 
   return createPortal(
     <div className="session-livekit-chat" aria-label="Mensagens do LiveKit">
-      <div className="session-livekit-chat-status" role="status">
-        <span aria-hidden="true" className="session-livekit-online" />
+      <output className="block session-livekit-chat-status">
+        <span aria-hidden="true" className="session-livekit-online" />{' '}
         Conectado ao chat da sala · mensagens temporárias
-      </div>
+      </output>
       <div ref={logRef} className="session-chat-log session-livekit-chat-log" role="log" aria-live="polite" aria-relevant="additions">
         {chatMessages.length === 0 && <p className="session-chat-empty">Nenhuma mensagem ainda. Envie a primeira mensagem da sessão.</p>}
         {chatMessages.map((entry, index) => {
