@@ -19,7 +19,7 @@ export function CampaignSessionShortcutSettings({campaignId}:Readonly<{campaignI
  useEffect(()=>{if(data)setSelected(data.shortcuts)},[data])
  const dirty=JSON.stringify(selected)!==JSON.stringify(data?.shortcuts??DEFAULT_SHORTCUTS)
  const toggle=(code:ShortcutCode)=>setSelected(current=>current.includes(code)?current.filter(item=>item!==code):[...current,code])
- const move=(index:number,step:number)=>setSelected(current=>{const next=[...current];const target=index+step;if(target<0||target>=next.length)return current;[next[index],next[target]]=[next[target],next[index]];return next})
+ const move=(index:number,step:number)=>setSelected(current=>{const next=[...current];const target=index+step;if(target<0||target>=next.length){return current;}[next[index],next[target]]=[next[target],next[index]];return next})
  async function save(){
   setSaving(true);setMessage('')
   try {
@@ -42,6 +42,6 @@ export function CampaignSessionShortcutSettings({campaignId}:Readonly<{campaignI
    {selected.map((code,index)=><div key={code}><span>{index+1}. {SHORTCUT_LABELS[code]}</span><div><button type="button" disabled={saving||index===0} onClick={()=>move(index,-1)} aria-label={`Subir ${SHORTCUT_LABELS[code]}`}>↑</button><button type="button" disabled={saving||index===selected.length-1} onClick={()=>move(index,1)} aria-label={`Descer ${SHORTCUT_LABELS[code]}`}>↓</button></div></div>)}
   </div>
   <div className="mt-5 flex flex-wrap items-center gap-3"><button type="button" className="button-primary" disabled={saving||!dirty} onClick={()=>void save()}>{saving?'Salvando...':'Salvar atalhos'}</button><button type="button" className="button-ghost" disabled={saving} onClick={()=>{setSelected([...DEFAULT_SHORTCUTS]);setMessage('')}}>Restaurar seleção padrão</button></div>
-  {message&&<p role="status" className="mt-3 text-sm">{message}</p>}</>}
+  {message&&<output className="block mt-3 text-sm">{message}</output>}</>}
  </section>
 }

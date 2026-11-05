@@ -55,11 +55,11 @@ export function CampaignParticipantControls({ characterId }: Readonly<{ characte
   }
 
   if (sheetError || resourceError) return <p role="alert" className="text-sm text-primary">Não foi possível consultar o estado da ficha. Recarregue a página.</p>
-  if (!sheet || !resources) return <p role="status" className="text-sm text-muted-foreground">Consultando estado da ficha…</p>
+  if (!sheet || !resources) return <output className="block text-sm text-muted-foreground">Consultando estado da ficha…</output>
   const condition = resources.state.condition
   return <div className="flex flex-col gap-3 border border-border p-4">
     <p className="text-sm">Ficha: {statuses[sheet.character.status] ?? 'Indisponível'} · Condição: {conditions[condition] ?? 'Indisponível'}</p>
-    {feedback && <p role="status" className="text-sm text-muted-foreground">{feedback}</p>}
+    {feedback && <output className="block text-sm text-muted-foreground">{feedback}</output>}
     {retry ? <button type="button" className="button-primary self-start" disabled={busy} onClick={() => send('APPROVED')}>Reenviar operação</button> : <>
       {sheet.character.status === 'PENDING_REVIEW' && <div className="flex flex-wrap gap-3"><button type="button" className="button-primary self-start" disabled={busy} onClick={() => send('APPROVED')}>Aprovar ficha</button><button type="button" className="button-ghost" disabled={busy} onClick={() => send('DRAFT')}>Solicitar correções</button><button type="button" className="action-delete" disabled={busy} onClick={() => send('ARCHIVED')}>Rejeitar ficha</button></div>}
       {condition !== 'FINAL_DEATH' && <>

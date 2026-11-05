@@ -54,7 +54,7 @@ export async function sessionNpcCommand(actorId:string,sessionId:string,input:un
     const row=rows.rows[0];if(!row){ npcFail(403,'NPC não pertence a esta mesa.') }
     const snapshot:Snapshot={npcId:row.npc_id,name:row.name,data:row.payload,characterId:row.character_id,fullData:row.data}
     const fullState=row.data?readSessionState(row.data,row.game_state??{}):null
-    const state:InstanceState={healthDamage:fullState?.healthDamage??{superficial:0,aggravated:0},willpowerDamage:fullState?.willpowerDamage??{superficial:0,aggravated:0},hunger:fullState?.hunger??row.payload.hunger,conditions:[],...(row.state??{})}
+    const state:InstanceState={healthDamage:fullState?.healthDamage??{superficial:0,aggravated:0},willpowerDamage:fullState?.willpowerDamage??{superficial:0,aggravated:0},hunger:fullState?.hunger??row.payload.hunger,conditions:[],...row.state}
     const max=maxima(snapshot)
     if(max.healthMax!==null&&!validateDamage(state.healthDamage,max.healthMax)||max.willpowerMax!==null&&!validateDamage(state.willpowerDamage,max.willpowerMax)){ npcFail(422,'Revise o estado persistente da campanha antes de adicionar à sessão.') }
     const inserted=await tx.execute(sql`INSERT INTO npc_session_instances(session_id,campaign_npc_id,instance_key,snapshot,state,revealed_fields) VALUES(${sessionId}::uuid,${row.id}::uuid,${npcText(value.instanceKey,120,true)},${JSON.stringify(snapshot)}::jsonb,${JSON.stringify(state)}::jsonb,${JSON.stringify(row.revealed_fields)}::jsonb) ON CONFLICT(session_id,instance_key) DO NOTHING RETURNING id`)

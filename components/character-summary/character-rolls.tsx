@@ -13,9 +13,13 @@ type RollCommand = { mode?: RollMode; hiddenDifficulty?: boolean; clanContext?: 
 type RollResponse = { ok: boolean; pool: number; specialtyBonus: number; clanModifiers?: ClanModifiers; visibility: 'PUBLIC' | 'SECRET'; revision: number; result: { normalDice: number[]; hungerDice: number[]; difficulty: number; successes: number; success: boolean; outcome: 'SUCCESS' | 'CRITICAL' | 'MESSY_CRITICAL' | 'FAILURE' | 'BESTIAL_FAILURE' } }
 const attributeNames: Record<string, string> = { forca: 'Força', destreza: 'Destreza', vigor: 'Vigor', carisma: 'Carisma', manipulacao: 'Manipulação', compostura: 'Compostura', inteligencia: 'Inteligência', raciocinio: 'Raciocínio', determinacao: 'Determinação' }
 const skillNames: Record<string, string> = { 'armas-brancas': 'Armas brancas', 'armas-de-fogo': 'Armas de fogo', atletismo: 'Atletismo', briga: 'Briga', conducao: 'Condução', furtividade: 'Furtividade', ladroagem: 'Ladroagem', oficios: 'Ofícios', sobrevivencia: 'Sobrevivência', 'empatia-com-animais': 'Empatia com animais', etiqueta: 'Etiqueta', intimidacao: 'Intimidação', lideranca: 'Liderança', manha: 'Manha', performance: 'Performance', persuasao: 'Persuasão', sagacidade: 'Sagacidade', subterfugio: 'Subterfúgio', ciencia: 'Ciência', academicos: 'Erudição', financas: 'Finanças', investigacao: 'Investigação', medicina: 'Medicina', ocultismo: 'Ocultismo', percepcao: 'Percepção', politica: 'Política', tecnologia: 'Tecnologia' }
-const rollReason = (mode: RollMode, attribute: string, skill: string, predatorName?: string) => mode === 'TEST' || mode === 'PREDATION'
-  ? `${mode === 'PREDATION' ? `Predação ${predatorName ?? ''}: ` : 'Teste de '}${attributeNames[attribute] ?? attribute} + ${skillNames[skill] ?? skill}.`
-  : `Teste de ${({ CHECK: 'check', WILLPOWER: 'Força de Vontade', HUMANITY: 'Humanidade', TAKING_HALF: 'Taking Half', AUTOMATIC: 'vitória automática' } as const)[mode]}.`
+function rollReason(mode: RollMode, attribute: string, skill: string, predatorName?: string) {
+  if (mode === 'TEST' || mode === 'PREDATION') {
+    const prefix = mode === 'PREDATION' ? `Predação ${predatorName ?? ''}: ` : 'Teste de '
+    return `${prefix}${attributeNames[attribute] ?? attribute} + ${skillNames[skill] ?? skill}.`
+  }
+  return `Teste de ${({ CHECK: 'check', WILLPOWER: 'Força de Vontade', HUMANITY: 'Humanidade', TAKING_HALF: 'Taking Half', AUTOMATIC: 'vitória automática' } as const)[mode]}.`
+}
 
 async function fetchRollData(url: string): Promise<RollData> {
   const response = await fetch(url)
@@ -34,7 +38,7 @@ function RollPanel({ characterId, sessionId, prefill }: Readonly<{ characterId: 
   const { data, error: loadError, isLoading, mutate } = useSWR<RollData>(endpoint, fetchRollData)
   const [attribute, setAttribute] = useState('')
   const [skillId, setSkillId] = useState('')
-  useEffect(() => { if (prefill?.attribute) setAttribute(prefill.attribute); if (prefill?.skill) setSkillId(prefill.skill) }, [prefill])
+  useEffect(() => { if (prefill?.attribute) { setAttribute(prefill.attribute) } if (prefill?.skill) { setSkillId(prefill.skill) } }, [prefill])
   const [specialtyId, setSpecialtyId] = useState('')
   const [difficulty, setDifficulty] = useState('1')
   const [mode, setMode] = useState<RollMode>('TEST')
