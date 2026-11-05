@@ -51,6 +51,9 @@ export function BloodActionsPanel({ characterId, revision, onComplete }: Readonl
       setMessage('Falha de conexão. Reenviar preservará a chave de idempotência.')
     } finally { setPending(false) }
   }
+  let maxServings = 5
+  if (source === 'HUMAN_HARMFUL') maxServings = 4
+  else if (['HUMAN_SAFE','HUMAN_SIP','HUMAN_KILLED'].includes(source)) maxServings = 1
   return <section className="mt-6 border-t border-border pt-5" aria-label="Ações automáticas V5">
     <h3 className="font-serif text-xl">Alimentação e regeneração V5</h3>
     <p className="mt-2 text-sm text-muted-foreground">Estas ações aplicam regras do sangue e registram os dados no servidor. Os controles manuais de recursos acima permanecem disponíveis.</p>
@@ -59,7 +62,7 @@ export function BloodActionsPanel({ characterId, revision, onComplete }: Readonl
         <select className="select" value={source} disabled={pending || !!retryCommand} onChange={e => { setSource(e.target.value as Source); setServings(1) }}>{sources.map(item => <option key={item.value} value={item.value}>{item.label}</option>)}</select>
       </label>
       <label className="sheet-field"><span>Porções / pontos drenados</span>
-        <input className="input" type="number" min={1} max={source === 'HUMAN_HARMFUL' ? 4 : ['HUMAN_SAFE','HUMAN_SIP','HUMAN_KILLED'].includes(source) ? 1 : 5} value={servings} disabled={pending || !!retryCommand} onChange={e => setServings(Number(e.target.value))}/>
+        <input className="input" type="number" min={1} max={maxServings} value={servings} disabled={pending || !!retryCommand} onChange={e => setServings(Number(e.target.value))}/>
       </label>
     </div>
     <label className="mt-3 flex items-center gap-2 text-sm"><input type="checkbox" checked={ventrueConfirmed} disabled={pending || !!retryCommand} onChange={e => setVentrueConfirmed(e.target.checked)}/> Alimentação compatível com a preferência Ventrue (confirmação do Narrador)</label>

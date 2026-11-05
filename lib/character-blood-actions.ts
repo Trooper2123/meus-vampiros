@@ -9,7 +9,11 @@ import type { BloodAction } from './vtm-v5/blood-actions'
 
 const ironGullet = (data: Record<string, unknown>) => {
   const merits = Array.isArray(data.vantagens) ? data.vantagens as Record<string, unknown>[] : []
-  return merits.some(item => ['IRON_GULLET','ESTOMAGO_DE_FERRO'].includes(String(item.code ?? item.id ?? '').toUpperCase()))
+  return merits.some(item => {
+    if (!item || typeof item !== 'object') return false
+    const code = item.code ?? item.id
+    return typeof code === 'string' && ['IRON_GULLET','ESTOMAGO_DE_FERRO'].includes(code.toUpperCase())
+  })
 }
 export async function performCharacterBloodAction(actorId: string, id: string, rawAction: unknown, expectedRevision: number, key: string) {
   let action: BloodAction
@@ -20,7 +24,8 @@ export async function performCharacterBloodAction(actorId: string, id: string, r
     character => actorId === character.ownerId || actorId === character.masterId,
     async (character, transaction) => {
       if (!['PLAYER_VAMPIRE','VAMPIRE_NPC'].includes(character.characterType)) throw new CharacterCommandError(422, 'Esta ação exige ficha de vampiro.')
-      if (action.kind === 'FEED' && (action.source === 'HUMAN_KILLED' || character.data.clanCode === 'VENTRUE' || String(character.data.cla ?? '').toLowerCase() === 'ventrue') && actorId !== character.masterId) throw new CharacterCommandError(403, 'Alimentação letal ou restrição Ventrue exige confirmação do Narrador.')
+      const isVentrue = character.data.clanCode === 'VENTRUE' || (typeof character.data.cla === 'string' && character.data.cla.toLowerCase() === 'ventrue')
+      if (action.kind === 'FEED' && (action.source === 'HUMAN_KILLED' || isVentrue) && actorId !== character.masterId) throw new CharacterCommandError(403, 'Alimentação letal ou restrição Ventrue exige confirmação do Narrador.')
       const policy = await getBloodPolicy(character.campaignId)
       const context = character.gameState.bloodContext as BloodContext | undefined
       let effects
@@ -39,7 +44,7 @@ export async function performCharacterBloodAction(actorId: string, id: string, r
       let result
       try {
         result = resolveBloodAction(state, action, effects, () => randomInt(1, 11), {
-          isVentrue: character.data.clanCode === 'VENTRUE' || String(character.data.cla ?? '').toLowerCase() === 'ventrue',
+          isVentrue,
           hasIronGullet: ironGullet(character.data),
           hasAggravatedNightPermission: permission, alreadyMendedAggravated: already,
         })

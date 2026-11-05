@@ -154,8 +154,8 @@ describe('modo de sessão: autorização, projeção e idempotência', () => {
     }
   })
 
-  it('persiste sessões no PostgreSQL isolado com idempotência e revisão', async () => {
-    if (!testDatabaseUrl) { return }
+  it('persiste sessões no PostgreSQL isolado com idempotência e revisão', async (testContext) => {
+    if (!testDatabaseUrl) { testContext.skip(); return }
     vi.stubEnv('NODE_ENV', 'test')
     vi.stubEnv('DATABASE_URL', testDatabaseUrl)
     preparePostgresTest()

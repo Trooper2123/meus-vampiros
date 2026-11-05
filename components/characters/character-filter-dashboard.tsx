@@ -50,11 +50,11 @@ export function CharacterFilterDashboard({
         </button>
       })}
     </section>
-    {filter !== 'all' && <div className="characters-filter-feedback" role="status">
+    {filter !== 'all' && <output className="block characters-filter-feedback">
       <ListFilter className="size-4" aria-hidden="true"/>
       <span>{visibleCount} {visibleCount === 1 ? 'ficha encontrada' : 'fichas encontradas'} em <strong>{cards.find(card => card.id === filter)?.label}</strong>.</span>
       <button type="button" onClick={() => setFilter('all')}>Limpar filtro</button>
-    </div>}
+    </output>}
     {visibleCount === 0 && filter !== 'all' && <p className="characters-filter-empty">Nenhuma ficha corresponde ao filtro selecionado.</p>}
     {children}
   </FilterContext.Provider>

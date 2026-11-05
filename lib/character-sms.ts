@@ -6,7 +6,7 @@ type Role = 'player' | 'narrator'
 type Access = { role: Role; enabled: boolean }
 type Character = { id: string; name: string; character_type: string; user_id: string; status: string; visibility: string }
 const uuid = /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i
-const fail = (status: number, message: string): never => { throw new CharacterCommandError(status, message) }
+function fail(status: number, message: string): never { throw new CharacterCommandError(status, message) }
 export function smsUuid(value: unknown): value is string { return typeof value === 'string' && uuid.test(value) }
 
 let schema: Promise<void> | undefined
