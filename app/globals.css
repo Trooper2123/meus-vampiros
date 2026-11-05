@@ -3126,8 +3126,19 @@ main > .archive-header {
 .session-player-tabs-enhanced button{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-width:0;white-space:normal}
 .session-player-tabs-enhanced button:focus-visible,.session-player-action-buttons button:focus-visible,.session-mobile-panels button:focus-visible{outline:2px solid var(--primary);outline-offset:3px}
 .session-player-unread{display:inline-flex;align-items:center;justify-content:center;min-width:19px;height:19px;padding:0 5px;border-radius:999px;background:var(--primary);color:var(--primary-foreground);font-size:11px;font-weight:700}
-.session-player-center>.session-player-action-dock{margin:12px 0 16px}
+.session-player-center>.session-player-action-dock{margin:16px 0 0}
 .session-player-center>.session-player-action-dock .session-player-action-buttons{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
 .session-player-center>.session-player-action-dock .session-player-action-buttons button{min-width:0}
 @media(max-width:900px){.session-player-tabs-enhanced{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}.session-player-tabs-enhanced button{padding-inline:6px}}
 @media(max-width:480px){.session-player-character-banner{padding:12px}.session-player-banner-select{width:100%}.session-player-tabs-enhanced{grid-template-columns:repeat(2,minmax(0,1fr))}.session-player-center>.session-player-action-dock .session-player-action-buttons{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Match narrator workspace: chat left, hub center, cameras right; quick commands at hub footer. */
+.session-player-master-layout{grid-template-columns:minmax(0,260px) minmax(0,1fr) minmax(0,280px);align-items:start}
+.session-player-master-layout>.session-player-chat{grid-column:1}
+.session-player-master-layout>.session-player-center{grid-column:2;display:flex;flex-direction:column;min-height:60vh;min-width:0}
+.session-player-master-layout>.session-player-cameras{grid-column:3}
+.session-player-hub-heading{margin-bottom:12px}
+.session-player-master-layout .session-player-stage{flex:1;min-width:0}
+.session-player-master-layout .session-player-action-dock{position:sticky;bottom:0;z-index:5;border-top:1px solid var(--border);background:var(--card);padding:12px;border-radius:10px;box-shadow:0 -6px 20px color-mix(in srgb,black 18%,transparent)}
+@media(min-width:701px) and (max-width:1350px){.session-player-master-layout{grid-template-columns:minmax(0,190px) minmax(0,1fr) minmax(0,220px)}}
+@media(max-width:700px){.session-player-master-layout>.session-player-chat,.session-player-master-layout>.session-player-center,.session-player-master-layout>.session-player-cameras{grid-column:auto}.session-player-master-layout .session-player-action-dock{bottom:0;padding:8px}}
