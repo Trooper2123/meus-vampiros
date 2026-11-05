@@ -1,5 +1,7 @@
 'use client'
 
+import { campaignDaysUntil } from '@/lib/campaign-timezone'
+
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 
@@ -7,6 +9,7 @@ type Mission = { id: string; title: string; status: string; dueDate: string | nu
 type Event = { id: string; title: string; eventDate: string | null }
 
 export function CampaignDeadlineReminders({ campaignId }: Readonly<{ campaignId: string }>) {
+  const [timezone, setTimezone] = useState('UTC')
   const [missions, setMissions] = useState<Mission[]>([])
   const [events, setEvents] = useState<Event[]>([])
   useEffect(() => {
@@ -16,13 +19,12 @@ export function CampaignDeadlineReminders({ campaignId }: Readonly<{ campaignId:
       fetch(`/api/campaign-events?campaignId=${encodeURIComponent(campaignId)}`, { cache: 'no-store' }).then(async response => { if (!response.ok) throw new Error('Eventos indisponíveis'); return response.json() }),
     ]).then(results => {
       if (!active) return
-      if (results[0].status === 'fulfilled') setMissions(results[0].value.missions ?? [])
+      if (results[0].status === 'fulfilled') (setMissions(results[0].value.missions ?? []), setTimezone(results[0].value.timezone ?? 'UTC'))
       if (results[1].status === 'fulfilled') setEvents(results[1].value.events ?? [])
     })
     return () => { active = false }
   }, [campaignId])
-  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' })
-  const daysUntil = (date: string) => Math.round((Date.parse(date + 'T12:00:00Z') - Date.parse(today + 'T12:00:00Z')) / 86400000)
+  const daysUntil = (date: string) => campaignDaysUntil(date, timezone)
   const reminders = [
     ...missions.filter(m => m.status === 'ACTIVE').flatMap(m => {
       const dates = [m.dueDate, m.eventDate].filter((date): date is string => Boolean(date))
