@@ -60,8 +60,8 @@ export function SessionReveals({sessionId,active=false}:Readonly<{sessionId:stri
   async function create(event:React.FormEvent){
     event.preventDefault();if(busy){return}setBusy(true);setMessage('')
     const signature=JSON.stringify({title,body});const id=pending.current?.signature===signature?pending.current.id:crypto.randomUUID();pending.current={signature,id}
-    try{await npcJson(url,{action:'CREATE',id,title,body});pending.current=null;setTitle('');setBody('');await mutate();setMessage('Revelação salva como anotação. Adicione imagens abaixo.')}
-    catch(error){setMessage(error instanceof Error?error.message:'Não foi poss?vel salvar a revelação.')}
+    try{await npcJson(url,{action:'CREATE',id,title,body});pending.current=null;setTitle('');setBody('');await mutate();setMessage('Boato ou fofoca salvo como anotação. Adicione imagens abaixo.')}
+    catch(error){setMessage(error instanceof Error?error.message:'Não foi poss?vel salvar o boato ou fofoca.')}
     finally{setBusy(false)}
   }
   async function visibility(id:string,revealed:boolean){
@@ -71,15 +71,15 @@ export function SessionReveals({sessionId,active=false}:Readonly<{sessionId:stri
     finally{setBusy(false)}
   }
   return <section className="flex flex-col gap-4 border border-border bg-card p-5">
-    <h2 className="font-serif text-2xl">Revelações da sessão</h2>
+    <h2 className="font-serif text-2xl">Boatos e Fofocas da sessão</h2>
     {error&&<p role="alert" className="text-sm text-primary">{error.message}</p>}{message&&<output className="block text-sm text-muted-foreground">{message}</output>}
     {data?.canManage&&active&&<form className="flex flex-col gap-4" onSubmit={e=>void create(e)}>
-      <label className="sheet-field"><span>Título da revelação</span><input required maxLength={120} value={title} disabled={busy} onChange={e=>setTitle(e.target.value)}/></label>
-      <label className="sheet-field"><span>Texto da revelação</span><textarea maxLength={20000} value={body} disabled={busy} onChange={e=>setBody(e.target.value)}/></label>
+      <label className="sheet-field"><span>Título do boato ou fofoca</span><input required maxLength={120} value={title} disabled={busy} onChange={e=>setTitle(e.target.value)}/></label>
+      <label className="sheet-field"><span>Texto do boato ou fofoca</span><textarea maxLength={20000} value={body} disabled={busy} onChange={e=>setBody(e.target.value)}/></label>
       <p className="text-sm text-muted-foreground">Salve, adicione imagens e use Revelar nesta sessão quando estiver pronto.</p>
       <button className="button-primary self-start" disabled={busy||!title.trim()} type="submit">Salvar como não revelado</button>
     </form>}
-    {data&&!data.reveals.length&&<p className="text-sm text-muted-foreground">Nenhuma nota ou imagem revelada nesta sessão.</p>}
+    {data&&!data.reveals.length&&<p className="text-sm text-muted-foreground">Nenhum boato ou fofoca registrado nesta sessão.</p>}
     {data?.reveals.map(item=><article key={item.id} className="border border-border p-4">
       <h3 className="font-serif text-xl">{item.snapshot.title}</h3>
       {data.canManage&&<p className="mt-2 text-sm text-muted-foreground">{item.revealed?'Revelado aos jogadores':'Não revelado'}</p>}

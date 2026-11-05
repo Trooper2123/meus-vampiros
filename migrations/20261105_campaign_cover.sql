@@ -1,0 +1,2 @@
+ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS cover_storage_key TEXT;
+ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS cover_updated_at TIMESTAMPTZ;

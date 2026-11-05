@@ -3011,3 +3011,105 @@ main > .archive-header {
 .sms-load-older{align-self:center;border:1px solid #6b3c43;border-radius:20px;background:#211116;padding:7px 15px;color:#e9bab8;font-size:11px}
 .sms-load-older:hover{border-color:#dc5662}
 .sms-load-older:disabled{opacity:.65}
+
+/* Campaign cover upload: responsive controls and bounded preview */
+.campaign-cover-editor{min-width:0}
+.campaign-cover-preview{overflow:hidden;position:relative}
+.campaign-cover-image{display:block;width:100%;height:100%;min-height:86px;max-height:220px;object-fit:cover;border-radius:7px}
+.campaign-cover-actions{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:10px}
+.campaign-cover-actions .button-ghost{display:inline-flex;align-items:center;gap:6px;max-width:100%;white-space:normal;text-align:center}
+.campaign-cover-editor-banner .campaign-cover-actions{justify-content:flex-end;margin-top:0}
+@media(max-width:900px){.campaign-cover-editor-banner .campaign-cover-actions{justify-content:flex-start}}
+
+
+/* BUG-09 / BUG-10: responsive session grid and embedded LiveKit.
+   Keep these overrides after the legacy approved-layout rules. */
+.session-page-shell,.session-page-content,.session-approved-layout{min-width:0;max-width:100%}
+.session-master-shell{width:100%;min-width:0;grid-template-columns:minmax(0,260px) minmax(0,1fr) minmax(0,280px)!important}
+.session-master-shell>.session-chat,.session-master-shell>.session-center,.session-master-shell>.session-cameras{min-width:0;max-width:100%}
+.session-master-shell .session-stage,.session-master-shell .session-hub-grid,.session-master-shell .session-shared-visual{min-width:0}
+.session-video-panel,.session-video-grid,.session-video-grid .lk-video-conference{min-width:0;max-width:100%}
+.session-video-grid .lk-video-conference{height:auto;min-height:260px;overflow:hidden}
+.session-video-grid .lk-grid-layout,.session-video-grid .lk-focus-layout,.session-video-grid .lk-participant-tile{min-width:0;max-width:100%}
+.session-video-grid video{display:block;width:100%;height:auto;max-height:320px;object-fit:contain}
+.session-livekit-video-with-external-chat .lk-chat,.session-livekit-video-with-external-chat .lk-chat-toggle{display:none!important}
+.session-chat-mount:has(.session-livekit-chat)>.session-chat-placeholder{display:none}
+.session-master-shell>.session-chat>.session-chat-mount{min-height:0;overflow:hidden}
+.session-livekit-chat{min-height:0;max-height:min(650px,calc(100dvh - 220px));overflow:hidden}
+.session-livekit-chat-log{min-height:0!important;max-height:none;overflow-y:auto;overscroll-behavior:contain}
+.session-livekit-compose{flex:none;position:sticky;bottom:0;background:#160b0d}
+@media(max-width:1350px){
+ .session-master-shell{grid-template-columns:minmax(0,240px) minmax(0,1fr)!important}
+ .session-master-shell>.session-cameras{grid-column:1/-1;position:static!important;min-height:0}
+ .session-master-shell>.session-chat{position:static!important;min-height:0}
+ .session-master-shell>.session-chat>.session-chat-mount{min-height:0}
+ .session-master-shell>.session-center{min-height:0}
+ .session-master-shell>.session-cameras .session-video-grid{max-width:100%}
+}
+@media(max-width:900px){
+ .session-master-shell{grid-template-columns:minmax(0,1fr)!important}
+ .session-master-shell>.session-chat,.session-master-shell>.session-center,.session-master-shell>.session-cameras{grid-column:1;min-height:0}
+ .session-master-shell>.session-chat{position:static!important}
+ .session-master-shell>.session-chat>.session-chat-mount{min-height:0}
+ .session-livekit-chat{max-height:420px}
+ .session-livekit-chat-log{min-height:120px!important}
+ .session-hub-grid{grid-template-columns:minmax(0,1fr)!important}
+ .session-free-roll>div{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .session-narrator-topbar,.session-active-header{flex-wrap:wrap;gap:12px}
+}
+@media(max-width:600px){
+ .session-page-content{padding:12px!important}
+ .session-free-roll>div{grid-template-columns:minmax(0,1fr)}
+ .session-video-grid video{max-height:240px}
+}
+
+
+/* BUG-09/10 follow-up: tablets retain the camera column on the right. */
+.session-mobile-panels{display:none}
+.session-player-columns{display:grid;grid-template-columns:minmax(0,260px) minmax(0,1fr) minmax(0,280px);gap:14px;align-items:start;min-width:0}
+.session-player-columns>.session-player-chat,.session-player-columns>.session-player-center,.session-player-columns>.session-player-cameras{min-width:0;max-width:100%}
+.session-player-columns>.session-player-cameras{grid-column:3}
+.session-player-columns>.session-player-chat{grid-column:1}
+.session-player-columns>.session-player-center{grid-column:2}
+.session-player-columns .session-player-stage{min-width:0}
+.session-player-columns .session-player-cameras .session-video-grid{max-width:100%}
+@media(min-width:701px) and (max-width:1350px){
+ .session-master-shell{grid-template-columns:minmax(0,190px) minmax(0,1fr) minmax(0,220px)!important;gap:10px!important}
+ .session-master-shell>.session-chat{grid-column:1;position:static!important;min-height:0}
+ .session-master-shell>.session-center{grid-column:2;min-height:0}
+ .session-master-shell>.session-cameras{grid-column:3;position:static!important;min-height:0}
+ .session-master-shell .session-hub-grid{grid-template-columns:minmax(0,1fr)!important}
+ .session-master-shell .session-shared-visual{grid-column:1!important}
+ .session-player-columns{grid-template-columns:minmax(0,190px) minmax(0,1fr) minmax(0,220px);gap:10px}
+ .session-page-content{padding-inline:12px!important}
+ .session-column-heading,.session-center-heading,.session-player-column-header{padding:10px}
+ .session-video-panel{padding:6px}
+}
+@media(max-width:700px){
+ .session-mobile-panels{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin:8px 0 12px}
+ .session-mobile-panels button{min-width:0;border:1px solid var(--border);border-radius:7px;padding:11px 6px;background:var(--card);color:var(--foreground);font-size:12px;overflow-wrap:anywhere}
+ .session-mobile-panels button.is-active{border-color:var(--primary);background:color-mix(in srgb,var(--primary) 20%,var(--card))}
+ .session-master-shell,.session-player-columns{display:block!important;position:relative;min-width:0}
+ .session-master-shell>.session-chat,.session-master-shell>.session-center,.session-master-shell>.session-cameras,
+ .session-player-columns>.session-player-chat,.session-player-columns>.session-player-center,.session-player-columns>.session-player-cameras{min-width:0;width:100%;max-width:100%;grid-column:auto}
+ /* Off-screen rather than display:none: LiveKit provider and tracks remain mounted
+    while the user views a different panel. */
+ .session-master-shell[data-mobile-panel]:not([data-mobile-panel="chat"])>.session-chat,
+ .session-master-shell[data-mobile-panel]:not([data-mobile-panel="center"])>.session-center,
+ .session-master-shell[data-mobile-panel]:not([data-mobile-panel="cameras"])>.session-cameras,
+ .session-player-columns[data-mobile-panel]:not([data-mobile-panel="chat"])>.session-player-chat,
+ .session-player-columns[data-mobile-panel]:not([data-mobile-panel="center"])>.session-player-center,
+ .session-player-columns[data-mobile-panel]:not([data-mobile-panel="cameras"])>.session-player-cameras{
+   position:absolute!important;left:-10000px!important;top:0!important;
+   width:320px!important;max-width:320px!important;height:1px!important;
+   overflow:hidden!important;opacity:0;pointer-events:none;
+ }
+ .session-master-shell[data-mobile-panel="chat"]>.session-chat,
+ .session-master-shell[data-mobile-panel="center"]>.session-center,
+ .session-master-shell[data-mobile-panel="cameras"]>.session-cameras,
+ .session-player-columns[data-mobile-panel="chat"]>.session-player-chat,
+ .session-player-columns[data-mobile-panel="center"]>.session-player-center,
+ .session-player-columns[data-mobile-panel="cameras"]>.session-player-cameras{position:relative!important;left:auto!important;opacity:1;overflow:visible}
+ .session-livekit-chat{max-height:min(65dvh,600px)}
+ .session-livekit-chat-log{min-height:120px!important}
+}

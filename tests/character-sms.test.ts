@@ -18,7 +18,7 @@ vi.mock('@/lib/character-commands', () => ({
   },
 }))
 
-import { smsMessages, smsSend, smsStart, smsSettings, setSmsSettings, smsUuid } from '@/lib/character-sms'
+import { smsMessages, smsSend, smsStart, smsSettings, setSmsSettings, smsUuid, smsContacts } from '@/lib/character-sms'
 
 const campaignId = '11111111-1111-4111-8111-111111111111'
 const threadId = '22222222-2222-4222-8222-222222222222'
@@ -35,6 +35,7 @@ beforeEach(() => {
   mocks.ensure.mockResolvedValue(undefined)
   mocks.connect.mockResolvedValue({ query: mocks.clientQuery, release: mocks.release })
   mocks.clientQuery.mockReset()
+
 })
 
 describe('SMS persistente e permissões', () => {
@@ -143,6 +144,34 @@ describe('SMS persistente e permissões', () => {
     const deliveries=mocks.clientQuery.mock.calls.filter(([statement])=>String(statement).includes('INSERT INTO character_message_deliveries'))
     expect(deliveries).toHaveLength(3)
     expect(deliveries.some(([,args])=>(args as unknown[])[1]===outsider && (args as unknown[])[2]==='NARRATOR_AS_CHARACTER')).toBe(true)
+  })
+
+  it('lista NPCs narrativos somente para o Narrador, sem marcá-los como remetentes válidos', async () => {
+    const npcId='77777777-7777-4777-8777-777777777777'
+    mocks.clientQuery.mockImplementation(async (statement:string) => {
+      if(statement.includes('master_user_id,character_sms_enabled')) return result([{master_user_id:'narrator',character_sms_enabled:true}])
+      if(statement.includes('FROM campaign_npcs cn')) return result([{id:npcId,name:'Informante',campaignNpcId:recipientId,sheetType:'SIMPLE'}])
+      if(statement.includes("to_regclass('coteries')")) return result([{ready:false}])
+      return result()
+    })
+    const contacts=await smsContacts(campaignId,'narrator')
+    expect(contacts.npcContacts).toEqual([{id:npcId,name:'Informante',campaignNpcId:recipientId,sheetType:'SIMPLE',canMessage:false}])
+    const query=mocks.clientQuery.mock.calls.find(([statement])=>String(statement).includes('FROM campaign_npcs cn'))
+    expect(query?.[0]).toContain("n.status='ACTIVE'")
+    expect(query?.[0]).toContain('NOT n.is_template')
+    expect(query?.[1]).toEqual([campaignId])
+  })
+
+  it('não consulta nem expõe NPCs narrativos ao jogador',async()=>{
+    mocks.clientQuery.mockImplementation(async (statement:string)=>{
+      if(statement.includes('master_user_id,character_sms_enabled'))return result([{master_user_id:'narrator',character_sms_enabled:true}])
+      if(statement.includes('SELECT 1 FROM characters WHERE campaign_id='))return result([{member:1}])
+      if(statement.includes("to_regclass('coteries')"))return result([{ready:false}])
+      return result()
+    })
+    const contacts=await smsContacts(campaignId,'player')
+    expect(contacts.npcContacts).toEqual([])
+    expect(mocks.clientQuery.mock.calls.some(([statement])=>String(statement).includes('FROM campaign_npcs cn'))).toBe(false)
   })
 
 })

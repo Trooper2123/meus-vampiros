@@ -1,3 +1,16 @@
+## [2026-11-05 19:53 BRT] - fix - Tipagem do fuso horário de missões
+
+- Arquivo principal: `lib/campaign-missions.ts`.
+- Preserva a validação do fuso e informa à API `Intl.DateTimeFormat` que o valor já foi validado como string.
+- Validação: `npx tsc --noEmit` aprovado.
+
+## [2026-11-05 19:08 BRT] - fix - Paginação e filtros de notas sob carga
+
+- Arquivos principais: `lib/notes.ts` e `tests/notes.test.ts`.
+- Busca SQL passa a tratar `%` e `_` como texto literal; listagem de revelações ignora personagens excluídos.
+- Teste integrado cria 108 notas temporárias no schema local isolado, valida paginação, total, filtro por marcador, busca e privacidade, e remove somente os IDs criados.
+- Validação: `pnpm exec vitest run tests/notes.test.ts` (16 testes aprovados); `npx tsc --noEmit` aprovado; `git diff --check` aprovado.
+
 ## [2026-11-03 21:24 BRT] - fix - Tipos de SMS, Awake e Havens de coteries
 
 - Arquivos: `lib/character-sms.ts`, `lib/coterie-service.ts`, `tests/character-awake-individual.test.ts` e `tests/character-sms.test.ts`.
@@ -1808,3 +1821,9 @@ Cada entrada deve incluir data, horÃ¡rio (BRT), tipo e resumo do que foi feito
 - Corrige os erros de tipos do workspace e do componente LiveKit; restringe a publicação a câmera e microfone no token, além de ocultar o botão de compartilhamento de tela.
 - Testa a proteção da rota de migração e o escopo de publicação do token LiveKit.
 - Validação: 24 testes focados, TypeScript, lint (0 erros), build e auditoria de dependências de produção aprovados.
+## [2026-11-05 00:00 BRT] - fix - Limitar consultas da listagem de anotações e testes Vitest
+
+- Arquivos: `lib/notes.ts`, `vitest.config.ts`.
+- A listagem filtra acesso, campanha, busca, marcador e vínculo no PostgreSQL antes da paginação; limita candidatos carregados e exclui worktrees aninhados da descoberta padrão.
+- Validação: pendente nesta alteração.
+

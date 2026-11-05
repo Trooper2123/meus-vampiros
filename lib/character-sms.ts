@@ -176,7 +176,18 @@ export async function smsContacts(campaignId: string, actorId: string, view?: 'p
          AND ($3::boolean OR (character_type='PLAYER_VAMPIRE' AND status='APPROVED')
            OR (character_type<>'PLAYER_VAMPIRE' AND visibility='PLAYER_VISIBLE'))
        ORDER BY name`,[campaignId,actorId,a.role==='narrator'])
-    return { ...a, characters:characters.rows, coteries: await smsAvailableCoteries(client,campaignId,actorId,a.role) }
+    // Narrative NPCs are independent of characters and cannot be passed as
+    // recipientCharacterId until message participants support NPC identities.
+    const npcContacts = a.role === 'narrator'
+      ? (await client.query<{id:string;name:string;campaignNpcId:string;sheetType:string}>(`
+          SELECT n.id,n.name,cn.id AS "campaignNpcId",n.sheet_type AS "sheetType"
+          FROM campaign_npcs cn
+          JOIN npc_definitions n ON n.id=cn.npc_id
+          WHERE cn.campaign_id=$1::uuid AND n.status='ACTIVE' AND NOT n.is_template
+          ORDER BY n.name,n.id
+        `,[campaignId])).rows.map(npc=>({...npc,canMessage:false as const}))
+      : []
+    return { ...a, characters:characters.rows, npcContacts, coteries: await smsAvailableCoteries(client,campaignId,actorId,a.role) }
   } finally { client.release() }
 }
 

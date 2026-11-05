@@ -1,9 +1,11 @@
 import { handleUpload,type HandleUploadBody } from '@vercel/blob/client'
+import { configurePrivateBlobToken } from '@/lib/private-blob-token'
 import { notesActor,notesBody,notesFailure,notesResponse } from '@/lib/notes-http'
 import { CharacterCommandError } from '@/lib/character-commands'
 import { authorizeCampaignHandoutUpload,MAX_SESSION_HANDOUT_BYTES } from '@/lib/session-handouts'
 
 export async function POST(request:Request,context:{params:Promise<{id:string}>}){try{
+  configurePrivateBlobToken()
   const actor=await notesActor(request,true),campaignId=(await context.params).id,body=await notesBody(request)
   if(body.type!=='blob.generate-client-token')throw new CharacterCommandError(400,'Pedido de upload inválido.')
   const result=await handleUpload({request,body:body as unknown as HandleUploadBody,onBeforeGenerateToken:async(pathname,payload)=>{
