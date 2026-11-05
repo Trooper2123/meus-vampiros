@@ -58,6 +58,7 @@ function PlayerQuickActions({characterId,sessionId}:Readonly<{characterId:string
 
 export function SessionPlayerWorkspace({campaignId,actorId,sessionId,characters,campaignName}:Readonly<{campaignId:string;actorId:string;sessionId:string|null;characters:Character[];campaignName?:string|null}>) {
   const [tab,setTab]=useState<PlayerTab>('sheet')
+  const [mobilePanel,setMobilePanel]=useState<'center'|'chat'|'cameras'>('center')
   const [selected,setSelected]=useState(characters[0]?.id??'')
   const {data:smsInbox}=useSWR<{enabled:boolean;threads:Array<{unreadCount:number}>}>(`/api/campaigns/${campaignId}/character-sms?view=player`,read,{refreshInterval:10000})
   const smsUnread=smsInbox?.enabled?smsInbox.threads.reduce((sum,thread)=>sum+Number(thread.unreadCount??0),0):0
@@ -71,7 +72,8 @@ export function SessionPlayerWorkspace({campaignId,actorId,sessionId,characters,
   ]
   return <div className="session-player-approved" aria-label="Modo Sessão do Jogador">
     <div className="session-player-title"><div><p className="eyebrow">Arquivos da Noite · Visão do Jogador</p><h1>{campaignName ? `Sessão: ${campaignName}` : "Minha Sessão"}</h1><p>Ficha, diário e recursos da crônica sem sair da mesa.</p></div><div className="session-player-title-actions"><span className="session-player-status">{sessionId?<><i/>Sessão em andamento</> :'Aguardando início da sessão'}</span><Link className="session-player-exit" href="/characters"><LogOut className="size-4"/>Sair da Sessão</Link></div></div>
-    <div className="session-player-columns">
+    <nav className="session-mobile-panels" aria-label="Selecionar painel da sessão">{[{id:'center',label:'Ficha e recursos'},{id:'chat',label:'Chat'},{id:'cameras',label:'Câmeras'}].map(item=><button type="button" key={item.id} aria-pressed={mobilePanel===item.id} className={mobilePanel===item.id?'is-active':''} onClick={()=>setMobilePanel(item.id as 'center'|'chat'|'cameras')}>{item.label}</button>)}</nav>
+    <div className="session-player-columns" data-mobile-panel={mobilePanel}>
       <aside className="session-player-chat" aria-label="Chat da sessão">
         <div className="session-player-column-header"><MessageCircle className="size-5"/><h2>Chat da Sessão</h2></div>
         <div id="session-player-livekit-chat" className="session-chat-mount">
