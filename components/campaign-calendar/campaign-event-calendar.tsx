@@ -1,5 +1,7 @@
 'use client'
 
+import { campaignDaysUntil } from '@/lib/campaign-timezone'
+
 import Link from 'next/link'
 import { Plus } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
@@ -17,6 +19,7 @@ function eventMonth(event: CampaignEvent) {
 }
 
 export function CampaignEventCalendar({ campaignId, master, config }: Readonly<{ campaignId: string; master: boolean; config: CampaignCalendarConfig }>) {
+  const [timezone, setTimezone] = useState('UTC')
   const [missionLinks, setMissionLinks] = useState<Array<{id:string;title:string;campaignEventId:string|null}>>([])
   const [events, setEvents] = useState<CampaignEvent[]>([])
   const [yearFilter, setYearFilter] = useState('all')
@@ -40,13 +43,12 @@ export function CampaignEventCalendar({ campaignId, master, config }: Readonly<{
     let active = true
     void fetch(`/api/campaigns/${encodeURIComponent(campaignId)}/missions`, { cache: 'no-store' })
       .then(async response => { if (!response.ok) throw new Error('Missões indisponíveis'); return response.json() })
-      .then(data => { if (active) setMissionLinks(data.missions ?? []) })
+      .then(data => { if (active) (setMissionLinks(data.missions ?? []), setTimezone(data.timezone ?? 'UTC')) })
       .catch(() => { if (active) setMissionLinks([]) })
     return () => { active = false }
   }, [campaignId])
 
-  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' })
-  const daysUntil = (date: string) => Math.round((Date.parse(date + 'T12:00:00Z') - Date.parse(today + 'T12:00:00Z')) / 86400000)
+  const daysUntil = (date: string) => campaignDaysUntil(date, timezone)
   const upcoming = events.filter(event => event.eventDate && daysUntil(event.eventDate) >= 0 && daysUntil(event.eventDate) <= 7)
   useEffect(() => {
     if (loading || events.length === 0) return
