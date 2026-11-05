@@ -149,6 +149,9 @@ export async function ensureAllTables() {
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
   );
+  ALTER TABLE notes ADD COLUMN IF NOT EXISTS marker VARCHAR(80);
+  CREATE INDEX IF NOT EXISTS idx_notes_campaign_marker ON notes(campaign_id, marker);
+  CREATE INDEX IF NOT EXISTS idx_notes_search_lower_title ON notes((lower(title)));
   CREATE INDEX IF NOT EXISTS notes_author_updated_idx ON notes (author_user_id, updated_at DESC);
   CREATE INDEX IF NOT EXISTS notes_campaign_updated_idx ON notes (campaign_id, updated_at DESC);
   CREATE TABLE IF NOT EXISTS note_requests (
