@@ -1,16 +1,17 @@
 'use client'
 
+import { CharacterSms } from '@/components/character-sms/character-sms'
 import { useState } from 'react'
 import Link from 'next/link'
 import useSWR from 'swr'
-import { BookOpen, CalendarDays, Download, FileText, FolderKanban, FolderOpen, Home, NotebookPen, Play, ShieldAlert, Users } from 'lucide-react'
+import { BookOpen, CalendarDays, Download, FileText, FolderKanban, FolderOpen, Home, NotebookPen, Play, ShieldAlert, Users, MessageSquareText } from 'lucide-react'
 import { CampaignTools } from '@/components/campaign-calendar/campaign-tools'
 import { NotesPanel } from '@/components/notes/notes-panel'
 import type { PlayerCampaign } from '@/lib/player-campaigns'
 import type { CampaignEvent } from '@/lib/types/campaign-event'
 import type { PlayerHandout } from '@/lib/player-handouts'
 
-type Tab = 'overview'|'files'|'notes'|'events'|'calendar'|'coterie'|'projects'
+type Tab = 'overview'|'files'|'notes'|'events'|'calendar'|'coterie'|'projects'|'messages'
 type SessionResponse = {session?:{id:string;status:'ACTIVE'|'CLOSED'}|null}
 type NotePreview = {id:string;title:string;updatedAt:string;marker?:string|null}
 const fetcher = async (url:string) => {
@@ -38,6 +39,8 @@ export function PlayerCampaignPortal({campaign,actorId}:Readonly<{campaign:Playe
   const {data:eventsData,error:eventsError}=useSWR<{events:CampaignEvent[]}>(`/api/campaign-events?campaignId=${campaign.id}`,fetcher,{refreshInterval:60000})
   const {data:notesData}=useSWR<{notes:NotePreview[]}>(`/api/notes?page=1&campaignId=${campaign.id}`,fetcher,{refreshInterval:30000})
   const {data:sessionData}=useSWR<SessionResponse>(`/api/campaigns/${campaign.id}/sessions`,fetcher,{refreshInterval:10000})
+  const {data:smsInbox}=useSWR<{enabled:boolean;threads:Array<{unreadCount:number}>}>(`/api/campaigns/${campaign.id}/character-sms?view=player`,fetcher,{refreshInterval:10000})
+  const smsUnread=smsInbox?.enabled?smsInbox.threads.reduce((sum,thread)=>sum+Number(thread.unreadCount??0),0):0
   const active = sessionData?.session?.status === 'ACTIVE'
   const files = filesData?.files ?? []
   const events = (eventsData?.events ?? []).filter(e=>e.visibility==='everyone')
@@ -51,6 +54,7 @@ export function PlayerCampaignPortal({campaign,actorId}:Readonly<{campaign:Playe
     {id:'calendar' as const,label:'Calendário',Icon:CalendarDays},
     {id:'coterie' as const,label:'Coterie',Icon:Users},
     {id:'projects' as const,label:'Projetos',Icon:FolderKanban},
+    {id:'messages' as const,label:smsUnread>0?`Mensagens (${smsUnread})`:'Mensagens',Icon:MessageSquareText},
   ]
   return <div className="player-portal-workspace">
     <div className="player-portal-campaign-banner">
@@ -103,6 +107,7 @@ export function PlayerCampaignPortal({campaign,actorId}:Readonly<{campaign:Playe
       {eventsData&&events.length===0&&<p className="player-portal-muted">Nenhum evento visível nesta campanha.</p>}
       {events.map(event=><div className="player-portal-list-row" key={event.id}><CalendarDays className="size-5"/><div><strong>{event.title}</strong><small>{event.eventDate ? niceDate(event.eventDate) : `Crônica: ${event.fictionalMonth ?? ''} ${event.fictionalYear ?? ''}`}{event.eventTime?` · ${event.eventTime}`:''}</small>{event.description&&<p>{event.description}</p>}</div></div>)}
     </PortalPanel>}
+    {tab==='messages'&&<CharacterSms campaignId={campaign.id} mode="player"/>}
     {tab==='calendar'&&<PortalPanel title="Calendários e Disponibilidade" subtitle="Consulte o calendário da campanha e marque sua disponibilidade para encontros." icon={CalendarDays}><CampaignTools campaignId={campaign.id} master={false}/></PortalPanel>}
     {tab==='coterie'&&<PortalPanel title="Coterie" subtitle="A estrutura coletiva dos personagens desta crônica." icon={Users}>
       <div className="player-portal-module-pending" role="status">

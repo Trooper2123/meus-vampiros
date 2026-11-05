@@ -1,0 +1,39 @@
+'use client'
+
+import { useEffect,useRef,useState } from 'react'
+import { upload } from '@vercel/blob/client'
+import useSWR from 'swr'
+import { FileText,Share2,Trash2,Upload } from 'lucide-react'
+
+type Handout={id:string;title:string;fileName:string;contentType:string|null;sizeBytes:number;shareMode:'PRIVATE'|'ALL'|'SELECTED';revision:number;createdAt:string;recipientActorIds?:string[];url:string}
+type Snapshot={canManage:boolean;recipients:{actor_id:string;name:string}[];handouts:Handout[]}
+const readHandouts=async(url:string)=>{const response=await fetch(url,{cache:'no-store'});const data=await response.json();if(!response.ok)throw new Error(data.error??'Não foi possível carregar os handouts.');return data}
+export function SessionHandouts({campaignId}:{campaignId:string}){
+  const endpoint=`/api/campaigns/${campaignId}/handouts`,{data,error,mutate}=useSWR<Snapshot>(endpoint,readHandouts,{refreshInterval:5000})
+  const [file,setFile]=useState<File|null>(null),[uploading,setUploading]=useState(false),[feedback,setFeedback]=useState(''),[selected,setSelected]=useState<Handout|null>(null),[mode,setMode]=useState<Handout['shareMode']>('PRIVATE'),[recipients,setRecipients]=useState<string[]>([])
+  const pending=useRef<{id:string;key:string;fileName:string}|null>(null)
+  const uploadKey=useRef<string|null>(null)
+  const shareDialog=useRef<HTMLDialogElement>(null)
+  useEffect(()=>{if(selected&&!shareDialog.current?.open)shareDialog.current?.showModal();else if(!selected&&shareDialog.current?.open)shareDialog.current.close()},[selected])
+  async function post(url:string,body:object,method='POST'){const response=await fetch(url,{method,headers:{'content-type':'application/json'},body:JSON.stringify(body)});const result=await response.json();if(!response.ok)throw new Error(result.error??'Não foi possível concluir a operação.');return result}
+  async function submitUpload(event:React.FormEvent){event.preventDefault();if(!file||uploading)return;setUploading(true);setFeedback('')
+    try{
+      if(!pending.current){uploadKey.current??=crypto.randomUUID();const prepared=await post(endpoint,{action:'PREPARE',fileName:file.name,idempotencyKey:uploadKey.current});pending.current={id:prepared.uploadId,key:uploadKey.current,fileName:file.name}}
+      try{await post(endpoint,{action:'CONFIRM',uploadId:pending.current.id})}catch(confirmError){
+        if(confirmError instanceof Error&&!confirmError.message.includes('não está disponível'))throw confirmError
+        const prepared=pending.current;await upload(prepared.fileName,file,{access:'private',handleUploadUrl:`/api/campaigns/${campaignId}/handouts/upload`,clientPayload:JSON.stringify({uploadId:prepared.id}),contentType:file.type||'application/octet-stream'});await post(endpoint,{action:'CONFIRM',uploadId:prepared.id})
+      }
+      pending.current=null;uploadKey.current=null;setFile(null);await mutate();setFeedback('Handout enviado e mantido privado até o compartilhamento.')
+    }catch(cause){setFeedback(cause instanceof Error?cause.message:'Não foi possível enviar o arquivo.')}finally{setUploading(false)}
+  }
+  async function share(item:Handout){try{await post(`/api/handouts/${item.id}/share`,{shareMode:mode,recipientActorIds:mode==='SELECTED'?recipients:[],expectedRevision:item.revision},'PATCH');setSelected(null);await mutate()}catch(cause){setFeedback(cause instanceof Error?cause.message:'Não foi possível compartilhar o arquivo.')}}
+  async function remove(item:Handout){if(!window.confirm(`Remover “${item.fileName}” e revogar o acesso?`))return;try{await post(`/api/handouts/${item.id}`,{},'DELETE');await mutate()}catch(cause){setFeedback(cause instanceof Error?cause.message:'Não foi possível remover o arquivo.')}}
+  return <div className="session-handouts">
+    {data?.canManage&&<form onSubmit={event=>void submitUpload(event)} className="session-handout-upload"><label className="sheet-field"><span>Adicionar arquivo · limite configurado no servidor</span><input type="file" disabled={uploading} onChange={event=>setFile(event.target.files?.[0]??null)}/></label><button className="button-primary" type="submit" disabled={!file||uploading}><Upload className="size-4" aria-hidden="true"/>{uploading?'Enviando…':'Adicionar arquivo'}</button></form>}
+    {feedback&&<p role="status" className="mt-3 text-sm text-muted-foreground">{feedback}</p>}{error&&<p role="alert" className="mt-3 text-sm text-primary">{error.message}</p>}{!data&&!error&&<p role="status" className="mt-4 text-sm text-muted-foreground">Carregando arquivos…</p>}
+    {data&&<div className="session-handout-folders"><section><h3 className="font-serif text-xl">{data.canManage?'Mestre':'Seus handouts'}</h3><ul className="mt-3 grid gap-2">{data.handouts.map(item=><HandoutRow key={item.id} item={item} canManage={data.canManage} onShare={()=>{setSelected(item);setMode(item.shareMode);setRecipients(item.recipientActorIds??[])}} onDelete={()=>void remove(item)}/>)}</ul></section>{data.canManage&&data.recipients.map(person=><section key={person.actor_id}><h3 className="font-serif text-xl">{person.name}</h3><ul className="mt-3 grid gap-2">{data.handouts.filter(item=>item.shareMode==='SELECTED'&&item.recipientActorIds?.includes(person.actor_id)).map(item=><HandoutRow key={`${person.actor_id}:${item.id}`} item={item} canManage onShare={()=>{setSelected(item);setMode(item.shareMode);setRecipients(item.recipientActorIds??[])}} onDelete={()=>void remove(item)}/>)}</ul></section>)}</div>}
+    {data?.handouts.length===0&&<p className="mt-5 text-sm text-muted-foreground">Nenhum handout compartilhado com você.</p>}
+    <dialog ref={shareDialog} className="session-handout-share" aria-labelledby="handout-share-title" onClose={()=>setSelected(null)}><h3 id="handout-share-title" className="font-serif text-xl">Compartilhar {selected?.fileName}</h3><label className="sheet-field mt-4"><span>Acesso</span><select className="select" value={mode} onChange={event=>setMode(event.target.value as Handout['shareMode'])}><option value="PRIVATE">Somente Narrador</option><option value="ALL">Todos os jogadores</option><option value="SELECTED">Jogadores selecionados</option></select></label>{mode==='SELECTED'&&<fieldset className="mt-3 grid gap-2"><legend className="text-sm">Destinatários</legend>{data?.recipients.map(person=><label key={person.actor_id} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={recipients.includes(person.actor_id)} onChange={event=>setRecipients(current=>event.target.checked?[...current,person.actor_id]:current.filter(id=>id!==person.actor_id))}/>{person.name}</label>)}</fieldset>}<div className="mt-5 flex gap-3"><button type="button" className="button-primary" autoFocus onClick={()=>selected&&void share(selected)}>Salvar acesso</button><button type="button" className="button-ghost" onClick={()=>setSelected(null)}>Cancelar</button></div></dialog>
+  </div>
+}
+function HandoutRow({item,canManage,onShare,onDelete}:{item:Handout;canManage:boolean;onShare:()=>void;onDelete:()=>void}){return <li className="session-handout-row"><FileText className="size-5 text-primary" aria-hidden="true"/><a href={item.url} className="min-w-0 flex-1" target="_blank" rel="noopener noreferrer"><span className="block truncate text-sm">{item.fileName}</span><span className="text-xs text-muted-foreground">{item.shareMode==='ALL'?'Mesa inteira':item.shareMode==='PRIVATE'?'Privado do Narrador':'Jogadores selecionados'} · {(item.sizeBytes/1048576).toFixed(1)} MB</span></a>{canManage&&<><button type="button" className="button-ghost" aria-label={`Alterar compartilhamento de ${item.fileName}`} onClick={onShare}><Share2 className="size-4" aria-hidden="true"/></button><button type="button" className="button-ghost" aria-label={`Remover ${item.fileName}`} onClick={onDelete}><Trash2 className="size-4" aria-hidden="true"/></button></>}</li>}

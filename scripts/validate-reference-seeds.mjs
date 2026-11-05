@@ -47,7 +47,7 @@ const roles = new Set(['ALLY','NEUTRAL','RIVAL','ANTAGONIST','EXTRA','CUSTOM']);
 for (const entry of generic.entries) {
   const d = entry.data;
   check(entry.origin === 'GENERIC_TEMPLATE' && entry.rulesStatus === 'ORIGINAL_HOME_BREW', `${entry.id}: generic origin missing`);
-  check(d && d.sheetType === 'INTERMEDIATE', `${entry.id}: wrong sheet type`);
+  check(d?.sheetType === 'INTERMEDIATE', `${entry.id}: wrong sheet type`);
   check(creatures.has(d?.creatureType) && roles.has(d?.role), `${entry.id}: invalid creature or role`);
   check(typeof d?.name === 'string' && d.name.trim(), `${entry.id}: name missing`);
   check(Number.isInteger(d?.threatLevel) && d.threatLevel >= 1 && d.threatLevel <= 7, `${entry.id}: invalid threat`);

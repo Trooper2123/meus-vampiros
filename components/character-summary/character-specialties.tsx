@@ -132,7 +132,7 @@ const response = await fetch(endpoint, { method: 'POST', headers: { 'content-typ
     try {
       let current = data
       if (kind === 'GRANT' || kind === 'PURCHASE') {
-        async function prepareSpecialtySkills(validation: { valid: boolean; skills: Record<string,number>; issues: SkillValidationIssue[] },hasUnsavedSkills: boolean,onBeforeSubmit: (() => Promise<string|null>)|undefined,current: SpecialtyData,endpoint: string,kind: string,grantId: string,selectedSkill: string) {
+        async function prepareSpecialtySkills() {
   if(!validation.valid) { throw new Error('Revise os pontos das habilidades antes de continuar.') }
   if(hasUnsavedSkills&&(!onBeforeSubmit||!await onBeforeSubmit())) { throw new Error('Não foi possível salvar as habilidades. A especialidade não foi enviada.') }
   current=await fetchSpecialties(endpoint)
@@ -141,7 +141,7 @@ const response = await fetch(endpoint, { method: 'POST', headers: { 'content-typ
   if(!current.skillValidation.valid||!allowed.some(option => option.skillId===selectedSkill)) { throw new Error('Esta habilidade não está disponível para a seleção atual. Revise a ficha.') }
   return current
 }
-current=await prepareSpecialtySkills(validation,hasUnsavedSkills,onBeforeSubmit,current,endpoint,kind,grantId,selectedSkill)
+current=await prepareSpecialtySkills()
       }
       const choice = specialtyId ? { specialtyId } : { skillId: selectedSkill, name: name.trim() }
       const grantChoice = !specialtyId && kind === 'GRANT' ? { grantId } : {}

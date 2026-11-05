@@ -28,8 +28,9 @@ export function SheetMediaPanel({subjectType,subjectId,campaignId,compact=false}
     }
     reset();setMessage('Imagem salva.');await mutate().catch(()=>setMessage('Imagem salva. Não foi possível atualizar a lista; recarregue a página.'))
   }catch(error){setMessage(error instanceof Error?error.message:'Não foi possível salvar a imagem.')}finally{setBusy(false)}
+  }
 
-async function saveImageUpload() {
+  async function saveImageUpload() {
     let uploadId=pending
     if(!uploadId) {
       if(!file) { throw new Error('Escolha uma imagem.')} 
@@ -45,11 +46,11 @@ async function saveImageUpload() {
     }
     await json('/api/sheet-media',{ action: 'CONFIRM',uploadId })
   }
-}
   async function remove(item:SheetMediaView){if(!window.confirm('Remover esta imagem? O acesso será revogado.')){ return; }setBusy(true);try{await json(`/api/sheet-media/${item.id}`,{expectedRevision:item.revision},'DELETE');if(editing?.id===item.id){reset()}setMessage('Imagem removida.');await mutate().catch(()=>setMessage('Imagem removida. Não foi possível atualizar a lista; recarregue a página.'))}catch(error){setMessage(error instanceof Error?error.message:'Não foi possível remover a imagem.')}finally{setBusy(false)}}
   const portrait=data?.portrait
-  return <section className="flex flex-col gap-4" aria-label={isNote?'Imagens da anotação':compact?'Retrato da ficha':'Galeria da ficha'}>
-    {!data&&!error&&<p role="status" className="text-sm text-muted-foreground">Carregando imagens...</p>}
+  const galleryLabel=compact?'Retrato da ficha':'Galeria da ficha'
+  return <section className="flex flex-col gap-4" aria-label={isNote?'Imagens da anotação':galleryLabel}>
+    {!data&&!error&&<output className="block text-sm text-muted-foreground">Carregando imagens...</output>}
     {!isNote&&(portrait?<div className="flex flex-col gap-3 sm:flex-row sm:items-center"><img src={portrait.url} alt={portrait.title} className="h-48 w-48 border border-border object-cover" style={{objectPosition:`${portrait.positionX}% ${portrait.positionY}%`}}/><div><p className="font-serif text-xl">{portrait.title}</p>{portrait.global&&campaignId&&<p className="text-xs text-muted-foreground">Retrato global da ficha</p>}{compact&&portrait.canEdit&&<div className="mt-3 flex flex-wrap gap-3"><button type="button" className="button-ghost" disabled={busy||!!pending} onClick={()=>edit(portrait)}>Editar retrato</button><button type="button" className="button-ghost" disabled={busy||!!pending} onClick={()=>void remove(portrait)}>Remover retrato</button></div>}</div></div>:data&&<div className="flex h-36 w-36 items-center justify-center border border-border bg-card text-sm text-muted-foreground">Sem retrato</div>)}
     {error&&<p role="alert" className="text-sm text-primary">{error.message}</p>}{message&&<output  className="block text-sm text-muted-foreground">{message}</output>}
     {!compact&&data?.media.length===0&&<p className="text-sm text-muted-foreground">Nenhuma imagem adicionada.</p>}
