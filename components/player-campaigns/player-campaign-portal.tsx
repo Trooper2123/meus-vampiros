@@ -7,11 +7,13 @@ import useSWR from 'swr'
 import { BookOpen, CalendarDays, Download, FileText, FolderKanban, FolderOpen, Home, NotebookPen, Play, ShieldAlert, Users, MessageSquareText } from 'lucide-react'
 import { CampaignTools } from '@/components/campaign-calendar/campaign-tools'
 import { NotesPanel } from '@/components/notes/notes-panel'
+import { CampaignCoteriePanel } from '@/components/coterie/campaign-coterie-panel'
+import { PlayerProjectsPanel } from '@/components/projects/player-projects-panel'
 import type { PlayerCampaign } from '@/lib/player-campaigns'
 import type { CampaignEvent } from '@/lib/types/campaign-event'
 import type { PlayerHandout } from '@/lib/player-handouts'
 
-type Tab = 'overview'|'files'|'notes'|'events'|'calendar'|'coterie'|'projects'|'messages'
+export type PlayerCampaignTab = 'overview'|'files'|'notes'|'events'|'calendar'|'coterie'|'projects'|'messages'
 type SessionResponse = {session?:{id:string;status:'ACTIVE'|'CLOSED'}|null}
 type NotePreview = {id:string;title:string;updatedAt:string;marker?:string|null}
 const fetcher = async (url:string) => {
@@ -33,8 +35,16 @@ function PortalPanel({title,subtitle,icon:Icon,children}:Readonly<{title:string;
   </section>
 }
 
-export function PlayerCampaignPortal({campaign,actorId}:Readonly<{campaign:PlayerCampaign;actorId:string}>) {
-  const [tab,setTab]=useState<Tab>('overview')
+export function PlayerCampaignPortal({campaign,actorId,initialTab='overview'}:Readonly<{campaign:PlayerCampaign;actorId:string;initialTab?:PlayerCampaignTab}>) {
+  const [tab,setTab]=useState<PlayerCampaignTab>(initialTab)
+  const openTab=(next:PlayerCampaignTab)=>{
+    setTab(next)
+    // Atualiza o deep link sem sair do hub nem desmontar o banner.
+    const url=new URL(window.location.href)
+    if(next==='overview')url.searchParams.delete('tab')
+    else url.searchParams.set('tab',next)
+    window.history.replaceState(window.history.state,'',url.pathname+url.search+url.hash)
+  }
   const {data:filesData,error:filesError} = useSWR<{files:PlayerHandout[]}>(`/api/campaigns/${campaign.id}/player-handouts`,fetcher,{refreshInterval:30000})
   const {data:eventsData,error:eventsError}=useSWR<{events:CampaignEvent[]}>(`/api/campaign-events?campaignId=${campaign.id}`,fetcher,{refreshInterval:60000})
   const {data:notesData}=useSWR<{notes:NotePreview[]}>(`/api/notes?page=1&campaignId=${campaign.id}`,fetcher,{refreshInterval:30000})
@@ -68,30 +78,30 @@ export function PlayerCampaignPortal({campaign,actorId}:Readonly<{campaign:Playe
         {active ? <Link className="button-primary" href={`/campaigns/${campaign.id}/session`}><Play className="size-4"/>Entrar na sessão</Link> : <span className="player-portal-session-off"><ShieldAlert className="size-4"/>Nenhuma sessão em andamento. Arquivos e calendários continuam acessíveis.</span>}
       </div>
     </div>
-    <nav className="player-portal-tabs" aria-label="Áreas da mesa">{tabs.map(({id,label,Icon})=><button type="button" key={id} onClick={()=>setTab(id)} aria-current={tab===id?'page':undefined} className={tab===id?'is-active':''}><Icon className="size-5"/>{label}</button>)}</nav>
+    <nav className="player-portal-tabs" aria-label="Áreas da mesa">{tabs.map(({id,label,Icon})=><button type="button" key={id} onClick={()=>openTab(id)} aria-current={tab===id?'page':undefined} aria-pressed={tab===id} className={tab===id?'is-active':''}><Icon className="size-5"/>{label}</button>)}</nav>
     {tab==='overview' && <div className="player-portal-overview">
       <PortalPanel title="Sobre a Campanha" icon={BookOpen}>
         <p className="player-portal-description">{campaign.theme || 'O Narrador ainda não definiu o tema da crônica.'}</p>
         {campaign.principios&&<p className="player-portal-principles"><strong>Princípios da mesa:</strong> {campaign.principios}</p>}
       </PortalPanel>
       <PortalPanel title="Próximos Eventos" icon={CalendarDays}>
-        <button type="button" className="player-portal-see-all" onClick={()=>setTab('events')}>Ver todos →</button>
+        <button type="button" className="player-portal-see-all" onClick={()=>openTab('events')}>Ver todos →</button>
         {eventsError&&<p role="alert">Falha ao carregar eventos.</p>}
         {!eventsData&&!eventsError&&<p className="player-portal-muted">Carregando...</p>}
         {eventsData&&datedEvents.length===0&&<p className="player-portal-muted">Nenhum evento futuro publicado.</p>}
         {datedEvents.slice(0,3).map(e=><div className="player-portal-list-row" key={e.id}><CalendarDays className="size-5"/><div><strong>{e.title}</strong><small>{niceDate(e.eventDate)} {e.eventTime ? '· '+e.eventTime : ''}</small></div></div>)}
       </PortalPanel>
       <PortalPanel title="Arquivos Recentes" icon={FolderOpen}>
-        <button type="button" className="player-portal-see-all" onClick={()=>setTab('files')}>Ver todos →</button>
+        <button type="button" className="player-portal-see-all" onClick={()=>openTab('files')}>Ver todos →</button>
         {filesError&&<p role="alert">Falha ao carregar arquivos compartilhados.</p>}
         {!filesData&&!filesError&&<p className="player-portal-muted">Carregando...</p>}
         {filesData&&files.length===0&&<p className="player-portal-muted">Nenhum arquivo foi compartilhado com você.</p>}
         {files.slice(0,3).map(file=><div className="player-portal-list-row" key={file.id}><FileText className="size-5"/><div><strong>{file.title}</strong><small>{file.fileName}</small></div><a className="player-portal-file-download" aria-label={`Baixar ${file.title}`} href={`/api/campaigns/${campaign.id}/player-handouts/${file.id}`}><Download className="size-4"/></a></div>)}
       </PortalPanel>
       <PortalPanel title="Anotações da Mesa" icon={NotebookPen}>
-        <button type="button" className="player-portal-see-all" onClick={()=>setTab('notes')}>Ver todas →</button>
+        <button type="button" className="player-portal-see-all" onClick={()=>openTab('notes')}>Ver todas →</button>
         {notes.length===0&&<p className="player-portal-muted">Nenhuma anotação disponível para você nesta mesa.</p>}
-        {notes.slice(0,3).map(note=><button className="player-portal-list-row player-portal-note-preview" type="button" key={note.id} onClick={()=>setTab('notes')}><NotebookPen className="size-5"/><div><strong>{note.title}</strong><small>{note.marker || 'Sem marcador'} · {niceDate(note.updatedAt)}</small></div></button>)}
+        {notes.slice(0,3).map(note=><button className="player-portal-list-row player-portal-note-preview" type="button" key={note.id} onClick={()=>openTab('notes')}><NotebookPen className="size-5"/><div><strong>{note.title}</strong><small>{note.marker || 'Sem marcador'} · {niceDate(note.updatedAt)}</small></div></button>)}
       </PortalPanel>
     </div>}
     {tab==='files'&&<PortalPanel title="Arquivos Compartilhados" subtitle="Somente documentos enviados à mesa inteira ou diretamente a você." icon={FolderOpen}>
@@ -109,19 +119,8 @@ export function PlayerCampaignPortal({campaign,actorId}:Readonly<{campaign:Playe
     </PortalPanel>}
     {tab==='messages'&&<CharacterSms campaignId={campaign.id} mode="player"/>}
     {tab==='calendar'&&<PortalPanel title="Calendários e Disponibilidade" subtitle="Consulte o calendário da campanha e marque sua disponibilidade para encontros." icon={CalendarDays}><CampaignTools campaignId={campaign.id} master={false}/></PortalPanel>}
-    {tab==='coterie'&&<PortalPanel title="Coterie" subtitle="A estrutura coletiva dos personagens desta crônica." icon={Users}>
-      <div className="player-portal-module-pending" role="status">
-        <Users className="size-9" aria-hidden="true"/>
-        <h3>A Coterie ainda não está disponível</h3>
-        <p>Quando o módulo da Coterie for implementado pelo Narrador, você poderá consultar membros, Domain, Backgrounds compartilhados, Haven, Goals e Boons/Debts autorizados para os jogadores.</p>
-      </div>
-    </PortalPanel>}
-    {tab==='projects'&&<PortalPanel title="Projetos" subtitle="Projects pessoais e coletivos, distintos das missões do Narrador." icon={FolderKanban}>
-      <div className="player-portal-module-pending" role="status">
-        <FolderKanban className="size-9" aria-hidden="true"/>
-        <h3>Os Projects ainda não estão disponíveis</h3>
-        <p>Esta área exibirá seus projetos pessoais e os da Coterie após a implementação das regras de Scope, Stake, Increment e Project Die, com aprovação e resolução mecânica pelo Narrador.</p>
-      </div>
-    </PortalPanel>}
+    {tab==='coterie'&&<CampaignCoteriePanel campaignId={campaign.id} onOpenProjects={()=>openTab('projects')}/>}
+    {tab==='projects'&&<PlayerProjectsPanel campaignId={campaign.id}/>}
+
   </div>
 }

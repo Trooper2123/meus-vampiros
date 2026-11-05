@@ -1,3 +1,4 @@
+import { PROJECTS_COTERIE_SCHEMA } from './projects-coterie-schema'
 import { drizzle } from 'drizzle-orm/node-postgres'
 import { Pool } from 'pg'
 import { sql } from 'drizzle-orm'
@@ -307,6 +308,7 @@ export async function ensureAllTables() {
       payload JSONB NOT NULL
     );
     `)
+    await pool.query(PROJECTS_COTERIE_SCHEMA)
     await ensureGameSessionsTables()
   })().catch(error => {
     schemaInitialization = undefined

@@ -49,7 +49,7 @@ export async function executeCharacterAwake(actorId: string, characterId: string
       character.gameState.playContext = 'EXTERNAL_TABLE'
       return { night, hunger: before.hunger, condition: before.condition }
     }
-    let nightId = input.nightId!
+    const nightId = input.nightId!
     if (!character.campaignId) {
       if (input.sessionId) throw new CharacterCommandError(400, 'Fichas de mesa externa não possuem sessão do aplicativo.')
       const night = character.gameState.independentNight as { id?: string } | undefined

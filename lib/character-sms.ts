@@ -261,8 +261,10 @@ export async function smsStart(campaignId:string,actorId:string,input:Record<str
   const recipientId=input.recipientCharacterId
   const coterieId=input.coterieId
   if(!smsUuid(senderId))fail(422,'Remetente inválido.')
+  const senderCharacterId=senderId
   if(kind==='DIRECT'&&(!smsUuid(recipientId)||senderId===recipientId))fail(422,'Destinatário inválido.')
   if(kind==='COTERIE'&&!smsUuid(coterieId))fail(422,'Coterie inválida.')
+  const selectedCoterieId=coterieId
   await ensureSmsSchema()
   const client=await pool!.connect()
   try{
@@ -270,12 +272,12 @@ export async function smsStart(campaignId:string,actorId:string,input:Record<str
     await client.query('SELECT id FROM campaigns WHERE id=$1::uuid FOR UPDATE',[campaignId])
     const a=await access(client,campaignId,actorId,view)
     if(!a.enabled)fail(409,'SMS_DISABLED')
-    const sender=await character(client,campaignId,senderId)
+    const sender=await character(client,campaignId,senderCharacterId)
     if(!canActAs(sender,a.role,actorId))fail(403,'Não é possível enviar por este personagem.')
     let threadId:string
     if(kind==='COTERIE'){
       if(!await smsCoteriesReady(client))fail(409,'COTERIE_UNAVAILABLE')
-      const co=(await smsAvailableCoteries(client,campaignId,actorId,a.role)).find(row=>row.id===coterieId)
+      const co=(await smsAvailableCoteries(client,campaignId,actorId,a.role)).find(row=>row.id===selectedCoterieId)
       if(!co)fail(404,'Coterie indisponível.')
       if(a.role==='player'&&!await smsMember(client,campaignId,co.id,sender.id))fail(403,'Seu personagem não pertence a essa Coterie.')
       const thread=await client.query<{id:string}>(`INSERT INTO character_message_threads
@@ -286,7 +288,8 @@ export async function smsStart(campaignId:string,actorId:string,input:Record<str
         [campaignId,co.id,co.name])
       threadId=thread.rows[0].id
     }else{
-      const recipient=await character(client,campaignId,recipientId as string)
+      if(!smsUuid(recipientId))fail(422,'Destinatário inválido.')
+      const recipient=await character(client,campaignId,recipientId)
       if(!validRecipient(recipient,a.role))fail(404,'Destinatário indisponível.')
       const [left,right]=[sender.id,recipient.id].sort()
       const thread=await client.query<{id:string}>(`INSERT INTO character_message_threads
@@ -307,6 +310,9 @@ export async function smsSend(campaignId:string,actorId:string,threadId:string,i
   const key=input.idempotencyKey
   const body=input.body
   if(!smsUuid(senderId)||!smsUuid(key)||typeof body!=='string'||body.trim().length<1||body.length>2000) fail(422,'Mensagem inválida.')
+  const senderCharacterId=senderId
+  const idempotencyKey=key
+  const messageBody=body
   await ensureSmsSchema()
   const client=await pool!.connect()
   try {
@@ -316,7 +322,7 @@ export async function smsSend(campaignId:string,actorId:string,threadId:string,i
     if(!locked.rowCount) fail(404,'Mesa não encontrada.')
     const {a,thread}=await threadAndAccess(client,campaignId,actorId,threadId,true,view)
     if(!a.enabled) fail(409,'SMS_DISABLED')
-    const sender=await character(client,campaignId,senderId)
+    const sender=await character(client,campaignId,senderCharacterId)
     if(!canActAs(sender,a.role,actorId)) fail(403,'Você não pode enviar como este personagem.')
     if(a.role==='player' && thread.kind==='DIRECT' && sender.id!==thread.character_a_id && sender.id!==thread.character_b_id) fail(403,'O personagem não participa desta conversa.')
     if(a.role==='player' && thread.kind==='COTERIE' && (!thread.coterie_id || !await smsMember(client,campaignId,thread.coterie_id,sender.id))) fail(403,'O personagem não pertence a essa Coterie.')
@@ -324,10 +330,10 @@ export async function smsSend(campaignId:string,actorId:string,threadId:string,i
     // participants and the character whose voice was used receive this specific message.
     const exists=await client.query<{id:string;body:string;thread_id:string;sender_character_id:string}>(
       'SELECT id,body,thread_id,sender_character_id FROM character_messages WHERE campaign_id=$1::uuid AND created_by_actor_id=$2 AND idempotency_key=$3::uuid',
-      [campaignId,actorId,key])
+      [campaignId,actorId,idempotencyKey])
     if(exists.rows[0]){
       const old=exists.rows[0]
-      if(old.body!==body.trim()||old.thread_id!==threadId||old.sender_character_id!==senderId) fail(409,'Chave já utilizada com outra mensagem.')
+      if(old.body!==messageBody.trim()||old.thread_id!==threadId||old.sender_character_id!==senderCharacterId) fail(409,'Chave já utilizada com outra mensagem.')
       await client.query('COMMIT')
       return {id:old.id,replayed:true}
     }
@@ -338,7 +344,7 @@ export async function smsSend(campaignId:string,actorId:string,threadId:string,i
     const insert=await client.query<{id:string}>(`INSERT INTO character_messages
       (campaign_id,thread_id,sender_character_id,created_by_actor_id,impersonated_by_narrator,body,idempotency_key)
       VALUES($1::uuid,$2::uuid,$3::uuid,$4,$5,$6,$7::uuid) RETURNING id`,
-      [campaignId,threadId,senderId,actorId,a.role==='narrator',body.trim(),key])
+      [campaignId,threadId,senderCharacterId,actorId,a.role==='narrator',messageBody.trim(),idempotencyKey])
     const id=insert.rows[0].id
     let receivers:string[]
     if(thread.kind==='COTERIE'){

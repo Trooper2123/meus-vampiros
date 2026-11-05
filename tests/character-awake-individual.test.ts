@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto'
+import assert from 'node:assert/strict'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { sql } from 'drizzle-orm'
 import { db, ensureAllTables } from '@/lib/db'
@@ -20,6 +21,7 @@ describe('Awake individual e política por mesa',()=>{
    await executeCharacterAwake('player-awake',char.id,{action:'DECLARE_EXTERNAL',expectedRevision:0,idempotencyKey:randomUUID()})
    const night=await executeCharacterAwake('player-awake',char.id,{action:'START_NIGHT',expectedRevision:1,idempotencyKey:randomUUID(),inGameDate:'2001-05-01'})
    expect(night.night).toMatchObject({origin:'EXTERNAL_TABLE',number:1})
+   assert(night.night && typeof night.night === 'object' && 'id' in night.night && typeof night.night.id === 'string')
    const rollD10=vi.fn(()=>[5]);const input={action:'AWAKE' as const,nightId:night.night.id,expectedRevision:2,idempotencyKey:randomUUID()}
    const a=await executeCharacterAwake('player-awake',char.id,input,{rollD10})
    const b=await executeCharacterAwake('player-awake',char.id,input,{rollD10})
@@ -34,6 +36,7 @@ describe('Awake individual e política por mesa',()=>{
    const char=await independent(5)
    await executeCharacterAwake('player-awake',char.id,{action:'DECLARE_EXTERNAL',expectedRevision:0,idempotencyKey:randomUUID()})
    const night=await executeCharacterAwake('player-awake',char.id,{action:'START_NIGHT',expectedRevision:1,idempotencyKey:randomUUID()})
+   assert(night.night && typeof night.night === 'object' && 'id' in night.night && typeof night.night.id === 'string')
    const result=await executeCharacterAwake('player-awake',char.id,{action:'AWAKE',nightId:night.night.id,expectedRevision:2,idempotencyKey:randomUUID()},{rollD10:()=>[1]})
    expect(result).toMatchObject({outcome:'TORPOR',after:{hunger:5,condition:'TORPOR',torpor:{cause:'HUNGER'}}})
  })
