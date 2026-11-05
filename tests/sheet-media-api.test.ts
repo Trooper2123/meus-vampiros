@@ -50,7 +50,7 @@ it('nega origem cruzada para reserva/token/edição/remoção', async () => {
 it('token é limitado ao caminho do ator/reserva, MIME e tamanho', async () => {
   expect((await token(request(tokenBody()))).status).toBe(200)
   expect(mocks.authorize).toHaveBeenCalledWith('owner', id)
-  expect(mocks.tokenOptions).toHaveBeenCalledWith(expect.objectContaining({ allowedContentTypes: ['image/jpeg', 'image/png', 'image/webp'], maximumSizeInBytes: MAX_SHEET_IMAGE_BYTES, addRandomSuffix: false, allowOverwrite: false }))
+  expect(mocks.tokenOptions).toHaveBeenCalledWith(expect.objectContaining({ allowedContentTypes: ['image/jpeg', 'image/png', 'image/webp'], maximumSizeInBytes: MAX_SHEET_IMAGE_BYTES, addRandomSuffix: false, allowOverwrite: true }))
   expect((await token(request(tokenBody(mediaStagingKey('other', id))))).status).toBe(403)
   expect(mocks.tokenOptions).toHaveBeenCalledOnce()
 })

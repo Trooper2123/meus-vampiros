@@ -62,6 +62,8 @@ export async function ensureAllTables() {
     );
 
     ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS principios TEXT;
+    ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS cover_storage_key TEXT;
+    ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS cover_updated_at TIMESTAMPTZ;
     ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS session_start_time TIME;
     ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS session_end_time TIME;
     ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS enabled_clan_codes JSONB;
@@ -125,6 +127,19 @@ export async function ensureAllTables() {
   updated_at TIMESTAMPTZ DEFAULT now()
   );
 
+  ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS npc_global_catalog_enabled BOOLEAN NOT NULL DEFAULT false;
+  
+  CREATE TABLE IF NOT EXISTS campaign_limits (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    campaign_id UUID NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+    category TEXT NOT NULL CHECK (category IN ('LINE','VEIL','OTHER')),
+    title VARCHAR(160) NOT NULL,
+    description TEXT NOT NULL DEFAULT '',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  );
+  CREATE INDEX IF NOT EXISTS idx_campaign_limits_campaign ON campaign_limits(campaign_id, category, title);
+
   CREATE TABLE IF NOT EXISTS notes (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     author_user_id TEXT NOT NULL,
@@ -138,6 +153,9 @@ export async function ensureAllTables() {
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
   );
+  ALTER TABLE notes ADD COLUMN IF NOT EXISTS marker VARCHAR(80);
+  CREATE INDEX IF NOT EXISTS idx_notes_campaign_marker ON notes(campaign_id, marker);
+  CREATE INDEX IF NOT EXISTS idx_notes_search_lower_title ON notes((lower(title)));
   CREATE INDEX IF NOT EXISTS notes_author_updated_idx ON notes (author_user_id, updated_at DESC);
   CREATE INDEX IF NOT EXISTS notes_campaign_updated_idx ON notes (campaign_id, updated_at DESC);
   CREATE TABLE IF NOT EXISTS note_requests (

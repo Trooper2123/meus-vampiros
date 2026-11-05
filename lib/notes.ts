@@ -116,19 +116,35 @@ export async function getNote(actorId: string, id: string) {
 export async function listNotes(actorId: string, options: { campaignId?: string; page?: number; pageSize?: number; link?: NoteLink; search?: string; marker?: string } = {}) {
   const page = options.page ?? 1, pageSize = options.pageSize ?? 20
   if (!Number.isSafeInteger(page) || page < 1 || !Number.isSafeInteger(pageSize) || pageSize < 1 || pageSize > 50 || options.campaignId !== undefined && !noteUuid(options.campaignId) || options.search !== undefined && (typeof options.search !== 'string' || options.search.length > 120) || options.marker !== undefined && (typeof options.marker !== 'string' || options.marker.length > 80)) { fail(400, 'Filtros inválidos.') }
-  if (options.link && (!noteUuid(options.link.targetId) || !['CHARACTER', 'NPC', 'EVENT', 'SESSION'].includes(options.link.targetType) || !await target(actorId, options.link))) { fail(404, 'Contexto não encontrado.') }
-  const result = await db.execute<NoteRow>(sql`SELECT ${columns} FROM notes WHERE campaign_id IS NOT DISTINCT FROM ${options.campaignId ?? null}::uuid OR ${options.campaignId ?? null}::uuid IS NULL ORDER BY updated_at DESC, id DESC`)
-  const visible: Note[] = []
-  for (const row of result.rows) {
+  const linkTarget = options.link && (!noteUuid(options.link.targetId) || !['CHARACTER', 'NPC', 'EVENT', 'SESSION'].includes(options.link.targetType) ? null : await target(actorId, options.link))
+  if (options.link && !linkTarget) { fail(404, 'Contexto não encontrado.') }
+  const search = options.search?.trim().toLocaleLowerCase('pt-BR') ?? ''
+  const marker = options.marker?.trim() ?? ''
+  const link = options.link
+  const result = await db.execute<NoteRow & { total: number }>(sql`SELECT ${columns}, count(*) OVER()::int AS total
+    FROM notes n
+    WHERE (${options.campaignId ?? null}::uuid IS NULL OR n.campaign_id = ${options.campaignId ?? null}::uuid)
+      AND (${!search} OR lower(n.title || ' ' || n.body || ' ' || COALESCE(n.marker, '')) LIKE ${`%${search}%`})
+      AND (${!marker} OR n.marker = ${marker})
+      AND (
+        (EXISTS (SELECT 1 FROM sheet_reveals r JOIN game_sessions s ON s.id = r.session_id JOIN campaigns c ON c.id = s.campaign_id WHERE r.id = n.id AND c.master_user_id = ${actorId}) OR
+          EXISTS (SELECT 1 FROM sheet_reveals r JOIN game_sessions s ON s.id = r.session_id JOIN campaigns c ON c.id = s.campaign_id JOIN characters ch ON ch.campaign_id = c.id WHERE r.id = n.id AND r.revoked_at IS NULL AND ch.user_id = ${actorId}))
+        OR (NOT EXISTS (SELECT 1 FROM sheet_reveals r WHERE r.id = n.id) AND (
+          n.author_user_id = ${actorId}
+          OR n.visibility = 'NARRATOR_ONLY' AND EXISTS (SELECT 1 FROM campaigns c WHERE c.id = n.campaign_id AND c.master_user_id = ${actorId})
+          OR n.visibility = 'SHARED' AND n.recipient_user_ids ? ${actorId}
+            AND EXISTS (SELECT 1 FROM campaigns c WHERE c.id = n.campaign_id AND (c.master_user_id = ${actorId} OR EXISTS (SELECT 1 FROM characters ch WHERE ch.campaign_id = c.id AND ch.user_id = ${actorId} AND ch.status <> 'DELETED')))
+            AND EXISTS (SELECT 1 FROM campaigns c WHERE c.id = n.campaign_id AND (c.master_user_id = n.author_user_id OR EXISTS (SELECT 1 FROM characters ch WHERE ch.campaign_id = c.id AND ch.user_id = n.author_user_id AND ch.status <> 'DELETED')))
+        ))
+      )
+      AND (${link === undefined} OR n.campaign_id IS NOT DISTINCT FROM ${linkTarget?.campaignId ?? null}::uuid AND n.links @> ${JSON.stringify(link ? [link] : [])}::jsonb)
+    ORDER BY n.updated_at DESC, n.id DESC LIMIT ${pageSize} OFFSET ${(page - 1) * pageSize}`)
+  const rows = result.rows
+  const notes = await Promise.all(rows.map(async row => {
     const value = note(row)
-    if (!await canRead(value, actorId)) { continue }
-    const search = options.search?.trim().toLocaleLowerCase('pt-BR')
-    if (search && ![value.title, value.body, value.marker ?? ''].some(field => field.toLocaleLowerCase('pt-BR').includes(search))) { continue }
-    if (options.marker?.trim() && value.marker !== options.marker.trim()) { continue }
-    if (options.link && (!value.links.some(link => link.targetType === options.link!.targetType && link.targetId === options.link!.targetId) || (await target(actorId, options.link))?.campaignId !== value.campaignId)) { continue }
-    visible.push(value)
-  }
-  return { notes: await Promise.all(visible.slice((page - 1) * pageSize, page * pageSize).map(value => project(value, actorId, false))), total: visible.length, page, pageSize }
+    return project(value, actorId, false)
+  }))
+  return { notes, total: Number(rows[0]?.total ?? 0), page, pageSize }
 }
 
 export async function createNote(actorId: string, input: unknown) {

@@ -10,13 +10,13 @@ async function fetchCampaigns(url: string): Promise<{ campaigns: { id: string }[
   return response.json()
 }
 
-export function ArchiveHeader({ title, showCampaigns, variant = 'default', campaignSection = 'current' }: Readonly<{ title: string; showCampaigns?: boolean; variant?: 'default' | 'campaigns' | 'characters'; campaignSection?: 'current' | 'inactive' }>) {
+export function ArchiveHeader({ title, showCampaigns, variant = 'default', campaignSection = 'current' }: Readonly<{ title: string; showCampaigns?: boolean; variant?: 'default' | 'campaigns' | 'characters' | 'notes'; campaignSection?: 'current' | 'inactive' }>) {
   const { data } = useSWR(showCampaigns === undefined ? '/api/campaigns' : null, fetchCampaigns)
   const hasCampaigns = showCampaigns ?? Boolean(data?.campaigns?.length)
   const onInactive = campaignSection === 'inactive'
-  const sidebar = variant === 'campaigns' || variant === 'characters'
+  const sidebar = variant === 'campaigns' || variant === 'characters' || variant === 'notes'
   const links = <>
-    {sidebar && <Link href="/" className="button-ghost"><House className="size-4" aria-hidden="true"/>Início</Link>}
+    {sidebar && <Link href="/characters" className="button-ghost"><House className="size-4" aria-hidden="true"/>Início</Link>}
     <Link href="/characters" aria-current={variant === 'characters' ? 'page' : undefined} className="button-ghost">{sidebar && <UserRound className="size-4" aria-hidden="true"/>}Personagens</Link>
     {sidebar ? <details className="campaign-nav-group" open={variant === 'campaigns'}>
       <summary><Layers3 className="size-4" aria-hidden="true"/><span>Campanhas</span><ChevronDown className="campaign-nav-chevron size-4" aria-hidden="true"/></summary>
@@ -27,7 +27,7 @@ export function ArchiveHeader({ title, showCampaigns, variant = 'default', campa
     </details> : hasCampaigns && <Link href="/campaigns" className="button-ghost">Mesas</Link>}
     <Link href="/master/catalogo" className="button-ghost">{sidebar && <BookOpen className="size-4" aria-hidden="true"/>}Disciplinas e habilidades</Link>
     <Link href="/master/vantagens-defeitos" className="button-ghost">{sidebar && <Star className="size-4" aria-hidden="true"/>}Vantagens e defeitos</Link>
-    <Link href="/notes" className="button-ghost">{sidebar && <NotebookPen className="size-4" aria-hidden="true"/>}Anotações</Link>
+    <Link href="/notes" aria-current={variant === 'notes' ? 'page' : undefined} className="button-ghost">{sidebar && <NotebookPen className="size-4" aria-hidden="true"/>}Anotações</Link>
     <a href="/auth/logout" className="button-ghost">{sidebar && <LogOut className="size-4" aria-hidden="true"/>}Sair</a>
   </>
 
