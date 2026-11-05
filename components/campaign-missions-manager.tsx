@@ -1,5 +1,7 @@
 'use client'
 
+import { campaignDaysUntil } from '@/lib/campaign-timezone'
+
 import Link from 'next/link'
 
 import { useCallback, useEffect, useState } from 'react'
@@ -116,8 +118,7 @@ export function CampaignMissionsManager({ campaignId }: Readonly<{ campaignId: s
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Dados inválidos.') }
   }
 
-  const today = new Intl.DateTimeFormat('en-CA', { timeZone: listing?.timezone ?? 'UTC', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())
-  const daysUntil = (date: string) => Math.round((Date.parse(date + 'T12:00:00Z') - Date.parse(today + 'T12:00:00Z')) / 86400000)
+  const daysUntil = (date: string) => campaignDaysUntil(date, listing?.timezone ?? 'UTC')
   const reminders = (listing?.missions ?? []).filter(m => m.status === 'ACTIVE' && ((m.dueDate && daysUntil(m.dueDate) <= 7) || (m.eventDate && daysUntil(m.eventDate) <= 7)))
   const visible = (listing?.missions ?? []).filter(mission => filter === 'ALL' || mission.status === filter)
   return <div className="campaign-module-body flex flex-col gap-5">
