@@ -1,5 +1,6 @@
-import Link from 'next/link'
 'use client'
+
+import Link from 'next/link'
 
 import { useCallback, useEffect, useState } from 'react'
 import { CheckCircle2, CirclePlus, RefreshCw, Save, XCircle } from 'lucide-react'
@@ -25,7 +26,8 @@ type Mission = {
   eventFictionalMonth: string | null
 }
 type CalendarEvent = { id: string; title: string; eventDate: string | null; fictionalYear: number | null; fictionalMonth: string | null; visibility: 'master' | 'everyone' }
-type Listing = { missions: Mission[]; canManage: boolean }
+type CatalogItem = { id: string; name: string }
+type Listing = { missions: Mission[]; canManage: boolean; timezone: string; characters: CatalogItem[]; npcs: CatalogItem[] }
 type FormData = { title: string; description: string; narratorNotes: string; visibility: Visibility; characterIds: string; npcIds: string; dueDate: string; campaignEventId: string }
 const emptyForm: FormData = { title: '', description: '', narratorNotes: '', visibility: 'NARRATOR_ONLY', characterIds: '', npcIds: '', dueDate: '', campaignEventId: '' }
 const statuses: Record<Status, string> = { DRAFT: 'Rascunho', ACTIVE: 'Ativa', COMPLETED: 'Concluída', FAILED: 'Falhou', CANCELLED: 'Cancelada' }
@@ -47,6 +49,9 @@ export function CampaignMissionsManager({ campaignId }: Readonly<{ campaignId: s
   const [notice, setNotice] = useState('')
   const [editing, setEditing] = useState<string | null>(null)
   const [form, setForm] = useState<FormData>(emptyForm)
+  const [searchCharacter, setSearchCharacter] = useState('')
+  const [searchNpc, setSearchNpc] = useState('')
+  const [timezoneInput, setTimezoneInput] = useState('UTC')
   const [filter, setFilter] = useState<'ALL' | Status>('ALL')
   const url = `/api/campaigns/${encodeURIComponent(campaignId)}/missions`
 
@@ -57,6 +62,7 @@ export function CampaignMissionsManager({ campaignId }: Readonly<{ campaignId: s
       const body = await response.json()
       if (!response.ok) throw new Error(body.error ?? 'Não foi possível carregar as missões.')
       setListing(body as Listing)
+      setTimezoneInput((body as Listing).timezone ?? 'UTC')
       setError('')
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Erro ao carregar missões.') }
     finally { setLoading(false) }
@@ -110,7 +116,7 @@ export function CampaignMissionsManager({ campaignId }: Readonly<{ campaignId: s
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Dados inválidos.') }
   }
 
-  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' })
+  const today = new Intl.DateTimeFormat('en-CA', { timeZone: listing?.timezone ?? 'UTC', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())
   const daysUntil = (date: string) => Math.round((Date.parse(date + 'T12:00:00Z') - Date.parse(today + 'T12:00:00Z')) / 86400000)
   const reminders = (listing?.missions ?? []).filter(m => m.status === 'ACTIVE' && ((m.dueDate && daysUntil(m.dueDate) <= 7) || (m.eventDate && daysUntil(m.eventDate) <= 7)))
   const visible = (listing?.missions ?? []).filter(mission => filter === 'ALL' || mission.status === filter)
@@ -127,6 +133,7 @@ export function CampaignMissionsManager({ campaignId }: Readonly<{ campaignId: s
       <p className="text-xs text-muted-foreground">Avisos exibidos ao acessar a campanha. Apenas missões permitidas para sua conta.</p>
       {reminders.map(mission => { const deadlines = [mission.dueDate, mission.eventDate].filter((date): date is string => Boolean(date)); const nearest = deadlines.sort()[0]; const days = daysUntil(nearest); return <p key={mission.id} className="text-sm"><a className="underline" href={`#mission-${mission.id}`}>{mission.title}</a>: {days < 0 ? `prazo vencido há ${-days} dia(s)` : days === 0 ? 'vence hoje' : `faltam ${days} dia(s)`}</p> })}
     </section>}
+    {listing?.canManage && <div className="campaign-module-subsection flex flex-wrap items-end gap-3"><label className="flex flex-col gap-1 text-sm"><span>Fuso horário da campanha (IANA)</span><input className="sheet-field" value={timezoneInput} onChange={event => setTimezoneInput(event.target.value)} list="campaign-timezones" placeholder="America/Sao_Paulo" /></label><datalist id="campaign-timezones"><option value="America/Sao_Paulo"/><option value="America/Manaus"/><option value="America/Rio_Branco"/><option value="America/New_York"/><option value="Europe/Lisbon"/><option value="UTC"/></datalist><button type="button" className="button-ghost" disabled={pending} onClick={() => void command({action:'SET_TIMEZONE',timezone:timezoneInput},'Fuso horário atualizado.')}>Salvar fuso</button></div>}
     {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
     {notice && <p role="status" className="text-sm">{notice}</p>}
     {loading && <p role="status">Carregando missões…</p>}
@@ -145,8 +152,8 @@ export function CampaignMissionsManager({ campaignId }: Readonly<{ campaignId: s
       <label className="sheet-field"><span>Visibilidade</span><select value={form.visibility} onChange={event => setForm(prev => ({ ...prev, visibility: event.target.value as Visibility }))}>{Object.entries(visibilityLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label>
       <label className="sheet-field"><span>Data da missão (calendário real, opcional)</span><input type="date" value={form.dueDate} onChange={event => setForm(prev => ({ ...prev, dueDate: event.target.value }))} /></label>
       <label className="sheet-field"><span>Vincular a evento da campanha (opcional)</span><select value={form.campaignEventId} onChange={event => setForm(prev => ({ ...prev, campaignEventId: event.target.value }))}><option value="">Nenhum evento</option>{events.map(event => <option key={event.id} value={event.id}>{event.title}{event.eventDate ? ` — ${event.eventDate}` : event.fictionalYear !== null ? ` — ${event.fictionalMonth ?? ''} ${event.fictionalYear}` : ''}</option>)}</select><span className="text-xs text-muted-foreground">Eventos fictícios ou personalizados mantêm sua data no calendário original. Para criá-los, acesse Calendário.</span></label>
-      <label className="sheet-field"><span>Personagens atribuídos (UUIDs separados por vírgula ou linha)</span><textarea rows={2} value={form.characterIds} onChange={event => setForm(prev => ({ ...prev, characterIds: event.target.value }))} placeholder="Opcional; somente personagens da mesa" /></label>
-      <label className="sheet-field"><span>NPCs relacionados (UUIDs das instâncias na mesa)</span><textarea rows={2} value={form.npcIds} onChange={event => setForm(prev => ({ ...prev, npcIds: event.target.value }))} placeholder="Opcional" /></label>
+      <ParticipantPicker label="Personagens atribuídos" options={listing.characters} selected={parseIds(form.characterIds)} search={searchCharacter} onSearch={setSearchCharacter} onChange={ids => setForm(prev => ({ ...prev, characterIds: ids.join(',') }))} />
+      <ParticipantPicker label="NPCs relacionados" options={listing.npcs} selected={parseIds(form.npcIds)} search={searchNpc} onSearch={setSearchNpc} onChange={ids => setForm(prev => ({ ...prev, npcIds: ids.join(',') }))} />
       <label className="sheet-field"><span>Notas exclusivas do narrador</span><textarea rows={3} maxLength={10000} value={form.narratorNotes} onChange={event => setForm(prev => ({ ...prev, narratorNotes: event.target.value }))} /></label>
       <div className="flex flex-wrap gap-2">
         <button type="submit" className="button-primary" disabled={pending}><Save className="size-4" aria-hidden="true" />{pending ? 'Salvando…' : 'Salvar missão'}</button>
@@ -172,4 +179,13 @@ export function CampaignMissionsManager({ campaignId }: Readonly<{ campaignId: s
       </div>}
     </article>)}
   </div>
+}
+
+function ParticipantPicker({label,options,selected,search,onSearch,onChange}: Readonly<{label:string;options:CatalogItem[];selected:string[];search:string;onSearch:(value:string)=>void;onChange:(ids:string[])=>void}>) {
+ const filtered=options.filter(item=>item.name.toLocaleLowerCase('pt-BR').includes(search.toLocaleLowerCase('pt-BR')))
+ return <fieldset className="campaign-module-subsection flex flex-col gap-2"><legend className="font-semibold">{label}</legend>
+  <input className="sheet-field" aria-label={`Buscar em ${label}`} placeholder="Buscar por nome" value={search} onChange={event=>onSearch(event.target.value)}/>
+  <div className="max-h-48 overflow-y-auto flex flex-col gap-2">{filtered.map(item=><label key={item.id} className="flex items-center gap-2 text-sm"><input type="checkbox" checked={selected.includes(item.id)} onChange={event=>onChange(event.target.checked?[...selected,item.id]:selected.filter(id=>id!==item.id))}/><span>{item.name}</span></label>)}{filtered.length===0&&<p className="text-xs text-muted-foreground">Nenhum resultado.</p>}</div>
+  <p className="text-xs text-muted-foreground">{selected.length} selecionado(s)</p>
+ </fieldset>
 }
