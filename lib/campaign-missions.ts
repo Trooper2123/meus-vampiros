@@ -31,7 +31,7 @@ function input(value:unknown,keys:string[]){
 export async function listMissions(actorId:string,campaignId:string){
  const access=await role(actorId,campaignId)
  const result=await connection().query(`
- SELECT m.id,m.title,m.description,m.status,m.visibility,m.revision,m.created_at AS "createdAt",m.updated_at AS "updatedAt",m.due_date::text AS "dueDate",m.campaign_event_id AS "campaignEventId",
+ SELECT m.id,m.title,m.description,m.status,m.visibility,m.revision,m.created_at AS "createdAt",m.updated_at AS "updatedAt",m.due_date::text AS "dueDate",CASE WHEN ev.id IS NOT NULL AND ($2::boolean OR ev.visibility='everyone') THEN m.campaign_event_id ELSE NULL END AS "campaignEventId",
  CASE WHEN ev.id IS NOT NULL AND ($2::boolean OR ev.visibility='everyone') THEN ev.title ELSE NULL END AS "eventTitle",
  CASE WHEN ev.id IS NOT NULL AND ($2::boolean OR ev.visibility='everyone') THEN ev.event_date::text ELSE NULL END AS "eventDate",
  CASE WHEN $2::boolean THEN m.narrator_notes ELSE NULL END AS "narratorNotes",
