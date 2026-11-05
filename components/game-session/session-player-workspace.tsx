@@ -1,9 +1,10 @@
 'use client'
 
+import { CharacterSms } from '@/components/character-sms/character-sms'
 import { useState, type ComponentProps } from 'react'
 import Link from 'next/link'
 import useSWR from 'swr'
-import { BookOpen, CalendarDays, Dice5, Droplet, FileText, HeartPulse, MessageCircle, NotebookPen, ScrollText, Shield, Users, LogOut, X } from 'lucide-react'
+import { BookOpen, CalendarDays, Dice5, Droplet, FileText, HeartPulse, MessageCircle, NotebookPen, ScrollText, Shield, Users, LogOut, X, MessageSquareText } from 'lucide-react'
 import { LiveKitRoomLink } from '@/components/livekit/livekit-room-link'
 import { CharacterSummary } from '@/components/character-summary/character-summary'
 import { SessionSoundtrack } from './session-soundtrack'
@@ -16,7 +17,7 @@ import { CampaignTools } from '@/components/campaign-calendar/campaign-tools'
 
 type Character = {id:string;name:string}
 type CharacterData = ComponentProps<typeof CharacterSummary>['data']
-type PlayerTab = 'sheet'|'diary'|'session'|'files'
+type PlayerTab = 'sheet'|'diary'|'session'|'files'|'messages'
 type QuickTool = 'roll'|'health'|'hunger'|'willpower'|null
 const read = async (url:string) => {
   const response = await fetch(url,{cache:'no-store'})
@@ -58,12 +59,15 @@ function PlayerQuickActions({characterId,sessionId}:Readonly<{characterId:string
 export function SessionPlayerWorkspace({campaignId,actorId,sessionId,characters,campaignName}:Readonly<{campaignId:string;actorId:string;sessionId:string|null;characters:Character[];campaignName?:string|null}>) {
   const [tab,setTab]=useState<PlayerTab>('sheet')
   const [selected,setSelected]=useState(characters[0]?.id??'')
+  const {data:smsInbox}=useSWR<{enabled:boolean;threads:Array<{unreadCount:number}>}>(`/api/campaigns/${campaignId}/character-sms?view=player`,read,{refreshInterval:10000})
+  const smsUnread=smsInbox?.enabled?smsInbox.threads.reduce((sum,thread)=>sum+Number(thread.unreadCount??0),0):0
   const current=characters.find(character=>character.id===selected)??characters[0]
   const tabs=[
     {id:'sheet' as const,label:'Ficha',Icon:ScrollText},
     {id:'diary' as const,label:'Anotações',Icon:NotebookPen},
     {id:'session' as const,label:'Sessão',Icon:CalendarDays},
     {id:'files' as const,label:'Arquivos',Icon:FileText},
+    {id:'messages' as const,label:smsUnread>0?`Mensagens (${smsUnread})`:'Mensagens',Icon:MessageSquareText},
   ]
   return <div className="session-player-approved" aria-label="Modo Sessão do Jogador">
     <div className="session-player-title"><div><p className="eyebrow">Arquivos da Noite · Visão do Jogador</p><h1>{campaignName ? `Sessão: ${campaignName}` : "Minha Sessão"}</h1><p>Ficha, diário e recursos da crônica sem sair da mesa.</p></div><div className="session-player-title-actions"><span className="session-player-status">{sessionId?<><i/>Sessão em andamento</> :'Aguardando início da sessão'}</span><Link className="session-player-exit" href="/characters"><LogOut className="size-4"/>Sair da Sessão</Link></div></div>
@@ -83,6 +87,7 @@ export function SessionPlayerWorkspace({campaignId,actorId,sessionId,characters,
           </> : <div className="session-player-empty"><BookOpen className="size-8"/><h2>Nenhuma ficha autorizada nesta mesa</h2><p>Uma ficha aprovada e vinculada é necessária para participar com rolagens e recursos.</p></div>)}
           {tab==='diary' && <div className="session-player-diary"><div className="session-player-section-heading"><NotebookPen className="size-6"/><div><p className="eyebrow">Diário da Crônica</p><h2>Minhas Anotações</h2><p>Registre acontecimentos, agrupe capítulos por marcador e pesquise seus próprios registros.</p></div></div><NotesPanel actorId={actorId} initialCampaignId={campaignId}/></div>}
           {tab==='session' && <div className="session-player-events"><div className="session-player-section-heading"><CalendarDays className="size-6"/><div><p className="eyebrow">Minha participação</p><h2>Calendário e disponibilidade</h2><p>Consulte eventos e informe os dias em que pode participar.</p></div></div><CampaignTools campaignId={campaignId} master={false}/></div>}
+          {tab==='messages' && <CharacterSms campaignId={campaignId} mode="player"/>}
           {tab==='files' && <div className="session-player-files"><div className="session-player-section-heading"><FileText className="size-6"/><div><p className="eyebrow">Documentos da crônica</p><h2>Arquivos recebidos</h2><p>Materiais que o Narrador compartilhar com você aparecerão aqui.</p></div></div><div className="session-player-empty"><FileText className="size-9"/><h3>Nenhum arquivo compartilhado</h3><p>A integração de handouts por Vercel Blob e seus avisos ainda depende do módulo de compartilhamento da mesa.</p></div></div>}
         </div>
         {sessionId && <SessionSoundtrack sessionId={sessionId}/>} 

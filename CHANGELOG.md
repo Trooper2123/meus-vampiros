@@ -12,6 +12,13 @@
 - Novos testes escritos: `tests/character-awake-individual.test.ts`, `tests/discipline-player-rolls.test.ts`, `tests/session-soundtrack.test.ts`.
 - **Validação: NÃO EXECUTADA.** Não houve checkout completo, typecheck, lint, build, PostgreSQL isolado, execução de testes, nem teste de áudio em navegador. A implementação é **experimental** e não está homologada.
 - Pendentes: ampliar catálogo para poderes com mecânicas especiais, testes resistidos, custo múltiplo de Rouse/Fome 5 assistida, revisão de segurança completa e trilhas em arquivo/licenciadas.
+## [2026-11-03 12:28 BRT] - docs - Atualizar panorama e verificações antes de push
+
+**Arquivos principais:** `README.md`, `AGENTS.md`, `CHANGELOG.md`.
+
+- Resume funcionalidades ativas e planejadas, distinguindo entregas parciais e pendências de validação; corrige a descrição antiga de persistência em memória.
+- Exige `npm install` seguido de `pnpm build` antes de cada push, com correção de erros, repetição das verificações e bloqueio do envio em caso de falha.
+- Alteração exclusivamente documental, conferida com código, specs locais e diff. Sem instalação, build, testes de runtime, commit ou push nesta atualização.
 
 ## [2026-11-02 04:22 BRT] - fix - Atualizar teste da listagem de campanhas
 
