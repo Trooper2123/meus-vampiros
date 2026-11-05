@@ -16,10 +16,15 @@ type Mission = {
   characterIds: string[]
   npcIds: string[]
   updatedAt: string
+  dueDate: string | null
+  campaignEventId: string | null
+  eventTitle: string | null
+  eventDate: string | null
 }
+type CalendarEvent = { id: string; title: string; eventDate: string | null; fictionalYear: number | null; fictionalMonth: string | null; visibility: 'master' | 'everyone' }
 type Listing = { missions: Mission[]; canManage: boolean }
-type FormData = { title: string; description: string; narratorNotes: string; visibility: Visibility; characterIds: string; npcIds: string }
-const emptyForm: FormData = { title: '', description: '', narratorNotes: '', visibility: 'NARRATOR_ONLY', characterIds: '', npcIds: '' }
+type FormData = { title: string; description: string; narratorNotes: string; visibility: Visibility; characterIds: string; npcIds: string; dueDate: string; campaignEventId: string }
+const emptyForm: FormData = { title: '', description: '', narratorNotes: '', visibility: 'NARRATOR_ONLY', characterIds: '', npcIds: '', dueDate: '', campaignEventId: '' }
 const statuses: Record<Status, string> = { DRAFT: 'Rascunho', ACTIVE: 'Ativa', COMPLETED: 'Concluída', FAILED: 'Falhou', CANCELLED: 'Cancelada' }
 const visibilityLabels: Record<Visibility, string> = { NARRATOR_ONLY: 'Apenas narrador', ASSIGNED: 'Personagens atribuídos', CAMPAIGN: 'Toda a mesa' }
 const transitions: Record<Status, Status[]> = { DRAFT: ['ACTIVE', 'CANCELLED'], ACTIVE: ['COMPLETED', 'FAILED', 'CANCELLED'], COMPLETED: [], FAILED: [], CANCELLED: [] }
@@ -31,6 +36,7 @@ function parseIds(value: string): string[] {
 }
 
 export function CampaignMissionsManager({ campaignId }: Readonly<{ campaignId: string }>) {
+  const [events, setEvents] = useState<CalendarEvent[]>([])
   const [listing, setListing] = useState<Listing | null>(null)
   const [loading, setLoading] = useState(true)
   const [pending, setPending] = useState(false)
@@ -54,6 +60,14 @@ export function CampaignMissionsManager({ campaignId }: Readonly<{ campaignId: s
   }, [url])
 
   useEffect(() => { void load() }, [load])
+  useEffect(() => {
+    let active = true
+    void fetch(`/api/campaign-events?campaignId=${encodeURIComponent(campaignId)}`, { cache: 'no-store' })
+      .then(async response => { if (!response.ok) throw new Error('Eventos indisponíveis.'); return response.json() })
+      .then(data => { if (active) setEvents(data.events ?? []) })
+      .catch(() => { if (active) setEvents([]) })
+    return () => { active = false }
+  }, [campaignId])
 
   async function command(body: Record<string, unknown>, message: string) {
     setPending(true); setError(''); setNotice('')
@@ -73,7 +87,7 @@ export function CampaignMissionsManager({ campaignId }: Readonly<{ campaignId: s
     setEditing(mission.id)
     setForm({
       title: mission.title, description: mission.description, narratorNotes: mission.narratorNotes ?? '',
-      visibility: mission.visibility, characterIds: mission.characterIds.join(', '), npcIds: mission.npcIds.join(', '),
+      visibility: mission.visibility, characterIds: mission.characterIds.join(', '), npcIds: mission.npcIds.join(', '), dueDate: mission.dueDate ?? '', campaignEventId: mission.campaignEventId ?? '',
     })
     setError(''); setNotice('')
   }
@@ -88,7 +102,7 @@ export function CampaignMissionsManager({ campaignId }: Readonly<{ campaignId: s
         action: existing ? 'UPDATE' : 'CREATE',
         ...(existing ? { missionId: existing.id, expectedRevision: existing.revision } : {}),
         title: form.title, description: form.description, narratorNotes: form.narratorNotes,
-        visibility: form.visibility, characterIds, npcIds,
+        visibility: form.visibility, characterIds, npcIds, dueDate: form.dueDate || null, campaignEventId: form.campaignEventId || null,
       }, existing ? 'Missão atualizada.' : 'Missão criada.')
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Dados inválidos.') }
   }
@@ -118,6 +132,8 @@ export function CampaignMissionsManager({ campaignId }: Readonly<{ campaignId: s
       <label className="sheet-field"><span>Título</span><input required maxLength={180} value={form.title} onChange={event => setForm(prev => ({ ...prev, title: event.target.value }))} /></label>
       <label className="sheet-field"><span>Descrição</span><textarea rows={4} maxLength={10000} value={form.description} onChange={event => setForm(prev => ({ ...prev, description: event.target.value }))} /></label>
       <label className="sheet-field"><span>Visibilidade</span><select value={form.visibility} onChange={event => setForm(prev => ({ ...prev, visibility: event.target.value as Visibility }))}>{Object.entries(visibilityLabels).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label>
+      <label className="sheet-field"><span>Data da missão (calendário real, opcional)</span><input type="date" value={form.dueDate} onChange={event => setForm(prev => ({ ...prev, dueDate: event.target.value }))} /></label>
+      <label className="sheet-field"><span>Vincular a evento da campanha (opcional)</span><select value={form.campaignEventId} onChange={event => setForm(prev => ({ ...prev, campaignEventId: event.target.value }))}><option value="">Nenhum evento</option>{events.map(event => <option key={event.id} value={event.id}>{event.title}{event.eventDate ? ` — ${event.eventDate}` : event.fictionalYear !== null ? ` — ${event.fictionalMonth ?? ''} ${event.fictionalYear}` : ''}</option>)}</select><span className="text-xs text-muted-foreground">Eventos fictícios ou personalizados mantêm sua data no calendário original. Para criá-los, acesse Calendário.</span></label>
       <label className="sheet-field"><span>Personagens atribuídos (UUIDs separados por vírgula ou linha)</span><textarea rows={2} value={form.characterIds} onChange={event => setForm(prev => ({ ...prev, characterIds: event.target.value }))} placeholder="Opcional; somente personagens da mesa" /></label>
       <label className="sheet-field"><span>NPCs relacionados (UUIDs das instâncias na mesa)</span><textarea rows={2} value={form.npcIds} onChange={event => setForm(prev => ({ ...prev, npcIds: event.target.value }))} placeholder="Opcional" /></label>
       <label className="sheet-field"><span>Notas exclusivas do narrador</span><textarea rows={3} maxLength={10000} value={form.narratorNotes} onChange={event => setForm(prev => ({ ...prev, narratorNotes: event.target.value }))} /></label>
@@ -132,6 +148,7 @@ export function CampaignMissionsManager({ campaignId }: Readonly<{ campaignId: s
         <div><h4 className="font-serif text-xl">{mission.title}</h4><p className="text-xs text-muted-foreground">{statuses[mission.status]} · {visibilityLabels[mission.visibility]}</p></div>
         {listing?.canManage && <button type="button" className="button-ghost" disabled={pending} onClick={() => edit(mission)}>Editar</button>}
       </div>
+      {(mission.dueDate || mission.eventTitle) && <p className="text-xs text-muted-foreground">{mission.dueDate ? `Data: ${mission.dueDate}` : ''}{mission.dueDate && mission.eventTitle ? ' · ' : ''}{mission.eventTitle ? `Evento: ${mission.eventTitle}${mission.eventDate ? ` (${mission.eventDate})` : ''}` : ''}</p>}
       {mission.description && <p className="text-sm whitespace-pre-wrap">{mission.description}</p>}
       {listing?.canManage && mission.narratorNotes && <div className="border-l-2 pl-3"><p className="text-xs font-semibold">Notas do narrador</p><p className="text-sm whitespace-pre-wrap">{mission.narratorNotes}</p></div>}
       {mission.characterIds.length > 0 && <p className="text-xs text-muted-foreground">Personagens atribuídos: {mission.characterIds.length}</p>}
