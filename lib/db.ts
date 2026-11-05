@@ -125,6 +125,17 @@ export async function ensureAllTables() {
   updated_at TIMESTAMPTZ DEFAULT now()
   );
 
+  CREATE TABLE IF NOT EXISTS campaign_limits (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    campaign_id UUID NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+    category TEXT NOT NULL CHECK (category IN ('LINE','VEIL','OTHER')),
+    title VARCHAR(160) NOT NULL,
+    description TEXT NOT NULL DEFAULT '',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+  );
+  CREATE INDEX IF NOT EXISTS idx_campaign_limits_campaign ON campaign_limits(campaign_id, category, title);
+
   CREATE TABLE IF NOT EXISTS notes (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     author_user_id TEXT NOT NULL,
