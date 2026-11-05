@@ -34,6 +34,7 @@ function SessionWorkspace({ campaignId, actorId, campaignName }: Readonly<{ camp
   const [pending, setPending] = useState(false)
   const [feedback, setFeedback] = useState('')
   const [activeTool, setActiveTool] = useState('shared')
+  const [mobilePanel, setMobilePanel] = useState<'center'|'chat'|'cameras'>('center')
   const [researchView, setResearchView] = useState<'skills' | 'merits'>('skills')
   const [closedNpcSession,setClosedNpcSession]=useState('')
   const manage = data?.canManage ?? false
@@ -90,7 +91,7 @@ function SessionWorkspace({ campaignId, actorId, campaignName }: Readonly<{ camp
     </header>
     {data?.archived&&<p className="border border-border bg-card p-4 text-sm">Mesa arquivada. O histórico continua disponível; restaure a mesa para iniciar novas sessões.</p>}
     {!!data?.sessions?.length&&<label className="sheet-field"><span>Sessão para consultar anotações e revelações</span><select className="select" value={notesSessionId??''} onChange={event=>{const id=event.target.value;setClosedNpcSession(id);const location=new URL(window.location.href);location.searchParams.set('npcSessionId',id);window.history.replaceState(window.history.state,'',location.toString())}}>{data.sessions.map(session=><option key={session.id} value={session.id}>{new Date(session.startedAt).toLocaleString('pt-BR')} · {session.status==='ACTIVE'?'Em andamento':'Encerrada'}</option>)}</select></label>}
-    {data && manage && <div className="session-master-shell">
+    {data && manage && <><nav className="session-mobile-panels" aria-label="Selecionar painel da sessão">{[{id:'center',label:'Hub'},{id:'chat',label:'Chat'},{id:'cameras',label:'Câmeras'}].map(item=><button type="button" key={item.id} aria-pressed={mobilePanel===item.id} className={mobilePanel===item.id?'is-active':''} onClick={()=>setMobilePanel(item.id as 'center'|'chat'|'cameras')}>{item.label}</button>)}</nav><div className="session-master-shell" data-mobile-panel={mobilePanel}>
       <aside className="session-chat" aria-label="Chat da mesa">
         <div className="session-column-heading"><MessageCircle className="size-6 text-primary" aria-hidden="true"/><div><p className="eyebrow">Comunicação</p><h2 className="font-serif text-xl">Chat da Mesa</h2></div><button type="button" className="session-icon-action" aria-label="Mais opções">•••</button></div>
         <div id="session-master-livekit-chat" className="session-chat-mount">
@@ -180,7 +181,7 @@ function SessionWorkspace({ campaignId, actorId, campaignName }: Readonly<{ camp
         <div className="mt-4"><LiveKitRoomLink campaignId={campaignId} master={manage} compact chatTargetId="session-master-livekit-chat" /></div>
         {data.characters.length > 0 && <div className="session-character-links"><p className="eyebrow">Resumos de ficha</p>{data.characters.map(character => <Link key={character.id} href={`/characters/${character.id}/summary`} target="_blank" rel="noopener noreferrer"><BookOpen className="size-3.5" aria-hidden="true"/>{character.name}</Link>)}</div>}
       </aside>
-    </div>}
+    </div></>}
     </div>}
     {data && !manage && <SessionPlayerWorkspace campaignId={campaignId} actorId={actorId} campaignName={campaignName} sessionId={activeSession?.status === 'ACTIVE' ? activeSession.id : null} characters={data.characters}/>} 
     {!snapshot && !error && <output  className="block border border-border bg-card p-5 text-sm text-muted-foreground">Carregando sessão...</output>}
