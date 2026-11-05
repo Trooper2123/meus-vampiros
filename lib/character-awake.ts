@@ -7,6 +7,7 @@ import { applyAwakening, readSessionState } from './vtm-v5/session-state'
 
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 export type AwakeIntent = { action: 'DECLARE_EXTERNAL' | 'START_NIGHT' | 'AWAKE'; expectedRevision: number; idempotencyKey: string; nightId?: string; inGameDate?: string; sessionId?: string }
+type StartedIndependentNight = { night: { id: string; number: number; inGameDate: string | null; createdAt: string; origin: 'EXTERNAL_TABLE' }; hunger: number; condition: string; revision: number }
 
 function validate(input: AwakeIntent) {
   if (!input || !['DECLARE_EXTERNAL', 'START_NIGHT', 'AWAKE'].includes(input.action) || !Number.isSafeInteger(input.expectedRevision) || input.expectedRevision < 0 || !uuid.test(input.idempotencyKey) || input.nightId !== undefined && !uuid.test(input.nightId) || input.sessionId !== undefined && !uuid.test(input.sessionId) || input.inGameDate !== undefined && (!/^\d{4}-\d{2}-\d{2}$/.test(input.inGameDate) || Number.isNaN(Date.parse(input.inGameDate)) || new Date(input.inGameDate).toISOString().slice(0,10) !== input.inGameDate)) throw new CharacterCommandError(400, 'Dados do despertar inválidos.')
@@ -26,7 +27,9 @@ export async function getCharacterAwake(actorId: string, characterId: string) {
   return { context: 'CAMPAIGN' as const, night, completed: completed?.rows[0] ?? null, revision: character.revision, hunger: state.hunger, condition: state.condition, eligible: character.characterType === 'PLAYER_VAMPIRE' && character.status === 'APPROVED' && state.condition !== 'FINAL_DEATH' }
 }
 
-export async function executeCharacterAwake(actorId: string, characterId: string, input: AwakeIntent, dice: DiceProvider = serverDiceProvider) {
+export function executeCharacterAwake(actorId: string, characterId: string, input: AwakeIntent & { action: 'START_NIGHT' }, dice?: DiceProvider): Promise<StartedIndependentNight>
+export function executeCharacterAwake(actorId: string, characterId: string, input: AwakeIntent, dice?: DiceProvider): Promise<Record<string, unknown>>
+export async function executeCharacterAwake(actorId: string, characterId: string, input: AwakeIntent, dice: DiceProvider = serverDiceProvider): Promise<Record<string, unknown>> {
   validate(input)
   return runCharacterCommand(actorId, characterId, { type: input.action === 'START_NIGHT' ? 'INDEPENDENT_NIGHT_STARTED' : input.action === 'DECLARE_EXTERNAL' ? 'EXTERNAL_TABLE_DECLARED' : 'CHARACTER_AWAKENED', key: input.idempotencyKey, expectedRevision: input.expectedRevision, payload: input }, character => character.ownerId === actorId, async (character, transaction) => {
     if (character.characterType !== 'PLAYER_VAMPIRE' || ['ARCHIVED','DISABLED','DELETED'].includes(character.status)) throw new CharacterCommandError(422, 'Despertar disponível apenas para vampiros jogáveis.')

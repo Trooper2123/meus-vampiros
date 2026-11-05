@@ -126,7 +126,7 @@ export function MasterPanel({ initialCampaigns, view = 'current' }: Readonly<{ i
         </select>
       </label>
     </div>
-    <p className="mt-3 text-xs text-muted-foreground" role="status">{visibleCampaigns.length} de {campaigns.length} campanha(s) nesta visão</p>
+    <output className="block mt-3 text-xs text-muted-foreground">{visibleCampaigns.length} de {campaigns.length} campanha(s) nesta visão</output>
     {visibleCampaigns.length === 0 ? <div className="campaigns-empty-state">
       <BookOpen className="size-11 text-primary" strokeWidth={1.5} aria-hidden="true" />
       <p className="eyebrow mt-5">{campaigns.length === 0 ? 'Nenhuma crônica registrada' : 'Nenhuma campanha encontrada'}</p>

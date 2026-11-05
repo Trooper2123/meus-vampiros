@@ -66,7 +66,7 @@ function SessionWorkspace({ campaignId, actorId, campaignName }: Readonly<{ camp
       const response = await fetch(endpoint, { method, headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ...body, idempotencyKey: requestKeys.current[operation] }) })
       const result = await response.json().catch(() => null)
       if (!response.ok) { setFeedback(result?.error ?? 'Não foi possível atualizar a sessão.'); await mutate(); return }
-      if (typeof result?.session?.id !== 'string') { throw new Error('Resposta de sessão inválida.') }
+      if (typeof result?.session?.id !== 'string') { throw new TypeError('Resposta de sessão inválida.') }
       const location = new URL(window.location.href)
       if (method === 'PATCH') { setClosedNpcSession(result.session.id); location.searchParams.set('npcSessionId', result.session.id) }
       else { setClosedNpcSession(''); location.searchParams.delete('npcSessionId') }

@@ -29,7 +29,8 @@ function NotesEditor({ link, initialCampaignId }: Readonly<{ link?: NoteLink; in
   const [search, setSearch] = useState('')
   const [marker, setMarker] = useState('')
   const filters = `&search=${encodeURIComponent(search)}`
-  const endpoint = link ? `/api/notes/links?targetType=${link.targetType}&targetId=${link.targetId}&page=${page}` : `/api/notes?page=${page}${initialCampaignId?`&campaignId=${initialCampaignId}`:""}${filters}`
+  const campaignFilter = initialCampaignId ? `&campaignId=${initialCampaignId}` : ''
+  const endpoint = link ? `/api/notes/links?targetType=${link.targetType}&targetId=${link.targetId}&page=${page}` : `/api/notes?page=${page}${campaignFilter}${filters}`
   const { data, error, mutate } = useSWR<{ notes: NoteView[]; total: number }>(endpoint, fetcher, { refreshInterval: 5000 })
   const { data: context } = useSWR<Context>('/api/notes/context', fetcher)
   const [current, setCurrent] = useState<NoteView | null>(null)
@@ -72,7 +73,7 @@ function NotesEditor({ link, initialCampaignId }: Readonly<{ link?: NoteLink; in
     setBusy(true)
     try {
       const url = current ? `/api/notes/${current.id}` : '/api/notes'
-      const { requestMethod,payload }=prepareNoteRequest(title,body,marker,visibility,recipients,links,current,campaignId,creationKey,remove)
+      const { requestMethod,payload }=prepareNoteRequest({title,body,marker,visibility,recipients,links},current,campaignId,creationKey,remove)
       const response = await fetch(url, { method: requestMethod, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
       const saved = await response.json()
       if (!response.ok) { throw new Error(saved.error ?? 'Não foi possível salvar. Seu texto foi preservado.') }
@@ -91,7 +92,12 @@ function NotesEditor({ link, initialCampaignId }: Readonly<{ link?: NoteLink; in
       const folder = note.marker?.trim() || 'Sem marcador'
       grouped.set(folder, [...(grouped.get(folder) ?? []), note])
     }
-    return [...grouped.entries()].sort(([a], [b]) => a === 'Sem marcador' ? 1 : b === 'Sem marcador' ? -1 : a.localeCompare(b, 'pt-BR'))
+    return [...grouped.entries()].sort(([a], [b]) => {
+      if (a === b) return 0
+      if (a === 'Sem marcador') return 1
+      if (b === 'Sem marcador') return -1
+      return a.localeCompare(b, 'pt-BR')
+    })
   }, [data?.notes])
   if ([401, 403].includes(error?.status)) { return <p role="alert">Sua sessão não permite acessar as anotações. Recarregue após entrar novamente.</p> }
   return <div className="campaign-notes-workspace">
@@ -100,7 +106,7 @@ function NotesEditor({ link, initialCampaignId }: Readonly<{ link?: NoteLink; in
       <label className="campaign-notes-search"><span>Pesquisar nas notas</span><input value={search} placeholder="Buscar por palavra no título, conteúdo ou marcador..." onChange={event => { setSearch(event.target.value); setPage(1) }}/></label>
       {error && <p role="alert">{error.message}</p>}{!data && !error && <output>Carregando...</output>}
       {data?.total === 0 && <p className="empty-state">Nenhuma anotação encontrada.</p>}
-      <div className="campaign-note-folders">{folders.map(([folder, notes]) => <details key={folder} open className="campaign-note-folder"><summary><span>▸ 📁 {folder}</span><strong>{notes.length}</strong></summary><ul>{notes.map(note => <li key={note.id}><button type="button" className={current?.id === note.id ? 'is-active' : ''} disabled={busy} onClick={() => void open(note.id)}><span><strong>{note.title}</strong><small>{note.body?.slice(0, 90) || 'Sem conteúdo'}</small></span><span className="campaign-note-visibility">{note.visibility === 'PRIVATE' ? 'Privada' : note.visibility === 'SHARED' ? 'Compartilhada' : 'Narrador'}</span></button></li>)}</ul></details>)}</div>
+      <div className="campaign-note-folders">{folders.map(([folder, notes]) => <details key={folder} open className="campaign-note-folder"><summary><span>▸ 📁 {folder}</span><strong>{notes.length}</strong></summary><ul>{notes.map(note => <li key={note.id}><button type="button" className={current?.id === note.id ? 'is-active' : ''} disabled={busy} onClick={() => void open(note.id)}><span><strong>{note.title}</strong><small>{note.body?.slice(0, 90) || 'Sem conteúdo'}</small></span><span className="campaign-note-visibility">{({ PRIVATE: 'Privada', SHARED: 'Compartilhada', NARRATOR_ONLY: 'Narrador' })[note.visibility]}</span></button></li>)}</ul></details>)}</div>
       <div className="campaign-notes-pagination"><button type="button" className="button-ghost" disabled={busy || page === 1} onClick={() => setPage(value => value - 1)}>« Anterior</button><span>{page}</span><button type="button" className="button-ghost" disabled={busy || !data || page * 20 >= data.total} onClick={() => setPage(value => value + 1)}>Próxima »</button></div>
     </section>
     <section className="campaign-notes-editor">
@@ -121,7 +127,7 @@ function NotesEditor({ link, initialCampaignId }: Readonly<{ link?: NoteLink; in
   </div>
 }
 
-function prepareNoteRequest(title: string,body: string,marker: string,visibility: string,recipients: string[],links: NoteLink[],current: { recipientUserIds?: string[]; body?: string; links?: { label: string; targetType: "CHARACTER"|"NPC"|"EVENT"|"SESSION"; targetId: string }[]; id: string; title: string; campaignId: string|null; visibility: "PRIVATE"|"NARRATOR_ONLY"|"SHARED"; revision: number; createdAt: string; updatedAt: string; canEdit: boolean; canDelete: boolean; canShare: boolean }|null,campaignId: string,creationKey: {current:string},remove: boolean) {
+function prepareNoteRequest({title,body,marker,visibility,recipients,links}: {title:string;body:string;marker:string;visibility:string;recipients:string[];links:NoteLink[]},current: NoteView|null,campaignId: string,creationKey: {current:string},remove: boolean) {
   const fields={ title,body,marker: marker.trim() || null,visibility,recipientUserIds: recipients,links,...(!current?.campaignId? { campaignId: campaignId||null }:{}) }
   const revision=current? { expectedRevision: current.revision }:{ idempotencyKey: creationKey.current }
   const payload=remove? { expectedRevision: current?.revision }:{ ...fields,...revision }
@@ -129,7 +135,7 @@ function prepareNoteRequest(title: string,body: string,marker: string,visibility
   return { requestMethod,payload }
 }
 
-function noteRequestMethod(remove: boolean,current: { recipientUserIds?: string[]; body?: string; links?: { label: string; targetType: "CHARACTER"|"NPC"|"EVENT"|"SESSION"; targetId: string }[]; id: string; title: string; campaignId: string|null; visibility: "PRIVATE"|"NARRATOR_ONLY"|"SHARED"; revision: number; createdAt: string; updatedAt: string; canEdit: boolean; canDelete: boolean; canShare: boolean }|null) {
+function noteRequestMethod(remove: boolean,current: NoteView|null) {
   let requestMethod
   if(remove) {
     requestMethod='DELETE'

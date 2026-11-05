@@ -34,7 +34,7 @@ export function CampaignXpHistory({ campaignId, initialCharacterId = '' }: Reado
       if (!response.ok) throw new Error(body.error ?? 'Não foi possível registrar a leitura.')
       setFeedback('Registros desta página marcados como visualizados. O histórico foi preservado.')
       await mutate()
-    } catch (failure) { setFeedback(failure instanceof Error ? failure.message : 'Falha ao registrar leitura. Tente novamente.') }
+    } catch (error_) { setFeedback(error_ instanceof Error ? error_.message : 'Falha ao registrar leitura. Tente novamente.') }
     finally { sending.current = false; setBusy(false) }
   }
   return <div id="campaign-xp-history" className="campaign-module-body">
@@ -48,9 +48,9 @@ export function CampaignXpHistory({ campaignId, initialCharacterId = '' }: Reado
         <label className="sheet-field"><span>Até</span><input className="input" type="date" value={filters.to} onChange={event => filter('to', event.target.value)} /></label>
         <label className="sheet-field"><span>Visualização</span><select className="select" value={filters.viewed} onChange={event => filter('viewed', event.target.value)}><option value="">Todas</option><option value="false">Não visualizadas</option><option value="true">Visualizadas</option></select></label>
       </div>
-      {feedback && <p role="status" className="text-sm text-muted-foreground">{feedback}</p>}
+      {feedback && <output className="block text-sm text-muted-foreground">{feedback}</output>}
       {error && <div role="alert"><p>Não foi possível consultar o histórico.</p><button type="button" className="button-ghost" onClick={() => void mutate()}>Tentar novamente</button></div>}
-      {!data && !error && <p role="status" className="text-sm text-muted-foreground">Carregando evolução…</p>}
+      {!data && !error && <output className="block text-sm text-muted-foreground">Carregando evolução…</output>}
       {data && <>
         <section className="campaign-module-subsection"><h3 className="font-serif text-xl">Resumo de XP por personagem</h3><div className="mt-4 grid gap-3 sm:grid-cols-2">{selected.map(character => <article key={character.id} className="border border-border p-3"><h3 className="font-serif text-xl">{character.name}</h3><p className="mt-2 text-sm">Recebido: {character.totalXp} XP · Gasto: {character.spentXp} XP · Disponível: {character.availableXp} XP</p><p className="mt-3 text-sm">Últimas compras:</p>{character.recentPurchases.length ? <ul className="mt-2 flex flex-col gap-1">{character.recentPurchases.map((purchase, index) => <li key={index} className="text-sm text-muted-foreground">{purchase.traitName} · {purchase.xpAmount} XP</li>)}</ul> : <p className="text-sm text-muted-foreground">Nenhuma compra detalhada registrada.</p>}<button type="button" className="button-ghost mt-3" onClick={() => setFilters({ characterId: character.id, category: '', from: '', to: '', viewed: '', page: '1' })}>Consultar histórico completo</button></article>)}</div></section>
         <button type="button" className="button-ghost self-start" disabled={busy || !data.entries.some(entry => !entry.viewed)} onClick={() => void markViewed()}>Marcar registros desta página como visualizados</button>
