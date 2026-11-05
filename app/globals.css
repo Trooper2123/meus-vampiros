@@ -3113,3 +3113,21 @@ main > .archive-header {
  .session-livekit-chat{max-height:min(65dvh,600px)}
  .session-livekit-chat-log{min-height:120px!important}
 }
+
+
+/* Player session: compact character overview and always-visible resource actions. */
+.session-player-character-banner{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:12px;padding:14px 18px;border:1px solid var(--border);border-radius:12px;background:linear-gradient(115deg,color-mix(in srgb,var(--primary) 12%,var(--card)),var(--card))}
+.session-player-character-banner>div:first-child{display:flex;flex-direction:column;gap:3px;min-width:0}
+.session-player-character-banner strong{font-family:serif;font-size:clamp(1.15rem,2vw,1.55rem);line-height:1.25;overflow-wrap:anywhere}
+.session-player-character-banner span{font-size:.8rem;color:var(--muted-foreground)}
+.session-player-banner-select{display:flex;flex-direction:column;gap:5px;font-size:.75rem;color:var(--muted-foreground);min-width:min(100%,190px)}
+.session-player-banner-select select{max-width:100%;border:1px solid var(--border);border-radius:8px;background:var(--background);color:var(--foreground);padding:8px}
+.session-player-tabs-enhanced{display:flex;flex-wrap:wrap;gap:6px}
+.session-player-tabs-enhanced button{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-width:0;white-space:normal}
+.session-player-tabs-enhanced button:focus-visible,.session-player-action-buttons button:focus-visible,.session-mobile-panels button:focus-visible{outline:2px solid var(--primary);outline-offset:3px}
+.session-player-unread{display:inline-flex;align-items:center;justify-content:center;min-width:19px;height:19px;padding:0 5px;border-radius:999px;background:var(--primary);color:var(--primary-foreground);font-size:11px;font-weight:700}
+.session-player-center>.session-player-action-dock{margin:12px 0 16px}
+.session-player-center>.session-player-action-dock .session-player-action-buttons{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.session-player-center>.session-player-action-dock .session-player-action-buttons button{min-width:0}
+@media(max-width:900px){.session-player-tabs-enhanced{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}.session-player-tabs-enhanced button{padding-inline:6px}}
+@media(max-width:480px){.session-player-character-banner{padding:12px}.session-player-banner-select{width:100%}.session-player-tabs-enhanced{grid-template-columns:repeat(2,minmax(0,1fr))}.session-player-center>.session-player-action-dock .session-player-action-buttons{grid-template-columns:repeat(2,minmax(0,1fr))}}
