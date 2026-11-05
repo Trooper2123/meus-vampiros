@@ -1,9 +1,13 @@
 import { CampaignNpcCatalogSettings } from '@/components/campaign-npc-catalog-settings'
+import { CampaignLimitsSummary } from '@/components/campaign-limits-summary'
+import { CampaignLimitsManager } from '@/components/campaign-limits-manager'
 import { CharacterSms } from '@/components/character-sms/character-sms'
 import { CharacterSmsSettings } from '@/components/character-sms/character-sms-settings'
 import { MasterViewportGuard } from '@/components/master-viewport-guard'
 import { NotesPanel } from '@/components/notes/notes-panel'
 import { CampaignArchiveControl } from '@/components/campaign-archive-control'
+import { CampaignProjectsPanel } from '@/components/projects/campaign-projects-panel'
+import { CampaignCoteriePanel } from '@/components/coterie/campaign-coterie-panel'
 import { CampaignTools } from '@/components/campaign-calendar/campaign-tools'
 import { CampaignAwakeSettings } from '@/components/game-session/campaign-awake-settings'
 import { CampaignSessionShortcutSettings } from '@/components/campaign-session-shortcut-settings'
@@ -89,7 +93,7 @@ export default async function CampaignDetailPage({ params, searchParams }: Reado
               <section className="campaign-preparation-banner"><div><span className="campaign-preparation-pill"><Shield className="size-4"/>Mesa em preparação</span><h2 className="mt-4 font-serif text-3xl">Nenhuma sessão ativa</h2><p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">Organize a próxima sessão, gerencie participantes, limites, handouts, anotações e eventos da campanha.</p></div><button className="button-ghost" type="button" disabled><ImageIcon className="size-4"/>Trocar imagem da mesa</button></section>
               <div className="campaign-approved-grid">
                 <section className="campaign-approved-card"><div className="campaign-approved-card-title"><span><Users/>Participantes ({summaries.length})</span><Link href={viewHref('participants')}>Ver todos →</Link></div><div className="campaign-participant-preview">{summaries.slice(0,4).map(summary => summary && <Link key={summary.id} href={`/characters/${summary.id}/summary`} className="campaign-participant-chip"><span className="campaign-participant-avatar">{summary.name.slice(0,1)}</span><strong>{summary.name}</strong><small>{summary.clan ?? 'Clã não definido'}</small></Link>)}</div></section>
-                <section className="campaign-approved-card"><div className="campaign-approved-card-title"><span><Shield/>Limites da Mesa</span><Link href={viewHref('limits')}>Gerenciar →</Link></div><div className="campaign-empty-module"><p>Configure os limites e regras específicas da mesa.</p></div></section>
+                <section className="campaign-approved-card"><div className="campaign-approved-card-title"><span><Shield/>Limites da Mesa</span><Link href={viewHref('limits')}>Gerenciar →</Link></div><CampaignLimitsSummary campaignId={campaign.id} /></section>
                 <section className="campaign-approved-card"><div className="campaign-approved-card-title"><span><CalendarDays/>Calendário de Eventos</span><Link href={viewHref('calendar')}>Resumo →</Link></div><div className="campaign-empty-module"><p>Acesse o calendário para consultar e agendar eventos.</p></div></section>
                 <section className="campaign-approved-card"><div className="campaign-approved-card-title"><span><ScrollText/>Resumo da Campanha</span></div><dl className="campaign-summary-list"><div><dt>Personagens</dt><dd>{summaries.length}</dd></div><div><dt>Fichas vinculadas</dt><dd>{characters.length}</dd></div><div><dt>Último encontro</dt><dd>{campaign.lastSessionAt ? new Date(campaign.lastSessionAt).toLocaleDateString('pt-BR') : '—'}</dd></div></dl></section>
                 <section className="campaign-approved-card"><div className="campaign-approved-card-title"><span><Target/>Missões Ativas</span></div><div className="campaign-empty-module"><p>O domínio de missões ainda não existe.</p></div></section>
@@ -102,14 +106,65 @@ export default async function CampaignDetailPage({ params, searchParams }: Reado
             {view === 'xp' && <section className="campaign-module-workspace"><div className="campaign-module-header"><div className="campaign-module-heading"><ScrollText/><div><p className="eyebrow">Progressão</p><h2>XP e Evolução</h2><p>Acompanhe experiência distribuída, disponível e histórico dos personagens.</p></div></div></div><CampaignXpHistory key={xpCharacterId} campaignId={campaign.id} initialCharacterId={xpCharacterId}/></section>}
             {view === 'possessions' && <section className="campaign-module-workspace"><div className="campaign-module-header"><div className="campaign-module-heading"><PackageOpen/><div><p className="eyebrow">Recursos especiais</p><h2>Itens Restritos</h2><p>Revise, conceda e administre pertences que exigem controle do Narrador.</p></div></div></div><CampaignPossessionsManager campaignId={campaign.id}/></section>}
             {view === 'handouts' && <section className="campaign-module-workspace"><div className="campaign-module-header"><div className="campaign-module-heading"><ImageIcon/><div><p className="eyebrow">Arquivos da crônica</p><h2>Handouts / Revelações</h2><p>Organize materiais da mesa e compartilhe arquivos com jogadores.</p></div></div></div><div className="campaign-module-empty"><ImageIcon/><h3>Handouts / Revelações</h3><p>Drive de Handouts da mesa. Implementação funcional seguirá a SPEC de Vercel Blob.</p></div></section>}
-            {view === 'limits' && <section className="campaign-module-workspace"><div className="campaign-module-header"><div className="campaign-module-heading"><Shield/><div><p className="eyebrow">Segurança e acordos</p><h2>Limites da Mesa</h2><p>Configure limites e regras específicas aplicadas à crônica.</p></div></div></div><div className="campaign-module-empty"><Shield/><h3>Limites da Mesa</h3><p>O domínio de limites ainda não está implementado.</p></div></section>}
-            {view === 'projects' && <section className="campaign-module-workspace"><div className="campaign-module-header"><div className="campaign-module-heading"><FolderKanban/><div><p className="eyebrow">Planos de longo prazo</p><h2>Projetos</h2><p>Acompanhe Projects pessoais e coletivos da Coterie.</p></div></div></div><div className="campaign-module-empty"><FolderKanban/><h3>Projetos</h3><p>Módulo reservado aos Projects definidos na SPEC-SESSION-011.</p></div></section>}
-            {view === 'coterie' && <section className="campaign-module-workspace"><div className="campaign-module-header"><div className="campaign-module-heading"><Users/><div><p className="eyebrow">Estrutura coletiva</p><h2>Cotterie</h2><p>Gerencie membros, Domain, Backgrounds, Goals e recursos compartilhados.</p></div></div></div><div className="campaign-module-empty"><Users/><h3>Cotterie</h3><p>Módulo reservado à Coterie definida na SPEC-SESSION-011.</p></div></section>}
+            {view === 'limits' && <section className="campaign-module-workspace"><div className="campaign-module-header"><div className="campaign-module-heading"><Shield/><div><p className="eyebrow">Segurança e acordos</p><h2>Limites da Mesa</h2><p>Configure limites e regras específicas aplicadas à crônica.</p></div></div></div><div className="campaign-module-body"><CampaignLimitsManager campaignId={campaign.id} /></div></section>}
+            {view === 'projects' && <section className="campaign-module-workspace"><div className="campaign-module-header"><div className="campaign-module-heading"><FolderKanban/><div><p className="eyebrow">Planos de longo prazo</p><h2>Projetos</h2><p>Acompanhe Projects pessoais e coletivos da Coterie.</p></div></div></div><div className="campaign-module-body"><CampaignProjectsPanel campaignId={campaign.id}/></div></section>}
+            {view === 'coterie' && <section className="campaign-module-workspace"><div className="campaign-module-header"><div className="campaign-module-heading"><Users/><div><p className="eyebrow">Estrutura coletiva</p><h2>Cotterie</h2><p>Gerencie membros, Domain, Backgrounds, Goals e recursos compartilhados.</p></div></div></div><div className="campaign-module-body"><CampaignCoteriePanel campaignId={campaign.id} projectsHref={viewHref("projects")}/></div></section>}
             {view === 'messages' && <section className="campaign-module-workspace"><div className="campaign-module-header"><div className="campaign-module-heading"><MessagesSquare/><div><p className="eyebrow">Comunicação entre personagens</p><h2>Mensagens da Mesa</h2><p>Acompanhe conversas privadas entre personagens da crônica.</p></div></div></div><CharacterSms campaignId={campaign.id} mode="narrator"/></section>}
             {view === 'notes' && <section className="campaign-module-workspace"><div className="campaign-module-header"><div className="campaign-module-heading"><NotebookPen/><div><p className="eyebrow">Registro do Narrador</p><h2>Anotações</h2><p>Organize, agrupe e pesquise registros, pistas e informações da campanha.</p></div></div></div><NotesPanel actorId={session.user.sub} initialCampaignId={campaign.id}/></section>}
             {view === 'research' && <section className="campaign-module-workspace"><div className="campaign-module-header"><div className="campaign-module-heading"><Search/><div><p className="eyebrow">Referências de regras</p><h2>Pesquisas</h2><p>Consulte catálogos de disciplinas, habilidades, vantagens e defeitos.</p></div></div></div><div className="campaign-module-choice-grid"><Link href="/master/catalogo"><Search/><strong>Disciplinas e habilidades</strong><span>Abrir catálogo de poderes e referências.</span></Link><Link href="/master/vantagens-defeitos"><BookOpen/><strong>Vantagens e defeitos</strong><span>Abrir catálogo e itens personalizados.</span></Link></div></section>}
-            {view === 'settings' && <section className="campaign-module-workspace"><div className="campaign-module-header"><div className="campaign-module-heading"><Settings2/><div><p className="eyebrow">Administração</p><h2>Configurações da Mesa</h2><p>Gerencie o estado e as opções administrativas da campanha.</p></div></div><Link className="button-ghost campaign-settings-back" href="/campaigns"><ArrowLeft className="size-4" aria-hidden="true"/>Voltar para todas as mesas</Link></div><div className="campaign-settings-content"><CampaignTools campaignId={campaign.id} master settingsOnly/><CampaignSessionShortcutSettings campaignId={campaign.id}/><CampaignNpcCatalogSettings campaignId={campaign.id}/><CampaignAwakeSettings campaignId={campaign.id}/><section className="campaign-module-subsection campaign-settings-danger"><p className="eyebrow">Administração da campanha</p><h3 className="mt-2 font-serif text-xl">Arquivamento</h3><p className="mt-2 mb-4 text-sm text-muted-foreground">Arquivar uma mesa impede novas sessões, preservando o histórico.</p><CampaignArchiveControl id={campaign.id} name={campaign.name} archived={campaign.status==='Arquivada'}/></section></div></section>}
-            {view === 'settings' && <section className="campaign-module-workspace"><div className="campaign-module-header"><div className="campaign-module-heading"><Settings2/><div><p className="eyebrow">Administração</p><h2>Configurações da Mesa</h2><p>Gerencie o estado e as opções administrativas da campanha.</p></div></div><Link className="button-ghost campaign-settings-back" href="/campaigns"><ArrowLeft className="size-4" aria-hidden="true"/>Voltar para todas as mesas</Link></div><div className="campaign-settings-content"><CampaignTools campaignId={campaign.id} master settingsOnly/><CampaignSessionShortcutSettings campaignId={campaign.id}/><CharacterSmsSettings campaignId={campaign.id}/><section className="campaign-module-subsection campaign-settings-danger"><p className="eyebrow">Administração da campanha</p><h3 className="mt-2 font-serif text-xl">Arquivamento</h3><p className="mt-2 mb-4 text-sm text-muted-foreground">Arquivar uma mesa impede novas sessões, preservando o histórico.</p><CampaignArchiveControl id={campaign.id} name={campaign.name} archived={campaign.status==='Arquivada'}/></section></div></section>}
+{view === 'settings' && (
+  <section className="campaign-module-workspace">
+    <div className="campaign-module-header">
+      <div className="campaign-module-heading">
+        <Settings2 />
+        <div>
+          <p className="eyebrow">Administração</p>
+          <h2>Configurações da Mesa</h2>
+          <p>Gerencie o estado e as opções administrativas da campanha.</p>
+        </div>
+      </div>
+
+      <Link
+        className="button-ghost campaign-settings-back"
+        href="/campaigns"
+      >
+        <ArrowLeft className="size-4" aria-hidden="true" />
+        Voltar para todas as mesas
+      </Link>
+    </div>
+
+    <div className="campaign-settings-content">
+      <CampaignTools
+        campaignId={campaign.id}
+        master
+        settingsOnly
+      />
+
+      <CampaignSessionShortcutSettings campaignId={campaign.id} />
+
+      <CampaignNpcCatalogSettings campaignId={campaign.id} />
+
+      <CampaignAwakeSettings campaignId={campaign.id} />
+
+      <CharacterSmsSettings campaignId={campaign.id} />
+
+      <section className="campaign-module-subsection campaign-settings-danger">
+        <p className="eyebrow">Administração da campanha</p>
+        <h3 className="mt-2 font-serif text-xl">Arquivamento</h3>
+        <p className="mt-2 mb-4 text-sm text-muted-foreground">
+          Arquivar uma mesa impede novas sessões, preservando o histórico.
+        </p>
+
+        <CampaignArchiveControl
+          id={campaign.id}
+          name={campaign.name}
+          archived={campaign.status === 'Arquivada'}
+        />
+      </section>
+    </div>
+  </section>
+)}
+
           </div>
           </div>
         </div>
