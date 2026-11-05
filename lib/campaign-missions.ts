@@ -12,7 +12,7 @@ const allowedTransitions:Record<Status,Status[]>={DRAFT:['ACTIVE','CANCELLED'],A
 function connection(){if(!pool)fail(503,'Banco não configurado.');return pool!}
 async function role(actorId:string,campaignId:string){
  if(!validUuid(campaignId))fail(400,'Mesa inválida.')
- const result=await connection().query<{master:boolean;member:boolean}>(`SELECT master_user_id=$2 AS master, (master_user_id=$2 OR EXISTS(SELECT 1 FROM characters WHERE campaign_id=c.id AND user_id=$2 AND character_type='PLAYER_VAMPIRE' AND status<>'DELETED')) AS member FROM campaigns c WHERE c.id=$1::uuid`,[campaignId,actorId])
+ const result=await connection().query<{master:boolean;member:boolean;timezone:string}>(`SELECT master_user_id=$2 AS master, COALESCE(NULLIF(timezone,''),'UTC') AS timezone, (master_user_id=$2 OR EXISTS(SELECT 1 FROM characters WHERE campaign_id=c.id AND user_id=$2 AND character_type='PLAYER_VAMPIRE' AND status<>'DELETED')) AS member FROM campaigns c WHERE c.id=$1::uuid`,[campaignId,actorId])
  if(!result.rows[0]?.member)fail(403,'Acesso negado.')
  return result.rows[0]
 }
@@ -45,14 +45,23 @@ export async function listMissions(actorId:string,campaignId:string){
  SELECT 1 FROM campaign_mission_characters mc JOIN characters ch ON ch.id=mc.character_id
  WHERE mc.mission_id=m.id AND ch.user_id=$3 AND ch.campaign_id=m.campaign_id AND ch.status<>'DELETED'
  ))))) ORDER BY m.updated_at DESC,m.id`,[campaignId,access.master,actorId])
- return {missions:result.rows,canManage:access.master}
+ const characters=access.master?await connection().query<{id:string;name:string}>(`SELECT id,name FROM characters WHERE campaign_id=$1::uuid AND character_type='PLAYER_VAMPIRE' AND status<>'DELETED' ORDER BY name`,[campaignId]):null
+ const npcs=access.master?await connection().query<{id:string;name:string}>(`SELECT cn.id,n.name FROM campaign_npcs cn JOIN npc_definitions n ON n.id=cn.npc_id WHERE cn.campaign_id=$1::uuid AND n.status='ACTIVE' ORDER BY n.name`,[campaignId]):null
+ return {missions:result.rows,canManage:access.master,timezone:access.timezone,characters:characters?.rows??[],npcs:npcs?.rows??[]}
 }
 export async function commandMission(actorId:string,campaignId:string,value:unknown){
  const access=await role(actorId,campaignId)
  if(!access.master)fail(403,'Somente o Narrador pode alterar missões.')
- const data=input(value,['action','missionId','title','description','narratorNotes','visibility','status','expectedRevision','characterIds','npcIds','dueDate','campaignEventId'])
+ const data=input(value,['action','missionId','title','description','narratorNotes','visibility','status','expectedRevision','characterIds','npcIds','dueDate','campaignEventId','timezone'])
  const action=data.action
- if(action!=='CREATE'&&action!=='UPDATE'&&action!=='TRANSITION')fail(400,'Ação inválida.')
+ if(action!=='CREATE'&&action!=='UPDATE'&&action!=='TRANSITION'&&action!=='SET_TIMEZONE')fail(400,'Ação inválida.')
+ if(action==='SET_TIMEZONE'){
+  const timezone=data.timezone
+  if(typeof timezone!=='string'||timezone.length>80)fail(422,'Fuso horário inválido.')
+  try {new Intl.DateTimeFormat('en-US',{timeZone:timezone})}catch{fail(422,'Fuso horário inválido.')}
+  await connection().query('UPDATE campaigns SET timezone=$1,updated_at=now() WHERE id=$2::uuid AND master_user_id=$3',[timezone,campaignId,actorId])
+  return {timezone}
+ }
  const dueDate=data.dueDate===undefined?undefined:data.dueDate===null||data.dueDate===''?null:data.dueDate
  if(dueDate!==undefined&&dueDate!==null&&(typeof dueDate!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(dueDate)||Number.isNaN(Date.parse(dueDate))||new Date(dueDate).toISOString().slice(0,10)!==dueDate))fail(422,'Data inválida.')
  const eventId=data.campaignEventId===undefined?undefined:data.campaignEventId===null||data.campaignEventId===''?null:data.campaignEventId
