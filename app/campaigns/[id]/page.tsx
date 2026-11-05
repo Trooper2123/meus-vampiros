@@ -1,3 +1,6 @@
+import { CampaignCover } from '@/components/campaign-cover'
+import { db, ensureAllTables } from '@/lib/db'
+import { sql } from 'drizzle-orm'
 import { CharacterSms } from '@/components/character-sms/character-sms'
 import { CharacterSmsSettings } from '@/components/character-sms/character-sms-settings'
 import { MasterViewportGuard } from '@/components/master-viewport-guard'
@@ -26,6 +29,9 @@ export default async function CampaignDetailPage({ params, searchParams }: Reado
   const { id } = await params
   const campaign = (await getCampaignsForMaster(session.user.sub)).find(item => item.id === id)
   if (!campaign) notFound()
+  await ensureAllTables()
+  const coverRows = await db.execute<{ has_cover: boolean }>(sql`SELECT cover_storage_key IS NOT NULL AS has_cover FROM campaigns WHERE id = ${campaign.id}::uuid AND master_user_id = ${session.user.sub}`)
+  const hasCover = coverRows.rows[0]?.has_cover === true
 
   const characters = await getCharactersForCampaign(campaign.id)
   const summaries = (await Promise.all(characters.map(async character => {
@@ -59,7 +65,7 @@ export default async function CampaignDetailPage({ params, searchParams }: Reado
         <div className="campaign-approved-layout">
           <aside className="campaign-approved-sidebar">
             <div className="campaign-approved-cover">
-              <div className="campaign-approved-cover-art"><Crown className="size-7" aria-hidden="true"/></div>
+              <CampaignCover campaignId={campaign.id} hasCover={hasCover} />
               <strong className="font-serif text-xl">{campaign.name}</strong>
               <span>{campaign.theme ?? 'Crônica sem tema definido'}</span>
             </div>
@@ -85,7 +91,7 @@ export default async function CampaignDetailPage({ params, searchParams }: Reado
 
           <div className="campaign-approved-main">
             {view === 'overview' && <>
-              <section className="campaign-preparation-banner"><div><span className="campaign-preparation-pill"><Shield className="size-4"/>Mesa em preparação</span><h2 className="mt-4 font-serif text-3xl">Nenhuma sessão ativa</h2><p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">Organize a próxima sessão, gerencie participantes, limites, handouts, anotações e eventos da campanha.</p></div><button className="button-ghost" type="button" disabled><ImageIcon className="size-4"/>Trocar imagem da mesa</button></section>
+              <section className="campaign-preparation-banner"><div><span className="campaign-preparation-pill"><Shield className="size-4"/>Mesa em preparação</span><h2 className="mt-4 font-serif text-3xl">Nenhuma sessão ativa</h2><p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground">Organize a próxima sessão, gerencie participantes, limites, handouts, anotações e eventos da campanha.</p></div><CampaignCover campaignId={campaign.id} hasCover={hasCover} variant="banner" /></section>
               <div className="campaign-approved-grid">
                 <section className="campaign-approved-card"><div className="campaign-approved-card-title"><span><Users/>Participantes ({summaries.length})</span><Link href={viewHref('participants')}>Ver todos →</Link></div><div className="campaign-participant-preview">{summaries.slice(0,4).map(summary => summary && <Link key={summary.id} href={`/characters/${summary.id}/summary`} className="campaign-participant-chip"><span className="campaign-participant-avatar">{summary.name.slice(0,1)}</span><strong>{summary.name}</strong><small>{summary.clan ?? 'Clã não definido'}</small></Link>)}</div></section>
                 <section className="campaign-approved-card"><div className="campaign-approved-card-title"><span><Shield/>Limites da Mesa</span><Link href={viewHref('limits')}>Gerenciar →</Link></div><div className="campaign-empty-module"><p>Configure os limites e regras específicas da mesa.</p></div></section>
