@@ -34,6 +34,8 @@ export async function listMissions(actorId:string,campaignId:string){
  SELECT m.id,m.title,m.description,m.status,m.visibility,m.revision,m.created_at AS "createdAt",m.updated_at AS "updatedAt",m.due_date::text AS "dueDate",CASE WHEN ev.id IS NOT NULL AND ($2::boolean OR ev.visibility='everyone') THEN m.campaign_event_id ELSE NULL END AS "campaignEventId",
  CASE WHEN ev.id IS NOT NULL AND ($2::boolean OR ev.visibility='everyone') THEN ev.title ELSE NULL END AS "eventTitle",
  CASE WHEN ev.id IS NOT NULL AND ($2::boolean OR ev.visibility='everyone') THEN ev.event_date::text ELSE NULL END AS "eventDate",
+ CASE WHEN ev.id IS NOT NULL AND ($2::boolean OR ev.visibility='everyone') THEN ev.fictional_year ELSE NULL END AS "eventFictionalYear",
+ CASE WHEN ev.id IS NOT NULL AND ($2::boolean OR ev.visibility='everyone') THEN ev.fictional_month ELSE NULL END AS "eventFictionalMonth",
  CASE WHEN $2::boolean THEN m.narrator_notes ELSE NULL END AS "narratorNotes",
  COALESCE((SELECT jsonb_agg(mc.character_id) FROM campaign_mission_characters mc WHERE mc.mission_id=m.id),'[]'::jsonb) AS "characterIds",
  CASE WHEN $2::boolean THEN COALESCE((SELECT jsonb_agg(mn.campaign_npc_id) FROM campaign_mission_npcs mn WHERE mn.mission_id=m.id),'[]'::jsonb) ELSE '[]'::jsonb END AS "npcIds"
