@@ -58,7 +58,7 @@ export async function commandMission(actorId:string,campaignId:string,value:unkn
  if(action==='SET_TIMEZONE'){
   const timezone=data.timezone
   if(typeof timezone!=='string'||timezone.length>80)fail(422,'Fuso horário inválido.')
-  try {new Intl.DateTimeFormat('en-US',{timeZone:timezone})}catch{fail(422,'Fuso horário inválido.')}
+  try {new Intl.DateTimeFormat('en-US',{timeZone:timezone as string})}catch{fail(422,'Fuso horário inválido.')}
   await connection().query('UPDATE campaigns SET timezone=$1,updated_at=now() WHERE id=$2::uuid AND master_user_id=$3',[timezone,campaignId,actorId])
   return {timezone}
  }

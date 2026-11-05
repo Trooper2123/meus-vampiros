@@ -159,6 +159,34 @@ describe('notas no PostgreSQL e APIs', () => {
     expect(await emptyFiltersResponse.json()).toMatchObject({ total: 1, page: 1, pageSize: 20 })
   })
 
+  it('pagina e filtra uma massa isolada de notas sem expor registros alheios', async () => {
+    const actorId = `test|load-${randomUUID()}`
+    const otherActorId = `test|load-other-${randomUUID()}`
+    const fixtures = Array.from({ length: 108 }, (_, index) => ({
+      id: randomUUID(),
+      authorId: index === 107 ? otherActorId : actorId,
+      title: index === 0 ? 'Pista 100% segura' : `Pista ${index}`,
+      body: index === 1 ? 'guarda_chuva' : `registro de carga ${index}`,
+      marker: index < 5 ? 'Elysium' : 'Arquivo',
+    }))
+    const values = fixtures.map(row => sql`(${row.id}::uuid, ${row.authorId}, 'PRIVATE', ${row.title}, ${row.body}, ${row.marker})`)
+    try {
+      await db.execute(sql`INSERT INTO notes (id, author_user_id, visibility, title, body, marker) VALUES ${sql.join(values, sql`, `)}`)
+
+      const first = await listNotes(actorId, { page: 1, pageSize: 50 })
+      const second = await listNotes(actorId, { page: 2, pageSize: 50 })
+      const third = await listNotes(actorId, { page: 3, pageSize: 50 })
+      expect([first.total, second.total, third.total]).toEqual([107, 107, 107])
+      expect([first.notes.length, second.notes.length, third.notes.length]).toEqual([50, 50, 7])
+      expect(new Set([...first.notes, ...second.notes, ...third.notes].map(item => item.id)).size).toBe(107)
+      expect((await listNotes(actorId, { marker: 'Elysium' })).total).toBe(5)
+      expect((await listNotes(actorId, { search: '%' })).total).toBe(1)
+      expect((await listNotes(actorId, { search: '_' })).total).toBe(1)
+    } finally {
+      await db.execute(sql`DELETE FROM notes WHERE id IN (${sql.join(fixtures.map(row => sql`${row.id}::uuid`), sql`, `)})`)
+    }
+  })
+
   it('rejeita corpo grande, JSON inválido, campos indevidos e paginação abusiva', async () => {
     expect((await POST(request(draft({ body: 'x'.repeat(100001) })))).status).toBe(413)
     expect((await POST(new Request('http://localhost/api/notes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{invalid' }))).status).toBe(400)

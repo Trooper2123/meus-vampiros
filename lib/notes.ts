@@ -124,11 +124,11 @@ export async function listNotes(actorId: string, options: { campaignId?: string;
   const result = await db.execute<NoteRow & { total: number }>(sql`SELECT ${columns}, count(*) OVER()::int AS total
     FROM notes n
     WHERE (${options.campaignId ?? null}::uuid IS NULL OR n.campaign_id = ${options.campaignId ?? null}::uuid)
-      AND (${!search} OR lower(n.title || ' ' || n.body || ' ' || COALESCE(n.marker, '')) LIKE ${`%${search}%`})
+      AND (${!search} OR strpos(lower(n.title || ' ' || n.body || ' ' || COALESCE(n.marker, '')), ${search}) > 0)
       AND (${!marker} OR n.marker = ${marker})
       AND (
         (EXISTS (SELECT 1 FROM sheet_reveals r JOIN game_sessions s ON s.id = r.session_id JOIN campaigns c ON c.id = s.campaign_id WHERE r.id = n.id AND c.master_user_id = ${actorId}) OR
-          EXISTS (SELECT 1 FROM sheet_reveals r JOIN game_sessions s ON s.id = r.session_id JOIN campaigns c ON c.id = s.campaign_id JOIN characters ch ON ch.campaign_id = c.id WHERE r.id = n.id AND r.revoked_at IS NULL AND ch.user_id = ${actorId}))
+          EXISTS (SELECT 1 FROM sheet_reveals r JOIN game_sessions s ON s.id = r.session_id JOIN campaigns c ON c.id = s.campaign_id JOIN characters ch ON ch.campaign_id = c.id WHERE r.id = n.id AND r.revoked_at IS NULL AND ch.user_id = ${actorId} AND ch.status <> 'DELETED'))
         OR (NOT EXISTS (SELECT 1 FROM sheet_reveals r WHERE r.id = n.id) AND (
           n.author_user_id = ${actorId}
           OR n.visibility = 'NARRATOR_ONLY' AND EXISTS (SELECT 1 FROM campaigns c WHERE c.id = n.campaign_id AND c.master_user_id = ${actorId})
