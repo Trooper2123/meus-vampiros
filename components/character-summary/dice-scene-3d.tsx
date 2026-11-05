@@ -25,7 +25,7 @@ function makeD10Geometry() {
   return geometry
 }
 
-function AnimatedDie({ die, position, geometry, edgeGeometry }: { die: Die; position: [number, number, number]; geometry: THREE.BufferGeometry; edgeGeometry: THREE.EdgesGeometry }) {
+function AnimatedDie({ die, position, geometry, edgeGeometry }: Readonly<{ die: Die; position: [number, number, number]; geometry: THREE.BufferGeometry; edgeGeometry: THREE.EdgesGeometry }>) {
   const meshRef = useRef<THREE.Mesh>(null)
   const throwMotion = useRef({ ready: false, offsetX: 0, offsetZ: 5, startHeight: 3, lift: 2, angularVelocity: new THREE.Vector3() })
   const motion = useRef({ launched: false, landed: false, bounces: 0, velocity: new THREE.Vector3() })

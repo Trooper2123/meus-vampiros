@@ -13,6 +13,18 @@ const potency = (value: number, gen?: number) => calculateBloodPotencyEffects({
   'potencia-de-sangue': value, ...(gen ? { geracao: gen } : {}), characterType: 'VAMPIRE_NPC',
 })
 describe('Alimentação e regeneração V5', () => {
+  it.each(['toString', 'constructor', '__proto__'])('rejeita fonte herdada %s', source => {
+    expect(() => validateBloodAction({ kind: 'FEED', source, servings: 1 })).toThrow()
+  })
+  it('preserva dano e estado original ao entrar em torpor durante os Rouse Checks', () => {
+    const original = state(4)
+    const result = resolveBloodAction(original, { kind: 'MEND_AGGRAVATED', nightId: '11111111-1111-4111-8111-111111111111' }, potency(2), () => 1, { hasAggravatedNightPermission: true })
+    expect(result).toMatchObject({ healed: 0, rouseRolls: [1, 1], state: { hunger: 5, condition: 'TORPOR', healthDamage: { aggravated: 2 } } })
+    expect(original).toEqual(state(4))
+  })
+  it.each([0, 11, 1.5, Number.NaN])('rejeita resultado de Rouse inválido %s', roll => {
+    expect(() => resolveBloodAction(state(2), { kind: 'MEND_SUPERFICIAL' }, potency(2), () => roll)).toThrow()
+  })
   it('mantém os limites geracionais oficiais 4–16 sem extrapolar 2 e 3', () => {
     expect(GENERATION_POTENCY_LIMITS[4]).toEqual([5, 10])
     expect(GENERATION_POTENCY_LIMITS[9]).toEqual([2, 5])

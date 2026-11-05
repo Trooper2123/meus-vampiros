@@ -43,8 +43,8 @@ export function DeleteCharacterButton({characterId, name, revision}: Readonly<{
             if (!response.ok) throw new Error(body.error ?? 'Não foi possível excluir a ficha.')
             dialog.current?.close()
             router.refresh()
-        } catch (failure) {
-            setError(failure instanceof Error ? failure.message : 'Não foi possível excluir a ficha.')
+        } catch (error_) {
+            setError(error_ instanceof Error ? error_.message : 'Não foi possível excluir a ficha.')
         } finally {
             setPending(false)
         }
