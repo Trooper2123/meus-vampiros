@@ -21,7 +21,7 @@ export async function PUT(request:Request,context:Context) {
   if(!library.canManage)throw new CharacterCommandError(403,'Somente o narrador altera a mesa visual.')
   const body=await notesBody(request)
   const handoutId=body.handoutId
-  if(handoutId!==null && (typeof handoutId!=='string'||!library.handouts.some(item=>item.id===handoutId&&item.contentType?.startsWith('image/'))))throw new CharacterCommandError(422,'Selecione uma imagem da biblioteca.')
+  if(handoutId!==null && (typeof handoutId!=='string'||!library.handouts.some(item=>item.id===handoutId&&item.contentType?.startsWith('image/')&&item.shareMode==='ALL')))throw new CharacterCommandError(422,'Selecione uma imagem da biblioteca.')
   const expected=body.expectedRevision
   if(!Number.isSafeInteger(expected)||expected<0)throw new CharacterCommandError(422,'Revisão inválida.')
   const updated=await db.execute<{revision:string}>(sql`
