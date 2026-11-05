@@ -84,7 +84,13 @@ export function CampaignLimitsManager({ campaignId }: Readonly<{ campaignId: str
   return <div className="space-y-6">
     <div className="rounded-lg border border-border bg-card/50 p-5">
       <h3 className="font-serif text-xl">Acordos da crônica</h3>
-      <p className="mt-2 text-sm text-muted-foreground">Linhas são temas excluídos da narrativa. Véus podem existir na história, mas não são descritos em cena.</p>
+      <p className="mt-2 text-sm text-muted-foreground">Os limites da mesa são acordos sobre conteúdos e comportamentos que devem ser evitados durante a crônica.</p>
+      <ol className="mt-4 list-decimal space-y-2 pl-5 text-sm leading-6 text-muted-foreground">
+        <li><strong className="text-foreground">Linhas (Lines):</strong> assuntos ou situações que não podem aparecer na narrativa, nem diretamente nem como acontecimentos fora de cena.</li>
+        <li><strong className="text-foreground">Véus (Veils):</strong> assuntos que podem existir na história, mas não devem ser descritos ou encenados explicitamente.</li>
+        <li><strong className="text-foreground">Acordos da mesa:</strong> regras de convivência e conduta, como não interromper jogadores, respeitar pausas e evitar determinadas abordagens.</li>
+        <li><strong className="text-foreground">Outros limites:</strong> restrições específicas acordadas pelo grupo.</li>
+      </ol>
       {loading ? <p className="mt-4 text-sm">Carregando limites...</p> : items.length === 0 ? <p className="mt-4 text-sm text-muted-foreground">Nenhum limite cadastrado. Adicione o primeiro acordo abaixo.</p> :
         <ul className="mt-5 space-y-3">{items.map(item => <li key={item.id} className="rounded-md border border-border p-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
