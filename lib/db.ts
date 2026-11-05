@@ -422,7 +422,7 @@ export async function upsertUserFromAuth0(user: { sub: string; email?: string | 
      VALUES ($1, $2, $3, $4)
      ON CONFLICT (auth0_id) DO UPDATE SET
        email = EXCLUDED.email,
-       name = EXCLUDED.name,
+       name = COALESCE(users.name, EXCLUDED.name),
        picture = EXCLUDED.picture,
        updated_at = now()
      RETURNING *;
