@@ -125,6 +125,8 @@ export async function ensureAllTables() {
   updated_at TIMESTAMPTZ DEFAULT now()
   );
 
+  ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS npc_global_catalog_enabled BOOLEAN NOT NULL DEFAULT false;
+  
   CREATE TABLE IF NOT EXISTS campaign_limits (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     campaign_id UUID NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
