@@ -4,8 +4,15 @@ import sharp from 'sharp'
 import { sql } from 'drizzle-orm'
 import { db, ensureAllTables } from '@/lib/db'
 import { CharacterCommandError } from '@/lib/character-commands'
+import { configurePrivateBlobToken } from '@/lib/private-blob-token'
 
 export const MAX_CAMPAIGN_COVER_BYTES = 5 * 1024 * 1024
+function requireCampaignCoverStorage() {
+  if (!configurePrivateBlobToken()) {
+    throw new CharacterCommandError(503, 'Armazenamento da capa não configurado. Verifique o token do Vercel Blob.')
+  }
+}
+
 const keyPattern = /^campaign-covers\/[0-9a-f-]{36}\/[0-9a-f-]{36}\.webp$/i
 
 export async function campaignCoverAccess(actorId: string, campaignId: string, manage = false) {
@@ -23,6 +30,7 @@ export async function campaignCoverAccess(actorId: string, campaignId: string, m
 
 export async function readCampaignCover(key: string): Promise<Uint8Array | null> {
   if (!keyPattern.test(key)) throw new CharacterCommandError(500, 'Capa inválida.')
+  requireCampaignCoverStorage()
   const result = await get(key, { access: 'private', useCache: false })
   if (!result || result.statusCode !== 200) return null
   if (result.blob.size > MAX_CAMPAIGN_COVER_BYTES) {
@@ -72,6 +80,7 @@ export async function sanitizeCampaignCover(request: Request) {
 }
 
 export async function replaceCampaignCover(actorId: string, campaignId: string, data: Uint8Array) {
+  requireCampaignCoverStorage()
   const key = `campaign-covers/${campaignId}/${randomUUID()}.webp`
   await put(key, Buffer.from(data), { access: 'private', contentType: 'image/webp', addRandomSuffix: false, allowOverwrite: false })
   try {
