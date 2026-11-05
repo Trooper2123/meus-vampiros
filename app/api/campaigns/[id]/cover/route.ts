@@ -8,6 +8,7 @@ export const runtime = 'nodejs'
 type Context = { params: Promise<{ id: string }> }
 const response = (body: unknown, status = 200) => NextResponse.json(body, { status, headers: { 'Cache-Control': 'private, no-store', Vary: 'Cookie' } })
 function fail(error: unknown) {
+  console.error('[campaign-cover] Falha na operação:', error)
   return response({ error: error instanceof CharacterCommandError ? error.message : 'Não foi possível gerenciar a capa.' }, error instanceof CharacterCommandError ? error.status : 500)
 }
 async function access(request: Request, context: Context, manage: boolean) {
