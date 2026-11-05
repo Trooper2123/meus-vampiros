@@ -1,5 +1,8 @@
 'use client'
 
+import { SessionVisualBoard } from '@/components/game-session/session-visual-board'
+import { CampaignHandouts } from '@/components/campaign-handouts'
+
 import { useEffect, useRef, useState } from 'react'
 import { BookOpen, CalendarDays, FileText, MessageCircle, NotebookPen, Search, Users, Wallet, Eye, UserRoundCog, House, Boxes, ImageIcon, Dices, Pause, X } from 'lucide-react'
 import Link from 'next/link'
@@ -128,7 +131,7 @@ function SessionWorkspace({ campaignId, actorId, campaignName }: Readonly<{ camp
             <section className="session-shared-visual">
               <div className="session-panel-heading"><ImageIcon className="size-7 text-primary"/><div><p className="eyebrow">Compartilhamento visual mútuo</p><h3 className="font-serif text-xl">Espaço visual compartilhado</h3><p className="session-panel-subtitle">Visual da sessão visível para toda a mesa (gerenciado pelo Narrador).</p></div><Eye className="ml-auto size-5 text-primary" aria-hidden="true"/></div>
               <div className="session-visual-stage session-visual-stage-compact">
-                <div className="session-visual-placeholder"><ImageIcon/><span>Mapas, imagens e handouts compartilhados aparecem aqui.</span></div>
+                <SessionVisualBoard campaignId={campaignId} compact/>
               </div>
             </section>
             <section className="session-quick-roll">
@@ -148,9 +151,9 @@ function SessionWorkspace({ campaignId, actorId, campaignName }: Readonly<{ camp
             </section>
           </div>}
 
-          {activeTool === 'visual' && <div className="session-panel"><p className="eyebrow">Mesa visual</p><h2 className="mt-2 font-serif text-2xl">Espaço visual compartilhado</h2><div className="session-visual-stage mt-5"><p className="max-w-lg text-sm leading-6 text-muted-foreground">Canvas compartilhado para mapas e imagens. A camada de sincronização ainda será implementada.</p></div></div>}
+          {activeTool === 'visual' && <div className="session-panel"><p className="eyebrow">Mesa visual</p><h2 className="mt-2 font-serif text-2xl">Espaço visual compartilhado</h2><div className="mt-5"><SessionVisualBoard campaignId={campaignId}/></div></div>}
 
-          {activeTool === 'handouts' && <div className="session-panel"><p className="eyebrow">Drive da mesa · gerenciado pelo Narrador</p><h2 className="mt-2 font-serif text-2xl">Handouts</h2><div className="session-handouts-empty"><FileText className="size-10 text-primary" strokeWidth={1.25} aria-hidden="true"/><p className="mt-3 text-sm">Nenhum handout disponível.</p><p className="mt-2 max-w-md text-xs leading-5 text-muted-foreground">O fluxo previsto é: selecionar um arquivo e escolher em popup entre compartilhar com todos ou apenas jogadores selecionados. O backend de handouts ainda não existe no repositório.</p></div></div>}
+          {activeTool === 'handouts' && <div className="session-panel"><h2 className="mt-2 font-serif text-2xl">Handouts</h2><CampaignHandouts campaignId={campaignId}/></div>}
 
           {activeTool === 'research' && <div className="session-panel"><p className="eyebrow">Acervo de regras</p><h2 className="mt-2 font-serif text-2xl">Pesquisa rápida</h2><div className="session-research-switch mt-5"><button type="button" className={researchView === 'skills' ? 'is-active' : ''} onClick={() => setResearchView('skills')}><Search className="size-4" aria-hidden="true"/>Disciplinas e habilidades</button><button type="button" className={researchView === 'merits' ? 'is-active' : ''} onClick={() => setResearchView('merits')}><BookOpen className="size-4" aria-hidden="true"/>Vantagens e defeitos</button></div><iframe title={researchView === 'skills' ? 'Disciplinas e habilidades' : 'Vantagens e defeitos'} className="session-research-frame" src={researchView === 'skills' ? '/master/catalogo?embedded=1' : '/master/vantagens-defeitos?embedded=1'} /></div>}
 
