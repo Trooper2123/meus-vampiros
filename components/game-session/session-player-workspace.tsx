@@ -45,7 +45,7 @@ function PlayerQuickActions({characterId,sessionId}:Readonly<{characterId:string
     {id:'roll' as const, label:'Rolagem',Icon:Dice5,value:'Testes V5'},
     {id:'health' as const,label:'Vitalidade',Icon:HeartPulse,value:data ? `${data.state.healthCurrent} / ${data.maxima.healthMax}` : '—'},
     {id:'hunger' as const,label:'Fome',Icon:Droplet,value:data ? `${data.state.hunger} / 5` : '—'},
-    {id:'willpower' as const,label:'Willpower',Icon:Shield,value:data ? `${data.state.willpowerCurrent} / ${data.maxima.willpowerMax}` : '—'},
+    {id:'willpower' as const,label:'Força de Vontade',Icon:Shield,value:data ? `${data.state.willpowerCurrent} / ${data.maxima.willpowerMax}` : '—'},
   ]
   return <section className="session-player-action-dock" aria-label="Ações rápidas durante a sessão">
     <div className="session-player-dock-header"><Dice5 className="size-5" aria-hidden="true"/><h2>Ações da Sessão</h2>{active && <button type="button" className="session-player-close-tool" aria-label="Fechar ações" onClick={()=>setActive(null)}><X className="size-4"/></button>}</div>
@@ -69,13 +69,13 @@ export function SessionPlayerWorkspace({campaignId,actorId,sessionId,characters,
   const tabs=[
     {id:'sheet' as const,label:'Ficha',Icon:ScrollText},
     {id:'diary' as const,label:'Anotações',Icon:NotebookPen},
-    {id:'session' as const,label:'Sessão',Icon:CalendarDays},
-    {id:'files' as const,label:'Arquivos',Icon:FileText},
-    {id:'messages' as const,label:smsUnread>0?`Mensagens (${smsUnread})`:'Mensagens',Icon:MessageSquareText},
+    {id:'session' as const,label:'Crônica',Icon:CalendarDays},
+    {id:'files' as const,label:'Handouts',Icon:FileText},
+    {id:'messages' as const,label:'Mensagens',Icon:MessageSquareText},
   ]
   return <div className="session-player-approved" aria-label="Modo Sessão do Jogador">
-    <div className="session-player-title"><div><p className="eyebrow">Arquivos da Noite · Visão do Jogador</p><h1>{campaignName ? `Sessão: ${campaignName}` : "Minha Sessão"}</h1><p>Ficha, diário e recursos da crônica sem sair da mesa.</p></div><div className="session-player-title-actions"><span className="session-player-status">{sessionId?<><i/>Sessão em andamento</> :'Aguardando início da sessão'}</span><Link className="session-player-exit" href="/characters"><LogOut className="size-4"/>Sair da Sessão</Link></div></div>
-    <nav className="session-mobile-panels" aria-label="Selecionar painel da sessão">{[{id:'center',label:'Ficha e recursos'},{id:'chat',label:'Chat'},{id:'cameras',label:'Câmeras'}].map(item=><button type="button" key={item.id} aria-pressed={mobilePanel===item.id} className={mobilePanel===item.id?'is-active':''} onClick={()=>setMobilePanel(item.id as 'center'|'chat'|'cameras')}>{item.label}</button>)}</nav>
+    <div className="session-player-title"><div><p className="eyebrow">Arquivos da Noite · Visão do Jogador</p><h1>{campaignName ? `Sessão: ${campaignName}` : "Minha Sessão"}</h1><p>Seu espaço na crônica: personagem, recursos, mensagens e materiais compartilhados.</p></div><div className="session-player-title-actions"><span className="session-player-status">{sessionId?<><i/>Sessão em andamento</> :'Aguardando início da sessão'}</span><Link className="session-player-exit" href="/characters"><LogOut className="size-4"/>Sair da Sessão</Link></div></div>
+    <nav className="session-mobile-panels" aria-label="Selecionar painel da sessão">{[{id:'center',label:'Personagem'},{id:'chat',label:'Chat'},{id:'cameras',label:'Câmeras'}].map(item=><button type="button" key={item.id} aria-pressed={mobilePanel===item.id} className={mobilePanel===item.id?'is-active':''} onClick={()=>setMobilePanel(item.id as 'center'|'chat'|'cameras')}>{item.label}</button>)}</nav>
     <div className="session-player-columns" data-mobile-panel={mobilePanel}>
       <aside className="session-player-chat" aria-label="Chat da sessão">
         <div className="session-player-column-header"><MessageCircle className="size-5"/><h2>Chat da Sessão</h2></div>
@@ -84,19 +84,20 @@ export function SessionPlayerWorkspace({campaignId,actorId,sessionId,characters,
         </div>
       </aside>
       <main className="session-player-center">
-        <nav className="session-player-tabs" aria-label="Seções da sessão">{tabs.map(({id,label,Icon})=><button type="button" key={id} aria-current={tab===id?'page':undefined} className={tab===id?'is-active':''} onClick={()=>setTab(id)}><Icon className="size-4"/>{label}</button>)}</nav>
-        <div className="session-player-stage">
+        <div className="session-player-character-banner"><div><p className="eyebrow">Personagem ativo</p><strong>{current?.name??'Sem personagem aprovado'}</strong><span>{sessionId?'Recursos e rolagens disponíveis':'Aguardando abertura da sessão'}</span></div>{characters.length>1&&<label className="session-player-banner-select">Alternar personagem<select value={current?.id??''} onChange={event=>setSelected(event.target.value)}>{characters.map(character=><option key={character.id} value={character.id}>{character.name}</option>)}</select></label>}</div>
+        <nav className="session-player-tabs session-player-tabs-enhanced" aria-label="Seções da sessão">{tabs.map(({id,label,Icon})=><button type="button" key={id} aria-current={tab===id?'page':undefined} aria-label={label} className={tab===id?'is-active':''} onClick={()=>setTab(id)}><Icon className="size-4" aria-hidden="true"/><span>{label}</span>{id==='messages'&&smsUnread>0&&<span className="session-player-unread" aria-label={`${smsUnread} mensagens não lidas`}>{smsUnread}</span>}</button>)}</nav>
+        {current && sessionId && <PlayerQuickActions characterId={current.id} sessionId={sessionId}/> }\n        <div className="session-player-stage">
           {tab==='sheet' && (current ? <>
-            {characters.length>1 && <label className="session-player-character-select">Personagem <select value={current.id} onChange={event=>setSelected(event.target.value)}>{characters.map(character=><option key={character.id} value={character.id}>{character.name}</option>)}</select></label>}
+            
             <PlayerSheet key={current.id} characterId={current.id}/>
           </> : <div className="session-player-empty"><BookOpen className="size-8"/><h2>Nenhuma ficha autorizada nesta mesa</h2><p>Uma ficha aprovada e vinculada é necessária para participar com rolagens e recursos.</p></div>)}
           {tab==='diary' && <div className="session-player-diary"><div className="session-player-section-heading"><NotebookPen className="size-6"/><div><p className="eyebrow">Diário da Crônica</p><h2>Minhas Anotações</h2><p>Registre acontecimentos, agrupe capítulos por marcador e pesquise seus próprios registros.</p></div></div><NotesPanel actorId={actorId} initialCampaignId={campaignId}/></div>}
           {tab==='session' && <div className="session-player-events"><div className="session-player-section-heading"><CalendarDays className="size-6"/><div><p className="eyebrow">Minha participação</p><h2>Calendário e disponibilidade</h2><p>Consulte eventos e informe os dias em que pode participar.</p></div></div><CampaignTools campaignId={campaignId} master={false}/></div>}
           {tab==='messages' && <CharacterSms campaignId={campaignId} mode="player"/>}
-          {tab==='files' && <div className="session-player-files"><h2 className="font-serif text-2xl">Arquivos recebidos</h2><div className="mb-5"><h3 className="mb-2 font-serif text-xl">Mesa visual compartilhada</h3><SessionVisualBoard campaignId={campaignId}/></div><CampaignHandouts campaignId={campaignId}/></div>}
+          {tab==='files' && <div className="session-player-files"><div className="session-player-section-heading"><FileText className="size-6"/><div><p className="eyebrow">Biblioteca da crônica</p><h2>Handouts e mesa visual</h2><p>Consulte os materiais compartilhados pelo narrador.</p></div></div><div className="mb-5"><h3 className="mb-2 font-serif text-xl">Mesa visual compartilhada</h3><SessionVisualBoard campaignId={campaignId}/></div><CampaignHandouts campaignId={campaignId}/></div>}
         </div>
         {sessionId && <SessionSoundtrack sessionId={sessionId}/>} 
-        {current && sessionId && <PlayerQuickActions characterId={current.id} sessionId={sessionId}/> }
+
         {(!current||!sessionId) && <div className="session-player-actions-unavailable">As ações de dados e recursos ficam disponíveis quando uma ficha autorizada participa de uma sessão ativa.</div>}
       </main>
       <aside className="session-player-cameras" aria-label="Câmeras da mesa">
