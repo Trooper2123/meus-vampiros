@@ -1,4 +1,5 @@
 import { createHash,randomUUID } from 'node:crypto'
+import { configurePrivateBlobToken } from './private-blob-token'
 import { get,put,del } from '@vercel/blob'
 import sharp from 'sharp'
 import { sql } from 'drizzle-orm'
@@ -13,7 +14,7 @@ export type MediaStore={read:(key:string)=>Promise<Uint8Array|null>;write:(key:s
 export type MediaSubjectType = SubjectType | 'NOTE'
 export type MediaRow={id:string;context_id:string|null;subject_type:MediaSubjectType;subject_id:string;storage_key:string;mime_type:string;size_bytes:number;width:number;height:number;title:string;description:string;category:string;is_portrait:boolean;position_x:number;position_y:number;visibility:SheetVisibility;author_id:string;revision:number;deleted_at:Date|null;created_at:Date}
 type UploadRow={id:string;author_id:string;context_id:string|null;subject_type:MediaSubjectType;subject_id:string;metadata:ReturnType<typeof validateMetadata>;created_at:Date;completed_at:Date|null}
-export function requireBlobConfiguration(){if(!process.env.BLOB_READ_WRITE_TOKEN){ npcFail(503,'Configure um Vercel Blob privado e BLOB_READ_WRITE_TOKEN para enviar imagens.') }}
+export function requireBlobConfiguration(){configurePrivateBlobToken();if(!process.env.BLOB_READ_WRITE_TOKEN){ npcFail(503,'Configure um Vercel Blob privado e BLOB_READ_WRITE_TOKEN para enviar imagens.') }}
 async function boundedStream(stream:ReadableStream<Uint8Array>){const reader=stream.getReader(),chunks:Uint8Array[]=[];let size=0;try{while(true){const part=await reader.read();if(part.done){ break; }size+=part.value.length;if(size>MAX_SHEET_IMAGE_BYTES){ npcFail(413,'A imagem excede 5 MB.'); }chunks.push(part.value)}}finally{await reader.cancel().catch(()=>{})}return Buffer.concat(chunks)}
 export const privateBlobStore:MediaStore={
   async read(key){requireBlobConfiguration();const result=await get(key,{access:'private',useCache:false});if(result?.statusCode!==200){ return null; }if(result.blob.size>MAX_SHEET_IMAGE_BYTES){await result.stream.cancel();return npcFail(413,'A imagem excede 5 MB.')}return boundedStream(result.stream)},
@@ -105,7 +106,7 @@ export async function listSheetMedia(actorId:string,campaignId:string,type:Subje
   const rows=await db.execute<MediaRow>(sql`SELECT m.* FROM sheet_media m LEFT JOIN sheet_contexts c ON c.id=m.context_id WHERE m.subject_type=${type} AND m.subject_id=${id}::uuid AND m.deleted_at IS NULL AND (c.campaign_id=${campaignId}::uuid OR m.context_id IS NULL AND m.is_portrait) ORDER BY m.created_at DESC LIMIT 100`)
   const visible=[]
   for(const row of rows.rows){const allowed=await authorizeMedia(actorId,row).catch(()=>null);if(allowed){ visible.push({...mediaProjection(row,allowed.canEdit),global:!row.context_id}) }}
-  return {media:visible,portrait:visible.find(m=>m.isPortrait&&!m.global)??visible.find(m=>m.isPortrait)??null,storageConfigured:!!process.env.BLOB_READ_WRITE_TOKEN}
+  return {media:visible,portrait:visible.find(m=>m.isPortrait&&!m.global)??visible.find(m=>m.isPortrait)??null,storageConfigured:configurePrivateBlobToken()}
 }
 async function noteMediaAccess(actorId:string,id:string,write=false){
   const note=await getNote(actorId,npcId(id))
@@ -116,14 +117,14 @@ export async function listGlobalSheetMedia(actorId:string,type:unknown,id:string
   if(type==='NOTE'){
     const access=await noteMediaAccess(actorId,id)
     const rows=await db.execute<MediaRow>(sql`SELECT * FROM sheet_media WHERE subject_type='NOTE' AND subject_id=${id}::uuid AND deleted_at IS NULL ORDER BY created_at DESC LIMIT 100`)
-    return {media:rows.rows.map(row=>mediaProjection(row,access.canEdit)),portrait:null,canEdit:access.canEdit,storageConfigured:!!process.env.BLOB_READ_WRITE_TOKEN}
+    return {media:rows.rows.map(row=>mediaProjection(row,access.canEdit)),portrait:null,canEdit:access.canEdit,storageConfigured:configurePrivateBlobToken()}
   }
   if(type!=='CHARACTER'&&type!=='NPC'){ npcFail(400,'Tipo de ficha inválido.') }
   const access=await globalSubjectAccess(actorId,type,id)
   const rows=await db.execute<MediaRow>(sql`SELECT * FROM sheet_media WHERE subject_type=${String(type)} AND subject_id=${id}::uuid AND context_id IS NULL AND is_portrait AND deleted_at IS NULL LIMIT 1`)
   const visible=[]
   for(const row of rows.rows){const allowed=await authorizeMedia(actorId,row).catch(()=>null);if(allowed){ visible.push({...mediaProjection(row,allowed.canEdit),global:true}) }}
-  return {media:visible,portrait:visible[0]??null,canEdit:access.isOwner||access.isNarrator,storageConfigured:!!process.env.BLOB_READ_WRITE_TOKEN}
+  return {media:visible,portrait:visible[0]??null,canEdit:access.isOwner||access.isNarrator,storageConfigured:configurePrivateBlobToken()}
 }
 export async function readSheetMedia(actorId:string,id:string,store:MediaStore=privateBlobStore){const rows=await db.execute<MediaRow>(sql`SELECT * FROM sheet_media WHERE id=${npcId(id)}::uuid AND deleted_at IS NULL`),row=rows.rows[0];if(!row){ npcFail(404,'Imagem não encontrada.'); }await authorizeMedia(actorId,row);const bytes=await store.read(row.storage_key);if(!bytes){ npcFail(404,'Imagem não encontrada.'); }return {bytes,mimeType:row.mime_type}}
 export async function editSheetMedia(actorId:string,id:string,input:unknown,store:MediaStore=privateBlobStore){

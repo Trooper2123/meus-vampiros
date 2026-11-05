@@ -28,12 +28,12 @@ const SHEET_TYPE_DESCRIPTIONS = {
 export function NewNpcModal({ campaignId }: Readonly<{ campaignId?: string }>) {
   const dialog = useRef<HTMLDialogElement>(null)
   const router = useRouter()
-  const { data: catalog } = useSWR<{ templates: { id: string; name: string; originalName: string | null; official: boolean; source: string; data: NpcData }[] }>('/api/npc-templates', npcJson)
+  const [campaign, setCampaign] = useState(campaignId ?? '')
+  const { data: catalog } = useSWR<{ globalEnabled: boolean; templates: { id: string; name: string; originalName: string | null; official: boolean; source: string; data: NpcData }[] }>(campaign ? `/api/npc-templates?campaignId=${encodeURIComponent(campaign)}` : '/api/npc-templates', npcJson)
   const { data: context } = useSWR<Catalogue>('/api/npcs', npcJson)
   const [step, setStep] = useState<'type' | 'form'>('type')
   const [sheetType, setSheetType] = useState<NpcData['sheetType']>('SIMPLE')
   const [selected, setSelected] = useState('')
-  const [campaign, setCampaign] = useState(campaignId ?? '')
   const [initial, setInitial] = useState<NpcData>(() => structuredClone(EMPTY_NPC))
   const [generation, setGeneration] = useState(0)
   const template = catalog?.templates.find(t => t.id === selected)
@@ -88,6 +88,7 @@ export function NewNpcModal({ campaignId }: Readonly<{ campaignId?: string }>) {
                 <option key={t.id} value={t.id}>{t.name} · {t.official ? 'Bloco oficial' : 'Personalizado'}</option>
               ))}
             </select>
+            {catalog && !catalog.globalEnabled && <p className="text-xs text-muted-foreground">O catálogo global está desabilitado nesta mesa. Modelos pessoais continuam disponíveis.</p>}
           </label>
           {template && (
             <div className="border border-border p-4">
@@ -99,7 +100,7 @@ export function NewNpcModal({ campaignId }: Readonly<{ campaignId?: string }>) {
           {!campaignId && (
             <label className="sheet-field">
               <span>Mesa inicial (opcional)</span>
-              <select className="select" value={campaign} onChange={e => setCampaign(e.target.value)}>
+              <select className="select" value={campaign} onChange={e => { setCampaign(e.target.value); setSelected(''); setInitial({ ...structuredClone(EMPTY_NPC), sheetType }); setGeneration(n => n + 1) }}>
                 <option value="">Somente no catálogo</option>
                 {context?.campaigns.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
@@ -130,7 +131,7 @@ export function NewNpcModal({ campaignId }: Readonly<{ campaignId?: string }>) {
 // Mantém NewNpcForm como alias para compatibilidade com /campaigns/[id]/npcs/new
 export function NewNpcForm({ campaignId }: Readonly<{ campaignId?: string }>) {
   const router = useRouter()
-  const { data: catalog } = useSWR<{ templates: { id: string; name: string; originalName: string | null; official: boolean; source: string; data: NpcData }[] }>('/api/npc-templates', npcJson)
+  const { data: catalog } = useSWR<{ globalEnabled: boolean; templates: { id: string; name: string; originalName: string | null; official: boolean; source: string; data: NpcData }[] }>(campaignId ? `/api/npc-templates?campaignId=${encodeURIComponent(campaignId)}` : '/api/npc-templates', npcJson)
   const { data: context } = useSWR<Catalogue>('/api/npcs', npcJson)
   const [sheetType, setSheetType] = useState<NpcData['sheetType']>('SIMPLE')
   const [selected, setSelected] = useState('')
@@ -170,6 +171,7 @@ export function NewNpcForm({ campaignId }: Readonly<{ campaignId?: string }>) {
           <option value="">Criar do zero</option>
           {catalog?.templates.map(t => <option key={t.id} value={t.id}>{t.name} · {t.official ? 'Bloco oficial' : 'Personalizado'}</option>)}
         </select>
+        {catalog && !catalog.globalEnabled && <p className="text-xs text-muted-foreground">O catálogo global está desabilitado nesta mesa. Modelos pessoais continuam disponíveis.</p>}
       </label>
       {template && (
         <div className="border border-border p-4">

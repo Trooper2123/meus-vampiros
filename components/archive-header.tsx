@@ -16,7 +16,7 @@ export function ArchiveHeader({ title, showCampaigns, variant = 'default', campa
   const onInactive = campaignSection === 'inactive'
   const sidebar = variant === 'campaigns' || variant === 'characters'
   const links = <>
-    {sidebar && <Link href="/" className="button-ghost"><House className="size-4" aria-hidden="true"/>Início</Link>}
+    {sidebar && <Link href="/characters" className="button-ghost"><House className="size-4" aria-hidden="true"/>Início</Link>}
     <Link href="/characters" aria-current={variant === 'characters' ? 'page' : undefined} className="button-ghost">{sidebar && <UserRound className="size-4" aria-hidden="true"/>}Personagens</Link>
     {sidebar ? <details className="campaign-nav-group" open={variant === 'campaigns'}>
       <summary><Layers3 className="size-4" aria-hidden="true"/><span>Campanhas</span><ChevronDown className="campaign-nav-chevron size-4" aria-hidden="true"/></summary>

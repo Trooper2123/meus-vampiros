@@ -5,6 +5,7 @@ import { noteUuid } from './notes'
 import { createCharacter } from './characters'
 import { NPC_TEMPLATES, npcFail, npcInteger, npcKeys, npcObject, npcText, npcWarnings, validateNpc, type NpcData } from './npc-domain'
 import { NPC_ROLES } from './npc-options'
+import { visibleNpcTemplates, canCloneGlobalNpcTemplate } from './npc-catalog-policy'
 
 export type NpcRow = { id: string; owner_id: string; name: string; sheet_type: NpcData['sheetType']; creature_type: NpcData['creatureType']; role: NpcData['role']; threat_level: number | null; payload: NpcData; character_id: string | null; template_id: string | null; is_template: boolean; status: 'ACTIVE' | 'ARCHIVED'; revision: number; created_at: Date; updated_at: Date }
 export type NpcTx = Parameters<Parameters<typeof db.transaction>[0]>[0]
@@ -78,17 +79,32 @@ export async function listNpcs(actorId: string, options: Record<string,string> =
   const rows=await db.execute<NpcRow & {total:string;in_session:boolean}>(sql`SELECT n.*,COALESCE(ch.name,n.name) AS name,count(*) OVER() AS total,EXISTS(SELECT 1 FROM npc_session_instances i JOIN campaign_npcs cn ON cn.id=i.campaign_npc_id JOIN game_sessions s ON s.id=i.session_id WHERE cn.npc_id=n.id AND i.active AND s.status='ACTIVE') AS in_session FROM npc_definitions n LEFT JOIN characters ch ON ch.id=n.character_id WHERE ${where} ORDER BY ${order} LIMIT 30 OFFSET ${(page-1)*30}`)
   return {npcs:rows.rows.map(row=>({id:row.id,name:row.name,sheetType:row.sheet_type,creatureType:row.creature_type,role:row.role,threatLevel:row.threat_level,status:row.status,revision:row.revision,characterId:row.character_id,inSession:row.in_session})),total:Number(rows.rows[0]?.total ?? 0),page}
 }
-export async function npcTemplates(actorId:string) {
-  const rows=await db.execute<NpcRow>(sql`SELECT * FROM npc_definitions WHERE owner_id=${actorId} AND is_template ORDER BY name`)
-  return {templates:[...NPC_TEMPLATES,...rows.rows.map(row=>({id:row.id,name:row.name,originalName:null,official:false,source:'Modelo personalizado do Narrador.',data:row.payload}))]}
+// The global catalog is opt-in per campaign. Personal templates remain available.
+export async function globalNpcCatalogEnabled(actorId:string,campaignId:string,executor:Pick<typeof db,'execute'>=db) {
+  await requireNpcCampaign(actorId,campaignId,executor)
+  const result=await executor.execute<{enabled:boolean}>(sql`SELECT npc_global_catalog_enabled AS enabled FROM campaigns WHERE id=${campaignId}::uuid AND master_user_id=${actorId}`)
+  return result.rows[0]?.enabled === true
+}
+export async function npcTemplates(actorId:string,campaignId?:string) {
+  const globalEnabled=campaignId ? await globalNpcCatalogEnabled(actorId,campaignId) : true
+  const rows=await db.execute<NpcRow>(sql`SELECT * FROM npc_definitions WHERE owner_id=${actorId} AND is_template AND status='ACTIVE' ORDER BY name`)
+  return {globalEnabled,templates:visibleNpcTemplates(NPC_TEMPLATES,rows.rows.map(row=>({id:row.id,name:row.name,originalName:null,official:false,source:'Modelo personalizado do Narrador.',data:row.payload})),globalEnabled)}
 }
 export async function createNpc(actorId:string, input:unknown) {
   const value=npcObject(input); npcKeys(value,['data','campaignId','templateId','idempotencyKey'])
   const data=validateNpc(value.data),campaignId=value.campaignId == null ? null : npcId(value.campaignId)
   const templateId=value.templateId == null ? undefined : npcText(value.templateId,120)
-  if (templateId && !NPC_TEMPLATES.some(t=>t.id===templateId)) { await ownNpc(actorId,npcId(templateId)) }
+  const globalTemplate = templateId ? NPC_TEMPLATES.find(t=>t.id===templateId) : undefined
+  if (templateId && !globalTemplate) {
+    const template=await ownNpc(actorId,npcId(templateId))
+    if (!template.is_template || template.status !== 'ACTIVE') npcFail(422,'Modelo personalizado indisponível.')
+  }
+  // Always enforce catalog settings server-side; hiding options in the UI is insufficient.
   return npcOperation(actorId,npcId(value.idempotencyKey),'NPC_CREATED',value,async tx=>{
-    if(campaignId) { await requireNpcCampaign(actorId,campaignId,tx) }
+    if(campaignId) {
+      await requireNpcCampaign(actorId,campaignId,tx)
+      if(globalTemplate && !canCloneGlobalNpcTemplate(true,campaignId,await globalNpcCatalogEnabled(actorId,campaignId,tx))) npcFail(403,'Catálogo global de NPCs desabilitado nesta mesa.')
+    }
     const id=await insertNpc(tx,actorId,data,{templateId})
     if(campaignId){await validateDomitor(actorId,data,tx,campaignId);await tx.execute(sql`INSERT INTO campaign_npcs(campaign_id,npc_id) VALUES(${campaignId}::uuid,${id}::uuid)`)}
     return {id}
