@@ -1,3 +1,4 @@
+import { CampaignHandouts } from '@/components/campaign-handouts'
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
@@ -150,7 +151,7 @@ function SessionWorkspace({ campaignId, actorId, campaignName }: Readonly<{ camp
 
           {activeTool === 'visual' && <div className="session-panel"><p className="eyebrow">Mesa visual</p><h2 className="mt-2 font-serif text-2xl">Espaço visual compartilhado</h2><div className="session-visual-stage mt-5"><p className="max-w-lg text-sm leading-6 text-muted-foreground">Canvas compartilhado para mapas e imagens. A camada de sincronização ainda será implementada.</p></div></div>}
 
-          {activeTool === 'handouts' && <div className="session-panel"><p className="eyebrow">Drive da mesa · gerenciado pelo Narrador</p><h2 className="mt-2 font-serif text-2xl">Handouts</h2><div className="session-handouts-empty"><FileText className="size-10 text-primary" strokeWidth={1.25} aria-hidden="true"/><p className="mt-3 text-sm">Nenhum handout disponível.</p><p className="mt-2 max-w-md text-xs leading-5 text-muted-foreground">O fluxo previsto é: selecionar um arquivo e escolher em popup entre compartilhar com todos ou apenas jogadores selecionados. O backend de handouts ainda não existe no repositório.</p></div></div>}
+          {activeTool === 'handouts' && <div className="session-panel"><h2 className="mt-2 font-serif text-2xl">Handouts</h2><CampaignHandouts campaignId={campaignId}/></div>}
 
           {activeTool === 'research' && <div className="session-panel"><p className="eyebrow">Acervo de regras</p><h2 className="mt-2 font-serif text-2xl">Pesquisa rápida</h2><div className="session-research-switch mt-5"><button type="button" className={researchView === 'skills' ? 'is-active' : ''} onClick={() => setResearchView('skills')}><Search className="size-4" aria-hidden="true"/>Disciplinas e habilidades</button><button type="button" className={researchView === 'merits' ? 'is-active' : ''} onClick={() => setResearchView('merits')}><BookOpen className="size-4" aria-hidden="true"/>Vantagens e defeitos</button></div><iframe title={researchView === 'skills' ? 'Disciplinas e habilidades' : 'Vantagens e defeitos'} className="session-research-frame" src={researchView === 'skills' ? '/master/catalogo?embedded=1' : '/master/vantagens-defeitos?embedded=1'} /></div>}
 
