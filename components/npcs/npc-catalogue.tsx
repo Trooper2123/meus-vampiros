@@ -28,12 +28,12 @@ const SHEET_TYPE_DESCRIPTIONS = {
 export function NewNpcModal({ campaignId }: Readonly<{ campaignId?: string }>) {
   const dialog = useRef<HTMLDialogElement>(null)
   const router = useRouter()
+  const [campaign, setCampaign] = useState(campaignId ?? '')
   const { data: catalog } = useSWR<{ globalEnabled: boolean; templates: { id: string; name: string; originalName: string | null; official: boolean; source: string; data: NpcData }[] }>(campaign ? `/api/npc-templates?campaignId=${encodeURIComponent(campaign)}` : '/api/npc-templates', npcJson)
   const { data: context } = useSWR<Catalogue>('/api/npcs', npcJson)
   const [step, setStep] = useState<'type' | 'form'>('type')
   const [sheetType, setSheetType] = useState<NpcData['sheetType']>('SIMPLE')
   const [selected, setSelected] = useState('')
-  const [campaign, setCampaign] = useState(campaignId ?? '')
   const [initial, setInitial] = useState<NpcData>(() => structuredClone(EMPTY_NPC))
   const [generation, setGeneration] = useState(0)
   const template = catalog?.templates.find(t => t.id === selected)
