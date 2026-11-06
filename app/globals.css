@@ -3182,3 +3182,30 @@ main > .archive-header {
 @media(max-width:1250px){.character-summary-page .character-summary-body{grid-template-columns:175px minmax(0,1fr)}.character-summary-page .summary-detail-rail{grid-column:2;position:static;display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.character-summary-page .summary-detail-rail>section:last-child{grid-column:1 / -1}}
 @media(max-width:780px){.character-summary-page{width:calc(100% - 24px)}.character-summary-page .summary-hero{grid-template-columns:110px minmax(0,1fr);padding:14px;gap:14px}.character-summary-page .summary-hero-portrait,.character-summary-page .summary-hero-portrait img,.character-summary-page .summary-hero-portrait>section>div:first-child>div:first-child{width:105px}.character-summary-page .summary-hero-portrait img,.character-summary-page .summary-hero-portrait>section>div:first-child>div:first-child{height:132px;min-height:132px}.character-summary-page .summary-hero-actions{grid-column:1 / -1}.character-summary-page .character-summary-body{grid-template-columns:1fr}.character-summary-page .character-summary-nav{position:static;display:flex;flex-direction:row;overflow-x:auto;padding-bottom:8px}.character-summary-page .character-summary-nav a{flex:0 0 auto}.character-summary-page .summary-detail-rail{grid-column:1}}
 @media(max-width:540px){.character-summary-page .summary-hero{grid-template-columns:1fr}.character-summary-page .summary-hero-portrait{width:100%;justify-content:center}.character-summary-page .summary-hero-details{text-align:center}.character-summary-page .summary-hero-tags,.character-summary-page .summary-hero-actions{justify-content:center}.character-summary-page .summary-hero-actions a{flex:1 1 100%}.character-summary-page .character-summary-content{padding:12px}.character-summary-page .summary-detail-rail{display:flex;flex-direction:column}}
+
+
+/* Summary hub refinement: compact cards and grounded portrait. */
+.character-summary-page .summary-hero{grid-template-columns:190px minmax(0,1fr);grid-template-rows:auto auto;gap:10px 24px;min-height:225px;background:radial-gradient(circle at 83% 12%,#a6192944 0,transparent 35%),linear-gradient(120deg,#290d13 0%,#170d10 50%,#100e10 100%);border-color:#7d2736}
+.character-summary-page .summary-hero-portrait{grid-row:1 / 3;align-self:center;position:relative;z-index:1}
+.character-summary-page .summary-hero-portrait>section{position:relative;inset:auto;width:100%;border:0;background:transparent;padding:0}
+.character-summary-page .summary-hero-portrait img{height:185px;width:170px;object-fit:cover}
+.character-summary-page .summary-hero-portrait details,.character-summary-page .summary-hero-portrait output{display:none}
+.character-summary-page .summary-hero-details{align-self:end}
+.character-summary-page .summary-hero-actions{grid-column:2;align-self:start}
+.character-summary-page .summary-hero-actions a{border-color:#8b2938}
+.character-summary-page .character-summary-content{background:linear-gradient(145deg,#250d12 0%,#160e11 65%,#100e10 100%);border-color:#782333}
+.character-summary-page .summary-hub-overview{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.character-summary-page .summary-hub-tile{min-width:0;display:flex;flex-direction:column;gap:9px;padding:16px 14px;border-radius:15px;border:1px solid #7b2636;background:linear-gradient(155deg,#300d14,#180d10);color:var(--foreground);text-decoration:none;transition:border-color .2s,transform .2s}
+.character-summary-page .summary-hub-tile:hover,.character-summary-page .summary-hub-tile:focus-visible{border-color:#e33b4e;transform:translateY(-2px)}
+.character-summary-page .summary-hub-tile-icon{color:#ef3549;font-size:25px;line-height:1}
+.character-summary-page .summary-hub-tile h3{font:600 16px/1.3 Georgia,serif}
+.character-summary-page .summary-hub-tile p{font-size:11px;color:#c6afb4;line-height:1.4}
+.character-summary-page .summary-hub-tile strong{font-size:12px;font-weight:600;margin-top:auto}
+.character-summary-page .summary-rail-card{background:linear-gradient(145deg,#270d13,#130e10);border-color:#782333}
+.character-summary-page .character-summary-nav a{background:linear-gradient(125deg,#260f14,#171014);border-color:#682a37;font:600 14px/1.3 Georgia,serif}
+.character-summary-page .character-summary-nav a:first-child{border-color:#d12b40;background:linear-gradient(110deg,#6b1421,#260d12)}
+.character-summary-page .character-summary-content #recursos{border:1px solid #7d2637;border-radius:16px;background:linear-gradient(135deg,#2b0d12,#130e10);padding:14px}
+.character-summary-page .character-summary-content #recursos button{border-radius:9px}
+@media(max-width:1350px){.character-summary-page .summary-hub-overview{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:780px){.character-summary-page .summary-hero{grid-template-columns:110px minmax(0,1fr)}.character-summary-page .summary-hero-portrait{grid-row:1 / 2}.character-summary-page .summary-hero-actions{grid-column:1 / -1}}
+@media(max-width:500px){.character-summary-page .summary-hub-overview{grid-template-columns:1fr 1fr}.character-summary-page .summary-hub-tile{padding:12px 10px}.character-summary-page .summary-hub-tile h3{font-size:14px}.character-summary-page .summary-hero{grid-template-columns:1fr}.character-summary-page .summary-hero-portrait{grid-row:auto}.character-summary-page .summary-hero-actions{grid-column:1}}
