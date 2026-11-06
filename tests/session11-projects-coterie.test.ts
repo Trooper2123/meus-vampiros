@@ -186,7 +186,7 @@ describe('SPEC-SESSION-011: domínio persistente em PostgreSQL isolado',()=>{
  it('Stake concorrente: apenas um projeto pode reservar o último ponto',async()=>{
   const camp=await createTestCampaign('narrator-stake-race')
   const ch=await createTestCharacter('player-stake-race',camp.id,'Agente',{fome:0,vantagens:[{name:'Resources',level:1}]})
-  await db.execute(sql\`UPDATE characters SET status='APPROVED',character_type='PLAYER_VAMPIRE',game_state='{"hunger":0,"condition":"ACTIVE"}'::jsonb WHERE id=\${ch.id}::uuid\`)
+  await db.execute(sql`UPDATE characters SET status='APPROVED',character_type='PLAYER_VAMPIRE',game_state='{"hunger":0,"condition":"ACTIVE"}'::jsonb WHERE id=${ch.id}::uuid`)
   const launch=async(name:string)=>{
     const p=await commandProject('player-stake-race',camp.id,command('CREATE',{ownerCharacterId:ch.id,name,goalDescription:'Obter influência'}) as any)
     await commandProject('player-stake-race',camp.id,command('SUBMIT',{projectId:p.projectId,expectedRevision:0}) as any)
