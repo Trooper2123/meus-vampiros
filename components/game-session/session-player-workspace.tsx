@@ -103,7 +103,7 @@ export function SessionPlayerWorkspace({campaignId,actorId,sessionId,characters,
           {tab==='messages' && <CharacterSms campaignId={campaignId} mode="player"/>}
           {tab==='files' && <div className="session-player-files"><div className="session-player-section-heading"><FileText className="size-6"/><div><p className="eyebrow">Biblioteca da crônica</p><h2>Handouts e mesa visual</h2><p>Consulte os materiais compartilhados pelo narrador.</p></div></div><CampaignHandouts campaignId={campaignId}/></div>}
         </div>
-        \n        {current && sessionId && <PlayerQuickActions characterId={current.id} sessionId={sessionId}/> } 
+         {current && sessionId && <PlayerQuickActions characterId={current.id} sessionId={sessionId}/> } 
 
         {(!current||!sessionId) && <div className="session-player-actions-unavailable">As ações de dados e recursos ficam disponíveis quando uma ficha autorizada participa de uma sessão ativa.</div>}
       </main>
