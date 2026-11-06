@@ -3254,3 +3254,26 @@ main > .archive-header {
 .campaign-gate-choice-description{font-size:14px;line-height:1.65;color:var(--muted-foreground);max-width:36ch}
 .campaign-gate-choice-action{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:auto;padding:12px 18px;border-radius:11px;background:color-mix(in srgb,var(--primary) 85%,#16070a);color:#fff;font-weight:700;font-size:13px}
 @media(max-width:720px){.campaign-gate-welcome{margin-top:36px;gap:24px}.campaign-gate-choices{grid-template-columns:1fr;gap:14px}.campaign-gate-choice{min-height:220px;padding:23px}.campaign-gate-intro h1{font-size:32px}}
+
+
+/* Rounded navigation for the classic top ArchiveHeader, consistent with the new UI. */
+.sheet-header.archive-header:not(.archive-header-campaigns) .archive-nav > .button-ghost,
+.sheet-header.archive-header:not(.archive-header-campaigns) .archive-menu > summary.button-ghost,
+.sheet-header.archive-header:not(.archive-header-campaigns) .archive-menu nav .button-ghost {
+  border-radius:12px;
+  border-color:color-mix(in srgb,var(--primary) 24%,var(--border));
+  background:color-mix(in srgb,var(--primary) 5%,var(--card));
+  transition:background .18s ease,border-color .18s ease,box-shadow .18s ease;
+}
+.sheet-header.archive-header:not(.archive-header-campaigns) .archive-nav > .button-ghost:hover,
+.sheet-header.archive-header:not(.archive-header-campaigns) .archive-nav > .button-ghost:focus-visible,
+.sheet-header.archive-header:not(.archive-header-campaigns) .archive-menu nav .button-ghost:hover {
+  border-color:color-mix(in srgb,var(--primary) 65%,var(--border));
+  background:color-mix(in srgb,var(--primary) 13%,var(--card));
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--primary) 18%,transparent);
+}
+.sheet-header.archive-header:not(.archive-header-campaigns) .archive-nav > .button-ghost:focus-visible,
+.sheet-header.archive-header:not(.archive-header-campaigns) .archive-menu > summary.button-ghost:focus-visible {
+  outline:2px solid var(--primary);
+  outline-offset:3px;
+}
