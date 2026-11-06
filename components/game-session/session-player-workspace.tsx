@@ -89,6 +89,7 @@ export function SessionPlayerWorkspace({campaignId,actorId,sessionId,characters,
       <main className="session-player-center" aria-label="Hub da sessão do jogador">
         <div className="session-center-heading session-player-hub-heading"><div className="session-hub-title"><House className="size-7 text-primary" aria-hidden="true"/><div><h2 className="font-serif text-2xl">Hub da Sessão</h2><p>Seu personagem, a crônica e os recursos compartilhados.</p></div></div></div>
         <div className="session-player-character-banner"><div><p className="eyebrow">Personagem ativo</p><strong>{current?.name??'Sem personagem aprovado'}</strong><span>{sessionId?'Recursos e rolagens disponíveis':'Aguardando abertura da sessão'}</span></div>{characters.length>1&&<label className="session-player-banner-select">Alternar personagem<select value={current?.id??''} onChange={event=>setSelected(event.target.value)}>{characters.map(character=><option key={character.id} value={character.id}>{character.name}</option>)}</select></label>}</div>
+        {sessionId && <SessionSoundtrack sessionId={sessionId}/>}
         <nav className="session-player-tabs session-player-tabs-enhanced" aria-label="Seções do Hub">{tabs.map(({id,label,Icon})=><button type="button" key={id} aria-current={tab===id?'page':undefined} aria-label={label} className={tab===id?'is-active':''} onClick={()=>setTab(id)}><Icon className="size-4" aria-hidden="true"/><span>{label}</span>{id==='messages'&&smsUnread>0&&<span className="session-player-unread" aria-label={`${smsUnread} mensagens não lidas`}>{smsUnread}</span>}</button>)}</nav>
         <div className="session-player-stage">
           {tab==='visual' && <section className="session-player-visual-hub"><div className="session-player-section-heading"><ImageIcon className="size-6"/><div><p className="eyebrow">Compartilhado pelo narrador</p><h2>Mesa Virtual</h2><p>O mapa ou imagem em exibição é sincronizado automaticamente.</p></div></div><SessionVisualBoard campaignId={campaignId}/></section>}
@@ -102,7 +103,7 @@ export function SessionPlayerWorkspace({campaignId,actorId,sessionId,characters,
           {tab==='messages' && <CharacterSms campaignId={campaignId} mode="player"/>}
           {tab==='files' && <div className="session-player-files"><div className="session-player-section-heading"><FileText className="size-6"/><div><p className="eyebrow">Biblioteca da crônica</p><h2>Handouts e mesa visual</h2><p>Consulte os materiais compartilhados pelo narrador.</p></div></div><CampaignHandouts campaignId={campaignId}/></div>}
         </div>
-        {sessionId && <SessionSoundtrack sessionId={sessionId}/>}\n        {current && sessionId && <PlayerQuickActions characterId={current.id} sessionId={sessionId}/> } 
+        \n        {current && sessionId && <PlayerQuickActions characterId={current.id} sessionId={sessionId}/> } 
 
         {(!current||!sessionId) && <div className="session-player-actions-unavailable">As ações de dados e recursos ficam disponíveis quando uma ficha autorizada participa de uma sessão ativa.</div>}
       </main>
