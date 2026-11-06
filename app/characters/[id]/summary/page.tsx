@@ -24,14 +24,24 @@ export default async function CharacterSummaryPage({
       <ArchiveHeader title="Resumo da ficha" />
 
       <div className="archive-content character-summary-page">
-        <div className="summary-page-actions">
-          <Link className="button-ghost" href="/characters">Voltar aos personagens</Link>
-          <Link href={`/characters/${id}/edit`} className="button-primary inline-flex items-center gap-2"><span className="text-xs">Editar ficha completa</span></Link>
-          <Link className="button-ghost" href={`/characters/${id}/narrative`}>Perfil, relações e mídias</Link>
-        </div>
-        <div className="summary-media-compact"><SheetMediaPanel compact subjectType="CHARACTER" subjectId={id}/></div>
+        <section className="summary-hero" aria-label="Identidade do personagem">
+          <div className="summary-hero-portrait"><SheetMediaPanel compact subjectType="CHARACTER" subjectId={id}/></div>
+          <div className="summary-hero-details">
+            <p className="eyebrow">Dossiê do personagem</p>
+            <h1>{characterData.name}</h1>
+            <p className="summary-hero-subtitle">{[characterData.clan, characterData.generation ? `${characterData.generation}ª geração` : null, characterData.campaignTheme].filter(Boolean).join(' · ') || 'Ficha de personagem'}</p>
+            <div className="summary-hero-tags">
+              <span>{characterData.characterType === 'PLAYER_VAMPIRE' ? 'Vampiro jogador' : characterData.characterType === 'VAMPIRE_NPC' ? 'Vampiro NPC' : characterData.characterType === 'HUMAN_NPC' ? 'Humano NPC' : 'Personagem'}</span>
+              {characterData.campaignName && <span>Mesa: {characterData.campaignName}</span>}
+            </div>
+          </div>
+          <div className="summary-hero-actions">
+            <Link className="button-ghost" href="/characters">Voltar aos personagens</Link>
+            <Link href={`/characters/${id}/edit`} className="button-primary">Editar ficha completa</Link>
+            <Link className="button-ghost" href={`/characters/${id}/narrative`}>Perfil, relações e mídias</Link>
+          </div>
+        </section>
         <CharacterSummaryClient data={characterData} />
-        <p className="summary-page-note">Prévia conceitual com dados ilustrativos, não extraídos de uma ficha existente.</p>
       </div>
     </main>
   )
