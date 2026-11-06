@@ -59,25 +59,29 @@ type CharacterSummaryClientProps = {
 
 export function CharacterSummaryClient({ data }: Readonly<CharacterSummaryClientProps>) {
   const [rollPrefill, setRollPrefill] = useState<{ attribute?: string; skill?: string }>()
+  const [activeSection, setActiveSection] = useState<'visao-geral' | 'atributos' | 'habilidades' | 'vantagens' | 'disciplinas' | 'potencia-de-sangue' | 'recursos' | 'rolagens' | 'predacao'>('visao-geral')
+  const selectSection = (section: typeof activeSection) => setActiveSection(section)
+  const sectionLabels: Record<typeof activeSection, string> = { 'visao-geral': 'Resumo da Ficha', atributos: 'Atributos', habilidades: 'Habilidades', vantagens: 'Vantagens e Defeitos', disciplinas: 'Disciplinas', 'potencia-de-sangue': 'Potência de Sangue', recursos: 'Recursos', rolagens: 'Rolagens', predacao: 'Predação' }
   const canRoll = data.characterType === 'PLAYER_VAMPIRE'
   const hasBloodPotency = ['PLAYER_VAMPIRE', 'VAMPIRE_NPC'].includes(data.characterType ?? '')
   return (
     <div className="character-summary-body">
       <nav className="character-summary-nav" aria-label="Navegação do dossiê">
-        <a href="#visao-geral">Visão geral</a>
-        <a href="#atributos">Atributos</a>
-        <a href="#habilidades">Habilidades</a>
-        <a href="#vantagens">Vantagens e defeitos</a>
-        <a href="#disciplinas">Disciplinas</a>
-        {hasBloodPotency && <a href="#potencia-de-sangue">Potência de Sangue</a>}
-        {canRoll && <><a href="#recursos">Recursos</a><a href="#rolagens">Rolagens</a></>}
-        {hasSummaryName(data.predator) && <a href="#predacao">Predação</a>}
+        <button type="button" className={activeSection === 'visao-geral' ? 'active' : ''} aria-current={activeSection === 'visao-geral' ? 'page' : undefined} onClick={() => selectSection('visao-geral')}>Visão geral</button>
+        <button type="button" className={activeSection === 'atributos' ? 'active' : ''} aria-current={activeSection === 'atributos' ? 'page' : undefined} onClick={() => selectSection('atributos')}>Atributos</button>
+        <button type="button" className={activeSection === 'habilidades' ? 'active' : ''} aria-current={activeSection === 'habilidades' ? 'page' : undefined} onClick={() => selectSection('habilidades')}>Habilidades</button>
+        <button type="button" className={activeSection === 'vantagens' ? 'active' : ''} aria-current={activeSection === 'vantagens' ? 'page' : undefined} onClick={() => selectSection('vantagens')}>Vantagens e defeitos</button>
+        <button type="button" className={activeSection === 'disciplinas' ? 'active' : ''} aria-current={activeSection === 'disciplinas' ? 'page' : undefined} onClick={() => selectSection('disciplinas')}>Disciplinas</button>
+        {hasBloodPotency && <button type="button" className={activeSection === 'potencia-de-sangue' ? 'active' : ''} aria-current={activeSection === 'potencia-de-sangue' ? 'page' : undefined} onClick={() => selectSection('potencia-de-sangue')}>Potência de Sangue</button>}
+        {canRoll && <><button type="button" className={activeSection === 'recursos' ? 'active' : ''} aria-current={activeSection === 'recursos' ? 'page' : undefined} onClick={() => selectSection('recursos')}>Recursos</button><button type="button" className={activeSection === 'rolagens' ? 'active' : ''} aria-current={activeSection === 'rolagens' ? 'page' : undefined} onClick={() => selectSection('rolagens')}>Rolagens</button></>}
+        {hasSummaryName(data.predator) && <button type="button" className={activeSection === 'predacao' ? 'active' : ''} aria-current={activeSection === 'predacao' ? 'page' : undefined} onClick={() => selectSection('predacao')}>Predação</button>}
       </nav>
       <div className="character-summary-content">
-        <header className="summary-content-heading"><div><p className="eyebrow">Ficha de personagem</p><h2>Resumo da Ficha</h2></div></header>
+        <header className="summary-content-heading"><div><p className="eyebrow">Ficha de personagem</p><h2>{sectionLabels[activeSection]}</h2></div></header>
         <CharacterSummary
-          onRollAttribute={canRoll ? attribute => setRollPrefill({ attribute }) : undefined}
-          onRollSkill={canRoll ? skill => setRollPrefill({ skill: Object.entries(SPECIALTY_SKILL_NAMES).find(([, name]) => name === skill)?.[0] }) : undefined}
+          section={activeSection === "visao-geral" || activeSection === "atributos" || activeSection === "habilidades" || activeSection === "vantagens" || activeSection === "disciplinas" || activeSection === "recursos" ? activeSection : "visao-geral"}
+          onRollAttribute={canRoll ? attribute => { setRollPrefill({ attribute }); selectSection("rolagens") } : undefined}
+          onRollSkill={canRoll ? skill => { setRollPrefill({ skill: Object.entries(SPECIALTY_SKILL_NAMES).find(([, name]) => name === skill)?.[0] }); selectSection("rolagens") } : undefined}
           clanDetails={data.characterType === 'PLAYER_VAMPIRE' ? <CharacterClanSummary characterId={data.id} /> : undefined}
           data={data}
           headerActions={<>
@@ -87,16 +91,16 @@ export function CharacterSummaryClient({ data }: Readonly<CharacterSummaryClient
           </>}
           resources={canRoll ? <SessionResources characterId={data.id} /> : undefined}
         />
-        <section className="summary-hub-overview" aria-label="Visão rápida da ficha">
-          <a href="#atributos" className="summary-hub-tile"><span className="summary-hub-tile-icon" aria-hidden="true">◇</span><h3>Atributos</h3><p>Físicos · Sociais · Mentais</p><strong>{Object.values(data.attributes).filter(value=>value>0).length} de 9</strong></a>
-          <a href="#habilidades" className="summary-hub-tile"><span className="summary-hub-tile-icon" aria-hidden="true">⚔</span><h3>Habilidades</h3><p>Perícias do personagem</p><strong>{Object.values(data.skills).filter(value=>value>0).length} preenchidas</strong></a>
-          <a href="#disciplinas" className="summary-hub-tile"><span className="summary-hub-tile-icon" aria-hidden="true">✦</span><h3>Disciplinas</h3><p>Poderes e dons vampíricos</p><strong>{data.disciplines.length} disciplinas</strong></a>
-          <a href="#vantagens" className="summary-hub-tile"><span className="summary-hub-tile-icon" aria-hidden="true">✧</span><h3>Vantagens e Defeitos</h3><p>Características especiais</p><strong>{data.merits.length} vantagens · {data.flaws.length} defeitos</strong></a>
-        </section>
-        {canRoll && <CharacterAwakePanel characterId={data.id} />}
-        {hasBloodPotency && <div id="potencia-de-sangue"><BloodPotencySummary characterId={data.id} /></div>}
-        {canRoll && <div id="rolagens"><DisciplineRollPanel characterId={data.id} /><CharacterRolls characterId={data.id} prefill={rollPrefill} /></div>}
-        {hasSummaryName(data.predator) && data.predator && <div id="predacao"><PlayerPredatorSummary name={data.predator} roll={data.predatorRoll} source={data.predatorSource} selection={data.predatorSelection} /></div>}
+        {activeSection === "visao-geral" && <section className="summary-hub-overview" aria-label="Visão rápida da ficha">
+          <button type="button" onClick={() => selectSection("atributos")} className="summary-hub-tile"><span className="summary-hub-tile-icon" aria-hidden="true">◇</span><h3>Atributos</h3><p>Físicos · Sociais · Mentais</p><strong>{Object.values(data.attributes).filter(value=>value>0).length} de 9</strong></button>
+          <button type="button" onClick={() => selectSection("habilidades")} className="summary-hub-tile"><span className="summary-hub-tile-icon" aria-hidden="true">⚔</span><h3>Habilidades</h3><p>Perícias do personagem</p><strong>{Object.values(data.skills).filter(value=>value>0).length} preenchidas</strong></button>
+          <button type="button" onClick={() => selectSection("disciplinas")} className="summary-hub-tile"><span className="summary-hub-tile-icon" aria-hidden="true">✦</span><h3>Disciplinas</h3><p>Poderes e dons vampíricos</p><strong>{data.disciplines.length} disciplinas</strong></button>
+          <button type="button" onClick={() => selectSection("vantagens")} className="summary-hub-tile"><span className="summary-hub-tile-icon" aria-hidden="true">✧</span><h3>Vantagens e Defeitos</h3><p>Características especiais</p><strong>{data.merits.length} vantagens · {data.flaws.length} defeitos</strong></button>
+        </section>}
+        {activeSection === "visao-geral" && canRoll && <CharacterAwakePanel characterId={data.id} />}
+        {activeSection === "potencia-de-sangue" && hasBloodPotency && <div id="potencia-de-sangue"><BloodPotencySummary characterId={data.id} /></div>}
+        {activeSection === "rolagens" && canRoll && <div id="rolagens"><DisciplineRollPanel characterId={data.id} /><CharacterRolls characterId={data.id} prefill={rollPrefill} /></div>}
+        {activeSection === "predacao" && hasSummaryName(data.predator) && data.predator && <div id="predacao"><PlayerPredatorSummary name={data.predator} roll={data.predatorRoll} source={data.predatorSource} selection={data.predatorSelection} /></div>}
       </div>
       <aside className="summary-detail-rail" aria-label="Informações do personagem">
         <section className="summary-rail-card">
