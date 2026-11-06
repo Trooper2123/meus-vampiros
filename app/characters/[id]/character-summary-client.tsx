@@ -72,6 +72,7 @@ export function CharacterSummaryClient({ data }: Readonly<CharacterSummaryClient
         {hasSummaryName(data.predator) && <a href="#predacao">Predação</a>}
       </nav>
       <div className="character-summary-content">
+        <header className="summary-content-heading"><div><p className="eyebrow">Ficha de personagem</p><h2>Resumo da Ficha</h2></div></header>
         <CharacterSummary
           onRollAttribute={canRoll ? attribute => setRollPrefill({ attribute }) : undefined}
           onRollSkill={canRoll ? skill => setRollPrefill({ skill: Object.entries(SPECIALTY_SKILL_NAMES).find(([, name]) => name === skill)?.[0] }) : undefined}
@@ -89,6 +90,33 @@ export function CharacterSummaryClient({ data }: Readonly<CharacterSummaryClient
         {canRoll && <div id="rolagens"><DisciplineRollPanel characterId={data.id} /><CharacterRolls characterId={data.id} prefill={rollPrefill} /></div>}
         {hasSummaryName(data.predator) && data.predator && <div id="predacao"><PlayerPredatorSummary name={data.predator} roll={data.predatorRoll} source={data.predatorSource} selection={data.predatorSelection} /></div>}
       </div>
+      <aside className="summary-detail-rail" aria-label="Informações do personagem">
+        <section className="summary-rail-card">
+          <h2>Conceito e história</h2>
+          <p>{data.campaignTheme || 'Consulte o perfil narrativo para conhecer a história e as relações deste personagem.'}</p>
+          <Link href={`/characters/${data.id}/narrative`} className="summary-rail-link">Ver perfil e relações</Link>
+        </section>
+        <section className="summary-rail-card">
+          <h2>Informações da ficha</h2>
+          <dl>
+            <div><dt>Clã</dt><dd>{data.clan || 'Não informado'}</dd></div>
+            <div><dt>Geração</dt><dd>{data.generation || 'Não informada'}</dd></div>
+            <div><dt>Predação</dt><dd>{data.predator || 'Não informada'}</dd></div>
+            <div><dt>Tipo de ficha</dt><dd>{data.characterType === 'PLAYER_VAMPIRE' ? 'Vampiro jogador' : data.characterType === 'VAMPIRE_NPC' ? 'Vampiro NPC' : data.characterType === 'HUMAN_NPC' ? 'Humano NPC' : 'Personagem'}</dd></div>
+            {data.campaignName && <div><dt>Mesa</dt><dd>{data.campaignName}</dd></div>}
+          </dl>
+        </section>
+        <section className="summary-rail-card">
+          <h2>Visão rápida</h2>
+          <dl>
+            <div><dt>Atributos</dt><dd>{Object.values(data.attributes).filter(value=>value>0).length} preenchidos</dd></div>
+            <div><dt>Habilidades</dt><dd>{Object.values(data.skills).filter(value=>value>0).length} preenchidas</dd></div>
+            <div><dt>Disciplinas</dt><dd>{data.disciplines.length}</dd></div>
+            <div><dt>Vantagens</dt><dd>{data.merits.length}</dd></div>
+            <div><dt>Defeitos</dt><dd>{data.flaws.length}</dd></div>
+          </dl>
+        </section>
+      </aside>
     </div>
   )
 }
