@@ -1,3 +1,5 @@
+import { characterBackgroundAvailability } from './background-availability'
+import { backgroundCode } from './project-stake-options'
 import { CharacterCommandError, CommandCharacter, runCharacterCommand } from './character-commands'
 import { normalizeCharacterRulesInput } from './vtm-v5/normalize'
 import { normalizeSpecialtySkillId, specialtyRollBonus } from './vtm-v5/specialties'
@@ -12,23 +14,35 @@ import { calculateBloodPotencyEffects, type BloodContext } from './vtm-v5/blood-
 import { getBloodPolicy } from './blood-policy'
 import { normalizePredatorType } from './vtm-v5/predator-types'
 
-export type RollInput = { mode?: RollMode; hiddenDifficulty?: boolean; clanContext?: ClanRollContext; attribute: string; skillId: string; difficulty: number; specialtyId?: string; visibility: 'PUBLIC' | 'SECRET'; reason: string; idempotencyKey: string; expectedRevision: number }
+export type RollInput = { mode?: RollMode; hiddenDifficulty?: boolean; clanContext?: ClanRollContext; attribute: string; skillId: string; backgroundCode?: string; difficulty: number; specialtyId?: string; visibility: 'PUBLIC' | 'SECRET'; reason: string; idempotencyKey: string; expectedRevision: number }
 
 export function executeCharacterRoll(actorId: string, id: string, input: RollInput, provider: DiceProvider = serverDiceProvider) {
   if (input.mode !== undefined && !ROLL_MODES.includes(input.mode) || input.hiddenDifficulty !== undefined && typeof input.hiddenDifficulty !== 'boolean' || !Number.isSafeInteger(input.difficulty) || input.difficulty < 1 || input.difficulty > 50) { throw new CharacterCommandError(400, 'Contexto de rolagem inválido.') }
+  if (input.backgroundCode !== undefined && (typeof input.backgroundCode !== 'string' || !backgroundCode(input.backgroundCode))) { throw new CharacterCommandError(422, 'Background inválido para a rolagem.') }
   if (input.clanContext !== undefined && !validClanRollContext(input.clanContext)) { throw new CharacterCommandError(400, 'Contexto de clã inválido.') }
   return runCharacterCommand(actorId, id, { key: input.idempotencyKey, type: 'DICE_ROLLED', expectedRevision: input.expectedRevision, payload: input }, character => (character.ownerId === actorId || character.masterId === actorId) && (!(input.visibility === 'SECRET' || input.hiddenDifficulty || input.clanContext !== undefined) || character.masterId === actorId), async character => {
     assertRollableCharacter(character, character.ownerId === actorId)
     const { mode,canUseSpecialties,state }=assertRollContext(character,actorId,input)
     const { attribute,skillDots,bonus }: { attribute: number; skillDots: number; bonus: number }=rollAttributeAndSpecialty(character,input,mode,canUseSpecialties)
+    const backgroundBonus = input.backgroundCode ? await effectiveBackgroundBonus(character, input.backgroundCode, mode) : 0
     const adjustment=await bloodClanAdjustment(mode,character,input)
     const difficulty = adjustment.difficulty ?? input.difficulty
-    const basePool = rollBasePool(mode,state,attribute+skillDots+bonus)
+    const basePool = rollBasePool(mode,state,attribute+skillDots+bonus+backgroundBonus)
     const pool = Math.max(0, basePool - (adjustment.modifiers?.dicePenalty ?? 0))
     const hungerCount = ['TEST', 'PREDATION', 'TAKING_HALF', 'AUTOMATIC'].includes(mode) ? Math.min(pool, state.hunger) : 0
     const result=resolveCharacterRollResult(mode,difficulty,provider,pool,hungerCount)
     return { ok: true, ...storeRoll(character, actorId, { mode, pool, specialtyBonus: bonus, visibility: input.visibility, reason: input.reason, hiddenDifficulty: input.hiddenDifficulty, ...(adjustment.modifiers ? { clanModifiers: adjustment.modifiers } : {}) }, result) }
   })
+}
+
+async function effectiveBackgroundBonus(character: CommandCharacter, code: string, mode: RollMode) {
+  if (!['TEST','TAKING_HALF','AUTOMATIC'].includes(mode)) throw new CharacterCommandError(422, 'Este modo não aceita contribuição de Background.')
+  const trait = backgroundCode(code)
+  if (!trait) throw new CharacterCommandError(422, 'Background inválido.')
+  const options = await characterBackgroundAvailability(character.id, character.data)
+  const available = options.find(option => option.trait === trait)?.availableDots ?? 0
+  if (available < 1) throw new CharacterCommandError(422, 'Background sem pontos disponíveis: verifique os Stakes ativos.')
+  return available
 }
 
 function resolveCharacterRollResult(mode: string,difficulty: number,provider: DiceProvider,pool: number,hungerCount: number) {
