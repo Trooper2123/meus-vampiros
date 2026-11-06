@@ -9,7 +9,7 @@ export function GetResumeCharacterButton({
   const router = useRouter()
 
   function edit() {
-    router.push(`/characters/${characterId}`)
+    router.push(`/characters/${characterId}/summary`)
   }
 
   return (
