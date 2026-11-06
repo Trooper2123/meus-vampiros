@@ -67,6 +67,8 @@ export async function getCharacterSummaryData(id: string, userId: string) {
     campaignId: character.campaignId,
     characterType: character.characterType,
     name: getName(),
+    concept: characterText(data['conceito'] ?? data['concept'] ?? ''),
+    history: characterText(data['historia'] ?? data['historico'] ?? data['history'] ?? ''),
     clan: data['cla'] ? characterText(data['cla']) : null,
     predator: predatorDefinition?.name ?? (data['predador'] ? characterText(data['predador']) : null),
     predatorRoll: predatorDefinition?.predatorRoll ?? null,

@@ -53,6 +53,7 @@ type CharacterData = {
 }
 
 type CharacterSummaryProps = {
+  section?: 'visao-geral' | 'atributos' | 'habilidades' | 'vantagens' | 'disciplinas' | 'recursos' | 'potencia-de-sangue' | 'rolagens' | 'predacao'
   clanDetails?: ReactNode
   headerActions?: ReactNode
   resources?: ReactNode
@@ -63,7 +64,7 @@ type CharacterSummaryProps = {
   onRollSkill?: (skill: string) => void
 }
 
-export function CharacterSummary({ data, onChangeResources, onRollAttribute, onRollSkill, specialties, resources, headerActions, clanDetails }: Readonly<CharacterSummaryProps>) {
+export function CharacterSummary({ data, section, onChangeResources, onRollAttribute, onRollSkill, specialties, resources, headerActions, clanDetails }: Readonly<CharacterSummaryProps>) {
   const maxima = data.characterType === 'PLAYER_VAMPIRE' ? calculateSecondaryAttributes(data.attributes) : undefined
   const handleResourcesChange = (newResources: CharacterData['resources']) => {
     onChangeResources?.(newResources)
@@ -71,7 +72,7 @@ export function CharacterSummary({ data, onChangeResources, onRollAttribute, onR
 
   return (
     <div className="flex flex-col gap-6">
-      <div id="visao-geral"><SummaryHeader
+      {(!section || section === "visao-geral") && <div id="visao-geral"><SummaryHeader
         actions={headerActions}
         name={data.name}
         clan={data.clan}
@@ -79,15 +80,15 @@ export function CharacterSummary({ data, onChangeResources, onRollAttribute, onR
         generation={data.generation}
         campaignName={data.campaignName}
         campaignTheme={data.campaignTheme}
-      /></div>
-      {clanDetails && <div id="clan">{clanDetails}</div>}
-      {resources && <div id="recursos">{resources}</div>}
-      {Boolean(data.convictions?.length) && <section className="border border-border bg-card p-6" aria-label="Pilares e convicções"><h2 className="mb-5 font-serif text-2xl">Pilares e convicções</h2><dl className="grid gap-4 sm:grid-cols-3">{data.convictions?.map(entry => <div key={`${entry.touchstone}:${entry.text}`}><dt className="font-semibold">{entry.touchstone || 'Pilar não informado'}</dt><dd className="mt-2 text-sm text-muted-foreground">{entry.text || 'Convicção não informada'}</dd></div>)}</dl></section>}
-      <div id="atributos"><SummaryAttributes attributes={data.attributes} onRoll={onRollAttribute} /></div>
-      <div id="habilidades"><SummarySkills skills={data.skills} onRoll={onRollSkill} /></div>
-      {specialties}
-      <div id="vantagens"><SummaryMerits merits={data.merits} flaws={data.flaws} grants={data.creationGrants} clan={data.clan} /></div>
-      <div id="disciplinas"><SummaryDisciplines disciplines={data.disciplines} grants={data.creationGrants} /></div>
+      /></div>}
+      {(!section || section === "visao-geral") && clanDetails && <div id="clan">{clanDetails}</div>}
+      {resources && (!section || section === "visao-geral" || section === "recursos") && <div id="recursos">{resources}</div>}
+      {(!section || section === "visao-geral") && Boolean(data.convictions?.length) && <section className="border border-border bg-card p-6" aria-label="Pilares e convicções"><h2 className="mb-5 font-serif text-2xl">Pilares e convicções</h2><dl className="grid gap-4 sm:grid-cols-3">{data.convictions?.map(entry => <div key={`${entry.touchstone}:${entry.text}`}><dt className="font-semibold">{entry.touchstone || 'Pilar não informado'}</dt><dd className="mt-2 text-sm text-muted-foreground">{entry.text || 'Convicção não informada'}</dd></div>)}</dl></section>}
+      {(!section || section === "atributos") && <div id="atributos"><SummaryAttributes attributes={data.attributes} onRoll={onRollAttribute} /></div>}
+      {(!section || section === "habilidades") && <div id="habilidades"><SummarySkills skills={data.skills} onRoll={onRollSkill} /></div>}
+      {(!section || section === "habilidades") && specialties}
+      {(!section || section === "vantagens") && <div id="vantagens"><SummaryMerits merits={data.merits} flaws={data.flaws} grants={data.creationGrants} clan={data.clan} /></div>}
+      {(!section || section === "disciplinas") && <div id="disciplinas"><SummaryDisciplines disciplines={data.disciplines} grants={data.creationGrants} /></div>}
       {onChangeResources && (
         <SummaryResources resources={data.resources} maxima={maxima} onChange={handleResourcesChange} />
       )}
