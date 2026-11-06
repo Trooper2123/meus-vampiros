@@ -3277,3 +3277,61 @@ main > .archive-header {
   outline:2px solid var(--primary);
   outline-offset:3px;
 }
+
+
+/* Identity editor alignment: informational banner and subnavigation span the
+   whole panel; only the form cards and portrait share the content row. */
+@media(min-width:1251px){
+  .assisted-creation-page .assisted-identity-basics{
+    display:grid;
+    grid-template-columns:minmax(0,1.3fr) minmax(260px,.85fr);
+    grid-template-rows:auto auto auto auto;
+    gap:14px 18px;
+    align-items:start;
+    align-content:start;
+  }
+  .assisted-creation-page .assisted-identity-basics>.grant-origin,
+  .assisted-creation-page .assisted-identity-basics>.assisted-identity-subnav{
+    grid-column:1 / -1;
+    grid-row:auto;
+    margin:0;
+  }
+  .assisted-creation-page .assisted-identity-basics>.assisted-identity-subnav{
+    padding-bottom:14px;
+    margin-bottom:2px;
+  }
+  .assisted-creation-page .assisted-identity-basics>.assisted-portrait-panel{
+    grid-column:2;
+    grid-row:3 / span 2;
+    position:static;
+    align-self:start;
+    margin:0;
+    width:100%;
+    max-width:none;
+  }
+  .assisted-creation-page .assisted-identity-basics>section:not(.assisted-portrait-panel){
+    grid-column:1;
+    grid-row:auto;
+    margin:0;
+    min-width:0;
+  }
+}
+@media(max-width:1250px){
+  .assisted-creation-page .assisted-identity-basics{
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+    align-items:stretch;
+  }
+  .assisted-creation-page .assisted-identity-basics>.grant-origin,
+  .assisted-creation-page .assisted-identity-basics>.assisted-identity-subnav,
+  .assisted-creation-page .assisted-identity-basics>section{
+    width:100%;
+    margin:0;
+  }
+  .assisted-creation-page .assisted-identity-basics>.assisted-portrait-panel{
+    order:0;
+    position:static;
+    max-width:none;
+  }
+}
