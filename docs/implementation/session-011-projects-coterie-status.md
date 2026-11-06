@@ -164,3 +164,15 @@ Fonte conferida: **Vampire: The Masquerade V5**, livro básico, Appendix II: Pro
 - Testes unitários de projeção adicionados em `tests/background-availability.test.ts` (não executados nesta sessão).
 - **Ainda não bloqueia rolagens genéricas**: a API atual recebe pool numérico e não identifica qual Background contribuiu; descontar do pool arbitrariamente poderia reduzir rolagens de Atributos/Habilidades. Para completar, é necessário adicionar origem tipada de Background à composição de pool e validar no servidor contra `characterBackgroundAvailability` ou `coterieBackgroundAvailability` antes da rolagem.
 - Também falta conferir outros consumidores narrativos de Backgrounds e impedir que um usuário altere os dots de origem abaixo dos pontos já reservados.
+
+
+## Integração de disponibilidade nas rolagens — entrega incremental (2026-11-06)
+
+- [x] GET /api/characters/[id]/rolls expõe backgroundAvailability: totalDots, reservedDots e availableDots, derivados de project_stakes.
+- [x] Rolagem aceita backgroundCode opcional, validado no servidor, acrescentando apenas dots disponíveis e rejeitando Background indisponível ou modo incompatível.
+- [x] Resumo da ficha e serviço da Coterie já projetam disponibilidade individual/compartilhada sem duplicar o desconto.
+- [x] Adicionado teste de integração da disponibilidade após reserva individual.
+- [ ] Expor seletor de Background na UI de rolagem; nunca aplicar bônus automaticamente a todas as rolagens.
+- [ ] Validar transacionalmente comandos de edição/evolução que reduzem Backgrounds reservados.
+- [ ] Integrar contribuição de Background compartilhado da Coterie em rolagens com autorização de membros ativos.
+- [ ] Executar CI, testes e QA com Narrador e jogador.
