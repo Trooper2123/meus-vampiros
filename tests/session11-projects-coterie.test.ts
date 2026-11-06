@@ -183,6 +183,36 @@ describe('SPEC-SESSION-011: domínio persistente em PostgreSQL isolado',()=>{
   expect((await getProjectStakeOptions('narrator-011',camp.id,second)).options).toEqual(expect.arrayContaining([expect.objectContaining({trait:'RESOURCES',available:0,reserved:2})]))
   await expect(getProjectStakeOptions('player-011',camp.id,second)).rejects.toMatchObject({status:403})
  })
+ it('Stake concorrente: apenas um projeto pode reservar o último ponto',async()=>{
+  const camp=await createTestCampaign('narrator-stake-race')
+  const ch=await createTestCharacter('player-stake-race',camp.id,'Agente',{fome:0,vantagens:[{name:'Resources',level:1}]})
+  await db.execute(sql`UPDATE characters SET status='APPROVED',character_type='PLAYER_VAMPIRE',game_state='{"hunger":0,"condition":"ACTIVE"}'::jsonb WHERE id=${ch.id}::uuid`)
+  const launch=async(name:string)=>{
+    const p=await commandProject('player-stake-race',camp.id,command('CREATE',{ownerCharacterId:ch.id,name,goalDescription:'Obter influência'}) as any)
+    await commandProject('player-stake-race',camp.id,command('SUBMIT',{projectId:p.projectId,expectedRevision:0}) as any)
+    await commandProject('narrator-stake-race',camp.id,command('APPROVE',{projectId:p.projectId,expectedRevision:1,targetTrait:'Contacts',currentDots:0,finalDots:1,incrementUnit:'MONTH',incrementValue:1,launchPool:4}) as any)
+    await commandProject('narrator-stake-race',camp.id,command('LAUNCH',{projectId:p.projectId,expectedRevision:2,rollingCharacterId:ch.id}) as any,{rollD10:()=>[6,6,6,6]})
+    return p.projectId
+  }
+  const [a,b]=await Promise.all([launch('Projeto A'),launch('Projeto B')])
+  const results=await Promise.allSettled([a,b].map(projectId=>commandProject('narrator-stake-race',camp.id,command('COMMIT_STAKE',{projectId,expectedRevision:3,stakes:[{characterId:ch.id,trait:'Resources',dots:1}]}) as any)))
+  expect(results.filter(result=>result.status==='fulfilled')).toHaveLength(1)
+  expect(results.filter(result=>result.status==='rejected')).toHaveLength(1)
+  const options=await getProjectStakeOptions('narrator-stake-race',camp.id,a)
+  expect(options.options).toEqual(expect.arrayContaining([expect.objectContaining({trait:'RESOURCES',reserved:1,available:0})]))
+ })
+ it('API de disponibilidade considera Stake sem alterar pontos adquiridos',async()=>{
+  const camp=await createTestCampaign('narrator-availability')
+  const ch=await createTestCharacter('player-availability',camp.id,'Investigadora',{fome:0,vantagens:[{name:'Resources',level:2}]})
+  await db.execute(sql`UPDATE characters SET status='APPROVED',character_type='PLAYER_VAMPIRE',game_state='{"hunger":0,"condition":"ACTIVE"}'::jsonb WHERE id=${ch.id}::uuid`)
+  const p=await commandProject('player-availability',camp.id,command('CREATE',{ownerCharacterId:ch.id,name:'Rede de contatos',goalDescription:'Ampliar influência'}) as any)
+  await commandProject('player-availability',camp.id,command('SUBMIT',{projectId:p.projectId,expectedRevision:0}) as any)
+  await commandProject('narrator-availability',camp.id,command('APPROVE',{projectId:p.projectId,expectedRevision:1,targetTrait:'Contacts',currentDots:0,finalDots:1,incrementUnit:'MONTH',incrementValue:1,launchPool:4}) as any)
+  await commandProject('narrator-availability',camp.id,command('LAUNCH',{projectId:p.projectId,expectedRevision:2,rollingCharacterId:ch.id}) as any,{rollD10:()=>[6,6,6,6]})
+  await commandProject('narrator-availability',camp.id,command('COMMIT_STAKE',{projectId:p.projectId,expectedRevision:3,stakes:[{characterId:ch.id,trait:'Resources',dots:1}]}) as any)
+  const {characterBackgroundAvailability}=await import('@/lib/background-availability')
+  expect(await characterBackgroundAvailability(ch.id,{vantagens:[{name:'Resources',level:2}]})).toEqual([{trait:'RESOURCES',totalDots:2,reservedDots:1,availableDots:1}])
+ })
  it('Stake rejeita merits e aceita nomes PT-BR de Background',()=>{
    expect(backgroundDots({vantagens:[{name:'Persuasão Sobrenatural',level:3},{name:'Recursos',level:2},{name:'Influência',dots:1}]})).toEqual([{trait:'RESOURCES',dots:2},{trait:'INFLUENCE',dots:1}])
  })

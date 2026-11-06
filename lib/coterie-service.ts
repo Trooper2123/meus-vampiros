@@ -1,4 +1,5 @@
 import { sql } from 'drizzle-orm'
+import { coterieBackgroundAvailability } from './background-availability'
 import { db } from './db'
 import { CharacterCommandError } from './character-commands'
 import { campaignAccess, dots, optionalText, requireCharacterOfCampaign, requireText, requireUuid, runCampaignCommand, type CampaignAccess, type Session11Tx } from './session11-common'
@@ -60,7 +61,8 @@ export async function getCampaignCoteries(actorId:string,campaignId:string){
       const goals=await tx.execute(sql`SELECT cg.id,cg.title,cg.description,cg.status,cp.id AS "projectId" FROM coterie_goals cg LEFT JOIN character_projects cp ON cp.origin_goal_id=cg.id WHERE cg.coterie_id=${id}::uuid ORDER BY cg.created_at DESC`)
       const traits=await tx.execute(sql`SELECT ht.id,ht.haven_id AS "havenId",ht.catalog_item_id AS "catalogItemId",ht.custom_name AS "customName",ht.kind,ht.dots FROM coterie_haven_traits ht JOIN coterie_havens h ON h.id=ht.haven_id WHERE h.coterie_id=${id}::uuid`)
       const projectCounts=await tx.execute<{total:number;active:number}>(sql`SELECT COUNT(*)::int AS total, COUNT(*) FILTER (WHERE status='ACTIVE')::int AS active FROM character_projects WHERE coterie_id=${id}::uuid`)
-      detail.push({...(coteries.rows.find(row=>(row as {id:string}).id===id) as object),members:members.rows,backgrounds:backgrounds.rows,advantages:advantages.rows,havens:havens.rows.map(h=>({...h,traits:traits.rows.filter(t=>(t as {havenId:string}).havenId===h.id)})),boons:boons.rows,goals:goals.rows,projectCounts:projectCounts.rows[0]})
+      const backgroundAvailability = await coterieBackgroundAvailability(id,tx)
+      detail.push({backgroundAvailability,...(coteries.rows.find(row=>(row as {id:string}).id===id) as object),members:members.rows,backgrounds:backgrounds.rows,advantages:advantages.rows,havens:havens.rows.map(h=>({...h,traits:traits.rows.filter(t=>(t as {havenId:string}).havenId===h.id)})),boons:boons.rows,goals:goals.rows,projectCounts:projectCounts.rows[0]})
     }
     const catalog=await tx.execute(sql`SELECT id,code,name,source,description,suggested_mechanics AS "suggestedMechanics" FROM coterie_type_catalog WHERE active=true ORDER BY name`)
     const roster=access.is_master?await tx.execute<{id:string;name:string}>(sql`SELECT id,name FROM characters WHERE campaign_id=${campaignId}::uuid AND character_type='PLAYER_VAMPIRE' AND status NOT IN ('ARCHIVED','DELETED','DISABLED') ORDER BY name`):null

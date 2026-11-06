@@ -1,5 +1,6 @@
 'use client'
 
+import { SessionParticipants } from '@/components/game-session/session-participants'
 import { SessionVisualBoard } from '@/components/game-session/session-visual-board'
 import { CampaignHandouts } from '@/components/campaign-handouts'
 
@@ -126,6 +127,7 @@ function SessionWorkspace({ campaignId, actorId, campaignName }: Readonly<{ camp
           ].map(({ id, label, Icon }) => <button key={id} type="button" aria-current={activeTool === id ? 'page' : undefined} className={`session-tab ${activeTool === id ? 'session-tab-active' : ''}`} onClick={() => setActiveTool(id)}><Icon className="size-4" aria-hidden="true"/>{label}</button>)}
         </nav>
 
+        {activeSession?.status === 'ACTIVE' && <SessionSoundtrack sessionId={activeSession.id}/>}
         <section className="session-stage" aria-label="Conteúdo da seção selecionada">
           {activeTool === 'shared' && <div className="session-hub-grid">
             <section className="session-shared-visual">
@@ -175,13 +177,13 @@ function SessionWorkspace({ campaignId, actorId, campaignName }: Readonly<{ camp
 
           {activeTool === 'calendar' && <div className="session-panel"><p className="eyebrow">Agenda da campanha</p><h2 className="mt-2 font-serif text-2xl">Calendário da mesa</h2><div className="mt-5"><CampaignTools campaignId={campaignId} master={manage}/></div></div>}
         </section>
-        {activeSession?.status === 'ACTIVE' && <SessionSoundtrack sessionId={activeSession.id}/>}
+        
       </main>
 
       <aside className="session-cameras" aria-label="Câmeras dos participantes">
-        <div className="session-column-heading"><Users className="size-6 text-primary" aria-hidden="true"/><div><p className="eyebrow">Participantes</p><h2 className="font-serif text-xl">Participantes ({data.characters.length})</h2></div></div>
+        <div className="session-column-heading"><Users className="size-6 text-primary" aria-hidden="true"/><div><p className="eyebrow">Participantes</p><h2 className="font-serif text-xl">Participantes da mesa</h2></div></div>
         
-        <div className="mt-4"><LiveKitRoomLink campaignId={campaignId} master={manage} compact chatTargetId="session-master-livekit-chat" /></div>
+        <div className="mt-4"><LiveKitRoomLink campaignId={campaignId} master={manage} compact chatTargetId="session-master-livekit-chat" /></div><SessionParticipants campaignId={campaignId}/>
         {data.characters.length > 0 && <div className="session-character-links"><p className="eyebrow">Resumos de ficha</p>{data.characters.map(character => <Link key={character.id} href={`/characters/${character.id}/summary`} target="_blank" rel="noopener noreferrer"><BookOpen className="size-3.5" aria-hidden="true"/>{character.name}</Link>)}</div>}
       </aside>
     </div></>}
