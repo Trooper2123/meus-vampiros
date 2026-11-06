@@ -79,7 +79,7 @@ export function CharacterSummaryClient({ data }: Readonly<CharacterSummaryClient
       <div className="character-summary-content">
         <header className="summary-content-heading"><div><p className="eyebrow">Ficha de personagem</p><h2>{sectionLabels[activeSection]}</h2></div></header>
         <CharacterSummary
-          section={activeSection === "visao-geral" || activeSection === "atributos" || activeSection === "habilidades" || activeSection === "vantagens" || activeSection === "disciplinas" || activeSection === "recursos" ? activeSection : "visao-geral"}
+          section={activeSection}
           onRollAttribute={canRoll ? attribute => { setRollPrefill({ attribute }); selectSection("rolagens") } : undefined}
           onRollSkill={canRoll ? skill => { setRollPrefill({ skill: Object.entries(SPECIALTY_SKILL_NAMES).find(([, name]) => name === skill)?.[0] }); selectSection("rolagens") } : undefined}
           clanDetails={data.characterType === 'PLAYER_VAMPIRE' ? <CharacterClanSummary characterId={data.id} /> : undefined}
