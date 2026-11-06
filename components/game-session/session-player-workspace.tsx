@@ -1,5 +1,6 @@
 'use client'
 
+import { SessionParticipants } from '@/components/game-session/session-participants'
 import { SessionVisualBoard } from '@/components/game-session/session-visual-board'
 import { CampaignHandouts } from '@/components/campaign-handouts'
 
@@ -110,7 +111,7 @@ export function SessionPlayerWorkspace({campaignId,actorId,sessionId,characters,
       <aside className="session-player-cameras" aria-label="Câmeras da mesa">
         <div className="session-player-column-header"><Users className="size-5"/><h2>Participantes</h2></div>
         <LiveKitRoomLink campaignId={campaignId} master={false} compact chatTargetId="session-player-livekit-chat"/>
-        <p className="session-player-video-hint">As câmeras permanecem nesta lateral enquanto você navega pelo Hub.</p>
+        <SessionParticipants campaignId={campaignId}/><p className="session-player-video-hint">As câmeras permanecem nesta lateral enquanto você navega pelo Hub.</p>
       </aside>
     </div>
   </div>
