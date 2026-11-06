@@ -57,4 +57,4 @@ A posição esperada é `position_seconds + (serverNow - started_at)` enquanto `
 8. Testes de autorização, idempotência, revisão, validação de URL e sincronização passam em CI.
 
 ## Estado atual
-Esta SPEC documenta a implementação futura; a integração YouTube **não está implementada** por este documento.
+Implementação inicial de playlists e vídeos no PR de integração. Validar a sincronização da transição entre faixas e autoplay em navegadores reais antes de publicar.

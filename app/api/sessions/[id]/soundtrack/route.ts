@@ -14,7 +14,7 @@ export async function POST(request:Request,context:Context){
  const origin=request.headers.get('origin');if(origin&&origin!==new URL(request.url).origin)return NextResponse.json({error:'Origem inválida.'},{status:403})
  if(Number(request.headers.get('content-length')??0)>8192)return NextResponse.json({error:'Requisição excessiva.'},{status:413})
  const body:unknown=await request.json().catch(()=>null)
- if(!body||typeof body!=='object'||Array.isArray(body)||Object.keys(body).some(key=>!['mood','playing','expectedRevision','idempotencyKey'].includes(key)))return NextResponse.json({error:'Comando inválido.'},{status:400})
+ if(!body||typeof body!=='object'||Array.isArray(body)||Object.keys(body).some(key=>!['mood','playing','source','youtubeVideoId','youtubePlaylistId','positionSeconds','expectedRevision','idempotencyKey'].includes(key)))return NextResponse.json({error:'Comando inválido.'},{status:400})
  await ensureAllTables()
  return NextResponse.json(await updateSessionSoundtrack(session.user.sub,(await context.params).id,body as SoundtrackCommand),{headers:{'Cache-Control':'no-store'}})
  }catch(error){return fail(error)}
