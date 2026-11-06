@@ -297,12 +297,13 @@ async function assertReservedBackgroundsPreserved(character: CommandCharacter, n
   if (!character.campaignId) return
   const previous = new Map(backgroundDots(character.data).map(entry => [entry.trait, entry.dots]))
   const proposed = new Map(backgroundDots(next).map(entry => [entry.trait, entry.dots]))
+  // Share the same advisory lock namespace as COMMIT_STAKE to prevent edit/reserve races.
+  const traits = [...new Set([...previous.keys(), ...proposed.keys()])].sort()
+  for (const trait of traits) await transaction.execute(sql`SELECT pg_advisory_xact_lock(hashtextextended(${`project-stake:CHARACTER:${character.id}:${trait}`},0))`)
   const rows = await transaction.execute<{trait:string;dots:number}>(sql`SELECT upper(trim(trait)) AS trait, SUM(dots)::int AS dots FROM project_stakes WHERE character_id=${character.id}::uuid AND released_at IS NULL GROUP BY upper(trim(trait))`)
   for (const row of rows.rows) {
     const nextDots = proposed.get(row.trait) ?? 0
     if (nextDots < Number(row.dots)) throw new CharacterCommandError(409, `Não é possível reduzir ${row.trait}: ${row.dots} ponto(s) estão comprometidos como Stake.`)
-    // Unchanged totals are always safe; increased totals are allowed.
-    if (!previous.has(row.trait) && nextDots === 0) throw new CharacterCommandError(409, 'Background reservado não pode ser removido.')
   }
 }
 
