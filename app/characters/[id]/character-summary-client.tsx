@@ -22,6 +22,8 @@ type CharacterData = {
   creationGrants?: CreationGrant[]
   characterType?: string
   name: string
+  concept?: string
+  history?: string
   clan: string | null
   predator: string | null
   predatorRoll?: string | null
@@ -99,7 +101,7 @@ export function CharacterSummaryClient({ data }: Readonly<CharacterSummaryClient
       <aside className="summary-detail-rail" aria-label="Informações do personagem">
         <section className="summary-rail-card">
           <h2>Conceito e história</h2>
-          <p>{data.campaignTheme || 'Consulte o perfil narrativo para conhecer a história e as relações deste personagem.'}</p>
+          <p>{data.concept || data.history || 'Consulte o perfil narrativo para conhecer a história e as relações deste personagem.'}</p>
           <Link href={`/characters/${data.id}/narrative`} className="summary-rail-link">Ver perfil e relações</Link>
         </section>
         <section className="summary-rail-card">
