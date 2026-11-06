@@ -1,3 +1,9 @@
+## [2026-11-05 23:21 BRT] - fix - JSX do formulário de personagem
+
+- Arquivo principal: `app/characters/character-form-client.tsx`.
+- Fecha o fragmento JSX no ramo final das dicas assistidas, inclusive quando o texto varia conforme o modo de preenchimento.
+- Validação: `pnpm build` aprovado.
+
 ## [2026-11-05 19:53 BRT] - fix - Tipagem do fuso horário de missões
 
 - Arquivo principal: `lib/campaign-missions.ts`.
