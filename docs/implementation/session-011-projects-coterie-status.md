@@ -155,3 +155,12 @@ Fonte conferida: **Vampire: The Masquerade V5**, livro básico, Appendix II: Pro
 - [ ] Validar no PostgreSQL isolado que dois COMMIT_STAKE concorrentes nunca excedem os dots disponíveis.
 - [ ] QA no navegador (desktop/tablet/mobile) e autorização/IDOR.
 - [ ] Revisar decisões narrativas e consequências extraordinárias com o Narrador.
+
+
+### Integração de disponibilidade (entrega incremental)
+
+- Adicionado `lib/background-availability.ts`: saldo derivado de `project_stakes` ativos, sem tabela duplicada; total/reservado/disponível para personagem e Coterie.
+- `lib/character-summary.ts` e resumo exibem a disponibilidade individual; `lib/coterie-service.ts` e painel da Coterie exibem disponibilidade coletiva.
+- Testes unitários de projeção adicionados em `tests/background-availability.test.ts` (não executados nesta sessão).
+- **Ainda não bloqueia rolagens genéricas**: a API atual recebe pool numérico e não identifica qual Background contribuiu; descontar do pool arbitrariamente poderia reduzir rolagens de Atributos/Habilidades. Para completar, é necessário adicionar origem tipada de Background à composição de pool e validar no servidor contra `characterBackgroundAvailability` ou `coterieBackgroundAvailability` antes da rolagem.
+- Também falta conferir outros consumidores narrativos de Backgrounds e impedir que um usuário altere os dots de origem abaixo dos pontos já reservados.
