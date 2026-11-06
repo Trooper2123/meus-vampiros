@@ -359,12 +359,18 @@ export async function ensureGameSessionsTables() {
     CREATE TABLE IF NOT EXISTS session_soundtrack_state (
       session_id UUID PRIMARY KEY REFERENCES game_sessions(id) ON DELETE CASCADE,
       mood TEXT NOT NULL DEFAULT 'DREAD' CHECK(mood IN ('DREAD','NOIR','RITUAL')),
+      source TEXT NOT NULL DEFAULT 'AMBIENT' CHECK(source IN ('AMBIENT','YOUTUBE')),
+      youtube_video_id TEXT,
+      position_seconds DOUBLE PRECISION NOT NULL DEFAULT 0,
       playing BOOLEAN NOT NULL DEFAULT false,
       started_at TIMESTAMPTZ,
       updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
       updated_by_user_id TEXT,
       revision INTEGER NOT NULL DEFAULT 0
     );
+    ALTER TABLE session_soundtrack_state ADD COLUMN IF NOT EXISTS source TEXT NOT NULL DEFAULT 'AMBIENT';
+    ALTER TABLE session_soundtrack_state ADD COLUMN IF NOT EXISTS youtube_video_id TEXT;
+    ALTER TABLE session_soundtrack_state ADD COLUMN IF NOT EXISTS position_seconds DOUBLE PRECISION NOT NULL DEFAULT 0;
     CREATE TABLE IF NOT EXISTS session_soundtrack_commands (
       session_id UUID NOT NULL REFERENCES game_sessions(id) ON DELETE CASCADE,
       command_key UUID NOT NULL,
