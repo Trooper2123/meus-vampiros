@@ -1,3 +1,4 @@
+import { characterBackgroundAvailability } from './background-availability'
 import { SPECIALTY_SKILL_NAMES, validateCharacterSkills } from '@/lib/vtm-v5/skills'
 import { disciplineDefinition } from '@/lib/vtm-v5/disciplines'
 import { characterText } from '@/lib/vtm-v5/text'
@@ -62,7 +63,10 @@ export async function getCharacterSummaryData(id: string, userId: string) {
     return 'Personagem sem nome'
   }
 
+  const backgroundAvailability = character.campaignId ? await characterBackgroundAvailability(character.id, data) : []
+
   return {
+    backgroundAvailability,
     id: character.id,
     campaignId: character.campaignId,
     characterType: character.characterType,

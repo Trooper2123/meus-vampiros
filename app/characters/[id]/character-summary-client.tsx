@@ -18,6 +18,7 @@ import { SPECIALTY_SKILL_NAMES } from '@/lib/vtm-v5/skills'
 
 type CharacterData = {
   id: string
+  backgroundAvailability?: Array<{trait:string;totalDots:number;reservedDots:number;availableDots:number}>
   campaignId?: string | null
   creationGrants?: CreationGrant[]
   characterType?: string
@@ -118,6 +119,12 @@ export function CharacterSummaryClient({ data }: Readonly<CharacterSummaryClient
             {data.campaignName && <div><dt>Mesa</dt><dd>{data.campaignName}</dd></div>}
           </dl>
         </section>
+        {Boolean(data.backgroundAvailability?.length) && <section className="summary-rail-card" aria-label="Backgrounds disponíveis">
+          <h2>Backgrounds · Stake</h2>
+          <dl>
+            {data.backgroundAvailability?.map(item => <div key={item.trait}><dt>{item.trait}</dt><dd>{item.availableDots} disponíveis / {item.totalDots} totais{item.reservedDots ? ` · ${item.reservedDots} reservados` : ''}</dd></div>)}
+          </dl>
+        </section>}
         <section className="summary-rail-card">
           <h2>Visão rápida</h2>
           <dl>

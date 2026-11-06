@@ -78,16 +78,22 @@ async function commitStakes(tx:Session11Tx,project:ProjectRow,stakes:Stake[],req
  if(!stakes.length||stakes.length>12)throw new CharacterCommandError(422,'Informe os Background dots comprometidos pelos participantes.')
  let sum=0
  const seen=new Set<string>()
+ // Serialize competing reservations for the same owner/background across projects.
+ // Acquire every lock in deterministic order to avoid deadlocks between multi-stake commits.
+ const keys=stakes.map(stake=>`${stake.characterId ? 'CHARACTER' : 'COTERIE'}:${stake.characterId??stake.coterieId}:${backgroundCode(stake.trait)??stake.trait.trim().toUpperCase()}`).sort()
+ for(const key of [...new Set(keys)]){
+   await tx.execute(sql`SELECT pg_advisory_xact_lock(hashtextextended(${`project-stake:${key}`},0))`)
+ }
  for(const stake of stakes){
-   const key=`${stake.characterId??stake.coterieId}:${stake.trait.toUpperCase()}`
+   const key=`${stake.characterId??stake.coterieId}:${backgroundCode(stake.trait)??stake.trait.trim().toUpperCase()}`
    if(seen.has(key))throw new CharacterCommandError(422,'Stake duplicado.');seen.add(key)
    const checked=await availableStake(tx,project,stake)
    sum+=checked.amount
  }
  if(sum!==required)throw new CharacterCommandError(422,`O lançamento exige ${required} pontos em Stake.`)
  for(const stake of stakes){
-   await tx.execute(sql`INSERT INTO project_stakes (project_id,character_id,coterie_id,trait,dots) VALUES (${project.id}::uuid,${stake.characterId??null}::uuid,${stake.coterieId??null}::uuid,${stake.trait.trim().toUpperCase()},${stake.dots})`)
-   if(stake.characterId)await tx.execute(sql`INSERT INTO character_ledger_events(character_id,event_type,origin,payload,created_by_user_id) VALUES (${stake.characterId}::uuid,'PROJECT_STAKE_RESERVED','PROJECT',${JSON.stringify({projectId:project.id,trait:stake.trait.trim().toUpperCase(),dots:stake.dots})}::jsonb,${actorId})`)
+   await tx.execute(sql`INSERT INTO project_stakes (project_id,character_id,coterie_id,trait,dots) VALUES (${project.id}::uuid,${stake.characterId??null}::uuid,${stake.coterieId??null}::uuid,${backgroundCode(stake.trait)},${stake.dots})`)
+   if(stake.characterId)await tx.execute(sql`INSERT INTO character_ledger_events(character_id,event_type,origin,payload,created_by_user_id) VALUES (${stake.characterId}::uuid,'PROJECT_STAKE_RESERVED','PROJECT',${JSON.stringify({projectId:project.id,trait:backgroundCode(stake.trait),dots:stake.dots})}::jsonb,${actorId})`)
  }
 }
 async function finalize(tx:Session11Tx,projectId:string,status:'SUCCESS'|'FAILED'|'ABANDONED',actorId:string){
