@@ -85,6 +85,12 @@ export function CharacterSummaryClient({ data }: Readonly<CharacterSummaryClient
           </>}
           resources={canRoll ? <SessionResources characterId={data.id} /> : undefined}
         />
+        <section className="summary-hub-overview" aria-label="Visão rápida da ficha">
+          <a href="#atributos" className="summary-hub-tile"><span className="summary-hub-tile-icon" aria-hidden="true">◇</span><h3>Atributos</h3><p>Físicos · Sociais · Mentais</p><strong>{Object.values(data.attributes).filter(value=>value>0).length} de 9</strong></a>
+          <a href="#habilidades" className="summary-hub-tile"><span className="summary-hub-tile-icon" aria-hidden="true">⚔</span><h3>Habilidades</h3><p>Perícias do personagem</p><strong>{Object.values(data.skills).filter(value=>value>0).length} preenchidas</strong></a>
+          <a href="#disciplinas" className="summary-hub-tile"><span className="summary-hub-tile-icon" aria-hidden="true">✦</span><h3>Disciplinas</h3><p>Poderes e dons vampíricos</p><strong>{data.disciplines.length} disciplinas</strong></a>
+          <a href="#vantagens" className="summary-hub-tile"><span className="summary-hub-tile-icon" aria-hidden="true">✧</span><h3>Vantagens e Defeitos</h3><p>Características especiais</p><strong>{data.merits.length} vantagens · {data.flaws.length} defeitos</strong></a>
+        </section>
         {canRoll && <CharacterAwakePanel characterId={data.id} />}
         {hasBloodPotency && <div id="potencia-de-sangue"><BloodPotencySummary characterId={data.id} /></div>}
         {canRoll && <div id="rolagens"><DisciplineRollPanel characterId={data.id} /><CharacterRolls characterId={data.id} prefill={rollPrefill} /></div>}
