@@ -3189,3 +3189,22 @@ main > .archive-header {
 @media(max-width:1100px){.assisted-creation-page .assisted-identity-panel{grid-template-columns:minmax(0,1fr) minmax(220px,34%)}}
 @media(max-width:960px){.assisted-creation-page .assisted-creation-grid{grid-template-columns:1fr}.assisted-creation-page .assisted-creation-sidebar{position:static}}
 @media(max-width:720px){.assisted-creation-page .archive-content{width:calc(100% - 24px)}.assisted-creation-page .assisted-identity-panel{display:flex;flex-direction:column}.assisted-creation-page .assisted-identity-panel>.assisted-portrait-panel{position:static;order:-1;width:100%}.assisted-creation-page .assisted-creation-content{padding:12px}}
+
+
+/* Assisted hints on every step and manageable Identity subsections. */
+.assisted-creation-page .assisted-creation-content{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,25%);gap:16px;align-items:start}
+.assisted-creation-page .assisted-creation-content>.assisted-original-tabs,.assisted-creation-page .assisted-creation-content>div[role="tabpanel"],.assisted-creation-page .assisted-creation-content>.assisted-identity-subnav{grid-column:1}
+.assisted-creation-page .assisted-creation-content>.assisted-step-help{grid-column:2;grid-row:1 / span 5;position:sticky;top:16px}
+.assisted-creation-page .assisted-creation-content>.mt-6{grid-column:1 / -1}
+.assisted-creation-page .assisted-step-help{padding:18px;border:1px solid color-mix(in srgb,var(--primary) 28%,var(--border));background:linear-gradient(160deg,color-mix(in srgb,var(--primary) 10%,var(--card)),var(--card));display:flex;flex-direction:column;gap:15px;font-size:13px;line-height:1.6;color:var(--muted-foreground)}
+.assisted-creation-page .assisted-step-help h3{color:var(--foreground);padding-bottom:10px;border-bottom:1px solid var(--border)}
+.assisted-creation-page .assisted-step-help details{padding-top:10px;border-top:1px solid var(--border)}
+.assisted-creation-page .assisted-step-help summary{cursor:pointer;color:var(--foreground)}
+.assisted-creation-page .assisted-identity-subnav{display:flex;flex-wrap:wrap;gap:8px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+.assisted-creation-page .assisted-identity-subnav button{padding:9px 12px;border:1px solid var(--border);font-size:12px;text-align:left}
+.assisted-creation-page .assisted-identity-subnav button.is-active{border-color:var(--primary);background:color-mix(in srgb,var(--primary) 15%,var(--card));color:var(--foreground)}
+.assisted-creation-page .assisted-identity-panel{display:block}
+.assisted-creation-page .assisted-identity-panel>.assisted-portrait-panel{position:static;max-width:100%;margin-bottom:16px}
+@media(min-width:1250px){.assisted-creation-page .assisted-identity-panel>.assisted-portrait-panel{max-width:420px}}
+@media(max-width:1100px){.assisted-creation-page .assisted-creation-content{grid-template-columns:minmax(0,1fr)}.assisted-creation-page .assisted-creation-content>.assisted-step-help{grid-column:1;grid-row:auto;position:static}.assisted-creation-page .assisted-creation-content>.mt-6{grid-column:1}}
+@media(max-width:640px){.assisted-creation-page .assisted-identity-subnav button{flex:1 1 100%;text-align:center}}
