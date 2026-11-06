@@ -53,7 +53,7 @@ type CharacterData = {
 }
 
 type CharacterSummaryProps = {
-  section?: 'visao-geral' | 'atributos' | 'habilidades' | 'vantagens' | 'disciplinas' | 'recursos'
+  section?: 'visao-geral' | 'atributos' | 'habilidades' | 'vantagens' | 'disciplinas' | 'recursos' | 'potencia-de-sangue' | 'rolagens' | 'predacao'
   clanDetails?: ReactNode
   headerActions?: ReactNode
   resources?: ReactNode
