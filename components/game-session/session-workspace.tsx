@@ -126,6 +126,7 @@ function SessionWorkspace({ campaignId, actorId, campaignName }: Readonly<{ camp
           ].map(({ id, label, Icon }) => <button key={id} type="button" aria-current={activeTool === id ? 'page' : undefined} className={`session-tab ${activeTool === id ? 'session-tab-active' : ''}`} onClick={() => setActiveTool(id)}><Icon className="size-4" aria-hidden="true"/>{label}</button>)}
         </nav>
 
+        {activeSession?.status === 'ACTIVE' && <SessionSoundtrack sessionId={activeSession.id}/>}
         <section className="session-stage" aria-label="Conteúdo da seção selecionada">
           {activeTool === 'shared' && <div className="session-hub-grid">
             <section className="session-shared-visual">
@@ -175,7 +176,7 @@ function SessionWorkspace({ campaignId, actorId, campaignName }: Readonly<{ camp
 
           {activeTool === 'calendar' && <div className="session-panel"><p className="eyebrow">Agenda da campanha</p><h2 className="mt-2 font-serif text-2xl">Calendário da mesa</h2><div className="mt-5"><CampaignTools campaignId={campaignId} master={manage}/></div></div>}
         </section>
-        {activeSession?.status === 'ACTIVE' && <SessionSoundtrack sessionId={activeSession.id}/>}
+        
       </main>
 
       <aside className="session-cameras" aria-label="Câmeras dos participantes">

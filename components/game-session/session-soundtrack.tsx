@@ -96,14 +96,14 @@ export function SessionSoundtrack({sessionId}:Readonly<{sessionId:string}>) {
    pending.current=null;setPendingCommand(null);await mutate();setFeedback('Estado da trilha atualizado para os participantes.')
   }catch(e){setPendingCommand(pending.current);setFeedback(e instanceof Error?e.message:'Falha de conexão, use reenviar.')}finally{setBusy(false)}
  }
- return <section className="border border-border bg-card p-4 sm:p-5" aria-label="Trilha sonora da sessão">
-  <p className="eyebrow">Ambiência sonora · SG-011</p><h3 className="mt-2 font-serif text-xl">Trilha sonora da sessão</h3>
-  <p className="mt-2 text-sm text-muted-foreground">Composições ambientes originais geradas no navegador. O Narrador controla o clima; cada pessoa controla seu próprio volume.</p>
+ return <section className="min-w-0 rounded-lg border border-border bg-card p-3 sm:p-4" aria-label="Trilha sonora da sessão">
+  <div className="flex flex-wrap items-center justify-between gap-2"><div><p className="eyebrow">Ambiência sonora</p><h3 className="font-serif text-lg">Áudio da sessão</h3></div>{data && <span className="text-sm text-muted-foreground" role="status">{captions[data.mood]} · {data.playing ? "Tocando" : "Pausado"}</span>}</div>
+  <p className="mt-1 text-xs text-muted-foreground">Volume individual. Ative o som para ajustar sem sair do Hub.</p>
   {error&&<p role="alert">{error.message}</p>}
   {data&&<div className="mt-3 flex flex-col gap-3 text-sm">
-   <p>Ambiente atual: {captions[data.mood]} · {data.playing?'Em reprodução':'Pausado'}</p>
+   
    {!enabled&&<button className="button-primary self-start" type="button" onClick={()=>void activate()}>Ativar som neste dispositivo</button>}
-   {enabled&&<><label className="flex flex-col gap-1">Volume pessoal: {volume}%<input type="range" min={0} max={100} step={1} value={volume} onChange={e=>setVolume(Number(e.target.value))}/></label>
+   {enabled&&<><label className="flex min-w-0 flex-1 flex-col gap-1">Volume pessoal: {volume}%<input aria-label="Volume pessoal da trilha sonora" className="w-full min-w-0" type="range" min={0} max={100} step={1} value={volume} onChange={e=>setVolume(Number(e.target.value))}/></label>
     <label className="flex gap-2 items-center"><input type="checkbox" checked={muted} onChange={e=>setMuted(e.target.checked)}/>Silenciar neste dispositivo</label></>}
    {data.canManage&&<div className="flex flex-wrap items-end gap-3">
     <label className="flex flex-col gap-1">Ambiente
