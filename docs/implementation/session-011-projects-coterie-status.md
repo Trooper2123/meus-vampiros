@@ -176,3 +176,13 @@ Fonte conferida: **Vampire: The Masquerade V5**, livro básico, Appendix II: Pro
 - [ ] Validar transacionalmente comandos de edição/evolução que reduzem Backgrounds reservados.
 - [ ] Integrar contribuição de Background compartilhado da Coterie em rolagens com autorização de membros ativos.
 - [ ] Executar CI, testes e QA com Narrador e jogador.
+
+
+## Integração adicional (2026-11-06)
+
+- [x] Interface de rolagem oferece seleção opcional de Background individual e da Coterie; mostra pontos disponíveis e reservados.
+- [x] GET de rolagens lista somente Coteries com vínculo ativo do personagem e respectivos saldos efetivos.
+- [x] Backend valida pertença à Coterie e pontos efetivamente disponíveis antes de aplicar o bônus; não soma Background individual e coletivo na mesma rolagem.
+- [x] Edição geral da ficha impede reduzir Background abaixo de pontos comprometidos, com locks transacionais no mesmo namespace de COMMIT_STAKE.
+- [ ] Revisar outros comandos especializados de alteração de Background fora da edição geral; testar concorrência, permissões, interface e build.
+- [ ] O Narrador deve confirmar aplicabilidade narrativa do Background escolhido; seleção opcional não substitui julgamento narrativo.
