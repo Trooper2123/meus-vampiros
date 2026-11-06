@@ -24,4 +24,20 @@ describe('trilha sonora de sessão, autorização e idempotência',()=>{
    await expect(updateSessionSoundtrack('master-audio',session.id,{...cmd,idempotencyKey:randomUUID()})).rejects.toMatchObject({status:409})
    await expect(getSessionSoundtrack('intruder',session.id)).rejects.toMatchObject({status:403})
  })
+ it('sincroniza vídeo, pausa e posição e bloqueia comandos de jogadores',async()=>{
+  const camp=await createTestCampaign('master-youtube')
+  const char=await createTestCharacter('player-youtube',camp.id,'Jogador')
+  await db.execute(sql`UPDATE characters SET status='APPROVED',character_type='PLAYER_VAMPIRE' WHERE id=${char.id}::uuid`)
+  const session=await startGameSession('master-youtube',camp.id,{idempotencyKey:randomUUID()})
+  const base={mood:'NOIR' as const,source:'YOUTUBE' as const,youtubeVideoId:'dQw4w9WgXcQ',playing:true,positionSeconds:42,expectedRevision:0,idempotencyKey:randomUUID()}
+  await expect(updateSessionSoundtrack('player-youtube',session.id,base)).rejects.toMatchObject({status:403})
+  const first=await updateSessionSoundtrack('master-youtube',session.id,base)
+  expect(first).toMatchObject({source:'YOUTUBE',youtubeVideoId:'dQw4w9WgXcQ',playing:true,revision:1})
+  expect((await getSessionSoundtrack('player-youtube',session.id)).positionSeconds).toBeGreaterThanOrEqual(42)
+  const paused=await updateSessionSoundtrack('master-youtube',session.id,{...base,playing:false,positionSeconds:50,expectedRevision:1,idempotencyKey:randomUUID()})
+  expect(paused).toMatchObject({playing:false,positionSeconds:50,revision:2})
+  await expect(updateSessionSoundtrack('master-youtube',session.id,{...base,expectedRevision:1,idempotencyKey:randomUUID()})).rejects.toMatchObject({status:409})
+  await expect(updateSessionSoundtrack('master-youtube',session.id,{...base,youtubeVideoId:'invalid',expectedRevision:2,idempotencyKey:randomUUID()})).rejects.toMatchObject({status:400})
+ })
+
 })
