@@ -3142,3 +3142,196 @@ main > .archive-header {
 .session-player-master-layout .session-player-action-dock{position:sticky;bottom:0;z-index:5;border-top:1px solid var(--border);background:var(--card);padding:12px;border-radius:10px;box-shadow:0 -6px 20px color-mix(in srgb,black 18%,transparent)}
 @media(min-width:701px) and (max-width:1350px){.session-player-master-layout{grid-template-columns:minmax(0,190px) minmax(0,1fr) minmax(0,220px)}}
 @media(max-width:700px){.session-player-master-layout>.session-player-chat,.session-player-master-layout>.session-player-center,.session-player-master-layout>.session-player-cameras{grid-column:auto}.session-player-master-layout .session-player-action-dock{bottom:0;padding:8px}}
+
+
+/* Assisted character creation: keeps existing steps, fields and validations. */
+.assisted-creation-page .archive-content{max-width:1600px;margin-inline:auto}
+.assisted-creation-heading{display:flex;justify-content:space-between;align-items:center;gap:20px;padding:22px 26px;margin-bottom:18px;border:1px solid var(--border);background:linear-gradient(115deg,color-mix(in srgb,var(--primary) 12%,var(--card)),var(--card))}
+.assisted-creation-grid{display:grid;grid-template-columns:minmax(220px,260px) minmax(0,1fr);gap:22px;align-items:start}
+.assisted-creation-sidebar{position:sticky;top:18px;padding:20px;border:1px solid var(--border);background:var(--card);display:flex;flex-direction:column;gap:18px}
+.assisted-creation-sidebar nav{display:flex;flex-direction:column;gap:6px}
+.assisted-step{display:flex;align-items:center;gap:12px;padding:12px;border:1px solid transparent;text-align:left;color:var(--foreground);background:transparent;cursor:pointer}
+.assisted-step:hover{border-color:var(--border);background:color-mix(in srgb,var(--primary) 6%,transparent)}
+.assisted-step.is-active{border-color:var(--primary);background:color-mix(in srgb,var(--primary) 12%,var(--card))}
+.assisted-step:disabled{opacity:.6;cursor:wait}
+.assisted-step-number{display:grid;place-items:center;flex:none;width:32px;height:32px;border:1px solid var(--border);border-radius:50%;font-family:serif}
+.assisted-step.is-active .assisted-step-number{border-color:var(--primary);color:var(--primary)}
+.assisted-step strong{display:block;font-family:serif;font-size:16px}
+.assisted-step small{display:block;font-size:10px;color:var(--muted-foreground);margin-top:3px}
+.assisted-creation-summary{padding-top:14px;border-top:1px solid var(--border)}
+.assisted-progress{height:7px;overflow:hidden;border-radius:9px;background:var(--border);margin:10px 0}
+.assisted-progress span{display:block;height:100%;background:var(--primary);transition:width .2s}
+.assisted-creation-content{min-width:0;padding:24px;border:1px solid var(--border);background:color-mix(in srgb,var(--card) 75%,transparent)}
+.assisted-original-tabs{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+.assisted-portrait-panel{display:flex;flex-direction:column;gap:14px;padding:20px;margin-bottom:24px;border:1px solid var(--border);background:var(--card)}
+.assisted-portrait-empty{padding:16px;border:1px dashed var(--border);display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px}
+.assisted-creation-content>div[role="tabpanel"]{min-width:0}
+@media(max-width:960px){.assisted-creation-grid{grid-template-columns:1fr}.assisted-creation-sidebar{position:static}.assisted-creation-sidebar nav{display:flex;flex-direction:row;overflow-x:auto;padding-bottom:8px}.assisted-step{min-width:155px}.assisted-step small{display:none}}
+@media(max-width:640px){.assisted-creation-heading{padding:16px;align-items:flex-start;flex-direction:column}.assisted-creation-content{padding:14px}.assisted-creation-sidebar{padding:12px}.assisted-step{min-width:130px;padding:9px}.assisted-portrait-panel{padding:14px}}
+
+
+/* Second pass: match the approved composition rather than stacking legacy panels. */
+.assisted-creation-page .assisted-legacy-title{display:none}
+.assisted-creation-page .archive-content{max-width:none;width:min(100% - 48px,1740px);padding-top:18px}
+.assisted-creation-page .assisted-creation-heading{margin-bottom:12px;padding:18px 24px;border-color:color-mix(in srgb,var(--primary) 35%,var(--border));background:linear-gradient(110deg,color-mix(in srgb,var(--primary) 14%,var(--card)),var(--card))}
+.assisted-creation-page .assisted-creation-grid{grid-template-columns:minmax(200px,245px) minmax(0,1fr);gap:14px}
+.assisted-creation-page .assisted-creation-content{padding:20px}
+.assisted-creation-page .assisted-identity-panel{display:grid;grid-template-columns:minmax(0,1fr) minmax(250px,32%);align-items:start;gap:14px 20px}
+.assisted-creation-page .assisted-identity-panel>*{grid-column:1;min-width:0;margin-bottom:0}
+.assisted-creation-page .assisted-identity-panel>.assisted-portrait-panel{grid-column:2;grid-row:1 / span 12;position:sticky;top:14px;margin:0;padding:14px;background:color-mix(in srgb,var(--primary) 4%,var(--card))}
+.assisted-creation-page .assisted-portrait-panel .flex.h-36.w-36{width:100%;height:220px}
+.assisted-creation-page .assisted-portrait-panel img{max-width:100%;height:auto}
+.assisted-creation-page .assisted-portrait-panel details{padding:10px 0;border-top:1px solid var(--border)}
+.assisted-creation-page .assisted-portrait-panel summary{cursor:pointer}
+.assisted-creation-page .assisted-context-help{display:flex;flex-direction:column;gap:12px;margin-top:10px;padding-top:16px;border-top:1px solid var(--border);font-size:13px;line-height:1.5;color:var(--muted-foreground)}
+.assisted-creation-page .assisted-context-help h3{color:var(--foreground)}
+.assisted-creation-page .assisted-creation-content>div[role="tabpanel"]>section{scroll-margin-top:20px}
+@media(max-width:1100px){.assisted-creation-page .assisted-identity-panel{grid-template-columns:minmax(0,1fr) minmax(220px,34%)}}
+@media(max-width:960px){.assisted-creation-page .assisted-creation-grid{grid-template-columns:1fr}.assisted-creation-page .assisted-creation-sidebar{position:static}}
+@media(max-width:720px){.assisted-creation-page .archive-content{width:calc(100% - 24px)}.assisted-creation-page .assisted-identity-panel{display:flex;flex-direction:column}.assisted-creation-page .assisted-identity-panel>.assisted-portrait-panel{position:static;order:-1;width:100%}.assisted-creation-page .assisted-creation-content{padding:12px}}
+
+
+/* Assisted hints on every step and manageable Identity subsections. */
+.assisted-creation-page .assisted-creation-content{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,25%);gap:16px;align-items:start}
+.assisted-creation-page .assisted-creation-content>.assisted-original-tabs,.assisted-creation-page .assisted-creation-content>div[role="tabpanel"],.assisted-creation-page .assisted-creation-content>.assisted-identity-subnav{grid-column:1}
+.assisted-creation-page .assisted-creation-content>.assisted-step-help{grid-column:2;grid-row:1 / span 5;position:sticky;top:16px}
+.assisted-creation-page .assisted-creation-content>.mt-6{grid-column:1 / -1}
+.assisted-creation-page .assisted-step-help{padding:18px;border:1px solid color-mix(in srgb,var(--primary) 28%,var(--border));background:linear-gradient(160deg,color-mix(in srgb,var(--primary) 10%,var(--card)),var(--card));display:flex;flex-direction:column;gap:15px;font-size:13px;line-height:1.6;color:var(--muted-foreground)}
+.assisted-creation-page .assisted-step-help h3{color:var(--foreground);padding-bottom:10px;border-bottom:1px solid var(--border)}
+.assisted-creation-page .assisted-step-help details{padding-top:10px;border-top:1px solid var(--border)}
+.assisted-creation-page .assisted-step-help summary{cursor:pointer;color:var(--foreground)}
+.assisted-creation-page .assisted-identity-subnav{display:flex;flex-wrap:wrap;gap:8px;padding-bottom:12px;border-bottom:1px solid var(--border)}
+.assisted-creation-page .assisted-identity-subnav button{padding:9px 12px;border:1px solid var(--border);font-size:12px;text-align:left}
+.assisted-creation-page .assisted-identity-subnav button.is-active{border-color:var(--primary);background:color-mix(in srgb,var(--primary) 15%,var(--card));color:var(--foreground)}
+.assisted-creation-page .assisted-identity-panel{display:block}
+.assisted-creation-page .assisted-identity-panel>.assisted-portrait-panel{position:static;max-width:100%;margin-bottom:16px}
+@media(min-width:1250px){.assisted-creation-page .assisted-identity-panel>.assisted-portrait-panel{max-width:420px}}
+@media(max-width:1100px){.assisted-creation-page .assisted-creation-content{grid-template-columns:minmax(0,1fr)}.assisted-creation-page .assisted-creation-content>.assisted-step-help{grid-column:1;grid-row:auto;position:static}.assisted-creation-page .assisted-creation-content>.mt-6{grid-column:1}}
+@media(max-width:640px){.assisted-creation-page .assisted-identity-subnav button{flex:1 1 100%;text-align:center}}
+
+
+/* Approved visual language: rounded surfaces and a three-zone concept step. */
+.assisted-creation-page .assisted-creation-heading,.assisted-creation-page .assisted-creation-sidebar,.assisted-creation-page .assisted-creation-content,.assisted-creation-page .assisted-step-help{border-radius:18px}
+.assisted-creation-page .assisted-creation-heading{padding:18px 26px;box-shadow:0 12px 35px #0003}
+.assisted-creation-page .assisted-creation-sidebar{border-color:color-mix(in srgb,var(--primary) 22%,var(--border));box-shadow:0 8px 30px #0002}
+.assisted-creation-page .assisted-step{border-radius:12px;transition:background .2s,border-color .2s}
+.assisted-creation-page .assisted-step.is-active{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--primary) 40%,transparent)}
+.assisted-creation-page .assisted-step-number{border-radius:50%}
+.assisted-creation-page .assisted-creation-content{border-radius:18px;border-color:color-mix(in srgb,var(--primary) 20%,var(--border));background:linear-gradient(125deg,color-mix(in srgb,var(--primary) 4%,var(--card)),var(--card))}
+.assisted-creation-page .assisted-identity-subnav{border:0;padding:0 0 14px;gap:9px}
+.assisted-creation-page .assisted-identity-subnav button{border-radius:12px;padding:11px 15px;background:var(--card);transition:background .2s}
+.assisted-creation-page .assisted-identity-subnav button.is-active{box-shadow:0 0 0 1px color-mix(in srgb,var(--primary) 35%,transparent)}
+.assisted-creation-page .assisted-identity-basics{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(230px,.85fr);column-gap:16px;row-gap:14px;align-items:start}
+.assisted-creation-page .assisted-identity-basics>.assisted-portrait-panel{grid-column:2;grid-row:1 / span 3;position:static;width:100%;max-width:none;min-width:0;margin:0}
+.assisted-creation-page .assisted-identity-basics>section:not(.assisted-portrait-panel){grid-column:1;min-width:0}
+.assisted-creation-page .assisted-identity-basics>section{border-radius:15px;border-color:color-mix(in srgb,var(--primary) 22%,var(--border));background:color-mix(in srgb,var(--card) 90%,var(--primary))}
+.assisted-creation-page .assisted-identity-basics>section .sheet-grid{gap:14px}
+.assisted-creation-page .assisted-identity-basics .sheet-field input,.assisted-creation-page .assisted-identity-basics .sheet-field select,.assisted-creation-page .assisted-identity-basics .select{border-radius:10px;min-height:44px}
+.assisted-creation-page .assisted-portrait-panel{border-radius:15px;padding:18px;overflow:hidden}
+.assisted-creation-page .assisted-portrait-panel .flex.h-36.w-36{width:100%;height:250px;border-radius:12px;background:color-mix(in srgb,var(--primary) 8%,var(--card))}
+.assisted-creation-page .assisted-portrait-panel img{width:100%;max-height:350px;object-fit:cover;border-radius:12px}
+.assisted-creation-page .assisted-portrait-empty{border-radius:12px;min-height:215px;align-content:center;justify-content:center;text-align:center;flex-direction:column}
+.assisted-creation-page .assisted-portrait-empty button,.assisted-creation-page .assisted-creation-content button.button-primary,.assisted-creation-page .assisted-creation-content button.button-ghost,.assisted-creation-page .assisted-creation-content a.button-ghost{border-radius:11px}
+.assisted-creation-page .assisted-step-help{border-color:color-mix(in srgb,var(--primary) 35%,var(--border));box-shadow:0 12px 28px #0002}
+.assisted-creation-page .assisted-creation-content>div[role="tabpanel"]>section:not(.assisted-portrait-panel){border-radius:15px}
+@media(max-width:1250px){.assisted-creation-page .assisted-identity-basics{grid-template-columns:minmax(0,1fr)}.assisted-creation-page .assisted-identity-basics>.assisted-portrait-panel{grid-column:1;grid-row:auto;max-width:none}}
+@media(max-width:1100px){.assisted-creation-page .assisted-step-help{box-shadow:none}}
+@media(max-width:700px){.assisted-creation-page .assisted-creation-heading,.assisted-creation-page .assisted-creation-sidebar,.assisted-creation-page .assisted-creation-content{border-radius:14px}.assisted-creation-page .assisted-identity-basics{display:flex;flex-direction:column}.assisted-creation-page .assisted-identity-basics>section{width:100%}}
+
+
+/* Campaign creation welcome: two equal choices, matching the rounded gothic UI. */
+.campaign-gate-welcome{width:min(100% - 36px,1100px);margin:clamp(40px,9vh,110px) auto 0;padding:0 0 60px;display:flex;flex-direction:column;gap:32px}
+.campaign-gate-intro{text-align:center;display:flex;flex-direction:column;align-items:center;gap:14px}
+.campaign-gate-intro h1{line-height:1.1;letter-spacing:.01em;text-transform:none}
+.campaign-gate-intro>p:last-child{max-width:580px;line-height:1.7}
+.campaign-gate-choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px}
+.campaign-gate-choice{min-width:0;min-height:275px;padding:30px;display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:14px;border:1px solid color-mix(in srgb,var(--primary) 27%,var(--border));border-radius:20px;background:linear-gradient(140deg,color-mix(in srgb,var(--primary) 9%,var(--card)),var(--card));color:var(--foreground);box-shadow:0 14px 42px #0004;transition:transform .2s,border-color .2s,background .2s}
+.campaign-gate-choice:hover:not(:disabled),.campaign-gate-choice:focus-visible{transform:translateY(-3px);border-color:var(--primary);background:linear-gradient(140deg,color-mix(in srgb,var(--primary) 17%,var(--card)),var(--card))}
+.campaign-gate-choice:focus-visible{outline:2px solid var(--primary);outline-offset:3px}
+.campaign-gate-choice:disabled{opacity:.55;cursor:wait}
+.campaign-gate-icon{display:grid;place-items:center;width:50px;height:50px;border-radius:14px;border:1px solid color-mix(in srgb,var(--primary) 55%,var(--border));background:color-mix(in srgb,var(--primary) 12%,transparent);color:var(--primary);font-size:29px}
+.campaign-gate-choice-title{font:600 clamp(22px,2vw,28px)/1.2 Georgia,serif}
+.campaign-gate-choice-description{font-size:14px;line-height:1.65;color:var(--muted-foreground);max-width:36ch}
+.campaign-gate-choice-action{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:auto;padding:12px 18px;border-radius:11px;background:color-mix(in srgb,var(--primary) 85%,#16070a);color:#fff;font-weight:700;font-size:13px}
+@media(max-width:720px){.campaign-gate-welcome{margin-top:36px;gap:24px}.campaign-gate-choices{grid-template-columns:1fr;gap:14px}.campaign-gate-choice{min-height:220px;padding:23px}.campaign-gate-intro h1{font-size:32px}}
+
+
+/* Rounded navigation for the classic top ArchiveHeader, consistent with the new UI. */
+.sheet-header.archive-header:not(.archive-header-campaigns) .archive-nav > .button-ghost,
+.sheet-header.archive-header:not(.archive-header-campaigns) .archive-menu > summary.button-ghost,
+.sheet-header.archive-header:not(.archive-header-campaigns) .archive-menu nav .button-ghost {
+  border-radius:12px;
+  border-color:color-mix(in srgb,var(--primary) 24%,var(--border));
+  background:color-mix(in srgb,var(--primary) 5%,var(--card));
+  transition:background .18s ease,border-color .18s ease,box-shadow .18s ease;
+}
+.sheet-header.archive-header:not(.archive-header-campaigns) .archive-nav > .button-ghost:hover,
+.sheet-header.archive-header:not(.archive-header-campaigns) .archive-nav > .button-ghost:focus-visible,
+.sheet-header.archive-header:not(.archive-header-campaigns) .archive-menu nav .button-ghost:hover {
+  border-color:color-mix(in srgb,var(--primary) 65%,var(--border));
+  background:color-mix(in srgb,var(--primary) 13%,var(--card));
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--primary) 18%,transparent);
+}
+.sheet-header.archive-header:not(.archive-header-campaigns) .archive-nav > .button-ghost:focus-visible,
+.sheet-header.archive-header:not(.archive-header-campaigns) .archive-menu > summary.button-ghost:focus-visible {
+  outline:2px solid var(--primary);
+  outline-offset:3px;
+}
+
+
+/* Identity editor alignment: informational banner and subnavigation span the
+   whole panel; only the form cards and portrait share the content row. */
+@media(min-width:1251px){
+  .assisted-creation-page .assisted-identity-basics{
+    display:grid;
+    grid-template-columns:minmax(0,1.3fr) minmax(260px,.85fr);
+    grid-template-rows:auto auto auto auto;
+    gap:14px 18px;
+    align-items:start;
+    align-content:start;
+  }
+  .assisted-creation-page .assisted-identity-basics>.grant-origin,
+  .assisted-creation-page .assisted-identity-basics>.assisted-identity-subnav{
+    grid-column:1 / -1;
+    grid-row:auto;
+    margin:0;
+  }
+  .assisted-creation-page .assisted-identity-basics>.assisted-identity-subnav{
+    padding-bottom:14px;
+    margin-bottom:2px;
+  }
+  .assisted-creation-page .assisted-identity-basics>.assisted-portrait-panel{
+    grid-column:2;
+    grid-row:3 / span 2;
+    position:static;
+    align-self:start;
+    margin:0;
+    width:100%;
+    max-width:none;
+  }
+  .assisted-creation-page .assisted-identity-basics>section:not(.assisted-portrait-panel){
+    grid-column:1;
+    grid-row:auto;
+    margin:0;
+    min-width:0;
+  }
+}
+@media(max-width:1250px){
+  .assisted-creation-page .assisted-identity-basics{
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+    align-items:stretch;
+  }
+  .assisted-creation-page .assisted-identity-basics>.grant-origin,
+  .assisted-creation-page .assisted-identity-basics>.assisted-identity-subnav,
+  .assisted-creation-page .assisted-identity-basics>section{
+    width:100%;
+    margin:0;
+  }
+  .assisted-creation-page .assisted-identity-basics>.assisted-portrait-panel{
+    order:0;
+    position:static;
+    max-width:none;
+  }
+}
