@@ -1,3 +1,4 @@
+import { backgroundDots } from './project-stake-options'
 import { characterText } from '@/lib/vtm-v5/text'
 import type { DisciplineAcquisition } from './vtm-v5/discipline-access'
 import { xpAcquisitions, validateDisciplineAllocation } from './discipline-allocation'
@@ -257,10 +258,14 @@ export async function updateCharacter(
 ) {
   const previous = await getCharacterForViewer(id, userId)
   if (!previous) return null
-  return runCharacterCommand(userId, id, { key: randomUUID(), type: 'CHARACTER_EDITED', expectedRevision: payload.expectedRevision ?? previous.revision, payload }, character => character.ownerId === userId || character.masterId === userId, async character => {
+  return runCharacterCommand(userId, id, { key: randomUUID(), type: 'CHARACTER_EDITED', expectedRevision: payload.expectedRevision ?? previous.revision, payload }, character => character.ownerId === userId || character.masterId === userId, async (character, transaction) => {
     if (['ARCHIVED', 'DISABLED'].includes(character.status)) throw new CharacterCommandError(409, 'Esta ficha precisa ser reativada pelo Narrador antes da edição.')
     if (payload.campaignId !== undefined && payload.campaignId !== character.campaignId) throw new CharacterCommandError(409, 'A alteração do vínculo exige aprovação da mesa.')
-    if (payload.data) await applyCharacterDataEdit(character, payload.data, userId)
+    if (payload.data) {
+      const merged = mergeCharacterSkills(character.data, payload.data)
+      await assertReservedBackgroundsPreserved(character, merged, transaction)
+      await applyCharacterDataEdit(character, payload.data, userId)
+    }
     if (payload.name !== undefined) {
       character.name = payload.name
       if ('nome' in character.data) character.data.nome = payload.name
@@ -286,6 +291,19 @@ export async function duplicateCharacter(id: string, userId: string) {
   if (source.data.clanSelection) data.clanSelection = structuredClone(source.data.clanSelection)
   const specialties = characterSpecialties(source).filter(entry => entry.origin === 'PREDATOR').map(({ id: specialtyId, skillId, name, origin, grantId }) => ({ id: specialtyId, skillId, name, origin, grantId, status: 'APPROVED' as const, costXp: 0 }))
   return createCharacter(userId, { name: `${original.name} — Cópia`, campaignId: null, data }, data, { creationEffects: effects, specialties, disciplineAcquisitions: xpAcquisitions(source).map(({ id: acquisitionId, disciplineId, source: acquisitionSource, fromLevel, targetLevel, xpCost }) => ({ id: acquisitionId, disciplineId, source: acquisitionSource, fromLevel, targetLevel, xpCost })) })
+}
+
+async function assertReservedBackgroundsPreserved(character: CommandCharacter, next: Record<string, unknown>, transaction: Parameters<Parameters<typeof db.transaction>[0]>[0]) {
+  if (!character.campaignId) return
+  const previous = new Map(backgroundDots(character.data).map(entry => [entry.trait, entry.dots]))
+  const proposed = new Map(backgroundDots(next).map(entry => [entry.trait, entry.dots]))
+  const rows = await transaction.execute<{trait:string;dots:number}>(sql`SELECT upper(trim(trait)) AS trait, SUM(dots)::int AS dots FROM project_stakes WHERE character_id=${character.id}::uuid AND released_at IS NULL GROUP BY upper(trim(trait))`)
+  for (const row of rows.rows) {
+    const nextDots = proposed.get(row.trait) ?? 0
+    if (nextDots < Number(row.dots)) throw new CharacterCommandError(409, `Não é possível reduzir ${row.trait}: ${row.dots} ponto(s) estão comprometidos como Stake.`)
+    // Unchanged totals are always safe; increased totals are allowed.
+    if (!previous.has(row.trait) && nextDots === 0) throw new CharacterCommandError(409, 'Background reservado não pode ser removido.')
+  }
 }
 
 async function applyCharacterDataEdit(character: CommandCharacter, incoming: Record<string, unknown>, actorId: string) {
