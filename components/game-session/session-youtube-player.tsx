@@ -29,6 +29,8 @@ export function SessionYoutubePlayer({videoId,playing,positionSeconds,revision,v
    }
   }
   reconcile()
+  const retry=window.setTimeout(()=>{lastRevision.current=-1;reconcile()},1200)
+  return ()=>window.clearTimeout(retry)
   // Reconcile on polling updates, not on a local player event. No player command writes to server.
  },[enabled,loaded,revision,playing,positionSeconds,serverNow])
  if(!enabled)return <p className="text-sm text-muted-foreground">Ative o áudio para carregar o player oficial do YouTube.</p>
