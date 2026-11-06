@@ -137,3 +137,21 @@ A orientação mais recente do usuário substitui o requisito anterior de págin
 - [ ] Verificar em navegador a alternância de abas nas visões Narrador e Jogador, inclusive campanha arquivada, tela estreita e links legados.
 
 **Nota de histórico:** os parágrafos anteriores que solicitam páginas independentes refletem versões superadas da SPEC. A decisão deste registro é a vigente.
+
+
+## Revisão de Stake — integridade e regras (2026-11-06)
+
+Fonte conferida: **Vampire: The Masquerade V5**, livro básico, Appendix II: Projects, páginas impressas **417–419**.
+
+- **Launch Roll**: dificuldade Scope + 2; vitória crítica dispensa Stake; vitória comum exige Scope + 1 menos a margem, mínimo de 1 dot. Cooperação exige contribuição de cada participante, salvo uso de Background da Coterie conforme adjudicação do Narrador.
+- **Reserva**: dots comprometidos não podem ser usados em jogo até o projeto terminar. O código já impede double booking **entre Projects**, mas ainda não impede que outros módulos consumam o mesmo Background; isso continua sendo uma pendência de integração, não uma regra homologada.
+- **Goal Roll**: perda de Background começa pelo Stake; perda além do Stake requer decisão do Narrador, sem débito automático arbitrário.
+- **Correção nesta branch**: locks transacionais PostgreSQL por proprietário e Background, adquiridos em ordem estável, para serializar commits concorrentes; normalização de aliases PT/EN antes de gravar Stake; teste de regressão para duas reservas simultâneas disputando o último dot.
+- **Validação necessária**: executar o novo teste concorrente em PostgreSQL isolado e CI; conferir se todas as telas/rolagens que utilizam Backgrounds respeitam os dots reservados. Não aplicar automaticamente as reservas a atributos, habilidades ou disciplinas, pois Stake é especificamente Background.
+
+### Critérios pendentes antes de encerrar a issue #66
+
+- [ ] Aplicar projeção de Background disponível (total menos reservado) a todas as rolagens e consumidores de Background, inclusive Coterie, com testes de integração.
+- [ ] Validar no PostgreSQL isolado que dois COMMIT_STAKE concorrentes nunca excedem os dots disponíveis.
+- [ ] QA no navegador (desktop/tablet/mobile) e autorização/IDOR.
+- [ ] Revisar decisões narrativas e consequências extraordinárias com o Narrador.
