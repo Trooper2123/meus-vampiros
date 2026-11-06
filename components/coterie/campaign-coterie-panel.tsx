@@ -16,7 +16,7 @@ type Goal={id:string;title:string;description:string;status:string;projectId:str
 type Coterie={
  id:string;name:string;typeId:string|null;typeName:string|null;chronicle:string|null;city:string|null;description:string
  hasDomain:boolean;domainDescription:string;chasse:number;lien:number;portillon:number;domainResonance:string;chronicleTenets:string;revision:number
- members:Member[];backgrounds:Background[];advantages:Advantage[];havens:Haven[];boons:Boon[];goals:Goal[]
+ members:Member[];backgrounds:Background[];backgroundAvailability?:Array<{trait:string;totalDots:number;reservedDots:number;availableDots:number}>;advantages:Advantage[];havens:Haven[];boons:Boon[];goals:Goal[]
  projectCounts:{total:number;active:number}|null
 }
 type Data={canManage:boolean;archived:boolean;coteries:Coterie[];types:CoterieType[];roster:{id:string;name:string}[]}
@@ -129,7 +129,7 @@ export function CampaignCoteriePanel({campaignId,projectsHref,onOpenProjects}:Re
      {selected.chronicleTenets&&<p className="mt-3 whitespace-pre-line text-sm text-muted-foreground">Princípios: {selected.chronicleTenets}</p>}
     </Section>
     <Section title="Backgrounds compartilhados" icon={Shield} action={button('Adicionar','ADD_BACKGROUND')}>
-     {selected.backgrounds.length?<div className="space-y-2">{selected.backgrounds.map(b=><div key={b.id} className="flex items-center justify-between gap-3 border-b border-border/50 py-2"><div><p className="font-medium">{b.code}</p>{b.description&&<p className="text-xs text-muted-foreground">{b.description}</p>}</div><Dots value={b.dots}/></div>)}</div>:<Empty>Nenhum Background coletivo registrado.</Empty>}
+     {selected.backgrounds.length?<div className="space-y-2">{selected.backgrounds.map(b=><div key={b.id} className="flex items-center justify-between gap-3 border-b border-border/50 py-2"><div><p className="font-medium">{b.code}</p>{b.description&&<p className="text-xs text-muted-foreground">{b.description}</p>}</div><div className="text-right"><Dots value={b.dots}/>{selected.backgroundAvailability?.find(item=>item.trait===b.code) && <p className="text-xs text-muted-foreground">{selected.backgroundAvailability.find(item=>item.trait===b.code)?.availableDots} disponíveis · {selected.backgroundAvailability.find(item=>item.trait===b.code)?.reservedDots} reservados</p>}</div></div>)}</div>:<Empty>Nenhum Background coletivo registrado.</Empty>}
      <p className="mt-3 text-xs text-muted-foreground">Os dots comprometidos em Stake são reservados pelo Narrador no módulo Projetos. A apresentação aqui mostra o total cadastrado.</p>
     </Section>
     <Section title="Vantagens e Defeitos" icon={Sparkles} action={button('Adicionar','ADD_ADVANTAGE')}>

@@ -137,3 +137,52 @@ A orientação mais recente do usuário substitui o requisito anterior de págin
 - [ ] Verificar em navegador a alternância de abas nas visões Narrador e Jogador, inclusive campanha arquivada, tela estreita e links legados.
 
 **Nota de histórico:** os parágrafos anteriores que solicitam páginas independentes refletem versões superadas da SPEC. A decisão deste registro é a vigente.
+
+
+## Revisão de Stake — integridade e regras (2026-11-06)
+
+Fonte conferida: **Vampire: The Masquerade V5**, livro básico, Appendix II: Projects, páginas impressas **417–419**.
+
+- **Launch Roll**: dificuldade Scope + 2; vitória crítica dispensa Stake; vitória comum exige Scope + 1 menos a margem, mínimo de 1 dot. Cooperação exige contribuição de cada participante, salvo uso de Background da Coterie conforme adjudicação do Narrador.
+- **Reserva**: dots comprometidos não podem ser usados em jogo até o projeto terminar. O código já impede double booking **entre Projects**, mas ainda não impede que outros módulos consumam o mesmo Background; isso continua sendo uma pendência de integração, não uma regra homologada.
+- **Goal Roll**: perda de Background começa pelo Stake; perda além do Stake requer decisão do Narrador, sem débito automático arbitrário.
+- **Correção nesta branch**: locks transacionais PostgreSQL por proprietário e Background, adquiridos em ordem estável, para serializar commits concorrentes; normalização de aliases PT/EN antes de gravar Stake; teste de regressão para duas reservas simultâneas disputando o último dot.
+- **Validação necessária**: executar o novo teste concorrente em PostgreSQL isolado e CI; conferir se todas as telas/rolagens que utilizam Backgrounds respeitam os dots reservados. Não aplicar automaticamente as reservas a atributos, habilidades ou disciplinas, pois Stake é especificamente Background.
+
+### Critérios pendentes antes de encerrar a issue #66
+
+- [ ] Aplicar projeção de Background disponível (total menos reservado) a todas as rolagens e consumidores de Background, inclusive Coterie, com testes de integração.
+- [ ] Validar no PostgreSQL isolado que dois COMMIT_STAKE concorrentes nunca excedem os dots disponíveis.
+- [ ] QA no navegador (desktop/tablet/mobile) e autorização/IDOR.
+- [ ] Revisar decisões narrativas e consequências extraordinárias com o Narrador.
+
+
+### Integração de disponibilidade (entrega incremental)
+
+- Adicionado `lib/background-availability.ts`: saldo derivado de `project_stakes` ativos, sem tabela duplicada; total/reservado/disponível para personagem e Coterie.
+- `lib/character-summary.ts` e resumo exibem a disponibilidade individual; `lib/coterie-service.ts` e painel da Coterie exibem disponibilidade coletiva.
+- Testes unitários de projeção adicionados em `tests/background-availability.test.ts` (não executados nesta sessão).
+- **Ainda não bloqueia rolagens genéricas**: a API atual recebe pool numérico e não identifica qual Background contribuiu; descontar do pool arbitrariamente poderia reduzir rolagens de Atributos/Habilidades. Para completar, é necessário adicionar origem tipada de Background à composição de pool e validar no servidor contra `characterBackgroundAvailability` ou `coterieBackgroundAvailability` antes da rolagem.
+- Também falta conferir outros consumidores narrativos de Backgrounds e impedir que um usuário altere os dots de origem abaixo dos pontos já reservados.
+
+
+## Integração de disponibilidade nas rolagens — entrega incremental (2026-11-06)
+
+- [x] GET /api/characters/[id]/rolls expõe backgroundAvailability: totalDots, reservedDots e availableDots, derivados de project_stakes.
+- [x] Rolagem aceita backgroundCode opcional, validado no servidor, acrescentando apenas dots disponíveis e rejeitando Background indisponível ou modo incompatível.
+- [x] Resumo da ficha e serviço da Coterie já projetam disponibilidade individual/compartilhada sem duplicar o desconto.
+- [x] Adicionado teste de integração da disponibilidade após reserva individual.
+- [ ] Expor seletor de Background na UI de rolagem; nunca aplicar bônus automaticamente a todas as rolagens.
+- [ ] Validar transacionalmente comandos de edição/evolução que reduzem Backgrounds reservados.
+- [ ] Integrar contribuição de Background compartilhado da Coterie em rolagens com autorização de membros ativos.
+- [ ] Executar CI, testes e QA com Narrador e jogador.
+
+
+## Integração adicional (2026-11-06)
+
+- [x] Interface de rolagem oferece seleção opcional de Background individual e da Coterie; mostra pontos disponíveis e reservados.
+- [x] GET de rolagens lista somente Coteries com vínculo ativo do personagem e respectivos saldos efetivos.
+- [x] Backend valida pertença à Coterie e pontos efetivamente disponíveis antes de aplicar o bônus; não soma Background individual e coletivo na mesma rolagem.
+- [x] Edição geral da ficha impede reduzir Background abaixo de pontos comprometidos, com locks transacionais no mesmo namespace de COMMIT_STAKE.
+- [ ] Revisar outros comandos especializados de alteração de Background fora da edição geral; testar concorrência, permissões, interface e build.
+- [ ] O Narrador deve confirmar aplicabilidade narrativa do Background escolhido; seleção opcional não substitui julgamento narrativo.
