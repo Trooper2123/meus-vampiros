@@ -43,9 +43,20 @@ async function validateAssignee(campaignId:string,fields:Record<string,unknown>)
 export async function sheetTargets(actorId:string,campaignId:string) {
   const campaign=await narrativeCampaignAccess(actorId,campaignId)
   const chars=await db.execute<{id:string;name:string}>(sql`SELECT id,name FROM characters WHERE campaign_id=${campaignId}::uuid AND character_type='PLAYER_VAMPIRE' ORDER BY name LIMIT 200`)
-  const npcs=await db.execute<{id:string;name:string}>(sql`SELECT n.id,n.name FROM npc_definitions n JOIN campaign_npcs cn ON cn.npc_id=n.id WHERE cn.campaign_id=${campaignId}::uuid AND (${campaign.isNarrator} OR cn.revealed_fields ? 'name' OR cn.revealed_fields ? 'identity') ORDER BY n.name LIMIT 200`)
+  // Narrators can discover their active personal NPCs even before linking them to this campaign.
+  // Players only receive NPCs already linked to the campaign and explicitly revealed.
+  const npcs=await db.execute<{id:string;name:string;linked:boolean}>(campaign.isNarrator
+    ? sql`SELECT n.id,n.name,(cn.id IS NOT NULL) AS linked FROM npc_definitions n
+      LEFT JOIN campaign_npcs cn ON cn.npc_id=n.id AND cn.campaign_id=${campaignId}::uuid
+      WHERE n.owner_id=${actorId} AND n.status='ACTIVE' AND NOT n.is_template
+      ORDER BY n.name,n.id LIMIT 200`
+    : sql`SELECT n.id,n.name,true AS linked FROM npc_definitions n
+      JOIN campaign_npcs cn ON cn.npc_id=n.id
+      WHERE cn.campaign_id=${campaignId}::uuid AND n.status='ACTIVE'
+        AND (cn.revealed_fields ? 'name' OR cn.revealed_fields ? 'identity')
+      ORDER BY n.name,n.id LIMIT 200`)
   const entities=await db.execute<SheetContext>(sql`SELECT * FROM sheet_contexts WHERE campaign_id=${campaignId}::uuid AND subject_type IN ('ORGANIZATION','PLACE') AND (${campaign.isNarrator} OR created_by=${actorId} OR visibility='CAMPAIGN_VISIBLE') ORDER BY name LIMIT 200`)
-  return [...chars.rows.map(r=>({subjectType:'CHARACTER',subjectId:r.id,label:r.name})),...npcs.rows.map(r=>({subjectType:'NPC',subjectId:r.id,label:r.name})),...entities.rows.map(r=>({subjectType:r.subject_type,subjectId:r.subject_id,contextId:r.id,label:r.name}))]
+  return [...chars.rows.map(r=>({subjectType:'CHARACTER',subjectId:r.id,label:r.name})),...npcs.rows.map(r=>({subjectType:'NPC',subjectId:r.id,label:r.name,linked:r.linked})),...entities.rows.map(r=>({subjectType:r.subject_type,subjectId:r.subject_id,contextId:r.id,label:r.name}))]
 }
 export async function getSheetData(actorId:string,campaignId:string,type:SubjectType,id:string,query='') {
   const access=await subjectAccess(actorId,campaignId,type,id)
