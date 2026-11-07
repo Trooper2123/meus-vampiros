@@ -23,7 +23,7 @@ import { SessionReveals } from '@/components/npcs/npc-session-panel'
 type Character = {id:string;name:string}
 type CharacterData = ComponentProps<typeof CharacterSummary>['data']
 type PlayerTab = 'visual'|'sheet'|'diary'|'session'|'files'|'reveals'|'messages'
-type QuickTool = 'roll'|'health'|'hunger'|'willpower'|null
+type QuickTool = 'roll'|'health'|'hunger'|'willpower'|'humanity'|null
 const read = async (url:string) => {
   const response = await fetch(url,{cache:'no-store'})
   const body = await response.json()
@@ -42,21 +42,35 @@ function PlayerSheet({characterId}:Readonly<{characterId:string}>) {
 
 function PlayerQuickActions({characterId,sessionId}:Readonly<{characterId:string;sessionId:string}>) {
   const [active,setActive]=useState<QuickTool>(null)
-  const {data}=useSWR<{state:{hunger:number;healthCurrent:number;willpowerCurrent:number};maxima:{healthMax:number;willpowerMax:number}}>(`/api/characters/${characterId}/resources`,read,{refreshInterval:5000})
-  const actions = [
-    {id:'roll' as const, label:'Rolar Dados',Icon:Dice5,value:'Testes V5'},
-    {id:'health' as const,label:'Vitalidade',Icon:HeartPulse,value:data ? `${data.state.healthCurrent} / ${data.maxima.healthMax}` : '—'},
-    {id:'hunger' as const,label:'Fome',Icon:Droplet,value:data ? `${data.state.hunger} / 5` : '—'},
-    {id:'willpower' as const,label:'Força de Vontade',Icon:Shield,value:data ? `${data.state.willpowerCurrent} / ${data.maxima.willpowerMax}` : '—'},
+  const {data,error,isLoading}=useSWR<{
+    state:{hunger:number;humanity:number;healthCurrent:number;willpowerCurrent:number};
+    maxima:{healthMax:number;willpowerMax:number}
+  }>(`/api/characters/${characterId}/resources`,read,{refreshInterval:5000})
+  const resources = [
+    {id:'health' as const,label:'Vitalidade',Icon:HeartPulse,current:data?.state.healthCurrent,max:data?.maxima.healthMax},
+    {id:'hunger' as const,label:'Fome',Icon:Droplet,current:data?.state.hunger,max:5},
+    {id:'willpower' as const,label:'Força de Vontade',Icon:Shield,current:data?.state.willpowerCurrent,max:data?.maxima.willpowerMax},
+    {id:'humanity' as const,label:'Humanidade',Icon:HeartPulse,current:data?.state.humanity,max:10},
   ]
-  return <section className="session-player-action-dock" aria-label="Ações rápidas durante a sessão">
-    <div className="session-player-dock-header"><Dice5 className="size-5" aria-hidden="true"/><h2>Ações da Sessão</h2>{active && <button type="button" className="session-player-close-tool" aria-label="Fechar ações" onClick={()=>setActive(null)}><X className="size-4"/></button>}</div>
-    <div className="session-player-action-buttons">
-      {actions.map(({id,label,Icon,value})=><button key={id} type="button" className={active===id?'is-active':''} aria-pressed={active===id} onClick={()=>setActive(old=>old===id?null:id)}><Icon className="size-5"/><strong>{label}</strong><small>{value}</small></button>)}
+  return <section className="session-player-action-dock" aria-label="Rolagens e recursos do personagem">
+    <div className="session-player-dock-header"><Dice5 className="size-5" aria-hidden="true"/><h2>Rolagens e Estado do Personagem</h2>{active && <button type="button" className="session-player-close-tool" aria-label="Fechar ações" onClick={()=>setActive(null)}><X className="size-4"/></button>}</div>
+    <div className="session-player-hud">
+      <button type="button" className={`session-player-roll-trigger ${active==='roll'?'is-active':''}`} aria-expanded={active==='roll'} onClick={()=>setActive(old=>old==='roll'?null:'roll')}>
+        <Dice5 className="size-6" aria-hidden="true"/><strong>Rolar dados</strong><small>Testes V5</small>
+      </button>
+      <div className="session-player-resource-grid" aria-label="Valores atuais confirmados do personagem">
+        {resources.map(({id,label,Icon,current,max})=><button type="button" key={id} className={`session-player-resource-tile ${active===id?'is-active':''}`} aria-expanded={active===id} aria-label={`${label}: ${current == null || max == null ? 'carregando' : `${current} de ${max}`}. Abrir detalhes`} onClick={()=>setActive(old=>old===id?null:id)}>
+          <span className="session-player-resource-name"><Icon className="size-4" aria-hidden="true"/>{label}</span>
+          <strong>{current == null || max == null ? '—' : `${current} / ${max}`}</strong>
+          <span className="session-player-resource-track" aria-hidden="true"><span style={{width:current == null || max == null || max<=0?'0%':`${Math.min(100,Math.max(0,current/max*100))}%`}}/></span>
+        </button>)}
+      </div>
     </div>
+    {isLoading&&<p role="status" className="mt-2 text-xs text-muted-foreground">Atualizando valores da ficha…</p>}
+    {error&&<p role="alert" className="mt-2 text-xs text-primary">Não foi possível atualizar os recursos. Os valores não foram confirmados.</p>}
     {active && <div className="session-player-action-panel">
       {active==='roll' ? <><CharacterAwakePanel characterId={characterId} sessionId={sessionId}/><DisciplineRollPanel characterId={characterId} sessionId={sessionId}/><CharacterRolls characterId={characterId} sessionId={sessionId}/></> :
-      <><p className="mb-3 text-xs text-muted-foreground">Ajustes de {active==='health'?'Vitalidade':active==='hunger'?'Fome':'Força de Vontade'} seguem as regras de dano e persistência da ficha.</p><SessionResources characterId={characterId} sessionId={sessionId} focus={active}/></>}
+      <><p className="mb-3 text-xs text-muted-foreground">Detalhes de {resources.find(resource=>resource.id===active)?.label}. Alterações seguem as regras e são registradas na ficha.</p><SessionResources characterId={characterId} sessionId={sessionId} focus={active==='humanity'?undefined:active}/></>}
     </div>}
   </section>
 }
