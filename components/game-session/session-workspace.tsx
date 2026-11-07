@@ -4,8 +4,8 @@ import { SessionParticipants } from '@/components/game-session/session-participa
 import { SessionVisualBoard } from '@/components/game-session/session-visual-board'
 import { CampaignHandouts } from '@/components/campaign-handouts'
 
-import { useEffect, useRef, useState } from 'react'
-import { BookOpen, CalendarDays, FileText, MessageCircle, NotebookPen, Search, Users, Wallet, Eye, UserRoundCog, House, Boxes, ImageIcon, Dices, Pause, X } from 'lucide-react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { BookOpen, CalendarDays, FileText, MessageCircle, NotebookPen, Search, Users, Wallet, Eye, UserRoundCog, House, Boxes, ImageIcon, Dices, Pause, X, Shield } from 'lucide-react'
 import Link from 'next/link'
 import useSWR, { SWRConfig, useSWRConfig } from 'swr'
 import { LiveKitRoomLink } from '@/components/livekit/livekit-room-link'
@@ -17,6 +17,7 @@ import { SessionQuickRoll } from '@/components/game-session/session-quick-roll'
 import { SessionPlayerWorkspace } from '@/components/game-session/session-player-workspace'
 import { MasterViewportGuard } from '@/components/master-viewport-guard'
 import { SessionSoundtrack } from './session-soundtrack'
+import { NarratorVirtualShield } from './narrator-virtual-shield'
 import { AwakePanel } from '@/components/awake-panel'
 import { CampaignAwakeSettings } from './campaign-awake-settings'
 import { DEFAULT_SHORTCUTS, SHORTCUT_LABELS, type ShortcutCode } from '@/lib/session-shortcut-options'
@@ -38,6 +39,8 @@ function SessionWorkspace({ campaignId, actorId, campaignName }: Readonly<{ camp
   const [pending, setPending] = useState(false)
   const [feedback, setFeedback] = useState('')
   const [activeTool, setActiveTool] = useState('shared')
+  const [shieldOpen, setShieldOpen] = useState(false)
+  const closeShield = useCallback(() => setShieldOpen(false), [])
   const [mobilePanel, setMobilePanel] = useState<'center'|'chat'|'cameras'>('center')
   const [researchView, setResearchView] = useState<'skills' | 'merits'>('skills')
   const [closedNpcSession,setClosedNpcSession]=useState('')
@@ -113,6 +116,7 @@ function SessionWorkspace({ campaignId, actorId, campaignName }: Readonly<{ camp
           <p className="text-xs text-muted-foreground">As abas trocam apenas o conteúdo central.</p>
         </div>
 
+        <div id="narrator-virtual-shield"><NarratorVirtualShield open={shieldOpen} onClose={closeShield}/></div>
         <nav className="session-tabs" aria-label="Seções do modo sessão">
           {[
             { id: 'shared', label: 'Hub', Icon: House },
@@ -148,6 +152,7 @@ function SessionWorkspace({ campaignId, actorId, campaignName }: Readonly<{ camp
                   const Icon = shortcutIcons[code]
                   return <button key={code} type="button" className="session-shortcut" onClick={() => setActiveTool(code)}><Icon className="size-4" aria-hidden="true"/>{SHORTCUT_LABELS[code]}</button>
                 })}
+                <button type="button" className="session-shortcut" aria-expanded={shieldOpen} aria-controls="narrator-virtual-shield" onClick={() => setShieldOpen(true)}><Shield className="size-4" aria-hidden="true"/>Escudo do Narrador</button>
                 {shortcuts.length === 0 && <p className="text-xs leading-5 text-muted-foreground">Nenhum atalho selecionado. Configure os itens em Gestão da Mesa → Configurações.</p>}
               </div>
             </section>
