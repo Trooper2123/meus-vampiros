@@ -630,7 +630,7 @@ const savedUrl = `/api/characters?id=${savedCharacterId}`
   const activeStepIndex = tabs.findIndex(item => item.id === activeTab)
   return <main className={`relative min-h-screen overflow-hidden bg-background text-foreground ${assistedLayout ? 'assisted-creation-page' : ''}`}>
     <div className="noise" aria-hidden="true" />
-    {!assistedLayout && <ArchiveHeader title={mode === 'edit' ? 'Editar personagem' : 'Novo registro'} />}
+    {!assistedLayout && <ArchiveHeader title="Novo registro" />}
     <div className="archive-content">
       <div className={assistedLayout ? "assisted-legacy-title" : "mb-8 flex flex-col justify-between gap-6 border-b border-border pb-8 sm:flex-row sm:items-end"}><div><p className="eyebrow">Ficha nº 000 / em elaboração</p><h1 className="mt-3 font-serif text-4xl uppercase tracking-[0.08em] sm:text-6xl">{mode === 'edit' ? 'Editar personagem' : 'Criar personagem'}</h1><p className="mt-3 max-w-xl text-sm leading-6 text-muted-foreground">Registre a identidade, os dons e as fraquezas da criatura que será confiada aos arquivos.</p></div><div className="flex items-center gap-3 text-xs text-muted-foreground"><span className="status active"><span className="status-dot" /> {characterStatusLabels[characterStatus]}</span><span>{saving ? 'Salvando...' : 'Pronto para editar'}</span></div></div>
       {mode === 'edit' && characterId && characterData?.character?.campaignId === null && characterType === 'PLAYER_VAMPIRE' && <CampaignLink characterId={characterId} onBeforeSubmit={() => saveDraft()} onCampaignChange={() => mutateCharacter()} />}
