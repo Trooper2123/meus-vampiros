@@ -3256,3 +3256,29 @@ main > .archive-header {
 @media(max-width:1180px){.assisted-creation-page .assisted-creation-grid{grid-template-columns:minmax(200px,245px) minmax(0,1fr)}.assisted-creation-page .assisted-step-help{grid-column:2;position:static}}
 @media(max-width:720px){.assisted-creation-page .archive-content{width:calc(100% - 24px);padding-block:16px 44px}.assisted-creation-page .assisted-creation-grid{grid-template-columns:minmax(0,1fr);gap:14px}.assisted-creation-page .assisted-creation-sidebar,.assisted-creation-page .assisted-step-help{position:static;grid-column:1}.assisted-creation-page .assisted-creation-sidebar nav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.assisted-creation-page .assisted-creation-content{padding:14px}.assisted-creation-page .assisted-creation-heading{padding:16px;align-items:flex-start;flex-wrap:wrap}.assisted-creation-page .assisted-legacy-title h1{font-size:clamp(28px,8vw,42px)}}
 @media(max-width:440px){.assisted-creation-page .assisted-creation-sidebar nav{grid-template-columns:minmax(0,1fr)}.assisted-creation-page .assisted-identity-subnav button{flex-basis:100%}}
+
+/* MESA-02: narrator-only V5 shield; drawer does not unmount LiveKit. */
+.narrator-shield{position:fixed;z-index:60;right:clamp(12px,2vw,32px);top:clamp(70px,10vh,112px);width:min(700px,calc(100vw - 24px));max-height:calc(100dvh - 90px);display:flex;flex-direction:column;overflow:hidden;background:#160d11;border:1px solid #9c3442;border-radius:18px;color:#f2e8e6;box-shadow:0 20px 75px #000b}
+.narrator-shield-header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:19px 22px;border-bottom:1px solid #633039;background:linear-gradient(110deg,#330e16,#170d10)}
+.narrator-shield-title{display:flex;align-items:center;gap:13px;min-width:0}
+.narrator-shield-title>svg{color:#e84958;flex-shrink:0}
+.narrator-shield-title h2{font:600 clamp(21px,2.2vw,29px)/1.18 Georgia,serif;margin-top:5px}
+.narrator-shield-close{display:grid;place-items:center;min-height:44px;min-width:44px;border-radius:10px;border:1px solid #74404a;background:#29151b;color:inherit}
+.narrator-shield-close:hover,.narrator-shield-close:focus-visible{border-color:#ee5062;outline-offset:2px}
+.narrator-shield-body{min-height:0;overflow:auto;display:grid;grid-template-columns:175px minmax(0,1fr)}
+.narrator-shield-nav{padding:14px 9px;border-right:1px solid #633039;display:flex;flex-direction:column;gap:6px}
+.narrator-shield-nav button{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:13px 10px;min-height:44px;border-radius:9px;border:1px solid transparent;color:#dfcdd0;text-align:left;font-size:13px;cursor:pointer}
+.narrator-shield-nav button:hover,.narrator-shield-nav button:focus-visible{border-color:#a44351;background:#32171d;outline-offset:2px}
+.narrator-shield-nav button.is-active{border-color:#b63a4d;color:#fff;background:#571824}
+.narrator-shield-nav button svg{flex-shrink:0}
+.narrator-shield-content{padding:20px 22px;min-width:0}
+.narrator-shield-content h3{font:600 26px/1.2 Georgia,serif;margin:8px 0 6px}
+.narrator-shield-description{color:#c5b1b4;line-height:1.5;font-size:13px}
+.narrator-shield-content dl{display:flex;flex-direction:column;gap:0;margin:17px 0}
+.narrator-shield-content dl>div{display:grid;grid-template-columns:minmax(115px,0.8fr) minmax(0,1.5fr);gap:12px;padding:12px 0;border-bottom:1px solid #4c2c33}
+.narrator-shield-content dt{font-size:13px;font-weight:700;color:#f3d8dc}
+.narrator-shield-content dd{font-size:13px;line-height:1.5;color:#d6c6c8;overflow-wrap:anywhere}
+.narrator-shield-reminder{display:flex;gap:10px;padding:13px;background:#341a22;border:1px solid #8a3948;border-radius:11px;color:#f0d7d9;font-size:13px;line-height:1.5}
+.narrator-shield-reminder svg{color:#f07b87}
+.narrator-shield-disclaimer{margin-top:15px;color:#ae9da0;font-size:11px;line-height:1.5}
+@media(max-width:650px){.narrator-shield{top:8px;right:8px;width:calc(100vw - 16px);max-height:calc(100dvh - 16px);border-radius:12px}.narrator-shield-header{padding:13px}.narrator-shield-body{display:block}.narrator-shield-nav{display:flex;flex-direction:row;gap:6px;overflow-x:auto;border-right:0;border-bottom:1px solid #633039;scrollbar-width:thin}.narrator-shield-nav button{flex:0 0 auto;white-space:nowrap}.narrator-shield-nav button svg{display:none}.narrator-shield-content{padding:15px}.narrator-shield-content dl>div{grid-template-columns:minmax(95px,0.9fr) minmax(0,1.4fr)}}
