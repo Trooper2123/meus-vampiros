@@ -89,3 +89,42 @@ export const NPC_TEMPLATES: { id: string; originalName: string | null; name: str
   { id:'police-detective', originalName:'Police Detective', name:'Detetive de polícia', official:true, source:'Vampire: The Masquerade V5 — Corebook, pp. 370–372', data:detective },
   ...([['civil','Civil','MORTAL',1],['security','Segurança','MORTAL',2],['criminal','Criminoso','MORTAL',2],['hunter','Caçador independente','MORTAL',3],['ambusher','Caçador emboscador','MORTAL',4],['ghoul-servant','Servo carniçal','GHOUL',2],['bodyguard','Guarda-costas carniçal','GHOUL',3],['agent','Agente carniçal','GHOUL',3],['neonate','Neófito','VAMPIRE',3],['ancilla','Ancilla','VAMPIRE',4],['elder','Ancião','VAMPIRE',6],['sabbat-fighter','Combatente Sabbat','VAMPIRE',4],['sabbat-infiltrator','Infiltrador Sabbat','VAMPIRE',4],['sabbat-leader','Líder Sabbat','VAMPIRE',5],['supernatural','Sobrenatural genérico','OTHER',4]] as const).map(([id,name,creatureType,threatLevel]) => ({ id, originalName:null, name, official:false, source:'Modelo personalizado do projeto; revisar antes de usar.', data:validateNpc({ name, sheetType:'SIMPLE',creatureType,role:'EXTRA',threatLevel }) })),
 ]
+
+
+/**
+ * Catalog references verified against the user's V5 PDFs. These are
+ * intentionally editable, abbreviated narrative starting points, NOT copies
+ * of their published stat blocks or claims of mechanically exact conversion.
+ * No instance exists until a narrator explicitly creates one.
+ */
+const bookNpc = (
+  id:string, originalName:string, name:string,
+  creatureType:NpcData['creatureType'], role:NpcData['role'], threatLevel:number,
+  sourceBook:string, page:number, concept:string,
+) => ({
+  id: `book-${id}`, originalName, name, official:true, sourceBook, sourcePage:page,
+  category: role==='ANTAGONIST'?'ANTAGONIST':'SUPPORT',
+  source: `${sourceBook}, p. ${page} — adaptação narrativa simplificada; consulte a ficha original para regras e números oficiais.`,
+  data:validateNpc({name,sheetType:'SIMPLE',creatureType,role,threatLevel,concept,
+    description:`Referência de ${sourceBook}, p. ${page}. Ponto de partida editável; atributos, pools, poderes e equipamentos não são transcritos automaticamente.`}),
+})
+
+const coreV5 = 'Vampire: The Masquerade V5 — Corebook'
+const bloodGods = 'Vampire: The Masquerade V5 — Cults of the Blood Gods'
+
+export const BOOK_NPC_TEMPLATES = [
+  bookNpc('gangster','Gangster','Criminoso organizado','MORTAL','ANTAGONIST',2,coreV5,371,'Criminoso que negocia favores ou oferece resistência aos vampiros.'),
+  bookNpc('clergy','Clergy','Líder religioso','MORTAL','NEUTRAL',2,coreV5,371,'Integrante do clero envolvido em conflitos sobrenaturais.'),
+  bookNpc('faith-hunter','Faith Hunter','Caçador da fé','MORTAL','ANTAGONIST',4,coreV5,371,'Inquisidor religioso que investiga e enfrenta mortos-vivos.'),
+  bookNpc('inquisitor-investigator','Inquisitor Investigator','Investigador da Segunda Inquisição','MORTAL','ANTAGONIST',4,coreV5,372,'Agente especializado em investigação e vigilância de vampiros.'),
+  bookNpc('inquisitor-delta','Inquisitor Delta','Operativo Delta da Segunda Inquisição','MORTAL','ANTAGONIST',5,coreV5,372,'Operativo de campo especializado em incursões contra vampiros.'),
+  bookNpc('ghoul','Ghoul','Carniçal a serviço de vampiros','GHOUL','NEUTRAL',3,coreV5,372,'Serviçal mortal afetado pelo sangue vampírico.'),
+  bookNpc('elysium-harpy','Elysium Harpy','Harpia do Elísio','VAMPIRE','RIVAL',4,coreV5,374,'Figura de influência social e política na sociedade vampírica.'),
+  bookNpc('anarch-revolutionary','Anarch Revolutionary','Revolucionário Anarquista','VAMPIRE','ANTAGONIST',4,coreV5,374,'Rebelde que desafia a ordem da Camarilla.'),
+  bookNpc('hiromitsu-asano','Hiromitsu Asano','Hiromitsu Asano','VAMPIRE','RIVAL',5,bloodGods,254,'Empresário Hecata influente na política e no comércio de Munique.'),
+  bookNpc('terrence-rusk','Terrence Rusk','Terrence Rusk','VAMPIRE','ANTAGONIST',5,bloodGods,256,'Ventrue ligado ao Culto de Mithras em Munique.'),
+  bookNpc('anna-fleischer','Anna Fleischer','Anna Fleischer','VAMPIRE','RIVAL',4,bloodGods,256,'Ventrue associada ao Culto de Mithras.'),
+  bookNpc('dieter-straub','Dieter Straub','Dieter Straub','VAMPIRE','ANTAGONIST',5,bloodGods,256,'Barão Anarquista Gangrel de Munique.'),
+] satisfies Array<{id:string;originalName:string;name:string;official:boolean;source:string;data:NpcData;sourceBook:string;sourcePage:number;category:string}>
+
+NPC_TEMPLATES.push(...BOOK_NPC_TEMPLATES)
