@@ -48,7 +48,7 @@ function SessionWorkspace({ campaignId, actorId, campaignName }: Readonly<{ camp
   const { data: awakeSettings } = useSWR<{executionMode:'PLAYER_ROLLS'|'NARRATOR_FORCES'}>(manage ? `/api/campaigns/${campaignId}/awake-settings` : null, read)
   const { data: shortcutSettings } = useSWR<{shortcuts: ShortcutCode[]}>(manage ? `/api/campaigns/${campaignId}/session-shortcuts` : null, read, { refreshInterval: 20000 })
   const shortcuts = shortcutSettings?.shortcuts ?? DEFAULT_SHORTCUTS
-  const shortcutIcons = { npcs: UserRoundCog, calendar: CalendarDays, notes: NotebookPen, research: Search, handouts: FileText, visual: ImageIcon, xp: Wallet } as const
+  const shortcutIcons = { npcs: UserRoundCog, calendar: CalendarDays, notes: NotebookPen, research: Search, handouts: FileText, visual: ImageIcon, xp: Wallet, shield: Shield } as const
   const activeSession = data?.session
     const notesSessionId=data?.sessions?.find(session=>session.id===closedNpcSession)?.id??data?.session?.id??data?.sessions?.[0]?.id
   const npcSessionId=notesSessionId
@@ -93,7 +93,7 @@ function SessionWorkspace({ campaignId, actorId, campaignName }: Readonly<{ camp
     {manage && <><header className="session-narrator-topbar"><Link className="session-back-link" href={`/campaigns/${campaignId}`}>← Voltar à mesa</Link><div className="session-breadcrumb"><span>Gestão da Mesa</span><b>›</b><strong>Sessão</strong></div></header><MasterViewportGuard backHref={`/campaigns/${campaignId}`} /></>}
     {manage && <div className="master-large-screen-only"><header className="session-active-header">
       <div className="session-active-brand"><Boxes aria-hidden="true"/><div><p className="eyebrow">Painel do Narrador</p><h1>Mesa em andamento</h1><p>Controle e condução da sessão · recursos, comunicação e rolagens da mesa.</p></div></div>
-      <div className="session-active-actions"><button type="button" className="button-ghost" aria-expanded={shieldOpen} aria-controls="narrator-virtual-shield" onClick={() => setShieldOpen(value => !value)}><Shield className="size-4" aria-hidden="true"/>Escudo virtual</button>{activeSession?.status === 'ACTIVE' && <><span className="session-live-status"><i/>Sessão em andamento</span><button className="button-ghost" type="button" disabled title="Pausa temporal será implementada em etapa própria"><Pause className="size-4"/>Pausar</button>{manage && <button className="button-primary" disabled={pending} onClick={() => void command('PATCH', `/api/sessions/${activeSession.id}`, { expectedRevision: activeSession.revision })}><X className="size-4"/>Encerrar</button>}</>}{!data?.session && manage && !data?.archived && <button className="button-primary" disabled={pending} onClick={() => void command('POST', url, {})}>Iniciar sessão</button>}</div>
+      <div className="session-active-actions">{activeSession?.status === 'ACTIVE' && <><span className="session-live-status"><i/>Sessão em andamento</span><button className="button-ghost" type="button" disabled title="Pausa temporal será implementada em etapa própria"><Pause className="size-4"/>Pausar</button>{manage && <button className="button-primary" disabled={pending} onClick={() => void command('PATCH', `/api/sessions/${activeSession.id}`, { expectedRevision: activeSession.revision })}><X className="size-4"/>Encerrar</button>}</>}{!data?.session && manage && !data?.archived && <button className="button-primary" disabled={pending} onClick={() => void command('POST', url, {})}>Iniciar sessão</button>}</div>
       {feedback && <output className="session-header-feedback">{feedback}</output>}{error && <p role="alert" className="session-header-feedback">{error.message}</p>}
     </header>
     {data?.archived&&<p className="border border-border bg-card p-4 text-sm">Mesa arquivada. O histórico continua disponível; restaure a mesa para iniciar novas sessões.</p>}
@@ -150,9 +150,8 @@ function SessionWorkspace({ campaignId, actorId, campaignName }: Readonly<{ camp
               <div className="mt-4 grid gap-2">
                 {shortcuts.map(code => {
                   const Icon = shortcutIcons[code]
-                  return <button key={code} type="button" className="session-shortcut" onClick={() => setActiveTool(code)}><Icon className="size-4" aria-hidden="true"/>{SHORTCUT_LABELS[code]}</button>
+                  return <button key={code} type="button" className="session-shortcut" onClick={() => code === "shield" ? setShieldOpen(true) : setActiveTool(code)}><Icon className="size-4" aria-hidden="true"/>{SHORTCUT_LABELS[code]}</button>
                 })}
-                <button type="button" className="session-shortcut" onClick={() => setShieldOpen(true)}><Shield className="size-4" aria-hidden="true"/>Escudo do Narrador</button>
                 {shortcuts.length === 0 && <p className="text-xs leading-5 text-muted-foreground">Nenhum atalho selecionado. Configure os itens em Gestão da Mesa → Configurações.</p>}
               </div>
             </section>
