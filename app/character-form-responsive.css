@@ -81,3 +81,99 @@
     padding: 14px;
   }
 }
+
+/* Mobile: each discipline power becomes a readable card instead of an 11-column table. */
+@media (max-width: 640px) {
+  .assisted-creation-page .discipline-card,
+  .assisted-creation-page .discipline-card-header,
+  .assisted-creation-page .discipline-card-header .sheet-field,
+  .assisted-creation-page .discipline-card-header .input,
+  .assisted-creation-page .discipline-card .power-list {
+    min-width: 0;
+    width: 100%;
+    max-width: 100%;
+  }
+  .assisted-creation-page .discipline-card-header {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .assisted-creation-page .discipline-card-header .input {
+    flex-wrap: wrap;
+    gap: 8px;
+    overflow-wrap: anywhere;
+  }
+  .assisted-creation-page .discipline-card-header .input .button-ghost {
+    margin-left: 0;
+  }
+  .assisted-creation-page .discipline-card .power-list {
+    overflow: visible;
+  }
+  .assisted-creation-page .discipline-card .power-list table,
+  .assisted-creation-page .discipline-card .power-list tbody {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    overflow: visible;
+  }
+  .assisted-creation-page .discipline-card .power-list thead {
+    display: none;
+  }
+  .assisted-creation-page .discipline-card .power-list tbody tr {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+    margin: 0 0 12px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    background: var(--card);
+  }
+  .assisted-creation-page .discipline-card .power-list tbody td {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    padding: 6px 0;
+    overflow-wrap: anywhere;
+  }
+  .assisted-creation-page .discipline-card .power-list tbody td:first-child {
+    font-weight: 700;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 10px;
+  }
+  .assisted-creation-page .discipline-card .power-list tbody td:not(:first-child)::before {
+    display: block;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .06em;
+    color: var(--muted-foreground);
+    text-transform: uppercase;
+    margin-bottom: 2px;
+  }
+  .assisted-creation-page .discipline-card .power-list tbody td:nth-child(2)::before { content: "Nome"; }
+  .assisted-creation-page .discipline-card .power-list tbody td:nth-child(3)::before { content: "Efeito"; }
+  .assisted-creation-page .discipline-card .power-list tbody td:nth-child(4)::before { content: "Custo"; }
+  .assisted-creation-page .discipline-card .power-list tbody td:nth-child(5)::before { content: "Pré-requisito"; }
+  .assisted-creation-page .discipline-card .power-list tbody td:nth-child(6)::before { content: "Amálgama"; }
+  .assisted-creation-page .discipline-card .power-list tbody td:nth-child(7)::before { content: "Duração"; }
+  .assisted-creation-page .discipline-card .power-list tbody td:nth-child(8)::before { content: "Parada"; }
+  .assisted-creation-page .discipline-card .power-list tbody td:nth-child(9)::before { content: "Parada oposta"; }
+  .assisted-creation-page .discipline-card .power-list tbody td:nth-child(10)::before { content: "Notas adicionais"; }
+  .assisted-creation-page .discipline-card .power-list tbody td:nth-child(11)::before { content: "Fonte"; }
+  .assisted-creation-page .discipline-card .power-list tbody td button {
+    width: 100%;
+    min-width: 0;
+    text-align: left;
+    padding: 5px 0;
+  }
+  .assisted-creation-page .discipline-card .power-list tbody td button span {
+    display: block;
+    max-width: none;
+    overflow-wrap: anywhere;
+    -webkit-line-clamp: unset;
+  }
+  .assisted-creation-page .discipline-card .power-list dialog {
+    width: min(95vw, 64rem);
+    max-width: 95vw;
+    padding: 14px;
+  }
+}
