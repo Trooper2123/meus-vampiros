@@ -47,8 +47,8 @@ const tabs = [
   { id: 'habilidades', label: 'Habilidades', eyebrow: 'III / aquilo que foi aprendido' },
   { id: 'disciplinas', label: 'Disciplinas', eyebrow: 'IV / dons do sangue' },
   { id: 'recursos', label: 'Recursos e convicções', eyebrow: 'V / o que ainda resta' },
-  { id: 'vantagens', label: 'Vantagens e Defeitos', eyebrow: 'VII / o que soma e o que custa' },
-  { id: 'historico', label: 'Histórico e notas', eyebrow: 'VI / aquilo que não deve ser esquecido' },
+  { id: 'vantagens', label: 'Vantagens e Defeitos', eyebrow: 'VI / o que soma e o que custa' },
+  { id: 'historico', label: 'Histórico e notas', eyebrow: 'VII / aquilo que não deve ser esquecido' },
 ] as const
 
 type TabId = (typeof tabs)[number]['id']
