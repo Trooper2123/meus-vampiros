@@ -1,0 +1,83 @@
+/* Responsive safeguards shared by character creation and editing. */
+.assisted-creation-page,
+.assisted-creation-page .archive-content,
+.assisted-creation-page form,
+.assisted-creation-page .assisted-creation-grid,
+.assisted-creation-page .assisted-creation-content,
+.assisted-creation-page .sheet-section,
+.assisted-creation-page .sheet-grid,
+.assisted-creation-page .sheet-field {
+  min-width: 0;
+  max-width: 100%;
+}
+.assisted-creation-page .assisted-creation-content {
+  overflow-wrap: anywhere;
+}
+.assisted-creation-page .assisted-creation-content input,
+.assisted-creation-page .assisted-creation-content select,
+.assisted-creation-page .assisted-creation-content textarea {
+  max-width: 100%;
+  min-width: 0;
+}
+.assisted-creation-page .assisted-creation-content :is(table, .dot-track) {
+  max-width: 100%;
+}
+.assisted-creation-page .assisted-creation-content table {
+  display: block;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.assisted-creation-page .assisted-creation-content :is(.sheet-section-heading, .actions) {
+  flex-wrap: wrap;
+}
+@media (max-width: 1350px) {
+  .assisted-creation-page .assisted-creation-grid {
+    grid-template-columns: minmax(190px, 225px) minmax(0, 1fr);
+    gap: 14px;
+  }
+  .assisted-creation-page .assisted-step-help {
+    grid-column: 2;
+    position: static;
+  }
+  .assisted-creation-page .assisted-creation-content {
+    padding: 16px;
+  }
+}
+@media (max-width: 1024px) {
+  .assisted-creation-page .assisted-creation-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .assisted-creation-page .assisted-creation-sidebar,
+  .assisted-creation-page .assisted-step-help {
+    grid-column: 1;
+    position: static;
+  }
+  .assisted-creation-page .assisted-creation-sidebar nav {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .assisted-creation-page .assisted-creation-content :is(.sheet-grid-4, .attribute-columns) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 640px) {
+  .assisted-creation-page .archive-content {
+    width: calc(100% - 24px);
+    padding-inline: 0;
+  }
+  .assisted-creation-page .assisted-creation-sidebar nav,
+  .assisted-creation-page .assisted-creation-content :is(.sheet-grid-2, .sheet-grid-4, .attribute-columns, .sheet-two-column) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .assisted-creation-page .assisted-creation-content {
+    padding: 12px;
+  }
+  .assisted-creation-page .assisted-creation-content button {
+    max-width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .assisted-creation-page .assisted-creation-heading {
+    padding: 14px;
+  }
+}
