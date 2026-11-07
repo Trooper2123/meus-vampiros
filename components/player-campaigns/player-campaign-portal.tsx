@@ -105,7 +105,7 @@ export function PlayerCampaignPortal({campaign,actorId,initialTab='overview'}:Re
       </PortalPanel>
     </div>}
     {tab==='files'&&<PortalPanel title="Arquivos Compartilhados" subtitle="Somente documentos enviados à mesa inteira ou diretamente a você." icon={FolderOpen}>
-      {filesError&&<p role="alert">Não foi possível acessar os arquivos. Confira a configuração do armazenamento.</p>}
+      {filesError&&<p role="alert">{filesError.message}</p>}
       {!filesData&&!filesError&&<p className="player-portal-muted">Carregando documentos...</p>}
       {filesData&&files.length===0&&<p className="player-portal-muted">Nenhum arquivo compartilhado por enquanto.</p>}
       {files.map(file=><div className="player-portal-list-row" key={file.id}><FileText className="size-6"/><div><strong>{file.title}</strong><small>{file.fileName}{file.sizeBytes!=null ? ` · ${(file.sizeBytes/1024/1024).toFixed(1)} MB`:''} · {niceDate(file.createdAt)}</small></div><a className="button-ghost" href={`/api/campaigns/${campaign.id}/player-handouts/${file.id}`} aria-label={`Baixar ${file.fileName}`}><Download className="size-4"/>Baixar</a></div>)}
