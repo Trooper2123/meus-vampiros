@@ -3218,3 +3218,41 @@ main > .archive-header {
 .character-summary-page .character-summary-nav button:focus-visible{outline:2px solid #ed3449;outline-offset:2px}
 .character-summary-page .summary-hub-tile{cursor:pointer;text-align:left;font-family:inherit}
 @media(max-width:780px){.character-summary-page .character-summary-nav button{flex:0 0 auto;width:auto;white-space:nowrap}}
+
+
+/* Assisted character creation and editing: restore missing layout styles.
+   Scoped to the guided form; standard character pages are unaffected. */
+.assisted-creation-page .archive-content{width:min(100% - 32px,1600px);max-width:1600px;margin-inline:auto;padding-block:28px 64px}
+.assisted-creation-page .assisted-legacy-title{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;flex-wrap:wrap;padding:0 0 24px;border-bottom:1px solid var(--border);margin-bottom:24px}
+.assisted-creation-page .assisted-legacy-title h1{font-size:clamp(32px,4vw,58px);line-height:1.08;letter-spacing:.045em}
+.assisted-creation-page .assisted-creation-heading{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:20px 24px;margin-bottom:22px;border:1px solid var(--border);border-radius:18px;background:var(--card)}
+.assisted-creation-page .assisted-creation-heading h2{margin:6px 0;font-size:clamp(20px,2vw,28px)}
+.assisted-creation-page .assisted-creation-heading .status{flex-shrink:0}
+.assisted-creation-page .assisted-creation-grid{display:grid;grid-template-columns:minmax(215px,260px) minmax(0,1fr) minmax(205px,245px);gap:20px;align-items:start}
+.assisted-creation-page .assisted-creation-grid>*{min-width:0}
+.assisted-creation-page .assisted-creation-sidebar,.assisted-creation-page .assisted-step-help{border:1px solid var(--border);border-radius:18px;background:var(--card);padding:18px;position:sticky;top:16px;min-width:0}
+.assisted-creation-page .assisted-creation-sidebar nav{display:flex;flex-direction:column;gap:7px;margin-top:15px}
+.assisted-creation-page .assisted-step{width:100%;min-width:0;display:flex;align-items:center;gap:12px;padding:12px 10px;text-align:left;color:var(--foreground);background:transparent;border:1px solid transparent;border-radius:11px;cursor:pointer}
+.assisted-creation-page .assisted-step:hover,.assisted-creation-page .assisted-step:focus-visible{background:color-mix(in srgb,var(--primary) 12%,var(--card));border-color:var(--primary);outline-offset:2px}
+.assisted-creation-page .assisted-step.is-active{background:color-mix(in srgb,var(--primary) 17%,var(--card));border-color:var(--primary)}
+.assisted-creation-page .assisted-step-number{display:grid;flex:0 0 30px;place-items:center;height:30px;border:1px solid var(--border);border-radius:9px;font-size:13px;color:var(--primary)}
+.assisted-creation-page .assisted-step>span:last-child{display:flex;flex-direction:column;min-width:0;gap:3px}
+.assisted-creation-page .assisted-step strong{font:600 14px/1.3 Georgia,serif;white-space:normal;overflow-wrap:anywhere}
+.assisted-creation-page .assisted-step small{font-size:11px;line-height:1.35;color:var(--muted-foreground);white-space:normal;overflow-wrap:anywhere}
+.assisted-creation-page .assisted-creation-summary{border-top:1px solid var(--border);padding-top:16px;margin-top:18px}
+.assisted-creation-page .assisted-progress{height:6px;background:var(--border);border-radius:99px;overflow:hidden;margin:10px 0}
+.assisted-creation-page .assisted-progress>span{display:block;height:100%;background:var(--primary);border-radius:99px}
+.assisted-creation-page .assisted-creation-content{min-width:0;border:1px solid var(--border);border-radius:18px;background:var(--card);padding:22px}
+.assisted-creation-page .assisted-original-tabs{display:none}
+.assisted-creation-page .assisted-identity-panel{min-width:0;display:flex;flex-direction:column;gap:14px}
+.assisted-creation-page .assisted-identity-subnav{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}
+.assisted-creation-page .assisted-identity-subnav button{flex:1 1 160px;text-align:center;padding:12px 10px;border:1px solid var(--border);border-radius:10px;background:var(--background);color:var(--foreground);cursor:pointer;white-space:normal}
+.assisted-creation-page .assisted-identity-subnav button.is-active{border-color:var(--primary);background:color-mix(in srgb,var(--primary) 16%,var(--card))}
+.assisted-creation-page .assisted-portrait-panel{display:flex;gap:18px;flex-wrap:wrap;align-items:start;padding:18px;border:1px solid var(--border);border-radius:14px;background:var(--background)}
+.assisted-creation-page .assisted-portrait-panel>div{min-width:0;flex:1 1 180px}
+.assisted-creation-page .assisted-portrait-empty{display:flex;flex-direction:column;gap:10px}
+.assisted-creation-page .assisted-step-help{font-size:13px;line-height:1.6;color:var(--muted-foreground);overflow-wrap:anywhere}
+.assisted-creation-page .assisted-step-help h3{color:var(--foreground);margin-bottom:12px}
+@media(max-width:1180px){.assisted-creation-page .assisted-creation-grid{grid-template-columns:minmax(200px,245px) minmax(0,1fr)}.assisted-creation-page .assisted-step-help{grid-column:2;position:static}}
+@media(max-width:720px){.assisted-creation-page .archive-content{width:calc(100% - 24px);padding-block:16px 44px}.assisted-creation-page .assisted-creation-grid{grid-template-columns:minmax(0,1fr);gap:14px}.assisted-creation-page .assisted-creation-sidebar,.assisted-creation-page .assisted-step-help{position:static;grid-column:1}.assisted-creation-page .assisted-creation-sidebar nav{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.assisted-creation-page .assisted-creation-content{padding:14px}.assisted-creation-page .assisted-creation-heading{padding:16px;align-items:flex-start;flex-wrap:wrap}.assisted-creation-page .assisted-legacy-title h1{font-size:clamp(28px,8vw,42px)}}
+@media(max-width:440px){.assisted-creation-page .assisted-creation-sidebar nav{grid-template-columns:minmax(0,1fr)}.assisted-creation-page .assisted-identity-subnav button{flex-basis:100%}}
