@@ -22,7 +22,7 @@ import { SessionReveals } from '@/components/npcs/npc-session-panel'
 
 type Character = {id:string;name:string}
 type CharacterData = ComponentProps<typeof CharacterSummary>['data']
-type PlayerTab = 'visual'|'sheet'|'diary'|'session'|'files'|'reveals'|'messages'
+type PlayerTab = 'hub'|'visual'|'sheet'|'diary'|'session'|'files'|'reveals'|'messages'
 type QuickTool = 'roll'|'health'|'hunger'|'willpower'|'humanity'|null
 const read = async (url:string) => {
   const response = await fetch(url,{cache:'no-store'})
@@ -76,16 +76,17 @@ function PlayerQuickActions({characterId,sessionId}:Readonly<{characterId:string
 }
 
 export function SessionPlayerWorkspace({campaignId,actorId,sessionId,characters,campaignName}:Readonly<{campaignId:string;actorId:string;sessionId:string|null;characters:Character[];campaignName?:string|null}>) {
-  const [tab,setTab]=useState<PlayerTab>('visual')
+  const [tab,setTab]=useState<PlayerTab>('hub')
   const [mobilePanel,setMobilePanel]=useState<'center'|'chat'|'cameras'>('center')
   const [selected,setSelected]=useState(characters[0]?.id??'')
   const {data:smsInbox}=useSWR<{enabled:boolean;threads:Array<{unreadCount:number}>}>(`/api/campaigns/${campaignId}/character-sms?view=player`,read,{refreshInterval:10000})
   const smsUnread=smsInbox?.enabled?smsInbox.threads.reduce((sum,thread)=>sum+Number(thread.unreadCount??0),0):0
   const current=characters.find(character=>character.id===selected)??characters[0]
   const tabs=[
+    {id:'hub' as const,label:'Hub',Icon:House},
     {id:'visual' as const,label:'Mesa Virtual',Icon:ImageIcon},
-    {id:'sheet' as const,label:'Ficha',Icon:ScrollText},
-    {id:'diary' as const,label:'Anotações',Icon:NotebookPen},
+    {id:'sheet' as const,label:'Resumo da Ficha',Icon:ScrollText},
+    {id:'diary' as const,label:'Notas',Icon:NotebookPen},
     {id:'session' as const,label:'Crônica',Icon:CalendarDays},
     {id:'files' as const,label:'Handouts',Icon:FileText},
     {id:'reveals' as const,label:'Fofocas e Descobertas',Icon:Eye},
@@ -107,6 +108,17 @@ export function SessionPlayerWorkspace({campaignId,actorId,sessionId,characters,
         {sessionId && <SessionSoundtrack sessionId={sessionId}/>}
         <nav className="session-tabs session-player-tabs session-player-tabs-enhanced" aria-label="Seções do Hub">{tabs.map(({id,label,Icon})=><button type="button" key={id} aria-current={tab===id?'page':undefined} aria-label={label} className={`session-tab ${tab===id?'session-tab-active is-active':''}`} onClick={()=>setTab(id)}><Icon className="size-4" aria-hidden="true"/><span>{label}</span>{id==='messages'&&smsUnread>0&&<span className="session-player-unread" aria-label={`${smsUnread} mensagens não lidas`}>{smsUnread}</span>}</button>)}</nav>
         <section className="session-stage session-player-stage" aria-label="Conteúdo da seção selecionada">
+          {tab==='hub' && <div className="session-player-hub-home">
+            <div className="session-player-hub-home-heading"><p className="eyebrow">Acesso rápido</p><h3>O que deseja consultar?</h3><p>Recursos da sua personagem e materiais compartilhados pelo Narrador, sem sair da sessão.</p></div>
+            <div className="session-player-hub-shortcuts">
+              {([
+                {id:'sheet',label:'Resumo da Ficha',description:current?'Identidade, atributos, habilidades e disciplinas':'Nenhuma ficha autorizada',Icon:ScrollText,disabled:!current},
+                {id:'diary',label:'Notas',description:'Anotações e registros da crônica',Icon:NotebookPen,disabled:false},
+                {id:'visual',label:'Mesa Virtual',description:'Mapa e imagens compartilhadas na sessão',Icon:ImageIcon,disabled:false},
+                {id:'files',label:'Handouts',description:'Documentos e pistas liberados para você',Icon:FileText,disabled:false},
+              ] as const).map(({id,label,description,Icon,disabled})=><button key={id} type="button" className="session-player-hub-shortcut" disabled={disabled} onClick={()=>setTab(id)}><Icon className="size-7" aria-hidden="true"/><span><strong>{label}</strong><small>{description}</small></span><span className="session-player-hub-shortcut-arrow" aria-hidden="true">›</span></button>)}
+            </div>
+          </div>}
           {tab==='visual' && <section className="session-player-visual-hub"><div className="session-player-section-heading"><ImageIcon className="size-6"/><div><p className="eyebrow">Compartilhado pelo narrador</p><h2>Mesa Virtual</h2><p>O mapa ou imagem em exibição é sincronizado automaticamente.</p></div></div><SessionVisualBoard campaignId={campaignId}/></section>}
           {tab==='reveals' && <section className="session-player-reveals"><div className="session-player-section-heading"><Eye className="size-6"/><div><p className="eyebrow">Informações reveladas</p><h2>Fofocas e Descobertas</h2><p>Somente informações que o narrador revelou à sua mesa.</p></div></div>{sessionId?<SessionReveals sessionId={sessionId}/>:<p className="text-sm text-muted-foreground">As descobertas aparecerão quando a sessão começar.</p>}</section>}
           {tab==='sheet' && (current ? <>
