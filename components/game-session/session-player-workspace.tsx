@@ -22,7 +22,7 @@ import { SessionReveals } from '@/components/npcs/npc-session-panel'
 
 type Character = {id:string;name:string}
 type CharacterData = ComponentProps<typeof CharacterSummary>['data']
-type PlayerTab = 'visual'|'sheet'|'diary'|'session'|'files'|'reveals'|'messages'
+type PlayerTab = 'hub'|'visual'|'sheet'|'diary'|'session'|'files'|'reveals'|'messages'
 type QuickTool = 'roll'|'health'|'hunger'|'willpower'|null
 const read = async (url:string) => {
   const response = await fetch(url,{cache:'no-store'})
@@ -62,13 +62,14 @@ function PlayerQuickActions({characterId,sessionId}:Readonly<{characterId:string
 }
 
 export function SessionPlayerWorkspace({campaignId,actorId,sessionId,characters,campaignName}:Readonly<{campaignId:string;actorId:string;sessionId:string|null;characters:Character[];campaignName?:string|null}>) {
-  const [tab,setTab]=useState<PlayerTab>('visual')
+  const [tab,setTab]=useState<PlayerTab>('hub')
   const [mobilePanel,setMobilePanel]=useState<'center'|'chat'|'cameras'>('center')
   const [selected,setSelected]=useState(characters[0]?.id??'')
   const {data:smsInbox}=useSWR<{enabled:boolean;threads:Array<{unreadCount:number}>}>(`/api/campaigns/${campaignId}/character-sms?view=player`,read,{refreshInterval:10000})
   const smsUnread=smsInbox?.enabled?smsInbox.threads.reduce((sum,thread)=>sum+Number(thread.unreadCount??0),0):0
   const current=characters.find(character=>character.id===selected)??characters[0]
   const tabs=[
+    {id:'hub' as const,label:'Início',Icon:House},
     {id:'visual' as const,label:'Mesa Virtual',Icon:ImageIcon},
     {id:'sheet' as const,label:'Ficha',Icon:ScrollText},
     {id:'diary' as const,label:'Anotações',Icon:NotebookPen},
