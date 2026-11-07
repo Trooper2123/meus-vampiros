@@ -48,7 +48,7 @@ function SessionWorkspace({ campaignId, actorId, campaignName }: Readonly<{ camp
   const { data: awakeSettings } = useSWR<{executionMode:'PLAYER_ROLLS'|'NARRATOR_FORCES'}>(manage ? `/api/campaigns/${campaignId}/awake-settings` : null, read)
   const { data: shortcutSettings } = useSWR<{shortcuts: ShortcutCode[]}>(manage ? `/api/campaigns/${campaignId}/session-shortcuts` : null, read, { refreshInterval: 20000 })
   const shortcuts = shortcutSettings?.shortcuts ?? DEFAULT_SHORTCUTS
-  const shortcutIcons = { npcs: UserRoundCog, calendar: CalendarDays, notes: NotebookPen, research: Search, handouts: FileText, visual: ImageIcon, xp: Wallet, shield: Shield } as const
+  const shortcutIcons = { npcs: UserRoundCog, calendar: CalendarDays, notes: NotebookPen, research: Search, handouts: FileText, visual: ImageIcon, xp: Wallet } as const
   const activeSession = data?.session
     const notesSessionId=data?.sessions?.find(session=>session.id===closedNpcSession)?.id??data?.session?.id??data?.sessions?.[0]?.id
   const npcSessionId=notesSessionId
@@ -150,8 +150,9 @@ function SessionWorkspace({ campaignId, actorId, campaignName }: Readonly<{ camp
               <div className="mt-4 grid gap-2">
                 {shortcuts.map(code => {
                   const Icon = shortcutIcons[code]
-                  return <button key={code} type="button" className="session-shortcut" onClick={() => code === "shield" ? setShieldOpen(true) : setActiveTool(code)}><Icon className="size-4" aria-hidden="true"/>{SHORTCUT_LABELS[code]}</button>
+                  return <button key={code} type="button" className="session-shortcut" onClick={() => setActiveTool(code)}><Icon className="size-4" aria-hidden="true"/>{SHORTCUT_LABELS[code]}</button>
                 })}
+                <button type="button" className="session-shortcut" aria-expanded={shieldOpen} aria-controls="narrator-virtual-shield" onClick={() => setShieldOpen(true)}><Shield className="size-4" aria-hidden="true"/>Escudo do Narrador</button>
                 {shortcuts.length === 0 && <p className="text-xs leading-5 text-muted-foreground">Nenhum atalho selecionado. Configure os itens em Gestão da Mesa → Configurações.</p>}
               </div>
             </section>
