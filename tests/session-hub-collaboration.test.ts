@@ -75,6 +75,24 @@ describe('hub de sessão: chat, handouts e mesa visual',()=>{
     expect((await getSessionVisual('hub-player-b',session.id)).handout?.id).toBe(allId)
   })
 
+  it('lista personagens ativos em rascunho como destinatários e preserva acesso restrito aos arquivos',async()=>{
+    const {campaign,pending}=await fixture()
+    actor.id='hub-master'
+    const initial=await listCampaignHandouts(actor.id,campaign.id)
+    expect(initial.recipients.map(person=>person.actor_id).sort()).toEqual(['hub-pending','hub-player-a','hub-player-b'])
+    expect(initial.recipients.find(person=>person.actor_id==='hub-pending')?.name).toBe('Pendente')
+
+    const id=await handout(campaign.id,'PRIVATE','mensagem para jogador')
+    await shareCampaignHandout(actor.id,id,{shareMode:'SELECTED',recipientActorIds:['hub-pending'],expectedRevision:0})
+    expect((await listCampaignHandouts('hub-pending',campaign.id)).handouts.map(item=>item.id)).toContain(id)
+    expect((await listCampaignHandouts('hub-player-a',campaign.id)).handouts.map(item=>item.id)).not.toContain(id)
+
+    await db.execute(sql`UPDATE characters SET status='ARCHIVED' WHERE id=${pending.id}::uuid`)
+    const updated=await listCampaignHandouts('hub-master',campaign.id)
+    expect(updated.recipients.map(person=>person.actor_id)).not.toContain('hub-pending')
+    await expect(listCampaignHandouts('hub-pending',campaign.id)).rejects.toMatchObject({status:404})
+  })
+
   it.skipIf(!process.env.BLOB_READ_WRITE_TOKEN)('executa upload, compartilhamento, download autorizado e exclusão no Blob privado',async()=>{
     const {campaign}=await fixture(),key=randomUUID()
     const prepared=await prepareCampaignHandout('hub-master',campaign.id,{fileName:'pista.txt',idempotencyKey:key})

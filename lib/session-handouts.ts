@@ -12,7 +12,7 @@ function requireBlob() { if (!configurePrivateBlobToken()) { throw new Character
 function requireUuid(value: unknown) { if (typeof value !== 'string' || !uuid.test(value)) { throw new CharacterCommandError(400, 'Identificador inválido.') } return value }
 function object(value: unknown): Record<string, unknown> { if (!value || typeof value !== 'object' || Array.isArray(value)) { throw new CharacterCommandError(400, 'Dados inválidos.') } return value as Record<string, unknown> }
 async function campaignAccess(actorId: string, campaignId: string) {
-  const result = await db.execute<{ master: boolean; member: boolean }>(sql`SELECT c.master_user_id=${actorId} AS master, (c.master_user_id=${actorId} OR EXISTS(SELECT 1 FROM characters ch WHERE ch.campaign_id=c.id AND ch.user_id=${actorId} AND ch.character_type='PLAYER_VAMPIRE' AND ch.status='APPROVED')) AS member FROM campaigns c WHERE c.id=${campaignId}::uuid`)
+  const result = await db.execute<{ master: boolean; member: boolean }>(sql`SELECT c.master_user_id=${actorId} AS master, (c.master_user_id=${actorId} OR EXISTS(SELECT 1 FROM characters ch WHERE ch.campaign_id=c.id AND ch.user_id=${actorId} AND ch.character_type='PLAYER_VAMPIRE' AND ch.status IN ('DRAFT','PENDING_REVIEW','APPROVED'))) AS member FROM campaigns c WHERE c.id=${campaignId}::uuid`)
   const row = result.rows[0]
   if (!row?.member) { throw new CharacterCommandError(404, 'Arquivo não encontrado.') }
   return row
@@ -29,7 +29,7 @@ export async function listCampaignHandouts(actorId: string, campaignId: string) 
       AND (${access.master} OR h.share_mode='ALL' OR (h.share_mode='SELECTED' AND EXISTS(SELECT 1 FROM campaign_handout_recipients mine WHERE mine.handout_id=h.id AND mine.actor_id=${actorId})))
     GROUP BY h.id ORDER BY h.created_at DESC LIMIT 200
   `)
-  const recipients = access.master ? await db.execute<{actor_id:string;name:string}>(sql`SELECT DISTINCT ch.user_id AS actor_id,ch.name FROM characters ch WHERE ch.campaign_id=${campaignId}::uuid AND ch.character_type='PLAYER_VAMPIRE' AND ch.status='APPROVED' ORDER BY ch.name LIMIT 200`) : { rows: [] }
+  const recipients = access.master ? await db.execute<{actor_id:string;name:string}>(sql`SELECT ch.user_id AS actor_id, MIN(ch.name) AS name FROM characters ch WHERE ch.campaign_id=${campaignId}::uuid AND ch.character_type='PLAYER_VAMPIRE' AND ch.status IN ('DRAFT','PENDING_REVIEW','APPROVED') GROUP BY ch.user_id ORDER BY MIN(ch.name) LIMIT 200`) : { rows: [] }
   return { canManage: access.master, recipients: recipients.rows, handouts: result.rows.map(row=>({id:row.id,title:row.title,fileName:row.file_name,contentType:row.content_type,sizeBytes:Number(row.size_bytes),shareMode:row.share_mode,revision:row.revision,createdAt:new Date(row.created_at).toISOString(),recipientActorIds:access.master?row.recipient_ids:undefined,url:`/api/handouts/${row.id}/file`})) }
 }
 
@@ -93,7 +93,7 @@ export async function shareCampaignHandout(actorId:string,id:string,input:unknow
     const campaign=await tx.execute<{master_user_id:string}>(sql`SELECT master_user_id FROM campaigns WHERE id=${row.campaign_id}::uuid FOR SHARE`)
     if(campaign.rows[0]?.master_user_id!==actorId) { throw new CharacterCommandError(403,'Somente o Narrador pode alterar o compartilhamento.') }
     if(row.revision!==value.expectedRevision) { throw new CharacterCommandError(409,'O compartilhamento foi alterado. Atualize a lista.') }
-    if(recipients.length){const valid=await tx.execute(sql`SELECT DISTINCT user_id FROM characters WHERE campaign_id=${row.campaign_id}::uuid AND character_type='PLAYER_VAMPIRE' AND status='APPROVED' AND user_id IN (${sql.join(recipients.map(actor=>sql`${actor}`),sql`, `)})`);if(valid.rows.length!==recipients.length){throw new CharacterCommandError(422,'Um destinatário não participa mais da mesa.')}}
+    if(recipients.length){const valid=await tx.execute(sql`SELECT DISTINCT user_id FROM characters WHERE campaign_id=${row.campaign_id}::uuid AND character_type='PLAYER_VAMPIRE' AND status IN ('DRAFT','PENDING_REVIEW','APPROVED') AND user_id IN (${sql.join(recipients.map(actor=>sql`${actor}`),sql`, `)})`);if(valid.rows.length!==recipients.length){throw new CharacterCommandError(422,'Um destinatário não participa mais da mesa.')}}
     await tx.execute(sql`DELETE FROM campaign_handout_recipients WHERE handout_id=${id}::uuid`)
     if(mode==='SELECTED'){const values=sql.join(recipients.map(actor=>sql`(${id}::uuid,${actor})`),sql`, `);await tx.execute(sql`INSERT INTO campaign_handout_recipients(handout_id,actor_id) VALUES ${values}`)}
     await tx.execute(sql`UPDATE campaign_handouts SET share_mode=${mode},revision=revision+1,updated_at=now() WHERE id=${id}::uuid`)
