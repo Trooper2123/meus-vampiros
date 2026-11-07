@@ -10,7 +10,7 @@ import { createNpc,getNpc,changeNpc,listNpcs } from '@/lib/npc-store'
 import { NPC_TEMPLATES } from '@/lib/npc-domain'
 import { getSessionNpcs,sessionNpcCommand } from '@/lib/npc-sessions'
 import { startGameSession } from '@/lib/game-sessions'
-import { getSheetData,sheetRecordCommand,revealSheetItem,listSheetReveals } from '@/lib/sheet-records'
+import { getSheetData,sheetTargets,sheetRecordCommand,revealSheetItem,listSheetReveals } from '@/lib/sheet-records'
 import { prepareSheetUpload,confirmSheetUpload,readSheetMedia,editSheetMedia,sanitizeSheetImage,type MediaStore } from '@/lib/sheet-media'
 import { POST as createNpcRoute } from '@/app/api/npcs/route'
 import { GET as readNpcRoute } from '@/app/api/npcs/[id]/route'
@@ -102,6 +102,19 @@ it('notas por mesa não vazam GM_ONLY e edição depende de autoria/política',a
   await expect(command(player,{action:'EDIT_RECORD',id:own.id,expectedRevision:0,data:record()})).rejects.toMatchObject({status:403})
   await expect(getSheetData(outsider,campaignId,'CHARACTER',characterId)).rejects.toMatchObject({status:403})
   await expect(command(master,{action:'CREATE_RECORD',data:{...record(),ownerId:player}})).rejects.toMatchObject({status:400})
+})
+it('lista NPCs ativos do catálogo do Narrador para integração sem expô-los ao jogador',async()=>{
+  const created=await createNpc(master,{data:{...NPC_TEMPLATES[0].data,name:'Contato privado do narrador'},idempotencyKey:key()})
+  const npcId=String(created.id)
+  const narratorTargets=await sheetTargets(master,campaignId)
+  expect(narratorTargets).toContainEqual(expect.objectContaining({subjectType:'NPC',subjectId:npcId,linked:false}))
+  expect((await sheetTargets(player,campaignId)).some(target=>target.subjectId===npcId)).toBe(false)
+  const npcRecord=await getNpc(master,npcId)
+  await changeNpc(master,npcId,{action:'LINK',campaignId,expectedRevision:npcRecord.revision,idempotencyKey:key(),revealedFields:[]})
+  expect(await sheetTargets(master,campaignId)).toContainEqual(expect.objectContaining({subjectType:'NPC',subjectId:npcId,linked:true}))
+  await command(master,{action:'CREATE_RELATION',target:{subjectType:'NPC',subjectId:npcId},relationType:'CONTACT',reciprocal:false,description:'Ligação da crônica',visibility:'GM_ONLY'})
+  expect((await getSheetData(master,campaignId,'CHARACTER',characterId)).relations).toHaveLength(1)
+  expect((await sheetTargets(player,campaignId)).some(target=>target.subjectId===npcId)).toBe(false)
 })
 it('relacionamentos respeitam os dois extremos e rejeitam outra campanha',async()=>{
   const own=await npc()
