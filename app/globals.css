@@ -3306,3 +3306,22 @@ main > .archive-header {
 @media(max-width:900px){.session-player-approved .session-player-tabs-enhanced{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}.session-player-approved .session-player-tabs-enhanced .session-tab{width:100%;justify-content:center}}
 @media(max-width:700px){.session-player-approved .session-player-master-layout{display:block}.session-player-approved .session-player-chat,.session-player-approved .session-player-cameras{position:static}.session-player-approved .session-player-master-layout>.session-player-chat,.session-player-approved .session-player-master-layout>.session-player-center,.session-player-approved .session-player-master-layout>.session-player-cameras{min-height:0}.session-player-approved>.session-active-header{padding:16px}.session-player-approved .session-active-actions{justify-content:flex-start}}
 @media(max-width:480px){.session-player-approved .session-player-tabs-enhanced{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Player hub home: quick navigation mirroring narrator session cards. */
+.session-player-approved .session-player-hub-home{padding:20px;min-width:0}
+.session-player-approved .session-player-hub-home-heading{margin-bottom:18px}
+.session-player-approved .session-player-hub-home-heading h3{margin:6px 0 8px;font:600 clamp(20px,2.3vw,27px)/1.2 Georgia,serif}
+.session-player-approved .session-player-hub-home-heading>p:last-child{font-size:13px;line-height:1.5;color:var(--muted-foreground)}
+.session-player-approved .session-player-hub-shortcuts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.session-player-approved .session-player-hub-shortcut{min-width:0;min-height:116px;display:flex;align-items:center;gap:13px;padding:19px;border:1px solid #6b303c;border-radius:12px;background:linear-gradient(130deg,#29131a,#160e12);color:var(--foreground);text-align:left;cursor:pointer}
+.session-player-approved .session-player-hub-shortcut>svg{flex-shrink:0;color:#df5a70}
+.session-player-approved .session-player-hub-shortcut>span:nth-child(2){flex:1;min-width:0;display:flex;flex-direction:column;gap:8px}
+.session-player-approved .session-player-hub-shortcut strong{font:600 18px/1.2 Georgia,serif;overflow-wrap:anywhere}
+.session-player-approved .session-player-hub-shortcut small{font-size:12px;line-height:1.45;color:var(--muted-foreground);overflow-wrap:anywhere}
+.session-player-approved .session-player-hub-shortcut-arrow{flex-shrink:0;color:#e17b8c;font-size:23px}
+.session-player-approved .session-player-hub-shortcut:not(:disabled):hover{border-color:#e05c73;background:linear-gradient(130deg,#481823,#231218)}
+.session-player-approved .session-player-hub-shortcut:focus-visible{outline:2px solid var(--primary);outline-offset:3px}
+.session-player-approved .session-player-hub-shortcut:disabled{opacity:.5;cursor:not-allowed}
+@media(max-width:1100px){.session-player-approved .session-player-hub-shortcuts{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:700px){.session-player-approved .session-player-hub-home{padding:14px}.session-player-approved .session-player-hub-shortcuts{grid-template-columns:repeat(2,minmax(0,1fr))}.session-player-approved .session-player-hub-shortcut{min-height:115px;padding:12px;gap:8px}.session-player-approved .session-player-hub-shortcut strong{font-size:15px}.session-player-approved .session-player-hub-shortcut small{font-size:11px}.session-player-approved .session-player-hub-shortcut>svg{width:20px;height:20px}}
+@media(max-width:430px){.session-player-approved .session-player-hub-shortcuts{grid-template-columns:minmax(0,1fr)}}
