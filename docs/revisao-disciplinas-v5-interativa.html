@@ -7,10 +7,10 @@ const ITEMS=[{"id":"ANIMALISM:poder:1:20-vtm-v5-vampire-the-masquerade-pdf:245:b
 const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const normalize=s=>String(s??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 const choice=(x)=>decisions[x.id]?.decision||'Pendente';
-const clean=s=>String(s??'').normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').replace(/[’‘]/g,"'").replace(/[^a-z0-9]/gi,'').toLowerCase();
+const clean=s=>String(s??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[’‘]/g,"'").replace(/[^a-z0-9]/gi,'').toLowerCase();
 const findWiki=(x)=>{
   const pages=WIKI_PAGES[x.discipline]||[];
-  const name=clean(x.name), words=x.name.replace(/[’‘]/g,"'").split(/\\s+/).filter(w=>w.length>2);
+  const name=clean(x.name), words=x.name.replace(/[’‘]/g,"'").split(/\s+/).filter(w=>w.length>2);
   let best={page:pages[0]?.page||1,score:-1,text:pages[0]?.text||''};
   for(const p of pages){
     const normalized=clean(p.text);
@@ -22,12 +22,12 @@ const findWiki=(x)=>{
   return {...best,matched:best.score===100,available:pages.length,totalPages:pages.length};
 };
 const wikiExcerpt=(x)=>{
-  const p=findWiki(x),lines=p.text.split('\\n');
-  const anchor=x.name.split(/\\s+/).find(w=>w.length>=4)||x.name;
+  const p=findWiki(x),lines=p.text.split('\n');
+  const anchor=x.name.split(/\s+/).find(w=>w.length>=4)||x.name;
   let at=lines.findIndex(line=>clean(line).includes(clean(anchor)));
   if(at<0)at=0;
   const start=Math.max(0,at-6),end=Math.min(lines.length,at+32);
-  return {page:p.page,matched:p.matched,excerpt:lines.slice(start,end).join('\\n'),full:p.text,available:p.available};
+  return {page:p.page,matched:p.matched,excerpt:lines.slice(start,end).join('\n'),full:p.text,available:p.available};
 };
 const w=(x)=>{
   const p=wikiExcerpt(x),label=x.name+' - VTM WIKI';
