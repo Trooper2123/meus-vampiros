@@ -1,0 +1,666 @@
+{
+  "version": "2026-11-08",
+  "baselineCount": 376,
+  "source": "12 user-supplied Paradox VTM Wiki PDFs, captured 2026-11-08",
+  "scope": "Name-and-level audit of individually identified wiki additions against existing research catalog; no automatic mechanical imports",
+  "missingCount": 78,
+  "missing": [
+    {
+      "disciplineId": "ANIMALISM",
+      "level": 2,
+      "name": "Animal Messenger",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Animalism"
+    },
+    {
+      "disciplineId": "ANIMALISM",
+      "level": 2,
+      "name": "Atavism",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Animalism"
+    },
+    {
+      "disciplineId": "ANIMALISM",
+      "level": 2,
+      "name": "Tracing the Blood",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Animalism"
+    },
+    {
+      "disciplineId": "ANIMALISM",
+      "level": 3,
+      "name": "Messenger's Command",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Animalism"
+    },
+    {
+      "disciplineId": "ANIMALISM",
+      "level": 3,
+      "name": "Scent of Prey",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Animalism"
+    },
+    {
+      "disciplineId": "ANIMALISM",
+      "level": 4,
+      "name": "Augury",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Animalism"
+    },
+    {
+      "disciplineId": "ANIMALISM",
+      "level": 4,
+      "name": "Awaken the Parasite",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Animalism"
+    },
+    {
+      "disciplineId": "ANIMALISM",
+      "level": 4,
+      "name": "Sway the Flock",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Animalism"
+    },
+    {
+      "disciplineId": "AUSPEX",
+      "level": 2,
+      "name": "Panacea",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Auspex"
+    },
+    {
+      "disciplineId": "AUSPEX",
+      "level": 2,
+      "name": "Reveal Temperament",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Auspex"
+    },
+    {
+      "disciplineId": "AUSPEX",
+      "level": 2,
+      "name": "Unerring Pursuit",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Auspex"
+    },
+    {
+      "disciplineId": "AUSPEX",
+      "level": 3,
+      "name": "Haruspex",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Auspex"
+    },
+    {
+      "disciplineId": "AUSPEX",
+      "level": 3,
+      "name": "Read the Room",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Auspex"
+    },
+    {
+      "disciplineId": "AUSPEX",
+      "level": 3,
+      "name": "Reveal the Invisible",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Auspex"
+    },
+    {
+      "disciplineId": "AUSPEX",
+      "level": 4,
+      "name": "Know the Heart Laid Bare",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Auspex"
+    },
+    {
+      "disciplineId": "BLOOD_SORCERY",
+      "level": 1,
+      "name": "Shape the Sanguine Sacrament",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Blood_Sorcery"
+    },
+    {
+      "disciplineId": "BLOOD_SORCERY",
+      "level": 2,
+      "name": "Scour Secrets",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Blood_Sorcery"
+    },
+    {
+      "disciplineId": "BLOOD_SORCERY",
+      "level": 2,
+      "name": "Vinculum Magnum",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Blood_Sorcery"
+    },
+    {
+      "disciplineId": "BLOOD_SORCERY",
+      "level": 3,
+      "name": "Transitive Bond",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Blood_Sorcery"
+    },
+    {
+      "disciplineId": "BLOOD_SORCERY",
+      "level": 4,
+      "name": "Blood Aegis",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Blood_Sorcery"
+    },
+    {
+      "disciplineId": "BLOOD_SORCERY",
+      "level": 4,
+      "name": "Fulminating Vitae",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Blood_Sorcery"
+    },
+    {
+      "disciplineId": "BLOOD_SORCERY",
+      "level": 4,
+      "name": "Marionette",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Blood_Sorcery"
+    },
+    {
+      "disciplineId": "BLOOD_SORCERY",
+      "level": 5,
+      "name": "Reclamation of Vitae",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Blood_Sorcery"
+    },
+    {
+      "disciplineId": "CELERITY",
+      "level": 2,
+      "name": "Rush Job",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Celerity"
+    },
+    {
+      "disciplineId": "CELERITY",
+      "level": 3,
+      "name": "Weaving a Thousand Cuts",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Celerity"
+    },
+    {
+      "disciplineId": "CELERITY",
+      "level": 4,
+      "name": "Blurred Momentum",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Celerity"
+    },
+    {
+      "disciplineId": "CELERITY",
+      "level": 4,
+      "name": "Unseen Strike",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Celerity"
+    },
+    {
+      "disciplineId": "DOMINATE",
+      "level": 2,
+      "name": "The Stolen Voice",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Dominate"
+    },
+    {
+      "disciplineId": "DOMINATE",
+      "level": 4,
+      "name": "Implant Suggestion",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Dominate"
+    },
+    {
+      "disciplineId": "DOMINATE",
+      "level": 4,
+      "name": "Tabula Rasa",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Dominate"
+    },
+    {
+      "disciplineId": "FORTITUDE",
+      "level": 2,
+      "name": "Earth's Perseverance",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Fortitude"
+    },
+    {
+      "disciplineId": "FORTITUDE",
+      "level": 2,
+      "name": "Invigorating Vitae",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Fortitude"
+    },
+    {
+      "disciplineId": "FORTITUDE",
+      "level": 2,
+      "name": "Obdurate",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Fortitude"
+    },
+    {
+      "disciplineId": "FORTITUDE",
+      "level": 3,
+      "name": "Calloused Soul",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Fortitude"
+    },
+    {
+      "disciplineId": "FORTITUDE",
+      "level": 4,
+      "name": "Gorgon's Scales",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Fortitude"
+    },
+    {
+      "disciplineId": "FORTITUDE",
+      "level": 5,
+      "name": "Meat Shields",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Fortitude"
+    },
+    {
+      "disciplineId": "OBFUSCATE",
+      "level": 2,
+      "name": "Ventriloquism",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Obfuscate"
+    },
+    {
+      "disciplineId": "OBFUSCATE",
+      "level": 3,
+      "name": "Mask of Isolation",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Obfuscate"
+    },
+    {
+      "disciplineId": "OBFUSCATE",
+      "level": 3,
+      "name": "Mind Masque",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Obfuscate"
+    },
+    {
+      "disciplineId": "OBFUSCATE",
+      "level": 3,
+      "name": "Guise of the Departed",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Obfuscate"
+    },
+    {
+      "disciplineId": "OBFUSCATE",
+      "level": 4,
+      "name": "Seclusion",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Obfuscate"
+    },
+    {
+      "disciplineId": "OBLIVION",
+      "level": 2,
+      "name": "Fatal Prediction",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Oblivion"
+    },
+    {
+      "disciplineId": "OBLIVION",
+      "level": 3,
+      "name": "Shadow Servant",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Oblivion"
+    },
+    {
+      "disciplineId": "OBLIVION",
+      "level": 4,
+      "name": "Manifest Profane Faith",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Oblivion"
+    },
+    {
+      "disciplineId": "OBLIVION",
+      "level": 4,
+      "name": "Umbrous Clutch",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Oblivion"
+    },
+    {
+      "disciplineId": "OBLIVION",
+      "level": 5,
+      "name": "The Darkness Within",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Oblivion"
+    },
+    {
+      "disciplineId": "POTENCE",
+      "level": 2,
+      "name": "Relentless Grasp",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Potence"
+    },
+    {
+      "disciplineId": "POTENCE",
+      "level": 3,
+      "name": "Exuberance",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Potence"
+    },
+    {
+      "disciplineId": "POTENCE",
+      "level": 4,
+      "name": "Crash Down",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Potence"
+    },
+    {
+      "disciplineId": "POTENCE",
+      "level": 5,
+      "name": "Subtle Hammer",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Potence"
+    },
+    {
+      "disciplineId": "PRESENCE",
+      "level": 1,
+      "name": "Eyes of the Serpent",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Presence"
+    },
+    {
+      "disciplineId": "PRESENCE",
+      "level": 2,
+      "name": "Melpominee",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Presence"
+    },
+    {
+      "disciplineId": "PRESENCE",
+      "level": 3,
+      "name": "Passion Leech",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Presence"
+    },
+    {
+      "disciplineId": "PRESENCE",
+      "level": 3,
+      "name": "Thrown Voice",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Presence"
+    },
+    {
+      "disciplineId": "PRESENCE",
+      "level": 4,
+      "name": "Magnum Opus",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Presence"
+    },
+    {
+      "disciplineId": "PRESENCE",
+      "level": 4,
+      "name": "Suffuse the Edifice",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Presence"
+    },
+    {
+      "disciplineId": "PROTEAN",
+      "level": 3,
+      "name": "Visceral Absorption",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Protean"
+    },
+    {
+      "disciplineId": "THIN_BLOOD_ALCHEMY",
+      "level": 1,
+      "name": "Gaoler's Bane",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Thin-blood_Alchemy"
+    },
+    {
+      "disciplineId": "THIN_BLOOD_ALCHEMY",
+      "level": 1,
+      "name": "Mercurian Tongue",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Thin-blood_Alchemy"
+    },
+    {
+      "disciplineId": "THIN_BLOOD_ALCHEMY",
+      "level": 1,
+      "name": "Plug-In",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Thin-blood_Alchemy"
+    },
+    {
+      "disciplineId": "THIN_BLOOD_ALCHEMY",
+      "level": 1,
+      "name": "Portable Shade",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Thin-blood_Alchemy"
+    },
+    {
+      "disciplineId": "THIN_BLOOD_ALCHEMY",
+      "level": 2,
+      "name": "Friends List",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Thin-blood_Alchemy"
+    },
+    {
+      "disciplineId": "THIN_BLOOD_ALCHEMY",
+      "level": 2,
+      "name": "Mirror of Trust",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Thin-blood_Alchemy"
+    },
+    {
+      "disciplineId": "THIN_BLOOD_ALCHEMY",
+      "level": 2,
+      "name": "Red's Flaming Hot Sauce",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Thin-blood_Alchemy"
+    },
+    {
+      "disciplineId": "THIN_BLOOD_ALCHEMY",
+      "level": 2,
+      "name": "Counterfeit Discipline",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Thin-blood_Alchemy"
+    },
+    {
+      "disciplineId": "THIN_BLOOD_ALCHEMY",
+      "level": 3,
+      "name": "Bleed Out",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Thin-blood_Alchemy"
+    },
+    {
+      "disciplineId": "THIN_BLOOD_ALCHEMY",
+      "level": 3,
+      "name": "Fang-Stinger",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Thin-blood_Alchemy"
+    },
+    {
+      "disciplineId": "THIN_BLOOD_ALCHEMY",
+      "level": 3,
+      "name": "Freezer Fluid",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Thin-blood_Alchemy"
+    },
+    {
+      "disciplineId": "THIN_BLOOD_ALCHEMY",
+      "level": 3,
+      "name": "Mandagloire",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Thin-blood_Alchemy"
+    },
+    {
+      "disciplineId": "THIN_BLOOD_ALCHEMY",
+      "level": 3,
+      "name": "Rumor",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Thin-blood_Alchemy"
+    },
+    {
+      "disciplineId": "THIN_BLOOD_ALCHEMY",
+      "level": 3,
+      "name": "Stay the Falling Sand",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Thin-blood_Alchemy"
+    },
+    {
+      "disciplineId": "THIN_BLOOD_ALCHEMY",
+      "level": 3,
+      "name": "Saraimu",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Thin-blood_Alchemy"
+    },
+    {
+      "disciplineId": "THIN_BLOOD_ALCHEMY",
+      "level": 3,
+      "name": "Tank",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Thin-blood_Alchemy"
+    },
+    {
+      "disciplineId": "THIN_BLOOD_ALCHEMY",
+      "level": 4,
+      "name": "Hollow Leg",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Thin-blood_Alchemy"
+    },
+    {
+      "disciplineId": "THIN_BLOOD_ALCHEMY",
+      "level": 4,
+      "name": "Short Circuit",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Thin-blood_Alchemy"
+    },
+    {
+      "disciplineId": "THIN_BLOOD_ALCHEMY",
+      "level": 4,
+      "name": "Toxic Personality",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Thin-blood_Alchemy"
+    },
+    {
+      "disciplineId": "THIN_BLOOD_ALCHEMY",
+      "level": 5,
+      "name": "Da Bomb",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Thin-blood_Alchemy"
+    },
+    {
+      "disciplineId": "THIN_BLOOD_ALCHEMY",
+      "level": 5,
+      "name": "Flowering Amaranth",
+      "status": "MISSING_PENDING_MECHANICAL_REVIEW",
+      "referenceUrl": "https://vtm.paradoxwikis.com/Thin-blood_Alchemy"
+    }
+  ],
+  "duplicateNameLevelCount": 1,
+  "duplicateNameLevel": [
+    {
+      "key": "BLOOD_SORCERY|2|lesangdelamour",
+      "entries": [
+        {
+          "id": "BLOOD_SORCERY:ritual:2:05-vtm-v5-blood-sigils-5-pdf-free-pdf:63:le-sang-de-l-amour",
+          "source": "Blood Sigils",
+          "printed_page": "63"
+        },
+        {
+          "id": "BLOOD_SORCERY:ritual:2:03-v5stlove-pdf:154:le-sang-de-l-amour",
+          "source": "Blood-Stained Love",
+          "printed_page": "154"
+        }
+      ]
+    }
+  ],
+  "baselineDistribution": {
+    "ANIMALISM": {
+      "1": 3,
+      "2": 6,
+      "3": 5,
+      "4": 2,
+      "5": 4
+    },
+    "AUSPEX": {
+      "1": 3,
+      "2": 8,
+      "3": 5,
+      "4": 1,
+      "5": 4
+    },
+    "CELERITY": {
+      "1": 3,
+      "2": 3,
+      "3": 4,
+      "4": 5,
+      "5": 2
+    },
+    "DOMINATE": {
+      "1": 2,
+      "2": 6,
+      "3": 3,
+      "4": 4,
+      "5": 4
+    },
+    "FORTITUDE": {
+      "1": 4,
+      "2": 7,
+      "3": 3,
+      "4": 4,
+      "5": 2
+    },
+    "OBFUSCATE": {
+      "1": 5,
+      "2": 6,
+      "3": 7,
+      "4": 4,
+      "5": 3
+    },
+    "OBLIVION": {
+      "1": 7,
+      "2": 8,
+      "3": 12,
+      "4": 5,
+      "5": 7
+    },
+    "POTENCE": {
+      "1": 3,
+      "2": 1,
+      "3": 4,
+      "4": 2,
+      "5": 2
+    },
+    "PRESENCE": {
+      "1": 2,
+      "2": 5,
+      "3": 6,
+      "4": 4,
+      "5": 3
+    },
+    "PROTEAN": {
+      "1": 6,
+      "2": 5,
+      "3": 6,
+      "4": 4,
+      "5": 7
+    },
+    "BLOOD_SORCERY": {
+      "1": 25,
+      "2": 26,
+      "3": 36,
+      "4": 22,
+      "5": 13
+    },
+    "THIN_BLOOD_ALCHEMY": {
+      "1": 8,
+      "2": 5,
+      "3": 10,
+      "4": 7,
+      "5": 3
+    }
+  },
+  "notes": [
+    "Missing entries are research candidates, not automatically selectable or rules-validated powers.",
+    "VTM Wiki does not replace original source book, errata, publication status, prerequisites or edition.",
+    "Wiki powers may come from books absent in the existing source collection; validate source before activation.",
+    "Same name across sources may be a legitimate different version; do not delete without checking.",
+    "Only the 12 Discipline power-list pages were reviewed here; ritual/ceremony lists external to these pages still need separate inventory."
+  ]
+}
