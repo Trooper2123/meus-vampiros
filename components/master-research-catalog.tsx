@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import type { DisciplineResearchEntry } from '@/lib/vtm-v5/research-catalog'
+import reconciliation from '@/lib/vtm-v5/wiki-reconciliation-audit.json'
 
 const PAGE_SIZE = 30
 const normalize = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR')
@@ -37,6 +38,17 @@ export function MasterResearchCatalog({ entries, skills }: Readonly<{ entries: r
       </label>
       <output className="block self-end text-sm text-muted-foreground">{filtered.length} de {entries.length} registros</output>
     </div>
+
+    <details className="rounded-lg border border-border bg-card p-4">
+      <summary className="cursor-pointer font-serif text-xl">Conferência com VTM Wiki · {reconciliation.missingCount} poderes para validação</summary>
+      <p className="mt-3 text-sm text-muted-foreground">Inventário de candidatos identificados nas listas da wiki e ainda não incorporados às regras ativas. Estes registros não são selecionáveis: custos, requisitos, páginas e efeitos devem ser conferidos no livro correspondente.</p>
+      <div className="mt-4 grid gap-2 sm:grid-cols-2">
+        {reconciliation.missing.map(item => <div key={`${item.disciplineId}:${item.level}:${item.name}`} className="flex flex-wrap items-center justify-between gap-2 border-b border-border py-2 text-sm">
+          <span>{item.name} · nível {item.level}</span>
+          <a className="text-xs underline underline-offset-2 text-muted-foreground hover:text-foreground" target="_blank" rel="noopener noreferrer" href={item.referenceUrl}>{item.disciplineId.replaceAll('_', ' ')} · referência</a>
+        </div>)}
+      </div>
+    </details>
 
     <details className="rounded-lg border border-border bg-card p-4">
       <summary className="cursor-pointer font-serif text-xl">Habilidades cadastradas ({skills.length})</summary>
