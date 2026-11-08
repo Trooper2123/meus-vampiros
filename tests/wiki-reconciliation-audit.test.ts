@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import audit from '@/lib/vtm-v5/wiki-reconciliation-audit.json'
+import fieldAudit from '@/lib/vtm-v5/wiki-field-quality-audit.json'
 import { DISCIPLINE_RESEARCH, DISCIPLINE_WIKI_REFERENCES } from '@/lib/vtm-v5/research-catalog'
 import { DISCIPLINES } from '@/lib/vtm-v5/disciplines'
 
@@ -23,4 +24,21 @@ describe('reconciliação das referências VTM Wiki', () => {
   it('preserva registros com o mesmo nome mas livros diferentes para avaliação editorial', () => {
     expect(audit.duplicateNameLevel.some(item => item.key.includes('lesangdelamour'))).toBe(true)
   })
+  it('documenta lacunas de preenchimento em todos os 376 registros sem confundi-las com validação mecânica', () => {
+    expect(fieldAudit.records).toBe(DISCIPLINE_RESEARCH.length)
+    expect(fieldAudit.recordsAudit).toHaveLength(DISCIPLINE_RESEARCH.length)
+    expect(fieldAudit.rowsWithAnyGeneric + fieldAudit.rowsWithoutGeneric).toBe(fieldAudit.records)
+    expect(fieldAudit.rowsWithAnyGeneric).toBeGreaterThan(0)
+    expect(fieldAudit.recordsAudit.every(item => DISCIPLINE_RESEARCH.some(row => row.id === item.id))).toBe(true)
+  })
+
+  it('mantém valores N/A quando a tabela da Wiki indica ausência de teste, sem inventar dados', () => {
+    const awe = DISCIPLINE_RESEARCH.find(item => item.name === 'Awe' && item.disciplineId === 'PRESENCE')
+    expect(awe?.pool).toBe('N/A')
+    expect(awe?.opposing_pool).toBe('N/A')
+    const bond = DISCIPLINE_RESEARCH.find(item => item.name === 'Bond Famulus')
+    expect(bond?.prerequisite).toBe('None')
+    expect(bond?.amalgam).toBe('No')
+  })
+
 })
