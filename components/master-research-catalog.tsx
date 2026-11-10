@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import type { DisciplineResearchEntry } from '@/lib/vtm-v5/research-catalog'
+import reconciliation from '@/lib/vtm-v5/wiki-reconciliation-audit.json'
 
 const PAGE_SIZE = 30
 const normalize = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR')
@@ -14,7 +15,7 @@ export function MasterResearchCatalog({ entries, skills }: Readonly<{ entries: r
   const [page, setPage] = useState(0)
   const skillNames = useMemo(() => new Map(skills.map(skill => [skill.id, skill.name])), [skills])
   const filtered = useMemo(() => entries.filter(entry => {
-    const text = normalize([entry.name, entry.effect, entry.cost, entry.prerequisite, entry.amalgam, entry.duration, entry.pool, entry.opposing_pool, entry.notes, entry.source, entry.source_file, ...entry.skillIds.map(id => skillNames.get(id))].join(' '))
+    const text = normalize([entry.name, entry.effect, entry.cost, entry.prerequisite, entry.amalgam, entry.duration, entry.pool, entry.opposing_pool, entry.notes, entry.source, entry.source_file, entry.disciplineNameEn, ...entry.skillIds.map(id => skillNames.get(id))].join(' '))
     return (!query || text.includes(normalize(query))) && (!discipline || entry.disciplineId === discipline) && (!type || entry.type === type) && (!status || entry.status === status)
   }), [entries, query, discipline, type, status, skillNames])
   const pageCount = Math.ceil(filtered.length / PAGE_SIZE)
@@ -39,6 +40,17 @@ export function MasterResearchCatalog({ entries, skills }: Readonly<{ entries: r
     </div>
 
     <details className="rounded-lg border border-border bg-card p-4">
+      <summary className="cursor-pointer font-serif text-xl">Conferência com VTM Wiki · {reconciliation.missingCount} poderes para validação</summary>
+      <p className="mt-3 text-sm text-muted-foreground">Inventário de candidatos identificados nas listas da wiki e ainda não incorporados às regras ativas. Estes registros não são selecionáveis: custos, requisitos, páginas e efeitos devem ser conferidos no livro correspondente.</p>
+      <div className="mt-4 grid gap-2 sm:grid-cols-2">
+        {reconciliation.missing.map(item => <div key={`${item.disciplineId}:${item.level}:${item.name}`} className="flex flex-wrap items-center justify-between gap-2 border-b border-border py-2 text-sm">
+          <span>{item.name} · nível {item.level}</span>
+          <a className="text-xs underline underline-offset-2 text-muted-foreground hover:text-foreground" target="_blank" rel="noopener noreferrer" href={item.referenceUrl}>{item.disciplineId.replaceAll('_', ' ')} · referência</a>
+        </div>)}
+      </div>
+    </details>
+
+    <details className="rounded-lg border border-border bg-card p-4">
       <summary className="cursor-pointer font-serif text-xl">Habilidades cadastradas ({skills.length})</summary>
       <ul className="mt-4 grid gap-2 text-sm sm:grid-cols-2 lg:grid-cols-3">{skills.map(skill => <li key={skill.id} className="flex justify-between gap-3 border-b border-border py-2"><span>{skill.name}</span><code className="text-muted-foreground">{skill.id}</code></li>)}</ul>
     </details>
@@ -46,7 +58,7 @@ export function MasterResearchCatalog({ entries, skills }: Readonly<{ entries: r
     {visible.length ? <div className="grid gap-4">
       {visible.map(entry => <article key={entry.id} className="rounded-lg border border-border bg-card p-4 sm:p-5">
         <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border pb-3">
-          <div><p className="eyebrow">{entry.discipline} · nível {entry.level} · {entry.type}</p><h2 className="mt-1 font-serif text-2xl">{entry.name}</h2></div>
+          <div><p className="eyebrow">{entry.disciplineNameEn} ({entry.discipline}) · nível {entry.level} · {entry.type}</p><h2 className="mt-1 font-serif text-2xl">{entry.name}</h2></div>
           <span className="rounded border border-border px-2 py-1 text-xs text-muted-foreground">{entry.status}</span>
         </div>
         <dl className="mt-4 grid gap-x-6 gap-y-3 text-sm sm:grid-cols-2 lg:grid-cols-3">
@@ -54,7 +66,7 @@ export function MasterResearchCatalog({ entries, skills }: Readonly<{ entries: r
         </dl>
         {entry.skillIds.length > 0 && <p className="mt-4 text-sm"><span className="text-muted-foreground">Habilidades relacionadas: </span>{entry.skillIds.map(id => skillNames.get(id) ?? id).join(', ')}</p>}
         {entry.notes && <details className="mt-4 border-t border-border pt-3 text-sm"><summary className="cursor-pointer text-muted-foreground">Observações e trecho de sistema</summary><p className="mt-2 whitespace-pre-wrap leading-6">{entry.notes}</p></details>}
-        <p className="mt-4 border-t border-border pt-3 text-xs leading-5 text-muted-foreground">Fonte: {entry.source} · p. {entry.printed_page} · PDF p. {entry.pdf_page}<br />Arquivo: {entry.source_file}</p>
+        <p className="mt-4 border-t border-border pt-3 text-xs leading-5 text-muted-foreground">Fonte: {entry.source} · p. {entry.printed_page} · PDF p. {entry.pdf_page}<br />Arquivo: {entry.source_file}<br /><a href={entry.wikiReferenceUrl ?? undefined} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 hover:text-foreground">Consultar disciplina na VTM Wiki ↗</a></p>
       </article>)}
     </div> : <p className="empty-state">Nenhum registro corresponde aos filtros.</p>}
 
