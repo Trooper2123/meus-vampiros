@@ -32,13 +32,13 @@ describe('reconciliação das referências VTM Wiki', () => {
     expect(fieldAudit.recordsAudit.every(item => DISCIPLINE_RESEARCH.some(row => row.id === item.id))).toBe(true)
   })
 
-  it('mantém valores N/A quando a tabela da Wiki indica ausência de teste, sem inventar dados', () => {
+  it('reflete os dados dos CSVs e preserva campos sem correspondência', () => {
     const awe = DISCIPLINE_RESEARCH.find(item => item.name === 'Awe' && item.disciplineId === 'PRESENCE')
-    expect(awe?.pool).toBe('N/A')
+    expect(awe?.pool).toContain('manipulation + presence')
     expect(awe?.opposing_pool).toBe('N/A')
     const bond = DISCIPLINE_RESEARCH.find(item => item.name === 'Bond Famulus')
     expect(bond?.prerequisite).toBe('None')
-    expect(bond?.amalgam).toBe('No')
+    expect(bond?.amalgam).toBe('N/A')
   })
 
 })
