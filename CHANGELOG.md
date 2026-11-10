@@ -1,3 +1,17 @@
+## [2026-11-09 23:09 BRT] - fix - Importação local dos CSVs de disciplinas
+
+- Arquivos principais: `docs/data/referencias_*.csv`, `lib/vtm-v5/research-catalog.json`, `tests/discipline-powers-route.test.ts` e `tests/wiki-reconciliation-audit.test.ts`; persistência: `discipline_research_catalog` no PostgreSQL local `::1:5432/postgres/public`.
+- Atualizados os campos de 174 registros existentes conforme os 12 CSVs, incluindo 11 níveis divergentes por confirmação do usuário. IDs, status editoriais e 202 registros fora dos CSVs preservados; sem alteração de schema, fichas, campanhas ou APIs.
+- Backups de origem e banco em `tmp/data-import-*-backup-2026-11-10T02-07-32-048Z.json` para rollback local. Atualização parametrizada e transacional; 174 payloads conferidos após commit.
+- Validação: catálogo com 376 IDs, 174 registros alterados e 202 intactos; 24 testes focados, TypeScript e build aprovados; auditoria de dependências sem vulnerabilidades conhecidas. Lint global bloqueado por dois erros anteriores em componentes de calendário e lembretes não alterados. Lint focado dos testes aprovados.
+
+## [2026-11-09 00:06 BRT] - fix - Revisão do catálogo de Disciplinas V5
+
+- Arquivo principal: `lib/vtm-v5/research-catalog.json`; persistência local: `discipline_research_catalog` em `postgres/public`.
+- Aplicados os 20 registros aprovados de `revisao-catalogo-v5.json` à origem e ao PostgreSQL local, preservando os 356 pendentes e ignorando o item extra sem decisão.
+- Sem alteração de schema, fichas, campanhas, APIs ou permissões. Cópia dos payloads anteriores em `tmp/revisao-catalogo-v5-backup.json` para rollback local.
+- Validação: 376 IDs preservados, 20 payloads conferidos com o export, 23 testes focados, TypeScript e build aprovados; auditoria com uma vulnerabilidade moderada preexistente em `minimatch`, nenhuma alta ou crítica. Lint bloqueado por dois erros preexistentes em componentes de calendário e lembretes não alterados nesta entrega.
+
 ## [2026-11-05 23:21 BRT] - fix - JSX do formulário de personagem
 
 - Arquivo principal: `app/characters/character-form-client.tsx`.
