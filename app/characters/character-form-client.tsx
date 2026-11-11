@@ -39,7 +39,12 @@ import { BLOOD_POTENCY_DERIVED_FIELDS } from '@/lib/vtm-v5/blood-potency'
 import { manualSkillValues, type CreationGrant } from '@/lib/vtm-v5/creation-grants'
 import { arrangeDisciplineEditor, fillDisciplinePowerSlots } from '@/lib/vtm-v5/discipline-editor'
 
-const fetcher = (url: string) => fetch(url).then((response) => response.json())
+const fetcher = async (url: string) => {
+  const response = await fetch(url, { cache: 'no-store' })
+  const body = await response.json()
+  if (!response.ok) throw new Error(body.error ?? 'Não foi possível carregar a ficha.')
+  return body
+}
 
 const tabs = [
   { id: 'identidade', label: 'Identidade', eyebrow: 'I / o nome antes da noite' },
@@ -224,6 +229,7 @@ export default function CharacterFormClient({
   const [spentXp, setSpentXp] = useState('')
   const [saved, setSaved] = useState(false)
   const [saving, setSaving] = useState(false)
+  const savingRef = useRef(false)
   const [characterId, setCharacterId] = useState<string | null>(idFromUrl)
   const secondaryAttributes = calculateSecondaryAttributes({ ...attributes, characterType, creationType, predador })
   const displayedResources = !characterId && characterType === 'PLAYER_VAMPIRE'
@@ -406,6 +412,25 @@ const data = characterData.character.data
   }
 
   async function saveDraft(redirectUrl?: string, acceptedInvitation?: AcceptedCampaignInvitation) {
+    // O estado React só muda no próximo render; o ref bloqueia dois saves no mesmo evento.
+    if (savingRef.current) return null
+    if (characterId && !Number.isSafeInteger(characterData?.character?.revision)) {
+      setValidationError('Aguarde o carregamento da ficha antes de salvar.')
+      return null
+    }
+    savingRef.current = true
+    try {
+      return await persistDraft(redirectUrl, acceptedInvitation)
+    } catch {
+      setValidationError('Não foi possível confirmar o salvamento. Seus dados foram mantidos; tente novamente.')
+      return null
+    } finally {
+      savingRef.current = false
+      setSaving(false)
+    }
+  }
+
+  async function persistDraft(redirectUrl?: string, acceptedInvitation?: AcceptedCampaignInvitation) {
     function collectCharacterFormData() {
   return {
     ...characterData?.character?.data,
@@ -542,6 +567,7 @@ const savedUrl = `/api/characters?id=${savedCharacterId}`
     window.setTimeout(() => setSaved(false), 2400)
     if (redirectUrl) {
       router.push(redirectUrl)
+      router.refresh()
     }
     return savedCharacterId
   }

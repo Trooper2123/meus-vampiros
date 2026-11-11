@@ -1,3 +1,4 @@
+import { revalidatePath } from 'next/cache'
 import { NextResponse } from 'next/server'
 import { getSessionOrDev } from '@/lib/auth0'
 import { getCharacterForViewer, getCharacterAccessRecord, createCharacter, updateCharacter, deleteCharacter, getCharactersForCampaign, normalizeDisciplines } from '@/lib/characters'
@@ -95,6 +96,7 @@ export async function POST(request: Request) {
     if (campaignId && !policyConsent && (data?.characterType ?? 'PLAYER_VAMPIRE') === 'PLAYER_VAMPIRE' && await campaignRequiresInvitation(campaignId)) throw new CharacterCommandError(409, 'Consulte o convite e aceite as regras antes de criar a ficha.')
     if (campaignId && !(await getCampaignById(campaignId))) return NextResponse.json({ error: 'Mesa não encontrada.' }, { status: 400 })
     const result = await createCharacter(session.user.sub, { name: name ?? 'Personagem sem nome', data: safeCharacterData(data), campaignId: campaignId ?? null }, undefined, undefined, policyConsent)
+    revalidatePath('/characters')
     return NextResponse.json({ id: result.id }, { status: 201 })
   } catch (error) {
     return errorResponse(error, 'Não foi possível salvar a ficha.')
@@ -128,6 +130,7 @@ export async function PUT(request: Request) {
     if (characterType !== original.characterType) return NextResponse.json({ error: 'O tipo da ficha não pode ser alterado.' }, { status: 422 })
     if (!canCreateCharacterType(characterType as CharacterType, await hasMasterAccess(session.user))) return NextResponse.json({ error: 'Este tipo de ficha é exclusivo do Mestre.' }, { status: 403 })
     await updateCharacter(id, session.user.sub, { name, data: safeCharacterData(data, original.data as Record<string, unknown>), campaignId, expectedRevision })
+    revalidatePath('/characters')
     return NextResponse.json({ ok: true, campaignId })
   } catch (error) {
     return errorResponse(error, 'Não foi possível atualizar a ficha.')

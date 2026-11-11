@@ -161,3 +161,13 @@ it('excluir revoga a URL mesmo se o storage falhar; confirmar é idempotente',as
   expect(await editSheetMedia(master,confirmed.id,{action:'DELETE',expectedRevision:0},failure)).toMatchObject({ok:true,storageDeletionPending:true})
   await expect(readSheetMedia(master,confirmed.id,store)).rejects.toMatchObject({status:404})
 })
+it('pesquisa o nome atual da ficha completa vinculada sem expor NPC de outro narrador',async()=>{
+  const created=await createNpc(master,{data:{...structuredClone(NPC_TEMPLATES[0].data),sheetType:'FULL',name:'Nome antigo'},campaignId,idempotencyKey:key()})
+  const own=await getNpc(master,String(created.id))
+  expect(own.characterId).toBeTruthy()
+  await db.execute(sql`UPDATE characters SET name='Nome atualizado' WHERE id=${own.characterId}::uuid`)
+  const found=await listNpcs(master,{campaignId,query:'Nome atualizado'})
+  expect(found.npcs.map(n=>n.id)).toContain(own.id)
+  expect((await listNpcs(master,{campaignId,query:'Nome antigo'})).npcs).toHaveLength(0)
+  expect((await listNpcs(outsider,{query:'Nome atualizado'})).npcs).toHaveLength(0)
+})
