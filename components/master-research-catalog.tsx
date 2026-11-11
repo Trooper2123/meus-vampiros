@@ -15,9 +15,9 @@ export function MasterResearchCatalog({ entries, skills }: Readonly<{ entries: r
   const [page, setPage] = useState(0)
   const skillNames = useMemo(() => new Map(skills.map(skill => [skill.id, skill.name])), [skills])
   const filtered = useMemo(() => entries.filter(entry => {
-    const text = normalize([entry.name, entry.effect, entry.cost, entry.prerequisite, entry.amalgam, entry.duration, entry.pool, entry.opposing_pool, entry.notes, entry.source, entry.source_file, entry.disciplineNameEn, ...entry.skillIds.map(id => skillNames.get(id))].join(' '))
+    const text = normalize([entry.name, entry.effect, entry.cost, entry.prerequisite, entry.amalgam, entry.duration, entry.pool, entry.opposing_pool, entry.notes, entry.source, entry.source_file, entry.disciplineNameEn].join(' '))
     return (!query || text.includes(normalize(query))) && (!discipline || entry.disciplineId === discipline) && (!type || entry.type === type) && (!status || entry.status === status)
-  }), [entries, query, discipline, type, status, skillNames])
+  }), [entries, query, discipline, type, status])
   const pageCount = Math.ceil(filtered.length / PAGE_SIZE)
   const visible = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
   const update = (setter: (value: string) => void) => (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => { setter(event.target.value); setPage(0) }
@@ -48,11 +48,6 @@ export function MasterResearchCatalog({ entries, skills }: Readonly<{ entries: r
           <a className="text-xs underline underline-offset-2 text-muted-foreground hover:text-foreground" target="_blank" rel="noopener noreferrer" href={item.referenceUrl}>{item.disciplineId.replaceAll('_', ' ')} · referência</a>
         </div>)}
       </div>
-    </details>
-
-    <details className="rounded-lg border border-border bg-card p-4">
-      <summary className="cursor-pointer font-serif text-xl">Habilidades cadastradas ({skills.length})</summary>
-      <ul className="mt-4 grid gap-2 text-sm sm:grid-cols-2 lg:grid-cols-3">{skills.map(skill => <li key={skill.id} className="flex justify-between gap-3 border-b border-border py-2"><span>{skill.name}</span><code className="text-muted-foreground">{skill.id}</code></li>)}</ul>
     </details>
 
     {visible.length ? <div className="grid gap-4">

@@ -1,0 +1,47 @@
+name: NPC messaging validation
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'lib/character-sms*'
+      - 'components/character-sms/**'
+      - 'app/api/campaigns/**/character-sms/**'
+      - 'tests/character-sms*'
+      - 'migrations/20261111_sms_npc_participants.sql'
+      - '.github/workflows/npc-messaging-ci.yml'
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: isolated-test-only
+          POSTGRES_DB: vampiros_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d vampiros_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://postgres:isolated-test-only@localhost:5432/vampiros_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx next typegen
+      - run: npx tsc --noEmit --incremental false
+      - run: npm run lint
+      - run: npx vitest run tests/character-sms.test.ts tests/character-sms-npc.integration.test.ts tests/character-sms-npc-ui.test.ts
+      - run: npm run build
+      - run: npm audit --omit=dev --audit-level=high

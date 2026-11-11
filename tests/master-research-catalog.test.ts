@@ -35,3 +35,16 @@ describe('catálogo de pesquisa do Narrador', () => {
     expect(getMasterResearchCatalog).toHaveBeenCalledOnce()
   })
 })
+
+it('buscador apresenta disciplinas e poderes sem listar habilidades como catálogo separado', async () => {
+  const { createElement } = await import('react')
+  const { renderToStaticMarkup } = await import('react-dom/server')
+  const { MasterResearchCatalog } = await import('@/components/master-research-catalog')
+  const html = renderToStaticMarkup(createElement(MasterResearchCatalog, { entries: DISCIPLINE_RESEARCH, skills: SKILL_CATALOG }))
+  expect(html).not.toContain('Habilidades cadastradas')
+  expect(html).toContain('Pesquisar no catálogo')
+  expect(html).toContain('Habilidades relacionadas:')
+  const pageHtml = renderToStaticMarkup(await MasterResearchPage({}))
+  expect(pageHtml).toContain('Disciplinas e poderes')
+  expect(pageHtml).not.toContain('27 habilidades')
+})

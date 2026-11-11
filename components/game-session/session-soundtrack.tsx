@@ -51,7 +51,7 @@ function beginSoundscape(ctx:AudioContext,mood:Mood,startedAt:string|null,volume
   }}
 }
 
-export function SessionSoundtrack({sessionId}:Readonly<{sessionId:string}>) {
+export function SessionSoundtrack({sessionId,compact=false}:Readonly<{sessionId:string;compact?:boolean}>) {
  const url=`/api/sessions/${sessionId}/soundtrack`
  const {data,error,mutate}=useSWR<State>(url,load,{refreshInterval:5000})
  const [enabled,setEnabled]=useState(false)
@@ -99,9 +99,9 @@ export function SessionSoundtrack({sessionId}:Readonly<{sessionId:string}>) {
    pending.current=null;setPendingCommand(null);await mutate();setFeedback('Estado da trilha atualizado para os participantes.')
   }catch(e){setPendingCommand(pending.current);setFeedback(e instanceof Error?e.message:'Falha de conexão, use reenviar.')}finally{setBusy(false)}
  }
- return <section className="min-w-0 rounded-lg border border-border bg-card p-3 sm:p-4" aria-label="Trilha sonora da sessão">
-  <p className="eyebrow">Ambiência sonora · SG-011</p><h3 className="mt-2 font-serif text-xl">Trilha sonora da sessão</h3>
-  <p className="mt-2 text-sm text-muted-foreground">Composições ambientes originais geradas no navegador. O Narrador controla o clima; cada pessoa controla seu próprio volume.</p>
+ return <section className={`min-w-0 rounded-lg border border-border bg-card p-3 sm:p-4 ${compact?'session-soundtrack-compact':''}`} aria-label="Trilha sonora da sessão">
+  {!compact&&<p className="eyebrow">Ambiência sonora · SG-011</p>}<h3 className="mt-2 font-serif text-xl">Trilha sonora da sessão</h3>
+  <p className="mt-2 text-sm text-muted-foreground">{compact?'O Narrador escolhe a trilha. Ajuste seu volume neste dispositivo.':'O Narrador controla o clima; cada pessoa controla seu próprio volume.'}</p>
   {error&&<p role="alert">{error.message}</p>}
   {data&&<div className="mt-3 flex flex-col gap-3 text-sm">
    <p>Fonte: {data.source==='YOUTUBE'?(data.youtubePlaylistId?'Playlist YouTube':'Vídeo YouTube'):captions[data.mood]} · {data.playing?'Em reprodução':'Pausado'}</p>

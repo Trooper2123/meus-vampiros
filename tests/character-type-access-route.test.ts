@@ -1,3 +1,4 @@
+vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
@@ -26,6 +27,7 @@ vi.mock('@/lib/auth/authorization', () => ({
   canManageCampaign: vi.fn(),
 }))
 
+import { revalidatePath } from 'next/cache'
 import { POST } from '../app/api/characters/route'
 
 function createRequest(characterType: string) {
@@ -49,6 +51,7 @@ describe('controle de tipos de ficha por contexto no perfil único', () => {
 
     expect(response.status).toBe(201)
     expect(mocks.createCharacter).toHaveBeenCalledOnce()
+    expect(revalidatePath).toHaveBeenCalledWith('/characters')
   })
 
   it.each(['HUMAN_NPC', 'VAMPIRE_NPC'])('exige criar %s pelo gerenciamento da mesa', async (characterType) => {

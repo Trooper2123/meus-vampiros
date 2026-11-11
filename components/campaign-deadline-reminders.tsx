@@ -19,7 +19,10 @@ export function CampaignDeadlineReminders({ campaignId }: Readonly<{ campaignId:
       fetch(`/api/campaign-events?campaignId=${encodeURIComponent(campaignId)}`, { cache: 'no-store' }).then(async response => { if (!response.ok) throw new Error('Eventos indisponíveis'); return response.json() }),
     ]).then(results => {
       if (!active) return
-      if (results[0].status === 'fulfilled') (setMissions(results[0].value.missions ?? []), setTimezone(results[0].value.timezone ?? 'UTC'))
+      if (results[0].status === 'fulfilled') {
+        setMissions(results[0].value.missions ?? [])
+        setTimezone(results[0].value.timezone ?? 'UTC')
+      }
       if (results[1].status === 'fulfilled') setEvents(results[1].value.events ?? [])
     })
     return () => { active = false }

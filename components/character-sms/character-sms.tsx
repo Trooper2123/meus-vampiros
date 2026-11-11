@@ -6,11 +6,14 @@ import { MessageSquareText, Send, Shield, UserRound, Users, RefreshCw } from 'lu
 
 type Contact = {id:string;name:string;characterType:string;owned:boolean}
 type Thread = {id:string;kind:string;updatedAt:string;characterA:string;characterB:string;unreadCount:number}
-type Message = {id:string;body:string;senderCharacterId:string;senderName:string;createdAt:string;narratorOperated:boolean|null}
+type Message = {id:string;body:string;senderCharacterId:string|null;senderNpcId?:string|null;senderName:string;createdAt:string;narratorOperated:boolean|null}
 type Inbox = {enabled:boolean;isNarrator:boolean;threads:Thread[]}
 type Coterie = {id:string;name:string;ownedCharacterIds:string[]}
-type Contacts = {enabled:boolean;isNarrator:boolean;characters:Contact[];coteries:Coterie[]}
+type Contacts = {enabled:boolean;isNarrator:boolean;characters:Contact[];npcContacts?:{id:string;name:string;canMessage:boolean}[];coteries:Coterie[]}
 type History = {enabled:boolean;isNarrator:boolean;thread:{id:string;kind:'DIRECT'|'COTERIE';coterieId:string|null;characterA:string;characterB:string;characterAId:string|null;characterBId:string|null};messages:Message[]}
+function identityFields(value:string,prefix:'sender'|'recipient') {
+  return value.startsWith('NPC:')?{[`${prefix}NpcId`]:value.slice(4)}:{[`${prefix}CharacterId`]:value}
+}
 const get = async (url:string) => {
   const r=await fetch(url,{cache:'no-store'})
   const body=await r.json().catch(()=>({}))
@@ -40,7 +43,7 @@ export function CharacterSms({campaignId,mode='player'}:Readonly<{campaignId:str
   const {data:contacts,error:contactsError}=useSWR<Contacts>(contactsUrl,get,{refreshInterval:30000})
   const {data:history,error:historyError,mutate:refreshHistory}=useSWR<History>(threadId?threadUrl(threadId):null,get,{refreshInterval:10000})
   const isNarrator=mode==='narrator' && inbox?.isNarrator===true
-  const allContacts=contacts?.characters??[]
+  const allContacts=[...(contacts?.characters??[]),...(contacts?.npcContacts??[]).filter(npc=>npc.canMessage).map(npc=>({id:`NPC:${npc.id}`,name:npc.name,characterType:'NPC',owned:false}))]
   const senders=isNarrator?allContacts:allContacts.filter(c=>c.owned&&c.characterType==='PLAYER_VAMPIRE')
   const coteries=contacts?.coteries??[]
   const currentCoterie=coteries.find(c=>c.id===coterieId)??coteries[0]
@@ -73,7 +76,7 @@ export function CharacterSms({campaignId,mode='player'}:Readonly<{campaignId:str
     if(!currentSender||(newKind==='DIRECT'&&!selectedRecipient)||(newKind==='COTERIE'&&!currentCoterie)||busy)return
     setBusy(true);setError('')
     try{
-      const response=await fetch(inboxUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(newKind==='COTERIE'?{kind:'COTERIE',senderCharacterId:currentSender,coterieId:currentCoterie?.id}:{kind:'DIRECT',senderCharacterId:currentSender,recipientCharacterId:selectedRecipient})})
+      const response=await fetch(inboxUrl,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(newKind==='COTERIE'?{kind:'COTERIE',...identityFields(currentSender,'sender'),coterieId:currentCoterie?.id}:{kind:'DIRECT',...identityFields(currentSender,'sender'),...identityFields(selectedRecipient,'recipient')})})
       const data=await response.json().catch(()=>({}))
       if(!response.ok)throw new Error(data.error??'Não foi possível criar a conversa.')
       setThreadId(data.id);setBody('')
@@ -98,7 +101,7 @@ export function CharacterSms({campaignId,mode='player'}:Readonly<{campaignId:str
     setBusy(true);setError('')
     try{
       const response=await fetch(threadUrl(threadId),{method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({senderCharacterId:replySender,body:body.trim(),idempotencyKey:crypto.randomUUID()})})
+        body:JSON.stringify({...identityFields(replySender,'sender'),body:body.trim(),idempotencyKey:crypto.randomUUID()})})
       const data=await response.json().catch(()=>({}))
       if(!response.ok)throw new Error(data.error==='SMS_DISABLED'?'Mensagens desativadas pelo Narrador.':data.error??'Não foi possível enviar.')
       setBody('');await Promise.all([refreshInbox(),refreshHistory()])
@@ -136,7 +139,7 @@ export function CharacterSms({campaignId,mode='player'}:Readonly<{campaignId:str
           <div className="sms-messages" role="log" aria-live="polite">
             {hasMore&&history?.messages.length===50&&<button type="button" className="sms-load-older" disabled={loadingOlder} onClick={()=>void loadOlder()}>{loadingOlder?'Carregando...':'Carregar mensagens anteriores'}</button>}
             {history&&messages.length===0&&<p className="sms-muted">Envie a primeira mensagem.</p>}
-            {messages.map(m=><article key={m.id} className={m.senderCharacterId===replySender?'sms-bubble mine':'sms-bubble'}><strong>{m.senderName}</strong><p>{m.body}</p><small>{new Date(m.createdAt).toLocaleString('pt-BR')}{isNarrator&&m.narratorOperated?' · Enviado pelo Narrador':''}</small></article>)}
+            {messages.map(m=><article key={m.id} className={(m.senderNpcId?`NPC:${m.senderNpcId}`:m.senderCharacterId)===replySender?'sms-bubble mine':'sms-bubble'}><strong>{m.senderName}</strong><p>{m.body}</p><small>{new Date(m.createdAt).toLocaleString('pt-BR')}{isNarrator&&m.narratorOperated?' · Enviado pelo Narrador':''}</small></article>)}
           </div>
           <form className="sms-write" onSubmit={e=>{e.preventDefault();void send()}}>
             <label className="sms-reply-as">Falar como <select value={replySender} onChange={e=>setSenderId(e.target.value)} disabled={disabled||busy}>{replySenders.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
