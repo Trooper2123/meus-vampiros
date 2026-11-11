@@ -1,3 +1,13 @@
+## [2026-11-11 15:18 BRT] - feat - NPCs narrativos nas mensagens da mesa (#67)
+
+- Arquivos principais: `lib/character-sms.ts`, `lib/character-sms-npc-schema.ts`, `migrations/20261111_sms_npc_participants.sql`, `components/character-sms/character-sms.tsx`, testes `character-sms*`, workflow `npc-messaging-ci.yml` e `docs/implementation/npc-messaging-67.md`.
+- Adiciona remetentes/destinatários NPC em conversas diretas, respostas e mensagens do Narrador em Coterie, sem copiar NPCs para personagens. Contratos Character continuam válidos; IDs e entregas passam a suportar identidades separadas e exclusivas.
+- Jogador contata apenas NPCs cuja identidade foi revelada; somente o Narrador fala como NPC. Histórico oculta nome e ID de NPC não revelado. Arquivamento, desvinculação, troca de narrador, SMS desativado, quota, paginação e idempotência são validados no servidor.
+- Migração reaplicável adiciona FKs/checks/índices tipados, substitui a PK de entregas por índices únicos parciais e preserva mensagens anteriores. Validada exclusivamente no PostgreSQL 16 local descartável, schema `meus_vampiros_test`, com dados fictícios; nenhum banco compartilhado/produção alterado. Rollback e pré-requisitos documentados.
+- Corrige o contrato `isNarrator` retornado pelo backend para os seletores da UI. Reaplica as duas correções de lint já diagnosticadas em `campaign-event-calendar.tsx` e `campaign-deadline-reminders.tsx`, separando chamadas antes agrupadas por vírgula.
+- Validação: 31 testes focados aprovados, incluindo integração real, concorrência, migração legada, autorização, privacidade e UI; TypeScript/build aprovados; lint global com 0 erros/10 avisos preexistentes. Auditoria: 9 moderadas na cadeia de desenvolvimento, nenhuma alta/crítica. Busca estática e revisão manual de segurança sem segredos/pontos críticos ou altos identificados no diff.
+- QA autenticado no deploy/Safari iPad e execução do workflow no GitHub pendentes. Em 11/11/2026, a usuária aprovou explicitamente a substituição da skill `pre-commit-review` indisponível pela revisão manual registrada, autorizando envio da branch e abertura de PR. Sem merge, deploy ou migração em produção. Issue #67 permanece aberta até homologação.
+
 ## [2026-11-09 23:09 BRT] - fix - Importação local dos CSVs de disciplinas
 
 - Arquivos principais: `docs/data/referencias_*.csv`, `lib/vtm-v5/research-catalog.json`, `tests/discipline-powers-route.test.ts` e `tests/wiki-reconciliation-audit.test.ts`; persistência: `discipline_research_catalog` no PostgreSQL local `::1:5432/postgres/public`.

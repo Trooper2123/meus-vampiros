@@ -104,7 +104,7 @@ describe('SMS persistente e permissões', () => {
     })
     const messages = await smsMessages(campaignId, 'player', threadId)
     expect(messages.messages).toEqual([])
-    const query = mocks.clientQuery.mock.calls.find(([statement]) => String(statement).includes('FROM character_messages m JOIN characters c'))
+    const query = mocks.clientQuery.mock.calls.find(([statement]) => String(statement).includes('FROM character_messages m LEFT JOIN characters c'))
     expect(query?.[0]).toContain('character_message_deliveries')
     expect(query?.[0]).toContain('ch.user_id=$2')
     expect(query?.[1]?.[1]).toBe('player')
@@ -126,7 +126,7 @@ describe('SMS persistente e permissões', () => {
 
   it('entrega ao controlador do personagem usado pelo Narrador sem expor outras mensagens',async()=>{
     const outsider='66666666-6666-4666-8666-666666666666'
-    mocks.clientQuery.mockImplementation(async (statement: string,values?:unknown[])=>{
+    mocks.clientQuery.mockImplementation(async (statement: string)=>{
       if (statement.includes('master_user_id,character_sms_enabled'))return result([{master_user_id:'narrator',character_sms_enabled:true}])
       if (statement.includes('SELECT t.*,COALESCE'))return result([{
         id:threadId,kind:'DIRECT',character_a_id:senderId,character_b_id:recipientId,
@@ -146,7 +146,7 @@ describe('SMS persistente e permissões', () => {
     expect(deliveries.some(([,args])=>(args as unknown[])[1]===outsider && (args as unknown[])[2]==='NARRATOR_AS_CHARACTER')).toBe(true)
   })
 
-  it('lista NPCs narrativos somente para o Narrador, sem marcá-los como remetentes válidos', async () => {
+  it('lista NPCs narrativos ativos e vinculados como contatos do Narrador', async () => {
     const npcId='77777777-7777-4777-8777-777777777777'
     mocks.clientQuery.mockImplementation(async (statement:string) => {
       if(statement.includes('master_user_id,character_sms_enabled')) return result([{master_user_id:'narrator',character_sms_enabled:true}])
@@ -155,14 +155,14 @@ describe('SMS persistente e permissões', () => {
       return result()
     })
     const contacts=await smsContacts(campaignId,'narrator')
-    expect(contacts.npcContacts).toEqual([{id:npcId,name:'Informante',campaignNpcId:recipientId,sheetType:'SIMPLE',canMessage:false}])
+    expect(contacts.npcContacts).toEqual([{id:npcId,name:'Informante',campaignNpcId:recipientId,sheetType:'SIMPLE',canMessage:true}])
     const query=mocks.clientQuery.mock.calls.find(([statement])=>String(statement).includes('FROM campaign_npcs cn'))
     expect(query?.[0]).toContain("n.status='ACTIVE'")
     expect(query?.[0]).toContain('NOT n.is_template')
-    expect(query?.[1]).toEqual([campaignId])
+    expect(query?.[1]).toEqual([campaignId,true])
   })
 
-  it('não consulta nem expõe NPCs narrativos ao jogador',async()=>{
+  it('filtra NPCs narrativos do jogador pela identidade revelada',async()=>{
     mocks.clientQuery.mockImplementation(async (statement:string)=>{
       if(statement.includes('master_user_id,character_sms_enabled'))return result([{master_user_id:'narrator',character_sms_enabled:true}])
       if(statement.includes('SELECT 1 FROM characters WHERE campaign_id='))return result([{member:1}])
@@ -171,7 +171,9 @@ describe('SMS persistente e permissões', () => {
     })
     const contacts=await smsContacts(campaignId,'player')
     expect(contacts.npcContacts).toEqual([])
-    expect(mocks.clientQuery.mock.calls.some(([statement])=>String(statement).includes('FROM campaign_npcs cn'))).toBe(false)
+    const query=mocks.clientQuery.mock.calls.find(([statement])=>String(statement).includes('FROM campaign_npcs cn'))
+    expect(query?.[0]).toContain("cn.revealed_fields ? 'name'")
+    expect(query?.[1]).toEqual([campaignId,false])
   })
 
 })

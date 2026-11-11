@@ -43,7 +43,12 @@ export function CampaignEventCalendar({ campaignId, master, config }: Readonly<{
     let active = true
     void fetch(`/api/campaigns/${encodeURIComponent(campaignId)}/missions`, { cache: 'no-store' })
       .then(async response => { if (!response.ok) throw new Error('Missões indisponíveis'); return response.json() })
-      .then(data => { if (active) (setMissionLinks(data.missions ?? []), setTimezone(data.timezone ?? 'UTC')) })
+      .then(data => {
+        if (active) {
+          setMissionLinks(data.missions ?? [])
+          setTimezone(data.timezone ?? 'UTC')
+        }
+      })
       .catch(() => { if (active) setMissionLinks([]) })
     return () => { active = false }
   }, [campaignId])
