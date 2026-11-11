@@ -1,7 +1,7 @@
 'use client'
 
 import { useRef, useState } from 'react'
-import useSWR from 'swr'
+import useSWR, { useSWRConfig } from 'swr'
 import { Check, Copy, Plus, Users, Search, CalendarDays, BookOpen, ArrowRight, Archive, History } from 'lucide-react'
 import Link from 'next/link'
 
@@ -182,9 +182,9 @@ type CampaignCharacter = {
   totalXp?: number | string
 }
 
-export function CampaignPossessionsManager({ campaignId, sessionId }: Readonly<{ campaignId: string; sessionId?: string }>) {
+export function CampaignPossessionsManager({ campaignId, sessionId, xpOnly = false }: Readonly<{ campaignId: string; sessionId?: string; xpOnly?: boolean }>) {
   const { data: charData, mutate: mutateCharacters } = useSWR<{ characters: CampaignCharacter[] }>(`/api/characters?campaignId=${campaignId}`, fetcher)
-  const { data: possData, error: possessionsError, mutate: mutatePossessions } = useSWR<{ possessions: Possession[] }>(`/api/possessions?campaignId=${campaignId}`, async url => {
+  const { data: possData, error: possessionsError, mutate: mutatePossessions } = useSWR<{ possessions: Possession[] }>(xpOnly ? null : `/api/possessions?campaignId=${campaignId}`, async url => {
     const response = await fetch(url)
     if (!response.ok) throw new Error('Não foi possível carregar os pertences.')
     return response.json()
@@ -201,6 +201,8 @@ export function CampaignPossessionsManager({ campaignId, sessionId }: Readonly<{
   const [granting, setGranting] = useState(false)
   const grantKeys = useRef<Record<string, string>>({})
   const sendingGrant = useRef(false)
+  const sendingXp = useRef(false)
+  const { mutate: mutateCache } = useSWRConfig()
   const [xpToAdd, setXpToAdd] = useState('2')
   const [updatingXp, setUpdatingXp] = useState(false)
   const [feedback, setFeedback] = useState('')
@@ -209,7 +211,8 @@ export function CampaignPossessionsManager({ campaignId, sessionId }: Readonly<{
   const [singleXpRetry, setSingleXpRetry] = useState<Record<string, { amount: number; reason: string; idempotencyKey: string }>>({})
 
   async function handleAddXpToCharacter(character: CampaignCharacter, amount: number) {
-    if (updatingXp || !xpReason.trim()) return
+    if (sendingXp.current || !xpReason.trim()) return
+    sendingXp.current = true
     const operation = singleXpRetry[character.id] ?? { amount, reason: xpReason.trim(), idempotencyKey: crypto.randomUUID() }
     setSingleXpRetry((current) => ({ ...current, [character.id]: operation }))
     setUpdatingXp(true)
@@ -227,9 +230,11 @@ export function CampaignPossessionsManager({ campaignId, sessionId }: Readonly<{
       setSingleXpRetry((current) => { const next = { ...current }; delete next[character.id]; return next })
       setFeedback(`${character.name}: XP concedido.`)
       await mutateCharacters(undefined, { revalidate: true })
+      await mutateCache(key => typeof key === 'string' && key.startsWith(`/api/campaigns/${campaignId}/xp-history?`))
     } catch {
       setFeedback(`${character.name}: falha de conexão. Tente novamente para repetir a mesma operação.`)
     } finally {
+      sendingXp.current = false
       setUpdatingXp(false)
     }
   }
@@ -237,7 +242,8 @@ export function CampaignPossessionsManager({ campaignId, sessionId }: Readonly<{
   async function handleGrantXpToAll(event: React.FormEvent) {
     event.preventDefault()
     const amount = Number(xpToAdd)
-    if (updatingXp || !Number.isInteger(amount) || amount <= 0 || amount > 10000 || !xpReason.trim() || characters.length === 0) return
+    if (sendingXp.current || !Number.isInteger(amount) || amount <= 0 || amount > 10000 || !xpReason.trim() || characters.length === 0) return
+    sendingXp.current = true
     const operation = xpRetry ?? { characterIds: characters.map((character) => character.id), amount, reason: xpReason.trim(), idempotencyKey: crypto.randomUUID() }
     setXpRetry(operation)
     setUpdatingXp(true)
@@ -252,9 +258,11 @@ export function CampaignPossessionsManager({ campaignId, sessionId }: Readonly<{
       setFeedback((body?.results ?? []).map((result: { characterId: string; ok: boolean; error?: string }) => `${characters.find((character) => character.id === result.characterId)?.name ?? result.characterId}: ${result.ok ? 'XP concedido' : result.error ?? 'falha'}`).join(' · '))
       if (body?.complete) setXpRetry(null)
       await mutateCharacters(undefined, { revalidate: true })
+      await mutateCache(key => typeof key === 'string' && key.startsWith(`/api/campaigns/${campaignId}/xp-history?`))
     } catch (error) {
       setFeedback(error instanceof Error ? error.message : 'Falha de conexão. Tente novamente para repetir a mesma operação.')
     } finally {
+      sendingXp.current = false
       setUpdatingXp(false)
     }
   }
@@ -311,27 +319,28 @@ export function CampaignPossessionsManager({ campaignId, sessionId }: Readonly<{
     <div className="campaign-module-body flex flex-col gap-6">
       <div className="campaign-module-subheading">
         <div>
-          <h3 className="font-serif text-lg uppercase text-foreground">Revisão e Gestão da Mesa</h3>
-          <p className="text-xs text-muted-foreground mt-0.5">Gerencie os personagens e aprove os pertences da crônica.</p>
+          <h3 className="font-serif text-lg uppercase text-foreground">{xpOnly ? 'Atribuir XP' : 'Revisão e Gestão da Mesa'}</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">{xpOnly ? 'Conceda experiência aos personagens, com ou sem sessão iniciada.' : 'Gerencie os personagens e aprove os pertences da crônica.'}</p>
         </div>
         <span className="eyebrow text-xs">Painel do Narrador</span>
       </div>
 
       {feedback && <output className="block text-sm text-muted-foreground">{feedback}</output>}
       {possessionsError && <p role="alert">{possessionsError.message}</p>}
-      {sessionId && <label className="flex flex-col gap-2 text-sm">Motivo da concessão de XP<input className="input" value={xpReason} maxLength={500} onChange={(event) => setXpReason(event.target.value)} required /></label>}
-      {sessionId && xpRetry && <p className="text-xs text-muted-foreground">Há uma concessão incompleta. Reenviar usa a mesma operação, sem duplicar XP.</p>}
-      {sessionId && characters.length > 0 && (
+      {<label className="flex flex-col gap-2 text-sm">Motivo da concessão de XP<input className="input" value={xpReason} maxLength={500} onChange={(event) => setXpReason(event.target.value)} required /></label>}
+      {xpRetry && <p className="text-xs text-muted-foreground">Há uma concessão incompleta. Reenviar usa a mesma operação, sem duplicar XP.</p>}
+      {characters.length > 0 && (
         <form onSubmit={handleGrantXpToAll} className="campaign-module-subsection flex flex-wrap items-center justify-between gap-4">
           <div>
-            <p className="text-xs font-mono font-semibold uppercase text-foreground">Atribuir XP Geral da Sessão</p>
+            <p className="text-xs font-mono font-semibold uppercase text-foreground">Atribuir XP aos personagens da mesa</p>
             <p className="text-[11px] text-muted-foreground">Conceda experiência simultaneamente para todos os personagens da mesa.</p>
           </div>
           <div className="flex items-center gap-2">
             <input
               type="number"
+              aria-label="Quantidade de XP por personagem"
               min="1"
-              max="50"
+              max="10000"
               value={xpToAdd}
               onChange={(e) => setXpToAdd(e.target.value)}
               className="input w-20 text-center font-mono"
@@ -349,19 +358,19 @@ export function CampaignPossessionsManager({ campaignId, sessionId }: Readonly<{
 
       {/* Seção de Personagens com XP */}
       <div className="flex flex-col gap-3">
-        <h4 className="font-mono text-xs uppercase text-muted-foreground tracking-wider">{sessionId ? 'Personagens vinculados e experiência (XP)' : 'Personagens vinculados'}</h4>
+        <h4 className="font-mono text-xs uppercase text-muted-foreground tracking-wider">Personagens vinculados e experiência (XP)</h4>
         {characters.length === 0 ? (
           <p className="text-xs text-muted-foreground italic">Nenhum personagem vinculado a esta mesa ainda.</p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-            <button
+            {!xpOnly && <button
               type="button"
               onClick={() => setSelectedCharacterId(null)}
               className={`p-3 text-left border transition-colors ${!selectedCharacterId ? 'border-primary bg-primary/10' : 'border-border bg-card'}`}
             >
               <p className="text-xs font-semibold uppercase">Todos os Personagens</p>
               <p className="text-[10px] text-muted-foreground mt-1">{possessions.length} pertences totais</p>
-            </button>
+            </button>}
             {characters.map((char) => {
               const spent = typeof char.spentXp === 'number' ? char.spentXp : Number.parseInt(String(char.spentXp ?? '0'), 10) || 0
               const total = typeof char.totalXp === 'number' ? char.totalXp : Number.parseInt(String(char.totalXp ?? '0'), 10) || 0
@@ -387,7 +396,7 @@ export function CampaignPossessionsManager({ campaignId, sessionId }: Readonly<{
                   </button>
                   <Link href={`/characters/${char.id}/summary`} className="button-ghost mt-2 text-xs">Ver ficha resumida</Link>
 
-                  {sessionId && <div className="mt-3 pt-2 border-t border-border/60 flex items-center justify-between gap-2 text-[11px]">
+                  {<div className="mt-3 pt-2 border-t border-border/60 flex items-center justify-between gap-2 text-[11px]">
                     <div className="flex flex-col">
                       <span className="font-mono text-muted-foreground text-[9px] uppercase">XP Total</span>
                       <span className="font-mono font-semibold text-foreground">{total} XP <span className="text-[9px] text-muted-foreground">({available} livre)</span></span>
@@ -418,6 +427,7 @@ export function CampaignPossessionsManager({ campaignId, sessionId }: Readonly<{
         )}
       </div>
 
+      {!xpOnly && <>
       {/* Painel de Revisão de Pertences */}
       {pendingPossessions.length > 0 && <div className="flex flex-col gap-4 border-t border-border pt-4">
         <h4 className="font-mono text-xs uppercase text-foreground tracking-wider">
@@ -525,6 +535,7 @@ export function CampaignPossessionsManager({ campaignId, sessionId }: Readonly<{
           <Plus className="size-4" /> {granting ? 'Concedendo...' : 'Conceder Item Restrito'}
         </button>
       </form>
+      </>}
     </div>
   )
 }

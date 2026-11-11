@@ -1,3 +1,4 @@
+vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }))
 import { beforeEach, expect, it, vi } from 'vitest'
 
 const session = vi.hoisted(() => {
